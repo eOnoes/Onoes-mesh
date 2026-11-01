@@ -214,6 +214,7 @@ async function inferenceSummary() {
       modelPath: strata.props?.model_path ?? null,
       contextMax: strata.health.max_context ?? strata.props?.default_generation_settings?.n_ctx ?? strata.models?.data?.[0]?.context_length ?? null,
       buildInfo: strata.props?.build_info ?? null,
+      state: engineState(strata),
     } : null,
     gpu, ram, disks,
     throughput: { tps: null, pps: null, contextUsed: null, contextPct: null,
@@ -221,6 +222,16 @@ async function inferenceSummary() {
                     : 'no engine answered on the usual ports' },
     cost: { simulatedUsd: null, reason: 'needs a token stream; run the engine behind a proxy' },
   };
+}
+
+// One word for what the engine is doing. The supervisor reports loaded but not busy, so
+// "loaded with no busy signal" is stated as loaded rather than guessed as idle.
+function engineState(found) {
+  if (!found) return 'stopped';
+  const busy = found.health.busy;
+  if (busy === true) return 'busy';
+  if (busy === false) return 'idle';
+  return found.health.loaded === true ? 'loaded' : 'unknown';
 }
 
 function shortModel(name) {

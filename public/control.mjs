@@ -37,13 +37,11 @@ function section(title) {
   return wrap;
 }
 
-function row(label, value, note) {
-  const wrap = el('div', 'ctl-row');
-  wrap.append(el('span', 'ctl-k', label));
-  const v = el('span', 'ctl-v', value === null || value === undefined ? '—' : String(value));
-  if (note) v.append(el('small', null, note));
-  wrap.append(v);
-  return wrap;
+function row(key, value, note) {
+  const line = el('div', 'ctl-row');
+  line.append(el('span', 'ctl-k', key), el('span', 'ctl-v', value === null || value === undefined || value === '' ? 'not reported' : String(value)));
+  if (note) line.append(el('span', 'ctl-note', String(note)));
+  return line;
 }
 
 function meter(label, pct, text, table = LEVELS) {
@@ -92,7 +90,8 @@ function render() {
     s.append(row('engine', engine.name, engine.transport === 'http' ? `:${engine.port}` : null));
     s.append(row('model', engine.modelShort || engine.modelAlias, engine.modelAlias));
     s.append(row('context', engine.contextMax, engine.contextLength ? `of ${engine.contextLength}` : null));
-    s.append(row('state', engine.busy === true ? 'generating' : engine.busy === false ? 'idle' : 'unknown',
+    s.append(// Prefer the server's own verdict: the supervisor reports loaded without a busy signal.
+    row('state', engine.state === 'busy' ? 'generating' : (engine.state ?? (engine.busy === true ? 'generating' : engine.busy === false ? 'idle' : 'unknown')),
       engine.loaded === false ? 'not loaded' : null));
     if (engine.buildInfo) s.append(row('build', engine.buildInfo));
     root.append(s);
