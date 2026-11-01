@@ -519,3 +519,74 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
   font-family:var(--sans);white-space:nowrap;min-height:28px}
 .agent-tabs .agent:hover{color:var(--ink)}
 .agent-tabs .agent[aria-pressed="true"]{background:var(--raised);border-color:var(--border);color:var(--ink)}
+
+/* ============================================================================
+   THE CHAT - ported from D:\Mesh\design-reference\index.html.
+
+   Message blocks with a left rail, an uppercase speaker label, the [copy]
+   affordance on its own line, and the composer's 4-column grid. Agent name colours
+   are tokens here because Mesh forbids literals in this file; in the reference they
+   are inline hex.
+
+   Every relay form id is preserved (#relay-form, #relay-text, #relay-message-id,
+   #relay-send): four tests drive that form directly, and m6 asserts #relay-send is
+   disabled. This is a restyle, not a rewiring.
+   ============================================================================ */
+.chat{display:flex;flex-direction:column;gap:2px;padding:12px;min-height:0;overflow-y:auto;
+      overscroll-behavior:contain;font-size:var(--terminal-font);line-height:var(--terminal-line)}
+.chat-msg{display:grid;min-width:0;gap:3px}
+.chat-msg+.chat-msg{margin-top:14px}
+.chat-who{font-weight:500;text-transform:uppercase}
+.chat-who.you-who{color:var(--blue)}
+.chat-who.agent-who{color:var(--amber)}
+.chat-msg.agent.echo .agent-who{color:var(--agent-echo)}
+.chat-msg.agent.cyony .agent-who{color:var(--agent-cyony)}
+.chat-msg.agent.tripp .agent-who{color:var(--agent-tripp)}
+.chat-msg.agent.dsh .agent-who{color:var(--agent-dsh)}
+.chat-body{min-width:0;padding-left:12px;border-left:1px solid var(--rail);overflow-wrap:anywhere}
+.chat-msg.you .chat-body{color:var(--ink)}
+.chat-msg.agent .chat-body{color:var(--agent-tx)}
+.chat-body>.fcp{float:none;display:block;width:max-content;margin:3px 0 0;padding:1px 7px;
+               border-radius:4px;text-align:left}
+.fcp{float:right;margin-left:10px;color:var(--faint);font-size:calc(var(--terminal-font) - 2px);
+     cursor:pointer;user-select:none;white-space:nowrap;border:0;background:transparent;
+     font-family:var(--mono)}
+.fcp:hover,.fcp:focus-visible{color:var(--blue);background:var(--raised)}
+.fcp.oky{color:var(--green)}
+.chat-files{display:flex;gap:6px;flex-wrap:wrap;padding-left:12px;margin-top:4px}
+.chat-file{color:var(--muted);font-size:inherit;cursor:pointer}
+.chat-discard{margin:0;padding:4px 12px 0;color:var(--faint);font-size:calc(var(--terminal-font) - 2px)}
+
+/* the composer: + | message id | input | round send */
+.cmp{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px;align-items:center;
+     padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--border);
+     background:var(--surface);flex:none;font-size:var(--terminal-font);
+     line-height:var(--terminal-line);margin:0}
+.cmperr{grid-column:1/-1;color:var(--danger);font-size:11px}
+.cmperr:empty{display:none}
+.cmp-add{display:flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;
+     border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--quiet);
+     font-family:var(--mono);font-size:15px;line-height:1}
+.cmp-add:hover:enabled{color:var(--ink);border-color:var(--faint)}
+.cmp-send{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;
+     border:1px solid var(--border);border-radius:50%;background:var(--raised);color:var(--ink);
+     font-family:var(--mono);font-size:15px;line-height:1;justify-self:end}
+.cmp-send:hover:enabled{background:var(--border)}
+.cmp #relay-text{min-width:0;width:100%;min-height:32px;max-height:120px;padding:6px 8px;
+     border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--ink);
+     font-family:var(--mono);font-size:var(--terminal-font);line-height:var(--terminal-line);
+     resize:none}
+.cmp #relay-message-id{display:none}
+.cmp .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+     clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* the Relay panel is a flex column: chat scrolls, composer pinned at the bottom */
+.content-layout{display:flex;flex-direction:column}
+#panel-relay{flex:1;display:flex;flex-direction:column;min-height:0;gap:0}
+#panel-relay .chat{flex:1 1 auto;min-height:0;overflow-y:auto}
+#panel-relay .cmp{flex:none}
+.cmp-lead{grid-column:1;color:var(--faint);font-family:var(--mono)}
+.cmp-add{grid-column:2}
+.cmp #relay-text{grid-column:3}
+.cmp-send{grid-column:4}
+.relay-extra{margin:0 12px 12px;background:var(--bg)}

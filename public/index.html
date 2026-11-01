@@ -26,7 +26,51 @@
 <article class="box section-gap"><h2>App</h2><p id="app-state">App status locked until a local session.</p></article>
 <article class="box section-gap"><h2>Not on this PC</h2><div id="overview-stubs"><p>SYNTHETIC. Relay is off. This page does not start it.</p><p>Inference: fixed local PC profile; native qualification required before loading.</p><p>SYNTHETIC. Agent has no executor. None is resumed.</p><p>SYNTHETIC. Mind has no database. None is read.</p></div></article>
 </section>
-<section role="tabpanel" id="panel-relay" aria-labelledby="tab-relay" tabindex="0" hidden><div class="panel-heading"><div><div class="eyebrow">Relay</div><p class="service-status" data-service="relay">Connection unknown</p><h1>Relay is off</h1><p id="relay-synthetic">SYNTHETIC. Relay is on ice. This tab does not start it and does not write relay files.</p><button id="relay-open" type="button" disabled>Open existing Relay terminal</button><button id="relay-close" type="button" disabled>Close Relay terminal</button></div></div><div id="relay-session-recovery" class="notice" hidden><p id="relay-session-state" role="status" tabindex="-1">Start a fresh local session to verify Relay access.</p><button id="relay-session-start" type="button">Start fresh local session</button></div><article class="box"><p id="relay-state" role="status">Relay unavailable until local session admission.</p><form id="relay-form"><label for="relay-message-id">Stable message id (keep for retries)</label><input id="relay-message-id" maxlength="80" pattern="[A-Za-z0-9_-]{1,80}" disabled><label for="relay-text">Message</label><textarea id="relay-text" maxlength="4000" required disabled></textarea><div class="actions"><button id="relay-send" type="submit" disabled>Send to Relay and create task</button><button id="relay-new" type="button" disabled>New message</button><button id="relay-reconnect" type="button" disabled>Reconnect Relay</button></div></form><iframe id="relay-terminal" title="Existing isolated Relay terminal" width="100%" height="600" hidden></iframe><h2>Saved Relay task references</h2><div id="relay-links"></div></article></section>
+<section role="tabpanel" id="panel-relay" aria-labelledby="tab-relay" tabindex="0" hidden>
+<div class="chat" id="relay-chat">
+<div class="chat-msg agent echo">
+<div class="chat-who agent-who">Echo</div>
+<div class="chat-body">
+<p class="service-status" data-service="relay">Connection unknown</p>
+<h1>Relay is off</h1>
+<span id="relay-synthetic">SYNTHETIC. Relay is on ice. This tab does not start it and does not write relay files.</span>
+<p id="relay-state" role="status">Relay unavailable until local session admission.</p>
+<button class="fcp" type="button" data-copy="relay-synthetic">[copy]</button>
+</div>
+</div>
+<div id="relay-session-recovery" class="notice" hidden>
+<p id="relay-session-state" role="status" tabindex="-1">Start a fresh local session to verify Relay access.</p>
+<button id="relay-session-start" type="button">Start fresh local session</button>
+</div>
+<div class="chat-msg you">
+<div class="chat-who you-who">You</div>
+<div class="chat-body">Nothing sent yet. This tab records a task locally; it does not message Relay until a session is admitted.</div>
+</div>
+</div>
+<article class="box relay-extra">
+<div class="actions">
+<button id="relay-open" type="button" disabled>Open existing Relay terminal</button>
+<button id="relay-close" type="button" disabled>Close Relay terminal</button>
+<button id="relay-new" type="button" disabled>New message</button>
+<button id="relay-reconnect" type="button" disabled>Reconnect Relay</button>
+</div>
+<iframe id="relay-terminal" title="Existing isolated Relay terminal" width="100%" height="600" hidden></iframe>
+<h2>Saved Relay task references</h2>
+<div id="relay-links"></div>
+</article>
+<p class="chat-discard">[discard]</p>
+<form id="relay-form" class="cmp">
+<span class="cmperr" id="relay-error"></span>
+<span class="cmp-lead" aria-hidden="true">&gt;</span>
+<button class="cmp-add" type="button" disabled title="attachments are not wired">+</button>
+<label class="sr-only" for="relay-message-id">Stable message id (keep for retries)</label>
+<input id="relay-message-id" maxlength="80" pattern="[A-Za-z0-9_-]{1,80}" disabled>
+<label class="sr-only" for="relay-text">Message</label>
+<textarea id="relay-text" maxlength="4000" required disabled placeholder="Echo · type a message…"></textarea>
+<button id="relay-send" type="submit" class="cmp-send" disabled aria-label="send">&#8593;</button>
+</form>
+
+</section>
 <section role="tabpanel" id="panel-inference" aria-labelledby="tab-inference" tabindex="0" hidden>
 <div class="panel-heading"><div><div class="eyebrow">Inference / this PC</div><h1>Local inference control</h1><p>Proposal → explicit approval → execution → read-back receipt. Uncertain ownership disables controls.</p></div></div>
 <article class="box"><h2>Health and freshness</h2><p id="local-inference-state" role="status">UNAVAILABLE · Start a local session and refresh.</p><p id="local-inference-telemetry">CPU UNKNOWN · RAM UNKNOWN · GPU UNAVAILABLE · VRAM UNAVAILABLE</p><button id="local-inference-refresh" type="button" disabled>Refresh local status</button></article>
