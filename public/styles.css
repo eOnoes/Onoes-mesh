@@ -1129,3 +1129,27 @@ footer{background:transparent}
 .picker-prompt{color:var(--faint);font:11px/1.6 var(--mono);padding:2px 4px 6px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .picker-prompt .ps1{color:var(--quiet)}
+
+/* ============================================================================
+   A CONNECTED tree.
+
+   `├─` characters can never join once each row has its own padding, so the vertical
+   is a 1px line per row running the full height of that row - consecutive rows butt
+   together into one continuous stroke - and a short horizontal tick branches off to
+   the left of each entry. The last row's vertical stops at its own midpoint, the way
+   a real tree ends.
+   ============================================================================ */
+.nav-rail .tab{position:relative;padding:4px 8px 4px 22px;line-height:1.6;
+  border-color:transparent;background:transparent}
+.nav-rail .tab::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:1px;
+  background:var(--border)}
+.nav-rail .tab:last-child::before{bottom:50%}
+.nav-rail .tab::after{content:"";position:absolute;left:8px;top:50%;width:9px;height:1px;
+  background:var(--border)}
+
+/* a plain monochrome folder: body plus a tab on the top-left */
+.nav-rail .tab .fi{position:relative;width:11px;height:8px;flex:none;margin-right:7px;
+  border:1px solid currentColor;border-radius:1px;opacity:.7}
+.nav-rail .tab .fi::before{content:"";position:absolute;left:-1px;top:-4px;width:4px;height:3px;
+  border:1px solid currentColor;border-bottom:0;border-radius:1px 1px 0 0}
+.nav-rail .tab[aria-selected="true"] .fi{opacity:1}
