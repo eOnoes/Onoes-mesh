@@ -1184,3 +1184,37 @@ footer{background:transparent}
 .tree-root{padding-left:26px}
 .tree-root::before{left:15px;top:50%;bottom:-1px;width:1px;background:var(--border)}
 .nav-rail .tab .fi{margin-right:8px}
+
+/* ============================================================================
+   FOLDERS ON A CHAIN.
+
+   The guide moves into the folder column, so the line passes from one folder to the
+   next with a clear gap at each icon - folders hanging off one thread, rather than a
+   margin rule with icons beside it.
+
+   The folder is a solid silhouette: 10x7 body, 4x2 tab, in --ink, which is #e8e8ea in
+   dark and #18181b in light - white folder on black, black folder on white. Labels stay
+   muted so the icon is the brightest mark in the row.
+   ============================================================================ */
+.nav-rail .tab{padding-left:26px}
+.nav-rail .tab::before{content:"";position:absolute;left:31px;top:0;width:1px;
+  height:calc(50% - 6px);background:var(--border)}
+.nav-rail .tab::after{content:"";position:absolute;left:31px;top:calc(50% + 6px);
+  bottom:0;width:1px;background:var(--border)}
+.nav-rail .tab:last-child::after{display:none}
+
+.nav-rail .tab .fi{width:10px;height:7px;flex:none;margin-right:9px;position:relative;
+  background:var(--ink);border:0;border-radius:1px;opacity:1}
+.nav-rail .tab .fi::before{content:"";position:absolute;left:0;top:-2px;width:4px;height:2px;
+  border:0;border-radius:1px 1px 0 0;background:var(--ink)}
+.nav-rail .tab[aria-selected="true"] .fi{background:var(--ink)}
+
+/* the trunk hangs from the bottom of "Mesh", never through the word itself */
+.tree-root{padding-left:31px}
+.tree-root::before{left:31px;top:100%;bottom:-1px;width:1px;background:var(--border)}
+
+/* The rail tabs stopped matching `.tbar .tab` when they moved out of the top bar, so the
+   folder <i> was a plain inline element: width/height were ignored and it measured 16px
+   tall with a zero-width box, putting its centre 5px off the guide line. */
+.nav-rail .tab .fi{display:inline-block;vertical-align:-1px;box-sizing:border-box}
+.nav-rail .tab{display:flex;align-items:center}
