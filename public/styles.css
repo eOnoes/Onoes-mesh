@@ -1223,3 +1223,8 @@ footer{background:transparent}
    an explicit height wins over `bottom`, so instead of spanning to the next folder it
    drew a 1px dash. Reset the height so the segment follows top/bottom again. */
 .nav-rail .tab::after{height:auto;width:1px}
+
+/* The lower segment never painted: an earlier iteration hid ::after with
+   `display:none` for the street-light fix, and the chained rule restored `content`
+   but never reset `display`. Explicit block, and let top/bottom define the height. */
+.nav-rail .tab::after{display:block;content:"";height:auto;width:1px}
