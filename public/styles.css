@@ -120,3 +120,41 @@ body.menu-open .nav-wrap{transform:none}
                    white-space:nowrap;min-height:28px;min-width:0}
 .topbar nav button[aria-selected="true"]{background:var(--raised);
                    border-color:var(--border);color:var(--ink)}
+
+/* ============================================================================
+   Quiet the dashboard chrome.
+
+   Mesh stacks four rows between the top bar and the content: preview-banner,
+   shell-label, the actions row, and two live status paragraphs. Relay has none of
+   them, and on a phone they eat the first third of the screen - this is the single
+   biggest reason the app still read as a dashboard rather than a terminal.
+
+   They are NOT removed: test/m6-standalone-browser.mjs and
+   test/owner-inspect-browser.mjs measure .preview-banner's geometry, and the ids
+   (#demo-start, #demo-end, #message, #demo-state) are wired in app.js. They stay in
+   the DOM, they just stop shouting: hairline separators, 11px, faint text, and
+   controls at Relay's scale instead of 44px blocks.
+   ============================================================================ */
+.preview-banner{background:transparent;border:0;border-bottom:1px solid var(--border);
+                color:var(--faint);font-size:11px;padding:6px 12px;margin:0}
+.shell-label{padding:6px 12px;font-size:11px;color:var(--faint);
+             border-bottom:1px solid var(--border)}
+.actions{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border)}
+#demo-state,#message{margin:0;padding:6px 12px;font-size:11px;color:var(--faint);
+                     border-bottom:1px solid var(--border)}
+
+/* Relay's control scale: a small bordered pill, sans, not a 44px block. */
+.actions button,.shell-label button,#refresh{padding:3px 10px;font-size:12px;
+  border:1px solid var(--border);border-radius:6px;background:transparent;
+  color:var(--quiet);font-family:var(--sans);min-height:28px;min-width:0}
+.actions button:hover:enabled,.shell-label button:hover:enabled,.actions button:focus-visible{
+  color:var(--ink);border-color:var(--faint)}
+
+/* The tablist was a vertical list in the drawer; inside the bar it must be a row.
+   Without this the seven pills stack and the top bar becomes 237px tall on a phone. */
+.topbar nav{flex-direction:row;flex-wrap:nowrap}
+
+/* Relay has one status line in the bar, not two stacked paragraphs. These stay live
+   regions with their ids intact - they are clamped to a single line instead of
+   disappearing, so nothing is hidden from assistive tech. */
+#demo-state,#message{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
