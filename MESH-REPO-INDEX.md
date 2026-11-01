@@ -4,6 +4,44 @@ Authoritative as of 2026-10-31. If you are an agent or a human picking this up, 
 first. A previous Mesh main repo (`D:\Dev\Onoes-Mesh`) was deleted without ever being
 committed anywhere, and its entire history went with it. That is why this file exists.
 
+## Hosting — how to open Mesh
+
+Mesh is hosted on the tailnet so the same URL works from this PC or from a phone. That is the
+operator's standard: host via Tailscale so an agent can hand over one clickable link and it
+works wherever they are.
+
+    https://emitchell.tail8c4a75.ts.net:8446          <- give this to the operator
+
+Published by:
+
+    tailscale serve --bg --https=8446 http://127.0.0.1:4317
+
+Locally the same app is at `http://127.0.0.1:4317`.
+
+**Started by** `tools\start-mesh.cmd`, launched from a Startup-folder entry
+(`%APPDATA%\...\Startup\mesh.cmd`). It is idempotent — it refuses to start a second copy — and
+it re-asserts the serve mapping after a successful boot.
+
+**Two constraints are the app's own, not the launcher's:**
+
+- `startApp` refuses a `dataDir` that is not `test/app03-*`. Mesh cannot be pointed at an
+  arbitrary folder; its state lives in `test/app03-mesh`.
+- `startApp` refuses a fixed port and requires an OS-assigned one, so **the backend port
+  changes every boot**. Only the preview port (4317) is stable, which is why that is what the
+  tailnet publishes. Never hardcode the backend port.
+
+**No authentication.** Unlike Onoes-Relay, Mesh has no unlock gate — anything on the tailnet
+can reach it. Tailnet-only is the only boundary.
+
+## Repo layout
+
+    public/      the seven-tab PWA: index.html, app.js, styles.css, sw.js, icons
+    shared/      tokens.css — the ONLY place a colour may be defined
+    lib/         server-side modules (task store, connections, probes, relay link)
+    tools/       start-mesh.cmd and friends
+    test/        the tracked suite; npm test / test:ui / check
+    _incoming/   staged, NOT integrated — see below
+
 ## The truth
 
     D:\Mesh        its own git repo, branch master, pushed to github.com/eOnoes/Onoes-mesh
