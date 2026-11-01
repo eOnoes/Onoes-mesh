@@ -715,3 +715,26 @@ footer{background:transparent}
   #relay-chat,#relay-form.cmp{max-width:none;margin-left:0;margin-right:0}
 }
 .chat-width{display:flex;gap:4px;padding:0 0 6px}
+
+/* ============================================================================
+   Message actions, revealed on hover or when the message is targeted.
+
+   Always-on [copy] put a control on every line of a transcript. Now the row is
+   invisible until you point at the message or click it, and focus-within keeps it
+   reachable from the keyboard.
+
+       [reply]  lime    [copy]  cyan    [delete]  red
+   ============================================================================ */
+.chat-actions{display:flex;gap:10px;margin:4px 0 0;opacity:0;transition:opacity 120ms ease}
+.chat-msg:hover .chat-actions,
+.chat-msg:focus-within .chat-actions,
+.chat-msg.is-target .chat-actions{opacity:1}
+.chat-msg.is-target .chat-body{border-left-color:var(--reply)}
+.chat-actions .fcp{float:none;margin:0;padding:1px 2px;background:transparent}
+.chat-actions .fcp.reply{color:var(--reply)}
+.chat-actions .fcp.copy{color:var(--cyan)}
+.chat-actions .fcp.del{color:var(--danger)}
+.chat-actions .fcp.reply:hover,.chat-actions .fcp.reply:focus-visible{background:var(--raised);color:var(--reply)}
+.chat-actions .fcp.copy:hover,.chat-actions .fcp.copy:focus-visible{background:var(--raised);color:var(--cyan)}
+.chat-actions .fcp.del:hover,.chat-actions .fcp.del:focus-visible{background:var(--raised);color:var(--danger)}
+.chat-msg.is-gone{display:none}

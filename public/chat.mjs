@@ -4,34 +4,36 @@
 // tools/sync-relay-chat.mjs. Mesh's server refuses live connections on purpose, so this
 // file only paints what the snapshot contains.
 //
-// The markup it builds is the reference's own: .chat-msg / .chat-who / .chat-body with
-// the [copy] affordance on its own line, and .chat-files for delivered artefacts.
+// Message actions are revealed on hover, on keyboard focus, or by clicking the message -
+// phones have no hover, so tapping a message targets it and shows the same row.
 const chat = document.getElementById('relay-chat');
-const empty = document.getElementById('relay-empty');
+const composer = document.getElementById('relay-text');
+const errorLine = document.getElementById('relay-error');
 
-function copyButton(text) {
+let agentName = 'Relay';
+
+function note(message) {
+  if (!errorLine) return;
+  errorLine.textContent = message;
+  setTimeout(() => { if (errorLine.textContent === message) errorLine.textContent = ''; }, 2200);
+}
+
+function actionButton(label, className, onClick) {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'fcp';
-  button.textContent = '[copy]';
-  button.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      button.classList.add('oky');
-      button.textContent = '[copied]';
-      setTimeout(() => { button.classList.remove('oky'); button.textContent = '[copy]'; }, 1200);
-    } catch {
-      button.textContent = '[failed]';
-      setTimeout(() => { button.textContent = '[copy]'; }, 1200);
-    }
+  button.className = `fcp ${className}`;
+  button.textContent = `[${label}]`;
+  button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    onClick(button);
   });
   return button;
 }
 
-function renderMessage(message, agentName) {
+function renderMessage(message) {
   const wrap = document.createElement('div');
   const mine = message.k === 'you';
-  wrap.className = mine ? 'chat-msg you' : 'chat-msg agent' + (message.k === 'ag' ? ' echo' : '');
+  wrap.className = mine ? 'chat-msg you' : 'chat-msg agent echo';
 
   const who = document.createElement('div');
   who.className = mine ? 'chat-who you-who' : 'chat-who agent-who';
@@ -39,6 +41,8 @@ function renderMessage(message, agentName) {
 
   const body = document.createElement('div');
   body.className = 'chat-body';
+
+  const plain = message.t || (message.files || []).map((f) => f.name).join(' ');
 
   if (message.t) {
     const text = document.createElement('div');
@@ -60,8 +64,48 @@ function renderMessage(message, agentName) {
     body.append(row);
   }
 
-  body.append(copyButton(message.t || message.files.map((f) => f.name).join(' ')));
+  const actions = document.createElement('div');
+  actions.className = 'chat-actions';
+
+  actions.append(actionButton('reply', 'reply', () => {
+    const already = wrap.classList.contains('is-target');
+    chat.querySelectorAll('.chat-msg.is-target').forEach((el) => el.classList.remove('is-target'));
+    if (!already) wrap.classList.add('is-target');
+    if (composer) {
+      composer.placeholder = already
+        ? `${agentName} · type a message…`
+        : `Replying to ${mine ? 'your message' : agentName} · send is not wired yet`;
+    }
+  }));
+
+  actions.append(actionButton('copy', 'copy', async (button) => {
+    try {
+      await navigator.clipboard.writeText(plain);
+      button.textContent = '[copied]';
+      setTimeout(() => { button.textContent = '[copy]'; }, 1200);
+    } catch {
+      button.textContent = '[failed]';
+      setTimeout(() => { button.textContent = '[copy]'; }, 1200);
+    }
+  }));
+
+  actions.append(actionButton('delete', 'del', () => {
+    // Local only: this hides the message from this view. Relay still holds it, and
+    // nothing is deleted anywhere until the write path is wired.
+    wrap.classList.add('is-gone');
+    note('Hidden locally - Relay still has this message.');
+  }));
+
+  body.append(actions);
   wrap.append(who, body);
+
+  // tapping the message targets it, which is how the actions appear without a mouse
+  wrap.addEventListener('click', () => {
+    if (wrap.classList.contains('is-target')) return;
+    chat.querySelectorAll('.chat-msg.is-target').forEach((el) => el.classList.remove('is-target'));
+    wrap.classList.add('is-target');
+  });
+
   return wrap;
 }
 
@@ -78,12 +122,11 @@ async function main() {
   const messages = Array.isArray(data.messages) ? data.messages : [];
   if (!messages.length) return;
 
-  const agentName = data.agent?.name || 'Relay';
-  const composer = document.getElementById('relay-text');
+  agentName = data.agent?.name || 'Relay';
   if (composer) composer.placeholder = `${agentName} · type a message…`;
 
   const fragment = document.createDocumentFragment();
-  for (const message of messages) fragment.append(renderMessage(message, agentName));
+  for (const message of messages) fragment.append(renderMessage(message));
   chat.replaceChildren(fragment);
 
   // Start at the newest message, like any terminal transcript. The panel is hidden when
