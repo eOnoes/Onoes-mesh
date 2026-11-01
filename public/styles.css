@@ -784,3 +784,35 @@ footer{background:transparent}
 .cmp-send{right:6px}
 .cmp-add:hover:enabled,.cmp-send:hover:enabled{color:var(--cyan);background:var(--raised)}
 .cmp-add:disabled,.cmp-send:disabled{cursor:default}
+
+/* ============================================================================
+   Composer, third pass: three lanes in one box.
+
+     [ slot ][        text field        ][ slot ]
+
+   The outer .cmp-box owns the only visible border. The slots are containers with
+   invisible borders that reserve their own width, and the textarea is a separate
+   flex item with no border and no overlap - so text cannot run under the buttons
+   because it physically is not in the same lane. Buttons are larger for thumbs.
+   ============================================================================ */
+.cmp-box{display:flex;align-items:stretch;gap:0;width:100%;min-width:0;min-height:56px;
+  border:1px solid var(--border);border-radius:8px;background:var(--bg);overflow:hidden}
+.cmp .cmp-slot{display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  width:52px;border:0;background:transparent}
+.cmp .cmp-add,.cmp .cmp-send{display:flex;align-items:center;justify-content:center;
+  width:40px;height:40px;padding:0;border:0;border-radius:6px;background:transparent;
+  color:var(--faint);font-family:var(--mono);font-size:20px;line-height:1;cursor:pointer}
+.cmp .cmp-add:enabled:hover,.cmp .cmp-send:enabled:hover{color:var(--cyan);background:var(--raised)}
+.cmp .cmp-add:disabled,.cmp .cmp-send:disabled{cursor:default;color:var(--faint)}
+.cmp #relay-text{flex:1 1 auto;min-width:0;display:block;min-height:54px;max-height:160px;
+  padding:10px 0;border:0;border-radius:0;background:transparent;color:var(--ink);
+  font-family:var(--mono);font-size:var(--terminal-font);line-height:var(--terminal-line);
+  resize:none;field-sizing:content;outline:none}
+.cmp #relay-text::placeholder{color:var(--faint)}
+/* the bottom area belongs to the prompt on a phone, edge to edge */
+@media(max-width:759px){
+  .cmp{padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+  .cmp-box{min-height:60px}
+  .cmp .cmp-slot{width:56px}
+  .cmp .cmp-add,.cmp .cmp-send{width:44px;height:44px;font-size:22px}
+}
