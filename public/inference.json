@@ -1,0 +1,69 @@
+﻿{
+    "schema":  "mesh-inference/v1",
+    "generatedAt":  "2026-11-01T10:25:12.5785476-06:00",
+    "host":  "Echo\u0027s PC",
+    "engine":  {
+                   "name":  "strata-poly",
+                   "transport":  "http",
+                   "port":  60409,
+                   "loaded":  true,
+                   "busy":  false,
+                   "modelAlias":  "JoyFox-Qwen3.6-35B-A3B-RP-Aggressive",
+                   "modelShort":  "JoyFox 35B-A3B",
+                   "modelPath":  "E:\\Echo-DB\\models\\JoyFox-Qwen3.6-35B-A3B-RP-Aggressive-Q5_K_M\\weights\\GGUF\\JoyFox-Qwen3.6-35B-A3B-RP-Aggressive-Q5_K_M.gguf",
+                   "contextMax":  4096,
+                   "contextLength":  4096,
+                   "buildInfo":  "b1-a6de9af",
+                   "vocabSize":  248320,
+                   "wrapper":  "unbiased-strata",
+                   "wrapperPid":  15356,
+                   "wrapperRamGB":  0.09,
+                   "startedAt":  "2026-11-01T09:05:46.3673460-06:00"
+               },
+    "ollama":  {
+                   "running":  true,
+                   "port":  11434,
+                   "modelsResident":  0
+               },
+    "gpu":  {
+                "name":  "NVIDIA GeForce RTX 4080 SUPER",
+                "vramUsedMiB":  29135,
+                "vramTotalMiB":  32760,
+                "vramPct":  88.9,
+                "utilPct":  0,
+                "powerW":  18.97,
+                "powerLimitW":  320,
+                "tempC":  32
+            },
+    "ram":  {
+                "totalGB":  127.1,
+                "freeGB":  66.3,
+                "usedGB":  60.8,
+                "usedPct":  47.8
+            },
+    "disks":  [
+                  {
+                      "name":  "C:",
+                      "usedGB":  1453.2,
+                      "totalGB":  1862,
+                      "usedPct":  78
+                  },
+                  {
+                      "name":  "D:",
+                      "usedGB":  1298.6,
+                      "totalGB":  1907.7,
+                      "usedPct":  68.1
+                  }
+              ],
+    "throughput":  {
+                       "tps":  null,
+                       "pps":  null,
+                       "contextUsed":  null,
+                       "contextPct":  null,
+                       "reason":  "engine is idle - no generation in flight to measure"
+                   },
+    "cost":  {
+                 "simulatedUsd":  null,
+                 "reason":  "needs a token stream; run the engine behind a proxy to account usage"
+             }
+}

@@ -38,6 +38,7 @@ rem first every time.
 rem Refresh the Relay agent snapshot. Best effort: never blocks the boot.
 node "%DIR%\tools\sync-relay-agents.mjs" 2>nul
 node "%DIR%\tools\sync-relay-chat.mjs" 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%DIR%\tools\sync-inference.ps1" >nul 2>&1
 set "MESH_DATA_DIR=test/app03-mesh"
 set "MESH_PREVIEW_PORT=4317"
 
