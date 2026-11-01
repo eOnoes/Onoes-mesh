@@ -233,3 +233,26 @@ body.menu-open .nav-wrap{transform:none}
   .panel-heading{margin-bottom:10px}
   .box{padding:10px}
 }
+
+/* ============================================================================
+   P3 - panels are CONTENT.
+
+   When the demo controls moved into the drawer I wrote `.actions{...}` unscoped. Panel
+   action rows use the same class, so content buttons inherited a sans font and a stray
+   bottom border meant for a chrome row. Scoped back to where it belongs: panels are
+   monospace, tight, and have no row separators.
+   ============================================================================ */
+.content-layout .actions{display:flex;flex-wrap:wrap;gap:6px;padding:0;border:0}
+.content-layout button{font-family:var(--mono)}
+.content-layout .actions button{padding:3px 10px;font-size:12px;border:1px solid var(--border);
+  border-radius:6px;background:transparent;color:var(--muted);min-height:28px;min-width:0}
+.content-layout .actions button:hover:enabled{color:var(--ink);border-color:var(--faint)}
+
+/* small print, status lines and empty-state stubs, in Relay's faint monospace */
+.fine{font-size:11px;color:var(--faint);line-height:1.45}
+.service-status,.inference-state{font-size:12px;color:var(--muted);
+  font-variant-numeric:tabular-nums}
+.inference-errors{font-size:12px;color:var(--danger)}
+.local-stub{font-size:11px;color:var(--faint);border:1px dashed var(--border);
+  border-radius:6px;padding:8px 10px;line-height:1.45}
+.item-list{gap:6px}
