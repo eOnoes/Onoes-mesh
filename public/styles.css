@@ -816,3 +816,20 @@ footer{background:transparent}
   .cmp .cmp-slot{width:56px}
   .cmp .cmp-add,.cmp .cmp-send{width:44px;height:44px;font-size:22px}
 }
+
+/* ============================================================================
+   Two conversation refinements.
+
+   1. A 2px indent staircase: agent steps in, you step back out. Very slight, but it
+      gives the transcript a direction instead of a perfectly straight left edge.
+
+   2. The rail line now stops shortly after the last line of text. It used to run the
+      full height of the block because the action row sat in flow even while invisible.
+      The row is taken out of flow into the space reserved below the text, so the line
+      is text + about 1.25 lines - enough room for [reply] [copy] [delete] to appear
+      without stretching every short message to two rows.
+   ============================================================================ */
+.chat-msg.agent{margin-left:2px}
+.chat-msg.you{margin-left:0}
+.chat-body{position:relative;padding-bottom:calc(var(--terminal-line) * 1.25)}
+.chat-actions{position:absolute;left:0;bottom:2px;margin:0}
