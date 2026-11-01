@@ -1153,3 +1153,19 @@ footer{background:transparent}
 .nav-rail .tab .fi::before{content:"";position:absolute;left:-1px;top:-4px;width:4px;height:3px;
   border:1px solid currentColor;border-bottom:0;border-radius:1px 1px 0 0}
 .nav-rail .tab[aria-selected="true"] .fi{opacity:1}
+
+/* For the stroke to be continuous the rows must touch: with a 4px gap between them no
+   per-row segment can ever meet the next one. Gap removed, vertical now spans the whole
+   row, and the root grows a trunk so the line starts under "Mesh". */
+.nav-rail .tabs{gap:0;flex-direction:column}
+.nav-rail .tab{margin:0;border:0;border-radius:0;
+  padding:5px 8px 5px 22px;min-height:0}
+.nav-rail .tab::before{top:0;bottom:0}
+.nav-rail .tab:last-child::before{bottom:50%}
+.nav-rail .tab[aria-selected="true"]{background:var(--raised);color:var(--ink)}
+.tree-root{position:relative;padding:2px 8px 2px 22px}
+.tree-root::before{content:"";position:absolute;left:8px;top:50%;bottom:0;width:1px;
+  background:var(--border)}
+
+/* 1px seam between the root trunk and the first branch (sub-pixel rounding) */
+.tree-root::before{bottom:-1px}
