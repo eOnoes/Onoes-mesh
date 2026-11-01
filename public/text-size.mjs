@@ -59,3 +59,22 @@ if (railButton) {
     try { localStorage.setItem(RAIL_KEY, next ? '1' : '0'); } catch { /* storage may be blocked */ }
   });
 }
+// Copy all: put the active panel's text on the clipboard. Relay's copy-all copies the
+// whole conversation; the equivalent here is whatever panel you are looking at.
+const copyButton = document.getElementById('copy-all');
+if (copyButton) {
+  copyButton.addEventListener('click', async () => {
+    const panel = document.querySelector('[role="tabpanel"]:not([hidden])');
+    const text = panel ? panel.innerText.trim() : '';
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      copyButton.classList.add('oky');
+      copyButton.textContent = 'copied';
+      setTimeout(() => { copyButton.classList.remove('oky'); copyButton.textContent = 'copy all'; }, 1400);
+    } catch {
+      copyButton.textContent = 'copy failed';
+      setTimeout(() => { copyButton.textContent = 'copy all'; }, 1400);
+    }
+  });
+}

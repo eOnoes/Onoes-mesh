@@ -363,12 +363,13 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
 }
 
 @media(max-width:600px){
-  .tbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto}
-  .tbar .wd{grid-column:1;grid-row:1}
-  .tbar .ttl{grid-column:2;grid-row:1;min-width:0;overflow:hidden;
-             text-overflow:ellipsis;white-space:nowrap;justify-self:end}
-  .tbar .menu{grid-column:1;grid-row:2;margin-left:0}
-  .tbar .tabs{grid-column:2/4;grid-row:2;min-width:0;overflow-x:auto}
+  /* The phone bar is ONE row: dots, menu, status, copy all.
+     The reference's 2-row grid expected the agent tabs to live in the bar. In Mesh the
+     navigation is the rail strip below the bar, so that grid only pushed copy-all onto
+     a second line at the left edge. */
+  .tbar{display:flex;flex-wrap:nowrap;gap:8px}
+  .tbar .ttl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:auto}
+  .tbar .wd,.tbar .rail-toggle,.tbar .cpy,.tbar .agent-tabs{flex:none}
   .content-layout{padding:12px}
 }
 
@@ -429,7 +430,6 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
 
 /* phones: the rail is the horizontal strip, so no toggle and no side column */
 @media(max-width:759px){
-  .rail-toggle{display:none}
   .nav-rail{background:transparent;border-right:0;padding:0 8px 6px}
   .nav-rail .tabs{overflow-x:auto}
 }
@@ -467,3 +467,37 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
   .nav-rail .tabs{flex-direction:row;overflow-x:auto;gap:4px}
   .nav-rail .tab{width:auto;justify-content:flex-start}
 }
+
+/* ============================================================================
+   TOP BAR, per the brief and per the reference's own note:
+
+     "Desktop: the menu and agent tabs sit on the LEFT, and the relay status line is
+      pushed to the RIGHT."
+
+       [dots] [menu] [agent pills]            [status] [copy all]
+
+   .cpy, .menu and the .ttl auto-margin are ported from the reference; only the token
+   names change (--tx3 -> --quiet, --tx -> --ink, --tx4 -> --faint).
+   ============================================================================ */
+.cpy{padding:3px 10px;font-size:12px;border-radius:6px;border:1px solid var(--border);
+  color:var(--quiet);background:transparent;font-family:var(--sans);white-space:nowrap;
+  min-height:28px}
+.cpy:hover,.cpy:focus-visible{color:var(--ink);border-color:var(--faint)}
+.cpy.oky{color:var(--green);border-color:var(--green)}
+
+/* the status line is pushed right; menu and any agent pills stay left */
+@media(min-width:601px){.tbar .ttl{margin-left:auto}}
+
+/* agent pills - only rendered when there is something to select */
+.agent-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.agent-tabs::-webkit-scrollbar{display:none}
+.agent-tabs[hidden]{display:none}
+
+/* the sessions drawer trigger lives at the foot of the rail */
+.rail-sessions{margin-top:8px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;
+  background:transparent;color:var(--quiet);font:11px var(--mono);text-align:left;width:100%}
+.rail-sessions:hover{color:var(--ink);border-color:var(--faint)}
+
+/* The menu must work at every width: on desktop it collapses the rail, on a phone it
+   hides the horizontal strip. The class rule therefore lives outside the breakpoint. */
+.shell.rail-collapsed .nav-rail{display:none}

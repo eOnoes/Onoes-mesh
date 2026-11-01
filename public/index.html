@@ -3,9 +3,9 @@
 <body class="variant-a"><div class="shell">
 <header class="tbar">
 <span class="wd" aria-hidden="true"><i></i><i></i><i></i></span>
-<button class="menu" id="menu-open" type="button" aria-controls="workspace-menu" aria-expanded="false">Menu</button>
 
-<button class="rail-toggle" id="rail-toggle" type="button" aria-controls="nav-rail" aria-expanded="true" title="collapse navigation">«</button><span class="ttl" id="ttl">mesh · local tasks</span>
+
+<button class="rail-toggle" id="rail-toggle" type="button" aria-controls="nav-rail" aria-expanded="true" aria-label="menu" title="menu">☰</button><span class="agent-tabs" id="agent-tabs" hidden></span><span class="ttl" id="ttl">mesh · local tasks</span><button class="cpy" id="copy-all" type="button" title="copy this panel">copy all</button>
 </header>
 <aside class="nav-rail" id="nav-rail" aria-label="workspaces"><nav class="tabs" role="tablist" aria-label="MAIN workspaces" aria-orientation="horizontal">
 <button role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" tabindex="0" class="tab">01 Overview</button>
@@ -15,7 +15,7 @@
 <button role="tab" id="tab-agent" aria-controls="panel-agent" aria-selected="false" tabindex="-1" class="tab">05 Agent</button>
 <button role="tab" id="tab-mind" aria-controls="panel-mind" aria-selected="false" tabindex="-1" class="tab">06 Mind</button>
 <button role="tab" id="tab-control" aria-controls="panel-control" aria-selected="false" tabindex="-1" class="tab">07 Control</button>
-</nav></aside>
+</nav><button class="rail-sessions" id="menu-open" type="button" aria-controls="workspace-menu" aria-expanded="false">sessions</button></aside>
 <div class="preview-banner" role="note">Local task board · this PC only · synthetic connections are labeled</div>
 
 
