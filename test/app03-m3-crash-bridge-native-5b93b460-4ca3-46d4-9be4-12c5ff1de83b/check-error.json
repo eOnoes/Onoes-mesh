@@ -1,0 +1,11 @@
+{
+  "status": "FAIL",
+  "rootPid": null,
+  "rootExitCode": null,
+  "timedOut": false,
+  "cleanupVerified": true,
+  "error": "cancellation check raised; execution cancelled",
+  "cancelled": true,
+  "stdout": "",
+  "stderr": ""
+}

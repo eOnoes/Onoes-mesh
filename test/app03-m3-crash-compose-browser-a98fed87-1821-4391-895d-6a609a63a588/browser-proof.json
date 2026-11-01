@@ -1,0 +1,176 @@
+{
+  "url": "http://127.0.0.1:61474",
+  "dataDir": "/D:/Dev/Onoes-Mesh-wt/m3-crash-compose/test/app03-m3-crash-compose-browser-a98fed87-1821-4391-895d-6a609a63a588/",
+  "cancelled": {
+    "id": "56bc18f9-f4d9-47ca-828f-7909083cb96d",
+    "title": "M3 browser real Cancel",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 4,
+    "createdAt": "2026-10-03T23:54:08.048Z",
+    "updatedAt": "2026-10-03T23:55:25.891Z",
+    "proposal": {
+      "command": "node lib/slow-command.mjs",
+      "cwd": "."
+    },
+    "proposalStatus": "failed",
+    "execution": {
+      "id": "ab80dc11-3370-4a5e-bee1-e38c6f5a2866",
+      "taskId": "56bc18f9-f4d9-47ca-828f-7909083cb96d",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\m3-crash-compose",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "D:\\Dev\\Onoes-Mesh-wt\\m3-crash-compose\\lib\\slow-command.mjs"
+      ],
+      "state": "failed",
+      "startedAt": "2026-10-03T23:55:18.761Z",
+      "finishedAt": "2026-10-03T23:55:25.886Z",
+      "result": {
+        "status": "FAIL",
+        "rootPid": 4078752,
+        "rootExitCode": 1,
+        "timedOut": false,
+        "cleanupVerified": true,
+        "error": "execution cancelled; root exited with nonzero code",
+        "cancelled": true,
+        "stdout": "M3 slow root 4078752; descendant 2156760; started\nM3 slow descendant 2156760; started\n",
+        "stderr": ""
+      },
+      "approvalRevision": 2
+    }
+  },
+  "recovered": {
+    "id": "5802d13c-02ff-4512-b038-83465d0eae5f",
+    "title": "M3 browser real crash",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 4,
+    "createdAt": "2026-10-03T23:56:36.413Z",
+    "updatedAt": "2026-10-04T00:04:02.433Z",
+    "proposal": {
+      "command": "node lib/slow-command.mjs",
+      "cwd": "."
+    },
+    "proposalStatus": "failed",
+    "execution": {
+      "id": "1a0f2b96-9f59-4f52-8f76-355f09d40628",
+      "taskId": "5802d13c-02ff-4512-b038-83465d0eae5f",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\m3-crash-compose",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "D:\\Dev\\Onoes-Mesh-wt\\m3-crash-compose\\lib\\slow-command.mjs"
+      ],
+      "state": "failed",
+      "startedAt": "2026-10-04T00:04:01.582Z",
+      "finishedAt": "2026-10-04T00:04:02.433Z",
+      "result": {
+        "status": "UNKNOWN",
+        "outcome": "unknown",
+        "reason": "server_restart",
+        "rootPid": null,
+        "rootExitCode": null,
+        "timedOut": null,
+        "cleanupVerified": null,
+        "error": "Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.",
+        "stdout": null,
+        "stderr": null
+      },
+      "approvalRevision": 2
+    }
+  },
+  "repeatedRestartRowsUnchanged": true,
+  "replayRevisions": [
+    2,
+    3,
+    4
+  ],
+  "beforeAndAfterReplayRowsEqual": true,
+  "hashes": {
+    "server.mjs": "1e45882638f4302e8538bd18c1d6e12e6a351980d899c1be00b9069d142cad31",
+    "lib/task-store.mjs": "79e28ae36a7d4654638c45b025c11f1d4f2ae50ede25c112a3e7d3fcaba4a59f",
+    "lib/command-proposals.mjs": "ecf40a91b30f78f801525397b8d908a18bbf420ba1c352b2c949213b468fc09d",
+    "public/app.js": "f78dbace1ce41efbf22d36beb2b840ca780da1fb13e46a2a6b1655ad8caab339",
+    "public/index.html": "e27542f6ec6e1c5ad50a4787acf75ef2dca270db83d6765553eebbd1b9e9554b",
+    "lib/command-execution.mjs": "b198a699c54768f530ce079735d850ab4e4514a0c8acb14fcfcbcfae86b8cfab",
+    "lib/owned-command.py": "b95386de964da31217be40bd4ae4684890c1d61aa5a5939d8e0ff7a9b907048d",
+    "lib/owned_job.py": "ec6ee410c7fe384899bd6df34275911bfbbf61f275e900fa0613046a492a33fb",
+    "lib/slow-command.mjs": "096077750eae85358fcea5f0593f0f225f1e5cd5604f36ba146d9b357676be00"
+  },
+  "cancelHandles": {
+    "event": "verified",
+    "action": "wait",
+    "identities": [
+      {
+        "role": "bridge",
+        "pid": 145664,
+        "creationTime100ns": "134355453187762315",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 3077016,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 4078752,
+        "creationTime100ns": "134355453188346127",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 145664,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 2156760,
+        "creationTime100ns": "134355453188711577",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 4078752,
+        "exitSignaled": true
+      }
+    ],
+    "elapsedMs": 0.03590004052966833
+  },
+  "crashHandles": {
+    "event": "verified",
+    "action": "kill-caller",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 2402212,
+        "creationTime100ns": "134355455769559464",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 3969668,
+        "creationTime100ns": "134355458416021547",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 2402212,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 4078152,
+        "creationTime100ns": "134355458416610635",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 3969668,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 3102352,
+        "creationTime100ns": "134355458416997545",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 4078152,
+        "exitSignaled": true
+      }
+    ],
+    "elapsedMs": 8.576499996706843
+  }
+}

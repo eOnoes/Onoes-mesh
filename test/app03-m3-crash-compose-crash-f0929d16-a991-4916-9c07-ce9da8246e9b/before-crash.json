@@ -1,0 +1,80 @@
+{
+  "running": {
+    "id": "6d262fa9-5709-4b9f-900c-9de2509caf36",
+    "title": "Actual slow-command server crash",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 3,
+    "createdAt": "2026-10-04T22:04:41.119Z",
+    "updatedAt": "2026-10-04T22:04:41.132Z",
+    "proposal": {
+      "command": "node lib/slow-command.mjs",
+      "cwd": "."
+    },
+    "proposalStatus": "running",
+    "execution": {
+      "id": "af553f0a-0923-49c9-be5f-4e936f6e8820",
+      "taskId": "6d262fa9-5709-4b9f-900c-9de2509caf36",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+      ],
+      "state": "running",
+      "startedAt": "2026-10-04T22:04:41.132Z",
+      "finishedAt": null,
+      "result": null,
+      "approvalRevision": 2
+    }
+  },
+  "rows": {
+    "tasks": [
+      {
+        "id": "6d262fa9-5709-4b9f-900c-9de2509caf36",
+        "title": "Actual slow-command server crash",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 3,
+        "createdAt": "2026-10-04T22:04:41.119Z",
+        "updatedAt": "2026-10-04T22:04:41.132Z"
+      }
+    ],
+    "task_proposals": [
+      {
+        "taskId": "6d262fa9-5709-4b9f-900c-9de2509caf36",
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "status": "pending"
+      }
+    ],
+    "task_executions": [
+      {
+        "id": "af553f0a-0923-49c9-be5f-4e936f6e8820",
+        "taskId": "6d262fa9-5709-4b9f-900c-9de2509caf36",
+        "proposalRevision": 2,
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "actualCwd": "D:\\Dev\\Onoes-Mesh",
+        "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh\\\\lib\\\\slow-command.mjs\"]",
+        "state": "running",
+        "startedAt": "2026-10-04T22:04:41.132Z",
+        "finishedAt": null,
+        "result": null,
+        "approvalRevision": 2
+      }
+    ],
+    "task_proposal_decisions": [
+      {
+        "taskId": "6d262fa9-5709-4b9f-900c-9de2509caf36",
+        "proposalRevision": 2,
+        "status": "running",
+        "executionId": "af553f0a-0923-49c9-be5f-4e936f6e8820"
+      }
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "mesh-node-probes/v1",
+  "observedAt": "2026-10-04T00:48:45.531Z",
+  "source": "disposable_transport",
+  "scope": "tailnet_node_state",
+  "limits": {
+    "freshMs": 30000,
+    "staleGraceMs": 60000
+  },
+  "nodes": [
+    {
+      "id": "pc",
+      "label": "PC",
+      "dnsName": "emitchell.tail8c4a75.ts.net",
+      "tailscaleIp": "100.72.250.65",
+      "status": "offline",
+      "lastProbeAt": "2026-10-04T00:48:45.531Z",
+      "lastSuccessAt": null,
+      "observationType": "tailscale_status_cached_online",
+      "timestampSource": "local_probe_completion",
+      "observationAvailability": "unavailable",
+      "tailscaleOnline": null,
+      "packetReachability": "unknown",
+      "inferenceReadiness": "unknown",
+      "modelReadiness": "unknown",
+      "capabilities": {
+        "observation": true,
+        "control": false,
+        "load": false,
+        "inference": false,
+        "unload": false
+      },
+      "errors": [
+        {
+          "code": "cli_unavailable"
+        }
+      ]
+    },
+    {
+      "id": "laptop",
+      "label": "Laptop",
+      "dnsName": "emitchell109-rog.tail8c4a75.ts.net",
+      "tailscaleIp": "100.119.162.99",
+      "status": "offline",
+      "lastProbeAt": "2026-10-04T00:48:45.531Z",
+      "lastSuccessAt": null,
+      "observationType": "tailscale_status_cached_online",
+      "timestampSource": "local_probe_completion",
+      "observationAvailability": "unavailable",
+      "tailscaleOnline": null,
+      "packetReachability": "unknown",
+      "inferenceReadiness": "unknown",
+      "modelReadiness": "unknown",
+      "capabilities": {
+        "observation": true,
+        "control": false,
+        "load": false,
+        "inference": false,
+        "unload": false
+      },
+      "errors": [
+        {
+          "code": "cli_unavailable"
+        }
+      ]
+    }
+  ]
+}

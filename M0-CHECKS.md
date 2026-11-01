@@ -1,0 +1,9 @@
+# M0 integration checks
+
+- m0-smoke: accepted previously; npm tests 29/29; merged commit 8c2fa4f37ed7ac38379c9bb19b48cda0b42550a3.
+- m0-runner-zero-output: accepted previously; native runner regressions 13/13; npm 29/29; merge d670a2c31ef2f0a9aceae6c21da5dabe29f18067.
+- m0-hang replay ended 2026-10-03T16:38:06+00:00: accepted. DISPATCH runnerExit=5; exactly two 10.0-second attempts. Current master tools/mesh_runner.py independently reclassified both native logs: three raw items each, zero meaningful output, zero tools. Worktree clean; no matching owned codex.exe/node.exe present. Its inherited smoke JOB.md was not used as evidence; no source change to merge.
+- m0-real ended 2026-10-03T16:55:49+00:00: integration held. Commit 10c47f36cad5e80bbdd96de9f2bd0ee75cfb6eed exists and worktree clean. Host named module check fails import because native Python's standard-library test package shadows this repository's namespace test directory. Independent discovery of test_owned_job.py passed all six tests, none skipped, in 0.447s. Do not substitute discovery success for named-command acceptance. Narrow retry m0-real-import will make tests an explicit local package; no assertion weakening or global Python changes.
+- m0-completion-event ended 2026-10-03T16:57:04+00:00: accepted. Independent native Windows regression discovery passed 26/26, zero skipped, in 110.071s; npm passed 29/29, zero skipped; diff check and clean worktree verified. Merge 505bd917031f54de6ac8031f1093febee662b076. Builder sandbox launcher warning is not host failure evidence. Tests mocked manager launches; next genuine completion will exercise the merged dispatcher.
+
+Next: finish the m0-real named-command repair, integrate its existing implementation, then dispatch exactly one review-M0 second-agent review. M1 awaits Eddie's M0 go.

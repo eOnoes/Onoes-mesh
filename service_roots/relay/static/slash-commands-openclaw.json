@@ -1,0 +1,237 @@
+[
+ {
+  "name": "acp",
+  "desc": "Manage ACP sessions and runtime options."
+ },
+ {
+  "name": "activation",
+  "desc": "Set group activation mode."
+ },
+ {
+  "name": "agents",
+  "desc": "List thread-bound agents for this session."
+ },
+ {
+  "name": "allowlist",
+  "desc": "List/add/remove allowlist entries."
+ },
+ {
+  "name": "approve",
+  "desc": "Approve or deny exec requests."
+ },
+ {
+  "name": "bash",
+  "desc": "Run host shell commands (host-only)."
+ },
+ {
+  "name": "btw",
+  "desc": "Ask a side question without changing future session context.",
+  "aliases": [
+   "side"
+  ]
+ },
+ {
+  "name": "commands",
+  "desc": "List all slash commands."
+ },
+ {
+  "name": "compact",
+  "desc": "Compact the session context."
+ },
+ {
+  "name": "config",
+  "desc": "Show or set config values."
+ },
+ {
+  "name": "context",
+  "desc": "Explain how context is built and used."
+ },
+ {
+  "name": "debug",
+  "desc": "Set runtime debug overrides."
+ },
+ {
+  "name": "diagnostics",
+  "desc": "Explain Gateway diagnostics and Codex feedback upload options."
+ },
+ {
+  "name": "elevated",
+  "desc": "Toggle elevated mode.",
+  "aliases": [
+   "elev"
+  ]
+ },
+ {
+  "name": "exec",
+  "desc": "Set exec defaults for this session."
+ },
+ {
+  "name": "export-session",
+  "desc": "Export current session to an owner-only HTML file in the workspace.",
+  "aliases": [
+   "export"
+  ]
+ },
+ {
+  "name": "export-trajectory",
+  "desc": "Export a JSONL trajectory bundle for the active session.",
+  "aliases": [
+   "trajectory"
+  ]
+ },
+ {
+  "name": "fast",
+  "desc": "Toggle fast mode."
+ },
+ {
+  "name": "focus",
+  "desc": "Bind this thread (Discord) or topic/conversation (Telegram) to a session target."
+ },
+ {
+  "name": "goal",
+  "desc": "Show or control the current goal."
+ },
+ {
+  "name": "help",
+  "desc": "Show available commands."
+ },
+ {
+  "name": "learn",
+  "desc": "Draft a reusable skill from recent work or named sources."
+ },
+ {
+  "name": "login",
+  "desc": "Pair Codex login."
+ },
+ {
+  "name": "loop",
+  "desc": "Loop a prompt: /loop [interval] <prompt> | /loop status | /loop stop [name]"
+ },
+ {
+  "name": "mcp",
+  "desc": "Show or set OpenClaw MCP servers."
+ },
+ {
+  "name": "model",
+  "desc": "Show or set the model; direct owner/admin selections request a default update."
+ },
+ {
+  "name": "models",
+  "desc": "List model providers/models."
+ },
+ {
+  "name": "name",
+  "desc": "Name or rename the current session."
+ },
+ {
+  "name": "new",
+  "desc": "Start a new session."
+ },
+ {
+  "name": "openclaw",
+  "desc": "Run the OpenClaw setup and repair helper."
+ },
+ {
+  "name": "plugins",
+  "desc": "List, show, enable, or disable plugins.",
+  "aliases": [
+   "plugin"
+  ]
+ },
+ {
+  "name": "queue",
+  "desc": "Adjust queue settings."
+ },
+ {
+  "name": "reasoning",
+  "desc": "Toggle reasoning visibility.",
+  "aliases": [
+   "reason"
+  ]
+ },
+ {
+  "name": "reset",
+  "desc": "Reset the current session."
+ },
+ {
+  "name": "restart",
+  "desc": "Restart OpenClaw."
+ },
+ {
+  "name": "send",
+  "desc": "Set send policy."
+ },
+ {
+  "name": "session",
+  "desc": "Manage session-level settings (for example /session idle)."
+ },
+ {
+  "name": "skill",
+  "desc": "Run a skill by name."
+ },
+ {
+  "name": "status",
+  "desc": "Show current status."
+ },
+ {
+  "name": "steer",
+  "desc": "Send guidance to the active run in this session.",
+  "aliases": [
+   "tell"
+  ]
+ },
+ {
+  "name": "stop",
+  "desc": "Stop the current run."
+ },
+ {
+  "name": "subagents",
+  "desc": "Inspect subagent runs for this session."
+ },
+ {
+  "name": "tasks",
+  "desc": "List background tasks for this session."
+ },
+ {
+  "name": "think",
+  "desc": "Set thinking level.",
+  "aliases": [
+   "t",
+   "thinking"
+  ]
+ },
+ {
+  "name": "tools",
+  "desc": "List available runtime tools."
+ },
+ {
+  "name": "trace",
+  "desc": "Toggle plugin trace lines."
+ },
+ {
+  "name": "tts",
+  "desc": "Control text-to-speech (TTS)."
+ },
+ {
+  "name": "unfocus",
+  "desc": "Remove the current thread (Discord) or topic/conversation (Telegram) binding."
+ },
+ {
+  "name": "usage",
+  "desc": "Usage footer or cost summary."
+ },
+ {
+  "name": "verbose",
+  "desc": "Toggle verbose mode.",
+  "aliases": [
+   "v"
+  ]
+ },
+ {
+  "name": "whoami",
+  "desc": "Show your sender id.",
+  "aliases": [
+   "id"
+  ]
+ }
+]

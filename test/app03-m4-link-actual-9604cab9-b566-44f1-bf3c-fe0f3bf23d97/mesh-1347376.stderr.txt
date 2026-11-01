@@ -1,0 +1,3 @@
+(node:1347376) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"event":"M4_RELAY_RUNTIME_SPAWN","executable":"C:\\Python314\\python.exe","args":["-I","-S","-B","-c","import sys; sys.path[:0]=[\"D:\\\\Dev\\\\Onoes-Mesh\\\\service_roots\\\\relay\",\"D:\\\\Dev\\\\Onoes-Mesh\\\\test\\\\app03-m4-link-runtime\\\\Lib\\\\site-packages\"]; import mesh_runtime"],"environmentKeys":["MESH_RELAY_CAPABILITY","RELAY_CONFIG_PATH","RELAY_SESSION_DB","SystemRoot","TEMP","TMP"]}

@@ -1,0 +1,1 @@
+{"stdout":"{\"BackendState\":\"Running\",\"Self\":{\"DNSName\":\"impostor.tail8c4a75.ts.net.\",\"TailscaleIPs\":[\"100.72.250.65\"],\"Online\":true,\"LastSeen\":\"1999-01-01T00:00:00Z\"},\"Peer\":{\"laptop\":{\"DNSName\":\"emitchell109-rog.tail8c4a75.ts.net.\",\"TailscaleIPs\":[\"100.119.162.99\"],\"Online\":false,\"LastSeen\":\"1999-01-01T00:00:00Z\"}}}"}

@@ -1,0 +1,976 @@
+{
+  "baseline": false,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "stages": [
+    {
+      "stage": "native-handoff",
+      "taskId": "63f0eb18-52d5-40ae-a3e5-519fd0cdbf63",
+      "savedRows": 1
+    },
+    {
+      "stage": "native-reconnect-link",
+      "taskId": "63f0eb18-52d5-40ae-a3e5-519fd0cdbf63"
+    },
+    {
+      "stage": "reload",
+      "task": {
+        "id": "63f0eb18-52d5-40ae-a3e5-519fd0cdbf63",
+        "title": "Native Relay inline CSP fixed",
+        "description": "Native Relay inline CSP fixed",
+        "label": "Relay",
+        "status": "open",
+        "revision": 1,
+        "createdAt": "2026-10-04T04:19:15.124Z",
+        "updatedAt": "2026-10-04T04:19:15.124Z"
+      }
+    }
+  ],
+  "errors": [],
+  "console": [
+    {
+      "type": "info",
+      "text": "Public shell: registered: control and offline readiness still require verification",
+      "location": {
+        "url": "http://127.0.0.1:61225/pwa-register.mjs",
+        "line": 17,
+        "column": 45,
+        "lineNumber": 17,
+        "columnNumber": 45
+      }
+    },
+    {
+      "type": "info",
+      "text": "Public shell: registered: control and offline readiness still require verification",
+      "location": {
+        "url": "http://127.0.0.1:61225/pwa-register.mjs",
+        "line": 17,
+        "column": 45,
+        "lineNumber": 17,
+        "columnNumber": 45
+      }
+    }
+  ],
+  "csp": [],
+  "requests": [
+    {
+      "path": "/",
+      "method": "GET"
+    },
+    {
+      "path": "/styles.css",
+      "method": "GET"
+    },
+    {
+      "path": "/app.js",
+      "method": "GET"
+    },
+    {
+      "path": "/pwa-register.mjs",
+      "method": "GET"
+    },
+    {
+      "path": "/icon.svg",
+      "method": "GET"
+    },
+    {
+      "path": "/api/trial-session/bootstrap",
+      "method": "POST"
+    },
+    {
+      "path": "/api/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/worker-activity",
+      "method": "GET"
+    },
+    {
+      "path": "/api/service-connections",
+      "method": "GET"
+    },
+    {
+      "path": "/api/inference-observation",
+      "method": "GET"
+    },
+    {
+      "path": "/api/commands",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay",
+      "method": "GET"
+    },
+    {
+      "path": "/api/node-probes",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/shell",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands-openclaw.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/auth",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/message",
+      "method": "POST"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks/63f0eb18-52d5-40ae-a3e5-519fd0cdbf63",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/reconnect",
+      "method": "POST"
+    },
+    {
+      "path": "/api/relay/shell",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands-openclaw.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/auth",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks/63f0eb18-52d5-40ae-a3e5-519fd0cdbf63",
+      "method": "GET"
+    },
+    {
+      "path": "/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/styles.css",
+      "method": "GET"
+    },
+    {
+      "path": "/app.js",
+      "method": "GET"
+    },
+    {
+      "path": "/pwa-register.mjs",
+      "method": "GET"
+    },
+    {
+      "path": "/api/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/worker-activity",
+      "method": "GET"
+    },
+    {
+      "path": "/api/service-connections",
+      "method": "GET"
+    },
+    {
+      "path": "/api/inference-observation",
+      "method": "GET"
+    },
+    {
+      "path": "/api/commands",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay",
+      "method": "GET"
+    },
+    {
+      "path": "/api/node-probes",
+      "method": "GET"
+    },
+    {
+      "path": "/icon.svg",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks/63f0eb18-52d5-40ae-a3e5-519fd0cdbf63",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/shell",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands-openclaw.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/auth",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/trial-session/logout",
+      "method": "POST"
+    }
+  ],
+  "url": "http://127.0.0.1:61225",
+  "browserPid": 2347236,
+  "browserArgs": [
+    "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+    "--disable-field-trial-config",
+    "--disable-background-networking",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-back-forward-cache",
+    "--disable-breakpad",
+    "--disable-client-side-phishing-detection",
+    "--disable-component-extensions-with-background-pages",
+    "--disable-component-update",
+    "--no-default-browser-check",
+    "--disable-default-apps",
+    "--disable-dev-shm-usage",
+    "--disable-edgeupdater",
+    "--disable-extensions",
+    "--disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion",
+    "--enable-features=CDPScreenshotNewSurface",
+    "--allow-pre-commit-input",
+    "--disable-hang-monitor",
+    "--disable-ipc-flooding-protection",
+    "--disable-popup-blocking",
+    "--disable-prompt-on-repost",
+    "--disable-renderer-backgrounding",
+    "--disable-updater-scheduler",
+    "--force-color-profile=srgb",
+    "--metrics-recording-only",
+    "--no-first-run",
+    "--password-store=basic",
+    "--use-mock-keychain",
+    "--no-service-autorun",
+    "--export-tagged-pdf",
+    "--disable-search-engine-choice-screen",
+    "--unsafely-disable-devtools-self-xss-warnings",
+    "--edge-skip-compat-layer-relaunch",
+    "--disable-infobars",
+    "--disable-search-engine-choice-screen",
+    "--disable-sync",
+    "--enable-unsafe-swiftshader",
+    "--headless",
+    "--hide-scrollbars",
+    "--mute-audio",
+    "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
+    "--no-sandbox",
+    "--user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-ycww0Z",
+    "--remote-debugging-pipe",
+    "--no-startup-window"
+  ],
+  "cspHeader": "default-src 'self'; connect-src 'self'; script-src 'self' 'sha256-vGtp3cCFT+t0vd+dyNnhAqCET9dcDQXf4Pvam+H84mA='; style-src 'self' 'sha256-wPHNqpo3SpjkH3Kp8DJjzGLrpyEP9qdxrWqlF7sgN9s='; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+  "ref": {
+    "ok": true,
+    "conversationId": "0951490b-b933-4243-a4f7-f4fd4c6d1cc9",
+    "messageId": "beb8140f-7ecf-4292-9c26-58e74f473f34",
+    "taskId": "63f0eb18-52d5-40ae-a3e5-519fd0cdbf63",
+    "duplicate": false
+  },
+  "canonical": [
+    {
+      "id": "63f0eb18-52d5-40ae-a3e5-519fd0cdbf63",
+      "title": "Native Relay inline CSP fixed",
+      "description": "Native Relay inline CSP fixed",
+      "label": "Relay",
+      "status": "open",
+      "revision": 1,
+      "createdAt": "2026-10-04T04:19:15.124Z",
+      "updatedAt": "2026-10-04T04:19:15.124Z"
+    }
+  ],
+  "normalPath": {
+    "inlineConsole": [],
+    "inlineEvents": [],
+    "errors": []
+  },
+  "templates": [
+    {
+      "id": "echo",
+      "view": "mini",
+      "accent": "rgb(240, 164, 75)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "echo",
+      "view": "focus",
+      "accent": "rgb(240, 164, 75)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "echo",
+      "view": "expanded",
+      "accent": "rgb(240, 164, 75)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "cyony",
+      "view": "mini",
+      "accent": "rgb(255, 121, 176)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "cyony",
+      "view": "focus",
+      "accent": "rgb(255, 121, 176)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "cyony",
+      "view": "expanded",
+      "accent": "rgb(255, 121, 176)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "tripp",
+      "view": "mini",
+      "accent": "rgb(239, 100, 97)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "tripp",
+      "view": "focus",
+      "accent": "rgb(239, 100, 97)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "tripp",
+      "view": "expanded",
+      "accent": "rgb(239, 100, 97)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "dsh",
+      "view": "mini",
+      "accent": "rgb(111, 211, 199)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "dsh",
+      "view": "focus",
+      "accent": "rgb(111, 211, 199)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "dsh",
+      "view": "expanded",
+      "accent": "rgb(111, 211, 199)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "mesh",
+      "view": "mini",
+      "accent": "rgb(217, 161, 59)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "mesh",
+      "view": "focus",
+      "accent": "rgb(217, 161, 59)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    },
+    {
+      "id": "mesh",
+      "view": "expanded",
+      "accent": "rgb(217, 161, 59)",
+      "dots": [
+        {
+          "status": "working",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "stalled",
+          "color": "rgb(217, 161, 59)"
+        },
+        {
+          "status": "waiting",
+          "color": "rgb(79, 140, 255)"
+        },
+        {
+          "status": "stopped",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "done",
+          "color": "rgb(63, 185, 107)"
+        },
+        {
+          "status": "idle",
+          "color": "rgb(91, 91, 99)"
+        },
+        {
+          "status": "unknown",
+          "color": "rgb(91, 91, 99)"
+        }
+      ],
+      "proposal": [
+        "wants to run:",
+        "$ render-only <proposal> & text"
+      ]
+    }
+  ],
+  "counts": {
+    "tasks": 1,
+    "relay_task_links": 1,
+    "task_proposals": 0,
+    "task_executions": 0,
+    "task_proposal_decisions": 0
+  },
+  "references": [
+    {
+      "conversation_id": "0951490b-b933-4243-a4f7-f4fd4c6d1cc9",
+      "message_id": "beb8140f-7ecf-4292-9c26-58e74f473f34",
+      "task_id": "63f0eb18-52d5-40ae-a3e5-519fd0cdbf63",
+      "message_hash": "765ea8f916f3bb6de6965e724ec6eebebe6cf253ba2aaa174ee95bc6aa70767d"
+    }
+  ],
+  "logoutCleared": true,
+  "passed": true,
+  "meshOutput": "{\"event\":\"mesh_relay_spawned\",\"pid\":361116,\"executable\":\"C:\\\\Python314\\\\python.exe\"}\n{\"event\":\"mesh_relay_listening\",\"pid\":361116,\"port\":61222}\n{\"event\":\"mesh_listening\",\"pid\":401400,\"url\":\"http://127.0.0.1:61225\",\"dataDir\":\"test/app03-m4-link-csp-fixed-90672d0a-3490-4183-8056-c6756dd3d308\",\"mode\":\"mesh\"}\n{\"event\":\"mesh_relay_task_linked\",\"conversationId\":\"0951490b-b933-4243-a4f7-f4fd4c6d1cc9\",\"messageId\":\"beb8140f-7ecf-4292-9c26-58e74f473f34\",\"taskId\":\"63f0eb18-52d5-40ae-a3e5-519fd0cdbf63\",\"duplicate\":false}\n{\"event\":\"mesh_relay_stopped\",\"pid\":361116,\"exitCode\":0,\"signal\":null}\n{\"event\":\"mesh_relay_spawned\",\"pid\":1704224,\"executable\":\"C:\\\\Python314\\\\python.exe\"}\n{\"event\":\"mesh_relay_listening\",\"pid\":1704224,\"port\":59772}\n",
+  "meshErrors": "(node:401400) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n{\"event\":\"M4_RELAY_RUNTIME_SPAWN\",\"executable\":\"C:\\\\Python314\\\\python.exe\",\"args\":[\"-I\",\"-S\",\"-B\",\"-c\",\"import sys; sys.path[:0]=[\\\"D:\\\\\\\\Dev\\\\\\\\Onoes-Mesh\\\\\\\\service_roots\\\\\\\\relay\\\",\\\"D:\\\\\\\\Dev\\\\\\\\Onoes-Mesh\\\\\\\\test\\\\\\\\app03-m4-link-runtime\\\\\\\\Lib\\\\\\\\site-packages\\\"]; import mesh_runtime\"],\"environmentKeys\":[\"MESH_RELAY_CAPABILITY\",\"RELAY_CONFIG_PATH\",\"RELAY_SESSION_DB\",\"SystemRoot\",\"TEMP\",\"TMP\"]}\n{\"event\":\"M4_RELAY_RUNTIME_SPAWN\",\"executable\":\"C:\\\\Python314\\\\python.exe\",\"args\":[\"-I\",\"-S\",\"-B\",\"-c\",\"import sys; sys.path[:0]=[\\\"D:\\\\\\\\Dev\\\\\\\\Onoes-Mesh\\\\\\\\service_roots\\\\\\\\relay\\\",\\\"D:\\\\\\\\Dev\\\\\\\\Onoes-Mesh\\\\\\\\test\\\\\\\\app03-m4-link-runtime\\\\\\\\Lib\\\\\\\\site-packages\\\"]; import mesh_runtime\"],\"environmentKeys\":[\"MESH_RELAY_CAPABILITY\",\"RELAY_CONFIG_PATH\",\"RELAY_SESSION_DB\",\"SystemRoot\",\"TEMP\",\"TMP\"]}\n"
+}

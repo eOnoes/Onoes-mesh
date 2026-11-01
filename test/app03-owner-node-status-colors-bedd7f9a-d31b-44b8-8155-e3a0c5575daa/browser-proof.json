@@ -1,0 +1,607 @@
+{
+  "provenance": "Actual disposable loopback Chromium; controlled probe stream/clock, no live tailnet or busy telemetry",
+  "dataDir": "test/app03-owner-node-status-colors-bedd7f9a-d31b-44b8-8155-e3a0c5575daa",
+  "url": "http://127.0.0.1:49342",
+  "cases": [
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "explicit local Start",
+      "banner": "Local task access verified by server. No human identity or execution approval."
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "API ready => Online",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Online · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Online",
+          "classes": "node-status node-status--online",
+          "color": "rgb(57, 255, 20)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Online · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Online",
+          "classes": "node-status node-status--online",
+          "color": "rgb(57, 255, 20)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "local aging => Stale",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Stale · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Stale",
+          "classes": "node-status node-status--stale",
+          "color": "rgb(255, 191, 105)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Stale · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Stale",
+          "classes": "node-status node-status--stale",
+          "color": "rgb(255, 191, 105)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "local aging => Offline",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Offline · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Offline",
+          "classes": "node-status node-status--offline",
+          "color": "rgb(255, 107, 107)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Offline · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Offline",
+          "classes": "node-status node-status--offline",
+          "color": "rgb(255, 107, 107)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "synthetic explicit status mapping: busy",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Busy · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Busy",
+          "classes": "node-status node-status--busy",
+          "color": "rgb(255, 209, 102)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Busy · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Busy",
+          "classes": "node-status node-status--busy",
+          "color": "rgb(255, 209, 102)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "synthetic explicit status mapping: unknown",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: unknown · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "unknown",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: unknown · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "unknown",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "synthetic explicit status mapping: unavailable",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Unavailable · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Unavailable",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Unavailable · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Unavailable",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "synthetic explicit status mapping: not_configured",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: not_configured · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "not_configured",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: not_configured · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "not_configured",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "unavailable cached Online stays neutral",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nObservation unavailable · cached status: Online · offline not established by this read\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: unavailable · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Online",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nObservation unavailable · cached status: Online · offline not established by this read\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: unavailable · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Online",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stage": "unavailable cached Offline stays neutral",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nObservation unavailable · cached status: Offline · offline not established by this read\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: unavailable · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Offline",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nObservation unavailable · cached status: Offline · offline not established by this read\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: unavailable · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Offline",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "explicit local Start",
+      "banner": "Local task access verified by server. No human identity or execution approval."
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "API ready => Online",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Online · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Online",
+          "classes": "node-status node-status--online",
+          "color": "rgb(57, 255, 20)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Online · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Online",
+          "classes": "node-status node-status--online",
+          "color": "rgb(57, 255, 20)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "local aging => Stale",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Stale · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Stale",
+          "classes": "node-status node-status--stale",
+          "color": "rgb(255, 191, 105)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Stale · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Stale",
+          "classes": "node-status node-status--stale",
+          "color": "rgb(255, 191, 105)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "local aging => Offline",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Offline · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Offline",
+          "classes": "node-status node-status--offline",
+          "color": "rgb(255, 107, 107)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Offline · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Offline",
+          "classes": "node-status node-status--offline",
+          "color": "rgb(255, 107, 107)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "synthetic explicit status mapping: busy",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Busy · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Busy",
+          "classes": "node-status node-status--busy",
+          "color": "rgb(255, 209, 102)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Busy · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Busy",
+          "classes": "node-status node-status--busy",
+          "color": "rgb(255, 209, 102)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "synthetic explicit status mapping: unknown",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: unknown · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "unknown",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: unknown · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "unknown",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "synthetic explicit status mapping: unavailable",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: Unavailable · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Unavailable",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: Unavailable · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Unavailable",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "synthetic explicit status mapping: not_configured",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nStatus: not_configured · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "not_configured",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nStatus: not_configured · cached Tailscale Online: true\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: available · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "not_configured",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "unavailable cached Online stays neutral",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nObservation unavailable · cached status: Online · offline not established by this read\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: unavailable · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Online",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nObservation unavailable · cached status: Online · offline not established by this read\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: unavailable · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Online",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "stage": "unavailable cached Offline stays neutral",
+      "rows": [
+        {
+          "id": "pc",
+          "text": "PC (pc)\n\nemitchell.tail8c4a75.ts.net · 100.72.250.65\n\nObservation unavailable · cached status: Offline · offline not established by this read\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: unavailable · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Offline",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        },
+        {
+          "id": "laptop",
+          "text": "Laptop (laptop)\n\nemitchell109-rog.tail8c4a75.ts.net · 100.119.162.99\n\nObservation unavailable · cached status: Offline · offline not established by this read\n\nLast probe: 2026-10-04T01:00:00.000Z · Last success (Online=true): 2026-10-04T01:00:00.000Z\n\nObservation: unavailable · source: disposable_transport · local probe completion timestamps\n\nPacket reachability: unknown · Inference readiness: unknown · Model readiness: unknown\n\nErrors at last probe: none · observation_expired\n\nTEST ONLY: controlled transport; no native tailnet claim.",
+          "word": "Offline",
+          "classes": "node-status node-status--neutral",
+          "color": "rgb(176, 176, 182)",
+          "paragraphColor": "rgb(176, 176, 182)",
+          "paragraphClass": "",
+          "inlineStyles": 0
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "busyContract": "No runtime busy telemetry established",
+  "browser": {
+    "pid": 2885080,
+    "executable": "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+    "argv": [
+      "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+      "--disable-field-trial-config",
+      "--disable-background-networking",
+      "--disable-background-timer-throttling",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-back-forward-cache",
+      "--disable-breakpad",
+      "--disable-client-side-phishing-detection",
+      "--disable-component-extensions-with-background-pages",
+      "--disable-component-update",
+      "--no-default-browser-check",
+      "--disable-default-apps",
+      "--disable-dev-shm-usage",
+      "--disable-edgeupdater",
+      "--disable-extensions",
+      "--disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion",
+      "--enable-features=CDPScreenshotNewSurface",
+      "--allow-pre-commit-input",
+      "--disable-hang-monitor",
+      "--disable-ipc-flooding-protection",
+      "--disable-popup-blocking",
+      "--disable-prompt-on-repost",
+      "--disable-renderer-backgrounding",
+      "--disable-updater-scheduler",
+      "--force-color-profile=srgb",
+      "--metrics-recording-only",
+      "--no-first-run",
+      "--password-store=basic",
+      "--use-mock-keychain",
+      "--no-service-autorun",
+      "--export-tagged-pdf",
+      "--disable-search-engine-choice-screen",
+      "--unsafely-disable-devtools-self-xss-warnings",
+      "--edge-skip-compat-layer-relaunch",
+      "--disable-infobars",
+      "--disable-search-engine-choice-screen",
+      "--disable-sync",
+      "--enable-unsafe-swiftshader",
+      "--headless",
+      "--hide-scrollbars",
+      "--mute-audio",
+      "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
+      "--no-sandbox",
+      "--user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l2rD0n",
+      "--remote-debugging-pipe",
+      "--no-startup-window"
+    ]
+  },
+  "result": "PASS",
+  "cleanup": {
+    "listenerClosed": true,
+    "disposableDataRetained": true,
+    "browserPid": 2885080,
+    "originalBrowserExitCode": 0,
+    "originalBrowserSignalCode": null
+  }
+}

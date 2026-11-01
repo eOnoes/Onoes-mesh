@@ -1,0 +1,40 @@
+{
+  "records": [
+    {
+      "event": "held",
+      "identities": [
+        {
+          "pid": 2330268,
+          "creationTime100ns": "134355590673887982",
+          "executable": "C:\\Python314\\python.exe"
+        },
+        {
+          "pid": 2303084,
+          "creationTime100ns": "134355590653528619",
+          "executable": "C:\\Program Files\\node.exe"
+        }
+      ]
+    },
+    {
+      "event": "verified",
+      "identities": [
+        {
+          "pid": 2330268,
+          "creationTime100ns": "134355590673887982",
+          "executable": "C:\\Python314\\python.exe",
+          "exitSignaled": true,
+          "exitCode": 0
+        },
+        {
+          "pid": 2303084,
+          "creationTime100ns": "134355590653528619",
+          "executable": "C:\\Program Files\\node.exe",
+          "exitSignaled": true,
+          "exitCode": 1
+        }
+      ]
+    }
+  ],
+  "code": 0,
+  "errors": ""
+}

@@ -1,0 +1,15 @@
+{
+  "result": {
+    "status": "FAIL",
+    "rootPid": 3446088,
+    "rootExitCode": 1,
+    "timedOut": false,
+    "cleanupVerified": true,
+    "error": "execution cancelled; root exited with nonzero code",
+    "cancelled": true,
+    "stdout": "M3 slow root 3446088; descendant 585872; started\nM3 slow descendant 585872; started\n",
+    "stderr": ""
+  },
+  "elapsedMs": 450.8242,
+  "callerPid": 190532
+}

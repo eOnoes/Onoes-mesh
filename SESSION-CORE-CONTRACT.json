@@ -1,0 +1,44 @@
+{
+  "contract": "MESH-SESSION-CORE02",
+  "version": 2,
+  "revision": "MESH-SESSION-CORE02-R1",
+  "module": "lib/trial-session.mjs",
+  "runtime": "Node 24 native standard library; no dependencies",
+  "exports": {
+    "SESSION_COOKIE_NAME": "mesh_trial",
+    "TRIAL_ACTOR": { "type": "SYNTHETIC_TRIAL", "role": "SYNTHETIC_TRIAL", "capabilities": ["trial:read", "trial:mutate"] },
+    "createTrialSessionManager": {
+      "settings": { "ttlMs": "required safe integer 1..86400000", "maxSessions": "required safe integer 1..10000", "now": "optional monotonic function returning nonnegative safe integer milliseconds; default Date.now" },
+      "unknownSettings": "throw TypeError; no coercion",
+      "methods": {
+        "createSession()": "no arguments; returns frozen {sessionId,csrfToken,actor,createdAt,expiresAt}; IDs and tokens are independent crypto random 32-byte base64url values; capacity throws code TRIAL_CAPACITY",
+        "authorize(sessionId,{mutation=false,csrfToken}={})": "frozen {actor,expiresAt} or null; mutation requires current session token; expired entries are removed; never creates a session",
+        "revoke(sessionId)": "boolean; deletes current session; revoked IDs remain unknown",
+        "sweepExpired()": "remove expired entries and return current size",
+        "size()": "sweep and return current size"
+      },
+      "storage": "bounded process memory, no persistence or timers; expiry occurs at now >= expiresAt; all sessions invalid after restart; clock regression throws"
+    },
+    "createTrialHttpGuard": {
+      "settings": { "manager": "manager returned by this module", "port": "required server-owned integer 1..65535 from actual 127.0.0.1 listener; never browser supplied" },
+      "trustedOrigin": "http://127.0.0.1:{port}, exact string",
+      "methods": {
+        "bootstrap(req,res)": "await; explicit public demo POST with JSON {} and exact Host/Origin; writes 201 synthetic admission JSON with CSRF token and HttpOnly cookie; true on success, null after body-free denial; an existing invalid cookie returns 401; current cookie requires CSRF and returns 409",
+        "authorize(req,res)": "await before private application work; GET/HEAD or POST/PUT/PATCH/DELETE; returns frozen {actor,expiresAt,body}, where body is parsed JSON object for mutations and null for reads; null after sending denial; mutations require exact Origin and X-Trial-CSRF; Originless GET/HEAD require a current session cookie and matching X-Trial-CSRF; rechecks session and required proof after body input",
+        "logout(req,res)": "await; POST JSON {} with current cookie and X-Trial-CSRF; revokes session, expires cookie and writes body-free 204; true or null"
+      },
+      "input": "actual node:http IncomingMessage/ServerResponse; raw headers checked, IPv4 loopback peers only, HTTP only; exact trusted Host always required; any present Origin must equal trustedOrigin; missing Origin allowed only for GET/HEAD with current session cookie and matching X-Trial-CSRF; if Sec-Fetch-Site is present on an Originless read it must be exactly same-origin; metadata alone never grants admission; duplicate Origin, Host, cookie, CSRF or Sec-Fetch-Site headers are denied; mutations, demo POST and logout POST always require exact Origin",
+      "bounds": { "headerPairs": 64, "headerNameAndValueBytes": 8192, "cookieBytes": 2048, "cookiePairs": 32, "requestTargetCharacters": 2048, "jsonBodyBytes": 4096, "jsonDepth": 16, "bodyDeadlineMs": 2000 },
+      "cookie": "mesh_trial=<43-char ID>; Path=/; HttpOnly; SameSite=Strict; Max-Age=ceil(ttlMs/1000). HTTP loopback has no Secure flag; Secure is required only for a separately designed HTTPS integration. Server expiry remains authoritative.",
+      "cache": "all guard success and denial responses receive Cache-Control: no-store and Pragma: no-cache",
+      "deniedStates": { "400": "malformed/duplicate/oversized headers or cookies, invalid/deep JSON, read body, nonempty admission/logout payload, malformed target", "401": "missing, unknown, expired or revoked current session, including Originless reads; expiry or revocation at final recheck", "403": "wrong/missing/nonexact Host; present null/empty/nonexact Origin; missing Origin outside GET/HEAD; Originless read with present Sec-Fetch-Site other than exact same-origin; nonloopback peer; browser claims/credential fields; wrong/missing CSRF for mutations or Originless reads", "405": "unsupported method", "408": "body deadline", "409": "bootstrap already admitted", "413": "oversized or malformed declared body length", "415": "mutation body Content-Type other than exact application/json", "503": "session capacity", "500": "clock or internal failure" },
+      "denialResponse": "status only, zero body bytes, no secret details and no Set-Cookie; parser-level node:http failures are owned by the integrator"
+    }
+  },
+  "boundaries": {
+    "coreOwns": ["synthetic session creation/expiry/revoke", "fixed actor and capabilities", "session and CSRF randomness", "guard Host/Origin/cookie/CSRF/claims enforcement", "bounded JSON consumption", "no-store guard responses"],
+    "integratorOwns": ["bind server to 127.0.0.1 and get actual owned port before exposing routes", "await guard before any protected work; return immediately on null", "map explicit demo admission, private API and logout routes", "read/mutation classification: do not mutate on GET/HEAD", "do not use browser fields to extend fixed actor/capabilities", "do not log session IDs, CSRF tokens, cookies, credentials or real user data", "handle node parser errors with body-free no-store responses", "set server header/request timeouts and bound other application resources", "exclude private API and bootstrap from any later service worker cache", "if async application work outlives authorization, reauthorize before side effects"],
+    "excluded": ["server/public/package integration", "UI or PWA acceptance", "offline cache", "real identity or human authentication; CSRF proof is not human identity", "Agent/Mind or owner approval; CSRF proof is not Agent approval", "provider/credential dependency", "overall product adoption"]
+  },
+  "integrationExample": "After server.listen(0,'127.0.0.1'), construct guard with server.address().port and the server-owned manager. Route explicit demo POST to await guard.bootstrap; route logout POST to await guard.logout; for private API await guard.authorize and return immediately on null. Use only returned actor, never browser roles. No follow-on implementation until Echo independent gate."
+}

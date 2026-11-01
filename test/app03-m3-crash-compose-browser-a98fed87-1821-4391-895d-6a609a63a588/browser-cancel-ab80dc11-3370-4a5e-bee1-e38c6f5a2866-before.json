@@ -1,0 +1,46 @@
+{
+  "tasks": [
+    {
+      "id": "56bc18f9-f4d9-47ca-828f-7909083cb96d",
+      "title": "M3 browser real Cancel",
+      "description": "",
+      "label": "",
+      "status": "open",
+      "revision": 3,
+      "createdAt": "2026-10-03T23:54:08.048Z",
+      "updatedAt": "2026-10-03T23:55:18.761Z"
+    }
+  ],
+  "task_proposals": [
+    {
+      "taskId": "56bc18f9-f4d9-47ca-828f-7909083cb96d",
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "status": "pending"
+    }
+  ],
+  "task_executions": [
+    {
+      "id": "ab80dc11-3370-4a5e-bee1-e38c6f5a2866",
+      "taskId": "56bc18f9-f4d9-47ca-828f-7909083cb96d",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\m3-crash-compose",
+      "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh-wt\\\\m3-crash-compose\\\\lib\\\\slow-command.mjs\"]",
+      "state": "running",
+      "startedAt": "2026-10-03T23:55:18.761Z",
+      "finishedAt": null,
+      "result": null,
+      "approvalRevision": 2
+    }
+  ],
+  "task_proposal_decisions": [
+    {
+      "taskId": "56bc18f9-f4d9-47ca-828f-7909083cb96d",
+      "proposalRevision": 2,
+      "status": "running",
+      "executionId": "ab80dc11-3370-4a5e-bee1-e38c6f5a2866"
+    }
+  ]
+}

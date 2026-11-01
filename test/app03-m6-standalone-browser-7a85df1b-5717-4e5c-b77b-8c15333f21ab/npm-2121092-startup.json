@@ -1,0 +1,35 @@
+{
+  "info": {
+    "event": "mesh_listening",
+    "pid": 1383476,
+    "url": "http://127.0.0.1:57994",
+    "previewUrl": "http://127.0.0.1:51282",
+    "dataDir": "test/app03-m6-standalone-browser-7a85df1b-5717-4e5c-b77b-8c15333f21ab",
+    "mode": "standalone"
+  },
+  "identity": {
+    "role": "Owned M6 descendant",
+    "pid": 1383476,
+    "creationTime100ns": "134355965722846384",
+    "executable": "C:\\Program Files\\node.exe",
+    "parentPid": 3728660,
+    "parentCreationTime100ns": "134355965722699275",
+    "commandLine": "node  test/m1-serve.mjs",
+    "purpose": "Disposable actual Agent / Workroom server",
+    "worktree": "D:\\Dev\\Onoes-Mesh",
+    "custodyClass": "workload",
+    "exitSignaled": false
+  },
+  "executable": "C:\\Program Files\\node.exe",
+  "argv": [
+    "C:\\Program Files\\node.exe",
+    "C:\\Program Files\\node_modules\\npm\\bin\\npm-cli.js",
+    "start"
+  ],
+  "env": {
+    "MESH_STANDALONE": "1",
+    "MESH_RELAY": "1",
+    "MESH_DATA_DIR": "test/app03-m6-standalone-browser-7a85df1b-5717-4e5c-b77b-8c15333f21ab",
+    "MESH_PREVIEW_PORT": "51282"
+  }
+}

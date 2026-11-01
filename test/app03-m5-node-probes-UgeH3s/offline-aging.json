@@ -1,0 +1,99 @@
+{
+  "provenance": "disposable process input; not a live tailnet observation",
+  "calls": [
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 773760,
+      "input": "D:\\Dev\\Onoes-Mesh-wt\\m5-node-probes\\test\\app03-m5-node-probes-UgeH3s\\input-2.json"
+    },
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 3912388,
+      "input": "D:\\Dev\\Onoes-Mesh-wt\\m5-node-probes\\test\\app03-m5-node-probes-UgeH3s\\input-3.json"
+    },
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 3875612,
+      "input": "D:\\Dev\\Onoes-Mesh-wt\\m5-node-probes\\test\\app03-m5-node-probes-UgeH3s\\input-4.json"
+    },
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 3898404,
+      "input": "D:\\Dev\\Onoes-Mesh-wt\\m5-node-probes\\test\\app03-m5-node-probes-UgeH3s\\input-5.json"
+    }
+  ],
+  "exits": [
+    {
+      "pid": 773760,
+      "exitCode": 0,
+      "signalCode": null
+    },
+    {
+      "pid": 3912388,
+      "exitCode": 0,
+      "signalCode": null
+    },
+    {
+      "pid": 3875612,
+      "exitCode": 0,
+      "signalCode": null
+    },
+    {
+      "pid": 3898404,
+      "exitCode": 0,
+      "signalCode": null
+    }
+  ]
+}

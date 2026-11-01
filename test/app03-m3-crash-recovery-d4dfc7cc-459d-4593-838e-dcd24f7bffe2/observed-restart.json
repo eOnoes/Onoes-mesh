@@ -1,0 +1,43 @@
+{
+  "id": "97efe6b1-0413-4d5e-8851-058b101d8e41",
+  "title": "Interrupted execution",
+  "description": "",
+  "label": "",
+  "status": "open",
+  "revision": 4,
+  "createdAt": "2026-10-03T23:37:00.072Z",
+  "updatedAt": "2026-10-03T23:37:00.647Z",
+  "proposal": {
+    "command": "node --version",
+    "cwd": "."
+  },
+  "proposalStatus": "failed",
+  "execution": {
+    "id": "1b288427-eb95-49d4-a3de-d67e1e865fa2",
+    "taskId": "97efe6b1-0413-4d5e-8851-058b101d8e41",
+    "proposalRevision": 2,
+    "command": "node --version",
+    "cwd": ".",
+    "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\m3-crash-recovery",
+    "argv": [
+      "C:\\Program Files\\node.exe",
+      "--version"
+    ],
+    "state": "failed",
+    "startedAt": "2026-10-03T23:37:00.109Z",
+    "finishedAt": "2026-10-03T23:37:00.647Z",
+    "result": {
+      "status": "UNKNOWN",
+      "outcome": "unknown",
+      "reason": "server_restart",
+      "rootPid": null,
+      "rootExitCode": null,
+      "timedOut": null,
+      "cleanupVerified": null,
+      "error": "Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.",
+      "stdout": null,
+      "stderr": null
+    },
+    "approvalRevision": 2
+  }
+}

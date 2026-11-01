@@ -1,0 +1,42 @@
+✔ M3 UI selects a fresh task without an execution and keeps decisions disabled (4.7926ms)
+✔ M3 UI releases Approve lock, Cancel targets current run and stays honest pending actual response (2.6933ms)
+✔ M3 UI reads a reopened running result without approving and ignores delayed cancel after private clearance (2.5089ms)
+✔ M3 Workroom explains unknown interruption, enables explicit new proposal only, and clears recovery on suspension (5.5752ms)
+✔ M3 UI: ordinary navigation clears private state, preserves nonce only, rechecks admission, reads existing run without approval (7.6955ms)
+✔ M3 UI: suspension, restored pages and cancelled navigation keep privacy clearance; invalidated server proof cannot reopen a run (5.8068ms)
+✔ explicit labels and denial explain no execution and no applicable cancellation/cleanup (2.4961ms)
+✔ terminal cancellation uses strict cleanup evidence; false, absent and nonboolean never claim verification (1.666ms)
+✔ ordinary completion and interrupted unknown do not borrow positive cleanup claims (0.7364ms)
+✔ PRIVACY01: valid current proof renders tasks/observations; explicit bootstrap, same-tab reload, HEAD and 204 preserved (8.2112ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after expiry (2.6263ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after observed-403 (1.5152ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after logout (1.5801ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after replacement (2.1577ms)
+✔ PRIVACY01: old 401 response cannot revoke newer valid proof (1.4506ms)
+✔ PRIVACY01: old 403 response cannot revoke newer valid proof (1.7448ms)
+✔ PRIVACY01: old network failure during body read cannot clear replacement (1.4132ms)
+✔ PRIVACY01: old abort failure during body read cannot clear replacement (1.356ms)
+✔ PRIVACY01: pending old logout finally cannot wipe newer session (1.916ms)
+✔ PRIVACY01: explicit admission health body delayed across expiry cannot admit stale proof (0.9203ms)
+✔ PRIVACY01: explicit admission health body delayed across observed-403 cannot admit stale proof (0.8891ms)
+✔ PRIVACY01: explicit admission health body delayed across logout cannot admit stale proof (0.8615ms)
+✔ PRIVACY01: explicit admission health body delayed across replacement cannot admit stale proof (1.1402ms)
+✔ PRIVACY01: reload admission health body delayed across expiry cannot admit stale proof (0.9021ms)
+✔ PRIVACY01: reload admission health body delayed across observed-403 cannot admit stale proof (1.0302ms)
+✔ PRIVACY01: reload admission health body delayed across logout cannot admit stale proof (0.8851ms)
+✔ PRIVACY01: reload admission health body delayed across replacement cannot admit stale proof (1.7617ms)
+✔ PRIVACY01: local expiry timer clears an already rendered private board and observations (1.0974ms)
+✔ PRIVACY01: approval controls follow current execution state and raw results clear on expiry (1.314ms)
+✔ PRIVACY01: stale revision disables proposal decisions until the current task is loaded (1.1939ms)
+✔ MOCK UI: seven panels, keyboard tabs, local task labels and initially disabled board (2.2757ms)
+✔ MOCK UI: stored nonce remains unverified until private GET; same-origin proof on GET/HEAD/mutation (3.7094ms)
+✔ MOCK UI: bootstrap only on explicit click; logout and offline clear private UI/storage (1.8948ms)
+✔ MOCK UI: 401, expired/invalid stored values and network failure never admit (3.202ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 130.3583

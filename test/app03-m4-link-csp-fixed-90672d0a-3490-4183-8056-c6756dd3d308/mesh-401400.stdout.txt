@@ -1,0 +1,7 @@
+{"event":"mesh_relay_spawned","pid":361116,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":361116,"port":61222}
+{"event":"mesh_listening","pid":401400,"url":"http://127.0.0.1:61225","dataDir":"test/app03-m4-link-csp-fixed-90672d0a-3490-4183-8056-c6756dd3d308","mode":"mesh"}
+{"event":"mesh_relay_task_linked","conversationId":"0951490b-b933-4243-a4f7-f4fd4c6d1cc9","messageId":"beb8140f-7ecf-4292-9c26-58e74f473f34","taskId":"63f0eb18-52d5-40ae-a3e5-519fd0cdbf63","duplicate":false}
+{"event":"mesh_relay_stopped","pid":361116,"exitCode":0,"signal":null}
+{"event":"mesh_relay_spawned","pid":1704224,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":1704224,"port":59772}

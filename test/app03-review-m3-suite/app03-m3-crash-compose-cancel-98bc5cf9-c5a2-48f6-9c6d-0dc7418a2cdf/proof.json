@@ -1,0 +1,164 @@
+{
+  "dataDir": "test/app03-m3-crash-compose-cancel-98bc5cf9-c5a2-48f6-9c6d-0dc7418a2cdf",
+  "url": "http://127.0.0.1:61169",
+  "servers": [
+    {
+      "pid": 3000504,
+      "createdAt": "2026-10-04T00:23:12.3393740Z",
+      "executable": "C:\\Program Files\\node.exe"
+    },
+    {
+      "pid": 995048,
+      "createdAt": "2026-10-04T00:23:13.9361145Z",
+      "executable": "C:\\Program Files\\node.exe"
+    }
+  ],
+  "running": {
+    "id": "70c9e4c5-dec5-4489-acff-ace9ce245879",
+    "title": "Actual API Cancel",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 3,
+    "createdAt": "2026-10-04T00:23:12.892Z",
+    "updatedAt": "2026-10-04T00:23:12.995Z",
+    "proposal": {
+      "command": "node lib/slow-command.mjs",
+      "cwd": "."
+    },
+    "proposalStatus": "running",
+    "execution": {
+      "id": "2b5c6693-1abf-4be6-a3f0-dccae4f5c89b",
+      "taskId": "70c9e4c5-dec5-4489-acff-ace9ce245879",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "D:\\Dev\\Onoes-Mesh-wt\\review-M3\\lib\\slow-command.mjs"
+      ],
+      "state": "running",
+      "startedAt": "2026-10-04T00:23:12.995Z",
+      "finishedAt": null,
+      "result": null,
+      "approvalRevision": 2
+    }
+  },
+  "done": {
+    "id": "70c9e4c5-dec5-4489-acff-ace9ce245879",
+    "title": "Actual API Cancel",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 4,
+    "createdAt": "2026-10-04T00:23:12.892Z",
+    "updatedAt": "2026-10-04T00:23:13.499Z",
+    "proposal": {
+      "command": "node lib/slow-command.mjs",
+      "cwd": "."
+    },
+    "proposalStatus": "failed",
+    "execution": {
+      "id": "2b5c6693-1abf-4be6-a3f0-dccae4f5c89b",
+      "taskId": "70c9e4c5-dec5-4489-acff-ace9ce245879",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "D:\\Dev\\Onoes-Mesh-wt\\review-M3\\lib\\slow-command.mjs"
+      ],
+      "state": "failed",
+      "startedAt": "2026-10-04T00:23:12.995Z",
+      "finishedAt": "2026-10-04T00:23:13.498Z",
+      "result": {
+        "status": "FAIL",
+        "rootPid": 4037776,
+        "rootExitCode": 1,
+        "timedOut": false,
+        "cleanupVerified": true,
+        "error": "execution cancelled; root exited with nonzero code",
+        "cancelled": true,
+        "stdout": "M3 slow root 4037776; descendant 369512; started\nM3 slow descendant 369512; started\n",
+        "stderr": ""
+      },
+      "approvalRevision": 2
+    }
+  },
+  "verified": {
+    "event": "verified",
+    "action": "wait",
+    "identities": [
+      {
+        "role": "bridge",
+        "pid": 2074736,
+        "creationTime100ns": "134355469930383373",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 3000504,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 4037776,
+        "creationTime100ns": "134355469931054639",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 2074736,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 369512,
+        "creationTime100ns": "134355469931468591",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 4037776,
+        "exitSignaled": true
+      }
+    ],
+    "elapsedMs": 0.02729997504502535
+  },
+  "elapsedMs": 534.5545999999999,
+  "replacement": {
+    "id": "70c9e4c5-dec5-4489-acff-ace9ce245879",
+    "title": "Actual API Cancel",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 7,
+    "createdAt": "2026-10-04T00:23:12.892Z",
+    "updatedAt": "2026-10-04T00:23:14.933Z",
+    "proposal": {
+      "command": "node lib/slow-command.mjs",
+      "cwd": "."
+    },
+    "proposalStatus": "failed",
+    "execution": {
+      "id": "752cbba4-ae5b-4f12-907b-b87d220c0720",
+      "taskId": "70c9e4c5-dec5-4489-acff-ace9ce245879",
+      "proposalRevision": 5,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "D:\\Dev\\Onoes-Mesh-wt\\review-M3\\lib\\slow-command.mjs"
+      ],
+      "state": "failed",
+      "startedAt": "2026-10-04T00:23:14.451Z",
+      "finishedAt": "2026-10-04T00:23:14.928Z",
+      "result": {
+        "status": "FAIL",
+        "rootPid": 1902292,
+        "rootExitCode": 1,
+        "timedOut": false,
+        "cleanupVerified": true,
+        "error": "execution cancelled; root exited with nonzero code",
+        "cancelled": true,
+        "stdout": "M3 slow root 1902292; descendant 2095592; started\nM3 slow descendant 2095592; started\n",
+        "stderr": ""
+      },
+      "approvalRevision": 5
+    }
+  }
+}

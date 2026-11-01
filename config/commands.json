@@ -1,0 +1,7 @@
+{
+  "commands": [
+    { "id": "node-version", "command": "node --version", "cwd": "." },
+    { "id": "git-status", "command": "git status", "cwd": "." },
+    { "id": "m3-slow", "command": "node lib/slow-command.mjs", "cwd": "." }
+  ]
+}

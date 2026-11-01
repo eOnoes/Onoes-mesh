@@ -1,0 +1,89 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "url": "http://127.0.0.1:52899",
+  "dataDir": "test/app03-owner-inspect-before-3111a9ef-94bb-4961-b4ac-bd0b1eadcbac",
+  "consoleErrors": [],
+  "responses": [
+    {
+      "route": "/api/trial-session/bootstrap",
+      "status": 201
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/commands",
+      "status": 200
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 201
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 201
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    }
+  ],
+  "stages": [
+    {
+      "label": "before selecting saved task",
+      "target": "execution-result",
+      "scrollY": 1665,
+      "top": 454.796875,
+      "bottom": 454.796875,
+      "height": 0,
+      "focus": "",
+      "text": "",
+      "bannerBottom": 55,
+      "title": "Second task",
+      "description": "",
+      "identity": "Task b8523857-6d32-455d-820f-0329108940f8 · revision 1"
+    },
+    {
+      "label": "old selection leaves result outside viewport",
+      "target": "execution-result",
+      "scrollY": 1665,
+      "top": 454.796875,
+      "bottom": 454.796875,
+      "height": 0,
+      "focus": "",
+      "text": "",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Stored description from disposable UI",
+      "identity": "Task 4809e356-a6f2-4105-82b7-5f9232dda990 · revision 1"
+    }
+  ]
+}

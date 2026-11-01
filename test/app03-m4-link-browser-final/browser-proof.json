@@ -1,0 +1,19 @@
+{
+  "url": "http://127.0.0.1:50529/",
+  "meshPid": 2428788,
+  "meshCreatedUtc": "2026-10-04T01:26:14.0641910Z",
+  "currentRoute": "/api/relay/shell",
+  "nativePublicRouteAbsent": true,
+  "admissionObserved": true,
+  "relayState": "Actual isolated Relay unavailable; verify local Python dependencies or reconnect.",
+  "sendDisabled": true,
+  "nativeOpenFailureVisible": true,
+  "nativeFrameStayedHidden": true,
+  "privateClearanceObserved": true,
+  "tabClosed": true,
+  "ownedServerStoppedVia": "Exact exec session 28749 Ctrl+C",
+  "actualRelayMessageSent": false,
+  "actualRelayTaskId": null,
+  "limitation": "Missing fastapi/uvicorn/httpx/cryptography; pip networking sandbox-denied WinError10013. Mouse CDP timed out; documented keyboard activation succeeded.",
+  "supersedes": "Earlier experimental public-native-frame browser evidence predates final admitted srcdoc implementation."
+}

@@ -1,0 +1,10 @@
+{
+  "pid": 735216,
+  "parentPid": 212376,
+  "creationTime100ns": "134355602508697527",
+  "executable": "C:\\Python314\\python.exe",
+  "argv": "C:/Python314/python.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-owner-deny-cancel-evidence\\supervise.py parent-integrated-npm-040410 \"C:/Program Files/node.exe\" \"C:/Program Files/node_modules/npm/bin/npm-cli.js\" test",
+  "argvStatus": 0,
+  "purpose": "owned disposable verification descendant",
+  "visibleWindows": []
+}

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "base": "owned loopback origin / root only",
+  "publicAssets": [
+    "/",
+    "/app.js",
+    "/styles.css",
+    "/manifest.webmanifest",
+    "/icon.svg",
+    "/shell-cache-policy.mjs",
+    "/sw.js"
+  ],
+  "privatePrefixes": [
+    "/api/"
+  ],
+  "privatePolicy": "Never cache private/auth/API/task/response/credentials bodies or queues; offline onlypublicshell + honest unavailable state",
+  "guardCore": "SESSION-CORE-CONTRACT.json v2 qualifiedwithparent17tests+actualbrowser",
+  "syntheticNonceStorage": "App-integrator may keep ONLY demo CSRF nonce+expiry in per-tab sessionStorage for reload; no IDs/actor/grants/privateAPIbody/taskdata/providercredentials, no persistentlocalStorage/CacheAPI tokens. Nonce alone never provesauth or offlineauthority. Clear logout/expiry; no fallbackcredentialengine. This is fake local trial only.",
+  "cacheResponsePolicy": "Exactownedorigin/allowlistedURL GET noquery/fragment/authorproofheaders; cache populationfetchcredentialsomit; only200 nonredirectbasicpublic MIMEapprovedResponsewithCache-Control public and notno-store/private orSet-Cookie; no global cachepurge",
+  "appIntegratorOwns": [
+    "server.mjs",
+    "public/app.js",
+    "public/index.html",
+    "public/styles.css",
+    "package.json",
+    "owned integrationtests"
+  ],
+  "assetLaneOwns": [
+    "new isolated assetmodule root only, no app files/sharedoutputs"
+  ],
+  "publicSourceMutability": "Only copies atnewapp-root; originalappsimmutable; no adoption/deploy"
+}

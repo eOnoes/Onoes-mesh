@@ -1,0 +1,30 @@
+{
+  "result": {
+    "status": "FAIL",
+    "rootPid": 2735644,
+    "rootExitCode": 1,
+    "timedOut": false,
+    "cleanupVerified": true,
+    "error": "execution cancelled; root exited with nonzero code",
+    "cancelled": true,
+    "stdout": "native before cancel\r\n",
+    "stderr": ""
+  },
+  "identities": [
+    {
+      "role": "root",
+      "pid": 2735644,
+      "creationTime100ns": "134355568875016669",
+      "executable": "C:\\Python314\\python.exe",
+      "exitSignaled": true
+    },
+    {
+      "role": "descendant",
+      "pid": 1776432,
+      "creationTime100ns": "134355568875548764",
+      "executable": "C:\\Python314\\python.exe",
+      "exitSignaled": true
+    }
+  ],
+  "elapsedMs": 126.57449999824166
+}

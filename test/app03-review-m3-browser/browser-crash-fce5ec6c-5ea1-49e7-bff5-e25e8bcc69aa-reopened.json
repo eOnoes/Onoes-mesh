@@ -1,0 +1,82 @@
+{
+  "tasks": [
+    {
+      "id": "a15d2c2a-a0a2-4518-a31a-83b141395984",
+      "title": "M3 reviewer ordinary save and Cancel",
+      "description": "",
+      "label": "",
+      "status": "open",
+      "revision": 4,
+      "createdAt": "2026-10-04T00:25:15.458Z",
+      "updatedAt": "2026-10-04T00:25:39.827Z"
+    },
+    {
+      "id": "e4f6f795-b588-43eb-824b-80fea90e0c5b",
+      "title": "M3 reviewer interrupted browser run",
+      "description": "",
+      "label": "",
+      "status": "open",
+      "revision": 4,
+      "createdAt": "2026-10-04T00:26:10.892Z",
+      "updatedAt": "2026-10-04T00:26:32.776Z"
+    }
+  ],
+  "task_proposals": [
+    {
+      "taskId": "a15d2c2a-a0a2-4518-a31a-83b141395984",
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "status": "pending"
+    },
+    {
+      "taskId": "e4f6f795-b588-43eb-824b-80fea90e0c5b",
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "status": "pending"
+    }
+  ],
+  "task_executions": [
+    {
+      "id": "978d8b0d-4152-406b-ba7d-3e76ee74454a",
+      "taskId": "a15d2c2a-a0a2-4518-a31a-83b141395984",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+      "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh-wt\\\\review-M3\\\\lib\\\\slow-command.mjs\"]",
+      "state": "failed",
+      "startedAt": "2026-10-04T00:25:32.927Z",
+      "finishedAt": "2026-10-04T00:25:39.823Z",
+      "result": "{\"status\":\"FAIL\",\"rootPid\":1448012,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 1448012; descendant 2787360; started\\nM3 slow descendant 2787360; started\\n\",\"stderr\":\"\"}",
+      "approvalRevision": 2
+    },
+    {
+      "id": "fce5ec6c-5ea1-49e7-bff5-e25e8bcc69aa",
+      "taskId": "e4f6f795-b588-43eb-824b-80fea90e0c5b",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+      "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh-wt\\\\review-M3\\\\lib\\\\slow-command.mjs\"]",
+      "state": "failed",
+      "startedAt": "2026-10-04T00:26:31.922Z",
+      "finishedAt": "2026-10-04T00:26:32.776Z",
+      "result": "{\"status\":\"UNKNOWN\",\"outcome\":\"unknown\",\"reason\":\"server_restart\",\"rootPid\":null,\"rootExitCode\":null,\"timedOut\":null,\"cleanupVerified\":null,\"error\":\"Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.\",\"stdout\":null,\"stderr\":null}",
+      "approvalRevision": 2
+    }
+  ],
+  "task_proposal_decisions": [
+    {
+      "taskId": "a15d2c2a-a0a2-4518-a31a-83b141395984",
+      "proposalRevision": 2,
+      "status": "failed",
+      "executionId": "978d8b0d-4152-406b-ba7d-3e76ee74454a"
+    },
+    {
+      "taskId": "e4f6f795-b588-43eb-824b-80fea90e0c5b",
+      "proposalRevision": 2,
+      "status": "failed",
+      "executionId": "fce5ec6c-5ea1-49e7-bff5-e25e8bcc69aa"
+    }
+  ]
+}

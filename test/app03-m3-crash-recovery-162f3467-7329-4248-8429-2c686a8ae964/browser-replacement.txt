@@ -1,0 +1,5 @@
+Browser tab: 1014724548, Title: "Onoes-mesh / Tasks", URL: "http://127.0.0.1:61060/".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 118
++			137 text //  WORKROOM / SAVED TASKS
+The focused UI element is 1 AXWebArea Onoes-mesh / Tasks, URL: 127.0.0.1:61060/

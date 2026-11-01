@@ -1,0 +1,479 @@
+{
+  "label": "parent-integrated-m4-041905",
+  "worktree": "D:\\Dev\\Onoes-Mesh",
+  "launch": [
+    "C:/Program Files/node.exe",
+    "--test",
+    "--test-timeout=60000",
+    "test/m4-link-store.test.mjs",
+    "test/m4-link-ui.test.mjs",
+    "test/m4-link-http.test.mjs"
+  ],
+  "identities": [
+    {
+      "pid": 656196,
+      "parentPid": 2364376,
+      "creationTime100ns": "134355611451548760",
+      "executable": "C:\\Python314\\pythonw.exe",
+      "argv": "C:/Python314/pythonw.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-csp-evidence\\supervisor.py parent-integrated-m4-041905 \"C:/Program Files/node.exe\" --test --test-timeout=60000 test/m4-link-store.test.mjs test/m4-link-ui.test.mjs test/m4-link-http.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 console-free supervisor",
+      "ancestry": [
+        2364376
+      ],
+      "exitSignaled": false
+    },
+    {
+      "pid": 1408796,
+      "parentPid": 656196,
+      "creationTime100ns": "134355611453914975",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:/Program Files/node.exe\" --test --test-timeout=60000 test/m4-link-store.test.mjs test/m4-link-ui.test.mjs test/m4-link-http.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 root test command",
+      "ancestry": [
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1204436,
+      "parentPid": 1408796,
+      "creationTime100ns": "134355611453960085",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1490000,
+      "parentPid": 1408796,
+      "creationTime100ns": "134355611454325917",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --use-largepages=off --trace-event-file-pattern=node_trace.${rotation}.log --v8-pool-size=4 --node-snapshot --cpu-prof-interval=1000 --report-signal=SIGUSR2 --tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA --secure-heap=0 --secure-heap-min=2 --stack-trace-limit=10 --test-isolation=process --network-family-autoselection-attempt-timeout=250 --heapsnapshot-near-heap-limit=0 --heap-prof-interval=524288 --max-http-header-size=16384 --test-concurrency=0 --test-timeout=60000 --test-coverage-branches=0 --test-coverage-functions=0 --test-coverage-lines=0 --watch-kill-signal=SIGTERM --inspect-port=127.0.0.1:9229 --inspect-publish-uid=stderr,http --test-timeout=60000 test\\m4-link-http.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant node.exe",
+      "ancestry": [
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1804896,
+      "parentPid": 1408796,
+      "creationTime100ns": "134355611454394121",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --use-largepages=off --trace-event-file-pattern=node_trace.${rotation}.log --v8-pool-size=4 --node-snapshot --cpu-prof-interval=1000 --report-signal=SIGUSR2 --tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA --secure-heap=0 --secure-heap-min=2 --stack-trace-limit=10 --test-isolation=process --network-family-autoselection-attempt-timeout=250 --heapsnapshot-near-heap-limit=0 --heap-prof-interval=524288 --max-http-header-size=16384 --test-concurrency=0 --test-timeout=60000 --test-coverage-branches=0 --test-coverage-functions=0 --test-coverage-lines=0 --watch-kill-signal=SIGTERM --inspect-port=127.0.0.1:9229 --inspect-publish-uid=stderr,http --test-timeout=60000 test\\m4-link-store.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant node.exe",
+      "ancestry": [
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1338416,
+      "parentPid": 1408796,
+      "creationTime100ns": "134355611454440470",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --use-largepages=off --trace-event-file-pattern=node_trace.${rotation}.log --v8-pool-size=4 --node-snapshot --cpu-prof-interval=1000 --report-signal=SIGUSR2 --tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA --secure-heap=0 --secure-heap-min=2 --stack-trace-limit=10 --test-isolation=process --network-family-autoselection-attempt-timeout=250 --heapsnapshot-near-heap-limit=0 --heap-prof-interval=524288 --max-http-header-size=16384 --test-concurrency=0 --test-timeout=60000 --test-coverage-branches=0 --test-coverage-functions=0 --test-coverage-lines=0 --watch-kill-signal=SIGTERM --inspect-port=127.0.0.1:9229 --inspect-publish-uid=stderr,http --test-timeout=60000 test\\m4-link-ui.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant node.exe",
+      "ancestry": [
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1293740,
+      "parentPid": 1490000,
+      "creationTime100ns": "134355611454878281",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --import file:///D:/Dev/Onoes-Mesh/test/app03-m4-link-denials-e76c6107-6a25-4b05-b7db-29f217cd6bf1/no-executor-0.mjs server.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant node.exe",
+      "ancestry": [
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 2389148,
+      "parentPid": 1293740,
+      "creationTime100ns": "134355611454921192",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        1293740,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1680640,
+      "parentPid": 1490000,
+      "creationTime100ns": "134355611456130779",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --import file:///D:/Dev/Onoes-Mesh/test/app03-m4-link-actual-9604cab9-b566-44f1-bf3c-fe0f3bf23d97/no-executor-0.mjs server.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant node.exe",
+      "ancestry": [
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 416916,
+      "parentPid": 1680640,
+      "creationTime100ns": "134355611456341549",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        1680640,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2098036,
+      "parentPid": 1680640,
+      "creationTime100ns": "134355611457115032",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -S -B -c \"import sys; sys.path[:0]=[\\\"D:\\\\Dev\\\\Onoes-Mesh\\\\service_roots\\\\relay\\\",\\\"D:\\\\Dev\\\\Onoes-Mesh\\\\test\\\\app03-m4-link-runtime\\\\Lib\\\\site-packages\\\"]; import mesh_runtime\"",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant python.exe",
+      "ancestry": [
+        1680640,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2378888,
+      "parentPid": 2098036,
+      "creationTime100ns": "134355611457167469",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        2098036,
+        1680640,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3461352,
+      "parentPid": 1490000,
+      "creationTime100ns": "134355611466554648",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\test\\m4-link-process-observer.py 2098036",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant python.exe",
+      "ancestry": [
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1239484,
+      "parentPid": 3461352,
+      "creationTime100ns": "134355611466613724",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        3461352,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 19908,
+      "parentPid": 1680640,
+      "creationTime100ns": "134355611467371839",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -S -B -c \"import sys; sys.path[:0]=[\\\"D:\\\\Dev\\\\Onoes-Mesh\\\\service_roots\\\\relay\\\",\\\"D:\\\\Dev\\\\Onoes-Mesh\\\\test\\\\app03-m4-link-runtime\\\\Lib\\\\site-packages\\\"]; import mesh_runtime\"",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant python.exe",
+      "ancestry": [
+        1680640,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2466312,
+      "parentPid": 19908,
+      "creationTime100ns": "134355611467395839",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        19908,
+        1680640,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 417944,
+      "parentPid": 1490000,
+      "creationTime100ns": "134355611475831232",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\test\\m4-link-process-observer.py 19908",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant python.exe",
+      "ancestry": [
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3891164,
+      "parentPid": 417944,
+      "creationTime100ns": "134355611475893966",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        417944,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2117644,
+      "parentPid": 1680640,
+      "creationTime100ns": "134355611476317261",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -S -B -c \"import sys; sys.path[:0]=[\\\"D:\\\\Dev\\\\Onoes-Mesh\\\\service_roots\\\\relay\\\",\\\"D:\\\\Dev\\\\Onoes-Mesh\\\\test\\\\app03-m4-link-runtime\\\\Lib\\\\site-packages\\\"]; import mesh_runtime\"",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant python.exe",
+      "ancestry": [
+        1680640,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 910932,
+      "parentPid": 2117644,
+      "creationTime100ns": "134355611476343620",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        2117644,
+        1680640,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 993872,
+      "parentPid": 1490000,
+      "creationTime100ns": "134355611485193646",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\test\\m4-link-process-observer.py 2117644 1680640",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant python.exe",
+      "ancestry": [
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3116460,
+      "parentPid": 993872,
+      "creationTime100ns": "134355611485273987",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        993872,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1347376,
+      "parentPid": 1490000,
+      "creationTime100ns": "134355611485771307",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --import file:///D:/Dev/Onoes-Mesh/test/app03-m4-link-actual-9604cab9-b566-44f1-bf3c-fe0f3bf23d97/no-executor-1.mjs server.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant node.exe",
+      "ancestry": [
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 1538692,
+      "parentPid": 1347376,
+      "creationTime100ns": "134355611485814856",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        1347376,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3761920,
+      "parentPid": 1347376,
+      "creationTime100ns": "134355611486385388",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -S -B -c \"import sys; sys.path[:0]=[\\\"D:\\\\Dev\\\\Onoes-Mesh\\\\service_roots\\\\relay\\\",\\\"D:\\\\Dev\\\\Onoes-Mesh\\\\test\\\\app03-m4-link-runtime\\\\Lib\\\\site-packages\\\"]; import mesh_runtime\"",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant python.exe",
+      "ancestry": [
+        1347376,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3367640,
+      "parentPid": 3761920,
+      "creationTime100ns": "134355611486439431",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        3761920,
+        1347376,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 366980,
+      "parentPid": 1490000,
+      "creationTime100ns": "134355611506749204",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\test\\m4-link-process-observer.py 3761920 1347376",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant python.exe",
+      "ancestry": [
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3891852,
+      "parentPid": 366980,
+      "creationTime100ns": "134355611506809657",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-integrated-m4-041905 owned descendant conhost.exe",
+      "ancestry": [
+        366980,
+        1490000,
+        1408796,
+        656196
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    }
+  ],
+  "windows": [],
+  "acquisitionRaces": [],
+  "commandExit": 0,
+  "protectedBefore": 200,
+  "protectedAfter": 200,
+  "descendantsExited": true,
+  "hiddenWindows": true
+}

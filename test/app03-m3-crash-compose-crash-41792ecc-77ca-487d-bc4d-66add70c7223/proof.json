@@ -1,0 +1,227 @@
+{
+  "dataDir": "test/app03-m3-crash-compose-crash-41792ecc-77ca-487d-bc4d-66add70c7223",
+  "url": "http://127.0.0.1:54097",
+  "servers": [
+    {
+      "pid": 3936128,
+      "createdAt": "2026-10-04T04:24:12.0228215Z",
+      "executable": "C:\\Program Files\\node.exe"
+    },
+    {
+      "pid": 3259608,
+      "createdAt": "2026-10-04T04:24:13.0981008Z",
+      "executable": "C:\\Program Files\\node.exe"
+    },
+    {
+      "pid": 3917692,
+      "createdAt": "2026-10-04T04:24:13.7072289Z",
+      "executable": "C:\\Program Files\\node.exe"
+    }
+  ],
+  "running": {
+    "id": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+    "title": "Actual slow-command server crash",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 3,
+    "createdAt": "2026-10-04T04:24:12.364Z",
+    "updatedAt": "2026-10-04T04:24:12.387Z",
+    "proposal": {
+      "command": "node lib/slow-command.mjs",
+      "cwd": "."
+    },
+    "proposalStatus": "running",
+    "execution": {
+      "id": "9986c3a3-fb2b-48ac-b731-31358ac74248",
+      "taskId": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+      ],
+      "state": "running",
+      "startedAt": "2026-10-04T04:24:12.387Z",
+      "finishedAt": null,
+      "result": null,
+      "approvalRevision": 2
+    }
+  },
+  "recovered": {
+    "id": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+    "title": "Actual slow-command server crash",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 4,
+    "createdAt": "2026-10-04T04:24:12.364Z",
+    "updatedAt": "2026-10-04T04:24:13.153Z",
+    "proposal": {
+      "command": "node lib/slow-command.mjs",
+      "cwd": "."
+    },
+    "proposalStatus": "failed",
+    "execution": {
+      "id": "9986c3a3-fb2b-48ac-b731-31358ac74248",
+      "taskId": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+      ],
+      "state": "failed",
+      "startedAt": "2026-10-04T04:24:12.387Z",
+      "finishedAt": "2026-10-04T04:24:13.153Z",
+      "result": {
+        "status": "UNKNOWN",
+        "outcome": "unknown",
+        "reason": "server_restart",
+        "rootPid": null,
+        "rootExitCode": null,
+        "timedOut": null,
+        "cleanupVerified": null,
+        "error": "Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.",
+        "stdout": null,
+        "stderr": null
+      },
+      "approvalRevision": 2
+    }
+  },
+  "verified": {
+    "event": "verified",
+    "action": "kill-caller",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 3936128,
+        "creationTime100ns": "134355614520228215",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 1593976,
+        "creationTime100ns": "134355614524181400",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 3936128,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 4088244,
+        "creationTime100ns": "134355614524754034",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 1593976,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 1924292,
+        "creationTime100ns": "134355614525135306",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 4088244,
+        "exitSignaled": true
+      }
+    ],
+    "elapsedMs": 10.297899949364364
+  },
+  "elapsedMs": 705.1613000000002,
+  "before": {
+    "tasks": [
+      {
+        "id": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+        "title": "Actual slow-command server crash",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 3,
+        "createdAt": "2026-10-04T04:24:12.364Z",
+        "updatedAt": "2026-10-04T04:24:12.387Z"
+      }
+    ],
+    "task_proposals": [
+      {
+        "taskId": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "status": "pending"
+      }
+    ],
+    "task_executions": [
+      {
+        "id": "9986c3a3-fb2b-48ac-b731-31358ac74248",
+        "taskId": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+        "proposalRevision": 2,
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "actualCwd": "D:\\Dev\\Onoes-Mesh",
+        "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh\\\\lib\\\\slow-command.mjs\"]",
+        "state": "running",
+        "startedAt": "2026-10-04T04:24:12.387Z",
+        "finishedAt": null,
+        "result": null,
+        "approvalRevision": 2
+      }
+    ],
+    "task_proposal_decisions": [
+      {
+        "taskId": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+        "proposalRevision": 2,
+        "status": "running",
+        "executionId": "9986c3a3-fb2b-48ac-b731-31358ac74248"
+      }
+    ]
+  },
+  "after": {
+    "tasks": [
+      {
+        "id": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+        "title": "Actual slow-command server crash",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 4,
+        "createdAt": "2026-10-04T04:24:12.364Z",
+        "updatedAt": "2026-10-04T04:24:13.153Z"
+      }
+    ],
+    "task_proposals": [
+      {
+        "taskId": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "status": "pending"
+      }
+    ],
+    "task_executions": [
+      {
+        "id": "9986c3a3-fb2b-48ac-b731-31358ac74248",
+        "taskId": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+        "proposalRevision": 2,
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "actualCwd": "D:\\Dev\\Onoes-Mesh",
+        "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh\\\\lib\\\\slow-command.mjs\"]",
+        "state": "failed",
+        "startedAt": "2026-10-04T04:24:12.387Z",
+        "finishedAt": "2026-10-04T04:24:13.153Z",
+        "result": "{\"status\":\"UNKNOWN\",\"outcome\":\"unknown\",\"reason\":\"server_restart\",\"rootPid\":null,\"rootExitCode\":null,\"timedOut\":null,\"cleanupVerified\":null,\"error\":\"Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.\",\"stdout\":null,\"stderr\":null}",
+        "approvalRevision": 2
+      }
+    ],
+    "task_proposal_decisions": [
+      {
+        "taskId": "2fb878f4-f689-4248-8f9e-dd01317ef9f3",
+        "proposalRevision": 2,
+        "status": "failed",
+        "executionId": "9986c3a3-fb2b-48ac-b731-31358ac74248"
+      }
+    ]
+  }
+}

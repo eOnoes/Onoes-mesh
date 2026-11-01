@@ -1,0 +1,26 @@
+{
+  "source": "Actual Chrome UI actions and accessibility observations, with separate read-only SQLite checks",
+  "url": "http://127.0.0.1:53936/",
+  "taskId": "fe249583-008a-43d1-9734-4d31f53477e8",
+  "runId": "28a4f376-e6f0-4679-99b6-42406dabecf1",
+  "serverPids": [3903736, 3355960, 69340],
+  "approved": {
+    "taskRevision": 4,
+    "status": "Completed · exit code 0 · owned cleanup verified.",
+    "stdout": "v24.14.0\r\n",
+    "exitCode": 0,
+    "cleanupVerified": true,
+    "sameResultVisibleAfterRealRestart": true
+  },
+  "deniedAfterRealRestart": {
+    "taskRevision": 6,
+    "proposalRevision": 5,
+    "status": "Denied · no executor invoked and no execution record created for this proposal.",
+    "currentRunOutput": "",
+    "historicalApprovedRuns": 1,
+    "deniedProposalRuns": 0,
+    "approvedRunUnchanged": true
+  },
+  "finalServerStopped": true,
+  "ownerAcceptance": "Pending Eddie laptop/phone check; local session is not Eddie identity"
+}

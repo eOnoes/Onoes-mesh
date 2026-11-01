@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "mesh-node-identities/v1",
+  "nodes": [
+    { "id": "pc", "label": "PC", "dnsName": "emitchell.tail8c4a75.ts.net", "tailscaleIp": "100.72.250.65" },
+    { "id": "laptop", "label": "Laptop", "dnsName": "emitchell109-rog.tail8c4a75.ts.net", "tailscaleIp": "100.119.162.99" }
+  ]
+}

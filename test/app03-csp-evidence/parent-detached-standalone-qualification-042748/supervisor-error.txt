@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "D:\Dev\Onoes-Mesh\test\app03-csp-evidence\supervisor.py", line 118, in <module>
+    scan()
+    ~~~~^^
+  File "D:\Dev\Onoes-Mesh\test\app03-csp-evidence\supervisor.py", line 79, in scan
+    entry=acquire(pid,parent,label+' owned descendant '+exe)
+  File "D:\Dev\Onoes-Mesh\test\app03-csp-evidence\supervisor.py", line 51, in acquire
+    if result < 0: raise RuntimeError('Command line query failed: '+str(result))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Command line query failed: -1073741558

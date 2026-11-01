@@ -1,0 +1,28 @@
+{
+  "records": [
+    {
+      "event": "held",
+      "identities": [
+        {
+          "pid": 216300,
+          "creationTime100ns": "134355590654313457",
+          "executable": "C:\\Python314\\python.exe"
+        }
+      ]
+    },
+    {
+      "event": "verified",
+      "identities": [
+        {
+          "pid": 216300,
+          "creationTime100ns": "134355590654313457",
+          "executable": "C:\\Python314\\python.exe",
+          "exitSignaled": true,
+          "exitCode": 0
+        }
+      ]
+    }
+  ],
+  "code": 0,
+  "errors": ""
+}

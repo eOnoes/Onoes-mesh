@@ -1,0 +1,14 @@
+{
+  "scope": "Owned Chrome tab 1014724560, current-byte loopback Mesh failure path only",
+  "url": "http://127.0.0.1:64688/",
+  "meshProcess": {"pid":2921568,"createdUtc":"2026-10-04T00:55:30.0307300Z","executable":"C:/Program Files/node.exe","cleanup":"Exact owned exec session 36190 interrupted and returned exit1; owned browser tab closed"},
+  "observations": [
+    "Start local session admitted; Relay service reported unavailable from isolated_relay with relay_unavailable error",
+    "Mesh Relay panel: Actual isolated Relay unavailable; verify local Python dependencies or reconnect. Send, message and new message disabled; reconnect available",
+    "Open existing Relay terminal loaded original adapted HTML in iframe relay-terminal within admitted Mesh page",
+    "Native frame DOM: Actual isolated Relay unavailable. Return to Mesh to reconnect. Composer, attach and Send and create Mesh task disabled",
+    "Browser-found CRLF CSP hash normalization and full-navigation BFcache proof loss corrected before final current-byte checks"
+  ],
+  "limitation": "No actual Relay message/task/reconnect success claimed: fastapi/runtime dependencies unavailable and pip network denied WinError10013",
+  "checks": {"npmTest":"PASS30+1","m2M3Privacy":"PASS47","m4Named":"PASS5 FAIL1 dependency gate; zero skips","nativeObserver":"PASS exact disposable handle validation; not a Relay runtime proof"}
+}

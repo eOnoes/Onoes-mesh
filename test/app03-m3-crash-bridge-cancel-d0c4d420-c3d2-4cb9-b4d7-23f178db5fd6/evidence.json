@@ -1,0 +1,61 @@
+{
+  "outcome": "interrupted",
+  "result": {
+    "result": {
+      "status": "FAIL",
+      "rootPid": 1453424,
+      "rootExitCode": 1,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": "execution cancelled; root exited with nonzero code",
+      "cancelled": true,
+      "stdout": "M3 slow root 1453424; descendant 1277720; started\nM3 slow descendant 1277720; started\n",
+      "stderr": ""
+    },
+    "elapsedMs": 450.3608,
+    "callerPid": 2623476
+  },
+  "observation": {
+    "event": "verified",
+    "action": "wait",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 2623476,
+        "creationTime100ns": "134355616931025751",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 2926128,
+        "creationTime100ns": "134355616931439413",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 2623476,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 1453424,
+        "creationTime100ns": "134355616931997907",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 2926128,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 1277720,
+        "creationTime100ns": "134355616932372150",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 1453424,
+        "exitSignaled": true
+      }
+    ],
+    "cleanupVerified": true,
+    "elapsedMs": 82.035
+  },
+  "output": "{\"result\":{\"status\":\"FAIL\",\"rootPid\":1453424,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 1453424; descendant 1277720; started\\nM3 slow descendant 1277720; started\\n\",\"stderr\":\"\"},\"elapsedMs\":450.3608,\"callerPid\":2623476}\n",
+  "errors": "",
+  "elapsedMs": 508.7415000000001,
+  "nativeResultUnavailable": false
+}

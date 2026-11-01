@@ -1,0 +1,1739 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "dataDir": "test/app03-m6-standalone-browser-6384e7d1-464c-4d23-874c-da49243d6407",
+  "provenance": {
+    "server.mjs": "b83ec4852c96806c3b6f5bec47e96f5e57db52df901e772db24e5ff42a2dd130",
+    "test/m1-serve.mjs": "440e123b9594d5eaecb09c9c8667ee88253f9ab95e2da65a4e2ad204069a7bd1",
+    "package.json": "29cfccdd7379b47f2a31700bbc1cb3bc1d141e6903b445187caedc468c36e592",
+    "public/app.js": "b8548dfb31e3cfe2098668d07591dcb9ff3a080a46f53fa8485b4cea97238f30",
+    "public/index.html": "2449fa101cf6f7d9d92cfd407c8302b855105f893a5424f175931954e3a22e0e",
+    "lib/task-store.mjs": "cb975a128e34805ccc13217a727d06f8d74326d91477690f957fff7d73edfece",
+    "lib/command-execution.mjs": "b198a699c54768f530ce079735d850ab4e4514a0c8acb14fcfcbcfae86b8cfab",
+    "lib/owned-command.py": "b95386de964da31217be40bd4ae4684890c1d61aa5a5939d8e0ff7a9b907048d",
+    "lib/owned_job.py": "ec6ee410c7fe384899bd6df34275911bfbbf61f275e900fa0613046a492a33fb",
+    "config/commands.json": "1b59ba9e43464cd13f125d8c349d2ea01ac47713dcd3a998094877610a3b3b8a",
+    "service_roots/relay/SOURCE.md": "e81e8670cc7bfe0b70436c07f9af89d47a1289977062359167777e615d6cc6ac"
+  },
+  "serviceRootsPresent": "# Isolated current Relay inputs\r\n\r\nSource root: D:/Dev/Onoes-Relay (read-only; no Git operations). SHA-256 below is of original bytes before minimal Mesh adapter changes. Only runtime imports and existing HTML assets copied; no live config/stores/history or gateway executors.\r\n\r\n| Source path | SHA-256 |\r\n| --- | --- |\r\n| D:/Dev/Onoes-Relay/relay_server.py | 82c85562ea6b49e12f8f7dd6edcd67aebff35693b000f81e59a4d21018a57e1b |\r\n| D:/Dev/Onoes-Relay/relay_sessions.py | f045f367735755e3741aa3354c90bb44b91efa0f861bd0c28e4513ddae237dae |\r\n| D:/Dev/Onoes-Relay/relay_db.py | a63e6e7d802a9ee064164eac672b1815e16915365d9f70e0b211c33faaf56d34 |\r\n| D:/Dev/Onoes-Relay/relay_auth.py | b8c221aa67f1253fda9d0586fd5cc48ed32cabe7623017cee1c248b089835361 |\r\n| D:/Dev/Onoes-Relay/relay_channels.py | 80aabdcb0daa73f4cfc4b3f124768e905cadcc2e8dacfb4c0f3c86c05ea21c3c |\r\n| D:/Dev/Onoes-Relay/relay_config.py | 3a605db1c6f45bec13997382b643761c91f5cf718999e5c1807f564c7dd5e150 |\r\n| D:/Dev/Onoes-Relay/relay_hermes.py | 0fd1452a68cf9a7e937b4a4a1636fc5fa46ab196e5b06496720a4f11de5f6dcc |\r\n| D:/Dev/Onoes-Relay/relay_openclaw.py | 71cc0583ff8edc7d4112532385f12d993134f7abccee950e2427776d9c4c5f3f |\r\n| D:/Dev/Onoes-Relay/relay_a2a.py | d3b8ee0ad593a92dc09e8f6721328a42a8fba3f2e262fe5db0ec62ebd1a9a8c2 |\r\n| D:/Dev/Onoes-Relay/relay_notify.py | 434d9f1903167f7338a7997ec1a8d1a2c979ff3fa464ee26afc8f670c59b8800 |\r\n| D:/Dev/Onoes-Relay/relay_webpush.py | 03b8dc63828d580eab21b0ebe524ed3bdedec9b43245346a1b04ad0fbf584003 |\r\n| D:/Dev/Onoes-Relay/relay_mcp.py | fcbea1d9bbd18f667eb7b5b77f064080c48e9b6061fd3d9556798c45b90acaba |\r\n| D:/Dev/Onoes-Relay/requirements.txt | bc4af4615e09e1a7cb0b2430047af1b714600bfcb509cb1f3901b2ee5deeab03 |\r\n| D:/Dev/Onoes-Relay/static/index.html | 3bb0b405a22c2f25e9a83bce9466cef336c9f9cd0e165fea0548695fe96858bd |\r\n| D:/Dev/Onoes-Relay/static/menu.svg | 9e95fef116c3a480d3abc716e0e8e5608c2aa87138a163a3908fbc2f94fc21e2 |\r\n| D:/Dev/Onoes-Relay/static/gear.svg | 135335dc92adb10632c31e2562d3608f8c065d8eb9ce96a1470ebeca5e9ff160 |\r\n| D:/Dev/Onoes-Relay/static/slash-commands.json | 762abbe60522d8159d985aa0cf3d7999e77a9a1377bdad2f7eb25649135eb13f |\r\n| D:/Dev/Onoes-Relay/static/slash-commands-openclaw.json | 0f12190447557c1abf1492433b96031fc537e62552fbeb4980e1d1a749fcb3f5 |\r\n\r\nMinimal changes: relay_server.py adds only the Mesh message branch, reference snapshot, and Mesh-only startup guard. mesh_link.py and mesh_runtime.py provide the confined reference bridge/runtime. Existing static/index.html uses the Mesh guard, text-only explicit create intent and volatile browser queue; existing CSS is unchanged. No gateway.mjs or relay-adapter.mjs copied: Mesh-only mode never starts OpenClaw/agent executors. The unused service worker is excluded.\r\nThe two original 16px SVG button icons are embedded unchanged in the admitted native HTML; no public image route or styling change is needed. Unused native PWA manifest/icon/service-worker copies are excluded; Mesh retains its existing PWA shell.\r\n",
+  "stages": [
+    {
+      "stage": "approve actual version and replay once",
+      "running": {
+        "id": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+        "title": "M6 actual standalone node version",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 3,
+        "createdAt": "2026-10-04T04:27:54.122Z",
+        "updatedAt": "2026-10-04T04:27:54.281Z",
+        "proposal": {
+          "command": "node --version",
+          "cwd": "."
+        },
+        "proposalStatus": "running",
+        "execution": {
+          "id": "d4e39bbe-7fec-4b41-8fc2-b85848e40fe1",
+          "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+          "proposalRevision": 2,
+          "command": "node --version",
+          "cwd": ".",
+          "actualCwd": "D:\\Dev\\Onoes-Mesh",
+          "argv": [
+            "C:\\Program Files\\node.exe",
+            "--version"
+          ],
+          "state": "running",
+          "startedAt": "2026-10-04T04:27:54.281Z",
+          "finishedAt": null,
+          "result": null,
+          "approvalRevision": 2
+        }
+      },
+      "done": {
+        "id": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+        "title": "M6 actual standalone node version",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 4,
+        "createdAt": "2026-10-04T04:27:54.122Z",
+        "updatedAt": "2026-10-04T04:27:54.407Z",
+        "proposal": {
+          "command": "node --version",
+          "cwd": "."
+        },
+        "proposalStatus": "completed",
+        "execution": {
+          "id": "d4e39bbe-7fec-4b41-8fc2-b85848e40fe1",
+          "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+          "proposalRevision": 2,
+          "command": "node --version",
+          "cwd": ".",
+          "actualCwd": "D:\\Dev\\Onoes-Mesh",
+          "argv": [
+            "C:\\Program Files\\node.exe",
+            "--version"
+          ],
+          "state": "completed",
+          "startedAt": "2026-10-04T04:27:54.281Z",
+          "finishedAt": "2026-10-04T04:27:54.407Z",
+          "result": {
+            "status": "PASS",
+            "rootPid": 2968156,
+            "rootExitCode": 0,
+            "timedOut": false,
+            "cleanupVerified": true,
+            "error": null,
+            "stdout": "v24.14.0\r\n",
+            "stderr": ""
+          },
+          "approvalRevision": 2
+        }
+      },
+      "replay": {
+        "status": 200,
+        "noStore": "no-store",
+        "value": {
+          "task": {
+            "id": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "title": "M6 actual standalone node version",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 4,
+            "createdAt": "2026-10-04T04:27:54.122Z",
+            "updatedAt": "2026-10-04T04:27:54.407Z",
+            "proposal": {
+              "command": "node --version",
+              "cwd": "."
+            },
+            "proposalStatus": "completed",
+            "execution": {
+              "id": "d4e39bbe-7fec-4b41-8fc2-b85848e40fe1",
+              "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+              "proposalRevision": 2,
+              "command": "node --version",
+              "cwd": ".",
+              "actualCwd": "D:\\Dev\\Onoes-Mesh",
+              "argv": [
+                "C:\\Program Files\\node.exe",
+                "--version"
+              ],
+              "state": "completed",
+              "startedAt": "2026-10-04T04:27:54.281Z",
+              "finishedAt": "2026-10-04T04:27:54.407Z",
+              "result": {
+                "status": "PASS",
+                "rootPid": 2968156,
+                "rootExitCode": 0,
+                "timedOut": false,
+                "cleanupVerified": true,
+                "error": null,
+                "stdout": "v24.14.0\r\n",
+                "stderr": ""
+              },
+              "approvalRevision": 2
+            }
+          }
+        }
+      },
+      "rows": {
+        "tasks": [
+          {
+            "id": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "title": "M6 actual standalone node version",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 4,
+            "createdAt": "2026-10-04T04:27:54.122Z",
+            "updatedAt": "2026-10-04T04:27:54.407Z"
+          }
+        ],
+        "task_proposals": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "command": "node --version",
+            "cwd": ".",
+            "status": "pending"
+          }
+        ],
+        "task_executions": [
+          {
+            "id": "d4e39bbe-7fec-4b41-8fc2-b85848e40fe1",
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 2,
+            "command": "node --version",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"--version\"]",
+            "state": "completed",
+            "startedAt": "2026-10-04T04:27:54.281Z",
+            "finishedAt": "2026-10-04T04:27:54.407Z",
+            "result": "{\"status\":\"PASS\",\"rootPid\":2968156,\"rootExitCode\":0,\"timedOut\":false,\"cleanupVerified\":true,\"error\":null,\"stdout\":\"v24.14.0\\r\\n\",\"stderr\":\"\"}",
+            "approvalRevision": 2
+          }
+        ],
+        "task_proposal_decisions": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 2,
+            "status": "completed",
+            "executionId": "d4e39bbe-7fec-4b41-8fc2-b85848e40fe1"
+          }
+        ]
+      },
+      "inspection": {
+        "focus": "result-heading",
+        "top": 400.765625,
+        "bannerBottom": 55
+      },
+      "rendered": "Run d4e39bbe-7fec-4b41-8fc2-b85848e40fe1\nState: completed\nCancelled: false\nExit code: 0\nCleanup verified: true\nError: none\nstdout:\nv24.14.0\r\n\nstderr:\n"
+    },
+    {
+      "stage": "re-propose and deny without execution",
+      "denied": {
+        "id": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+        "title": "M6 actual standalone node version",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 6,
+        "createdAt": "2026-10-04T04:27:54.122Z",
+        "updatedAt": "2026-10-04T04:27:54.704Z",
+        "proposal": {
+          "command": "node --version",
+          "cwd": "."
+        },
+        "proposalStatus": "denied",
+        "execution": null
+      },
+      "rows": {
+        "tasks": [
+          {
+            "id": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "title": "M6 actual standalone node version",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 6,
+            "createdAt": "2026-10-04T04:27:54.122Z",
+            "updatedAt": "2026-10-04T04:27:54.704Z"
+          }
+        ],
+        "task_proposals": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "command": "node --version",
+            "cwd": ".",
+            "status": "pending"
+          }
+        ],
+        "task_executions": [
+          {
+            "id": "d4e39bbe-7fec-4b41-8fc2-b85848e40fe1",
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 2,
+            "command": "node --version",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"--version\"]",
+            "state": "completed",
+            "startedAt": "2026-10-04T04:27:54.281Z",
+            "finishedAt": "2026-10-04T04:27:54.407Z",
+            "result": "{\"status\":\"PASS\",\"rootPid\":2968156,\"rootExitCode\":0,\"timedOut\":false,\"cleanupVerified\":true,\"error\":null,\"stdout\":\"v24.14.0\\r\\n\",\"stderr\":\"\"}",
+            "approvalRevision": 2
+          }
+        ],
+        "task_proposal_decisions": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 5,
+            "status": "denied",
+            "executionId": null
+          }
+        ]
+      }
+    },
+    {
+      "stage": "actual slow-command Cancel",
+      "cancelling": {
+        "id": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+        "title": "M6 actual standalone cancellation",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 3,
+        "createdAt": "2026-10-04T04:27:54.775Z",
+        "updatedAt": "2026-10-04T04:27:54.917Z",
+        "proposal": {
+          "command": "node lib/slow-command.mjs",
+          "cwd": "."
+        },
+        "proposalStatus": "running",
+        "execution": {
+          "id": "026dec3f-3221-4a63-8b36-0aa114b9faea",
+          "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+          "proposalRevision": 2,
+          "command": "node lib/slow-command.mjs",
+          "cwd": ".",
+          "actualCwd": "D:\\Dev\\Onoes-Mesh",
+          "argv": [
+            "C:\\Program Files\\node.exe",
+            "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+          ],
+          "state": "running",
+          "startedAt": "2026-10-04T04:27:54.917Z",
+          "finishedAt": null,
+          "result": null,
+          "approvalRevision": 2
+        }
+      },
+      "cancelled": {
+        "id": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+        "title": "M6 actual standalone cancellation",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 4,
+        "createdAt": "2026-10-04T04:27:54.775Z",
+        "updatedAt": "2026-10-04T04:27:55.124Z",
+        "proposal": {
+          "command": "node lib/slow-command.mjs",
+          "cwd": "."
+        },
+        "proposalStatus": "failed",
+        "execution": {
+          "id": "026dec3f-3221-4a63-8b36-0aa114b9faea",
+          "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+          "proposalRevision": 2,
+          "command": "node lib/slow-command.mjs",
+          "cwd": ".",
+          "actualCwd": "D:\\Dev\\Onoes-Mesh",
+          "argv": [
+            "C:\\Program Files\\node.exe",
+            "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+          ],
+          "state": "failed",
+          "startedAt": "2026-10-04T04:27:54.917Z",
+          "finishedAt": "2026-10-04T04:27:55.123Z",
+          "result": {
+            "status": "FAIL",
+            "rootPid": 579140,
+            "rootExitCode": 1,
+            "timedOut": false,
+            "cleanupVerified": true,
+            "error": "execution cancelled; root exited with nonzero code",
+            "cancelled": true,
+            "stdout": "M3 slow root 579140; descendant 1039612; started\nM3 slow descendant 1039612; started\n",
+            "stderr": ""
+          },
+          "approvalRevision": 2
+        }
+      },
+      "nativeExits": [
+        {
+          "role": "Owned M6 descendant",
+          "pid": 2969432,
+          "creationTime100ns": "134355616749257825",
+          "executable": "C:\\Python314\\python.exe",
+          "parentPid": 3600020,
+          "commandLine": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py",
+          "purpose": "Original native command ownership bridge",
+          "exitSignaled": true,
+          "exitCode": 0
+        },
+        {
+          "role": "Owned M6 descendant",
+          "pid": 579140,
+          "creationTime100ns": "134355616749872558",
+          "executable": "C:\\Program Files\\node.exe",
+          "parentPid": 2969432,
+          "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs",
+          "purpose": "Fixed slow-command root",
+          "exitSignaled": true,
+          "exitCode": 1
+        },
+        {
+          "role": "Owned M6 descendant",
+          "pid": 1039612,
+          "creationTime100ns": "134355616750271691",
+          "executable": "C:\\Program Files\\node.exe",
+          "parentPid": 579140,
+          "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs --owned-child",
+          "purpose": "Fixed slow-command descendant",
+          "exitSignaled": true,
+          "exitCode": 1
+        }
+      ],
+      "rows": {
+        "tasks": [
+          {
+            "id": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "title": "M6 actual standalone node version",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 6,
+            "createdAt": "2026-10-04T04:27:54.122Z",
+            "updatedAt": "2026-10-04T04:27:54.704Z"
+          },
+          {
+            "id": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "title": "M6 actual standalone cancellation",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 4,
+            "createdAt": "2026-10-04T04:27:54.775Z",
+            "updatedAt": "2026-10-04T04:27:55.124Z"
+          }
+        ],
+        "task_proposals": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "command": "node --version",
+            "cwd": ".",
+            "status": "pending"
+          },
+          {
+            "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "status": "pending"
+          }
+        ],
+        "task_executions": [
+          {
+            "id": "d4e39bbe-7fec-4b41-8fc2-b85848e40fe1",
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 2,
+            "command": "node --version",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"--version\"]",
+            "state": "completed",
+            "startedAt": "2026-10-04T04:27:54.281Z",
+            "finishedAt": "2026-10-04T04:27:54.407Z",
+            "result": "{\"status\":\"PASS\",\"rootPid\":2968156,\"rootExitCode\":0,\"timedOut\":false,\"cleanupVerified\":true,\"error\":null,\"stdout\":\"v24.14.0\\r\\n\",\"stderr\":\"\"}",
+            "approvalRevision": 2
+          },
+          {
+            "id": "026dec3f-3221-4a63-8b36-0aa114b9faea",
+            "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "proposalRevision": 2,
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh\\\\lib\\\\slow-command.mjs\"]",
+            "state": "failed",
+            "startedAt": "2026-10-04T04:27:54.917Z",
+            "finishedAt": "2026-10-04T04:27:55.123Z",
+            "result": "{\"status\":\"FAIL\",\"rootPid\":579140,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 579140; descendant 1039612; started\\nM3 slow descendant 1039612; started\\n\",\"stderr\":\"\"}",
+            "approvalRevision": 2
+          }
+        ],
+        "task_proposal_decisions": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 5,
+            "status": "denied",
+            "executionId": null
+          },
+          {
+            "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "proposalRevision": 2,
+            "status": "failed",
+            "executionId": "026dec3f-3221-4a63-8b36-0aa114b9faea"
+          }
+        ]
+      },
+      "inspection": {
+        "focus": "result-heading",
+        "top": 400.765625,
+        "bannerBottom": 55
+      },
+      "rendered": "Run 026dec3f-3221-4a63-8b36-0aa114b9faea\nState: failed\nCancelled: true\nExit code: 1\nCleanup verified: true\nError: execution cancelled; root exited with nonzero code\nstdout:\nM3 slow root 579140; descendant 1039612; started\nM3 slow descendant 1039612; started\n\nstderr:\n"
+    },
+    {
+      "stage": "exact server kill, same store and URL, UNKNOWN replay without spawn",
+      "crashing": {
+        "id": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+        "title": "M6 actual standalone crash recovery",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 3,
+        "createdAt": "2026-10-04T04:27:55.252Z",
+        "updatedAt": "2026-10-04T04:27:55.395Z",
+        "proposal": {
+          "command": "node lib/slow-command.mjs",
+          "cwd": "."
+        },
+        "proposalStatus": "running",
+        "execution": {
+          "id": "aa6e60aa-6cae-4fd7-a7ff-2ce889209fb9",
+          "taskId": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+          "proposalRevision": 2,
+          "command": "node lib/slow-command.mjs",
+          "cwd": ".",
+          "actualCwd": "D:\\Dev\\Onoes-Mesh",
+          "argv": [
+            "C:\\Program Files\\node.exe",
+            "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+          ],
+          "state": "running",
+          "startedAt": "2026-10-04T04:27:55.395Z",
+          "finishedAt": null,
+          "result": null,
+          "approvalRevision": 2
+        }
+      },
+      "beforeCrash": {
+        "tasks": [
+          {
+            "id": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "title": "M6 actual standalone node version",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 6,
+            "createdAt": "2026-10-04T04:27:54.122Z",
+            "updatedAt": "2026-10-04T04:27:54.704Z"
+          },
+          {
+            "id": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "title": "M6 actual standalone cancellation",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 4,
+            "createdAt": "2026-10-04T04:27:54.775Z",
+            "updatedAt": "2026-10-04T04:27:55.124Z"
+          },
+          {
+            "id": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+            "title": "M6 actual standalone crash recovery",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 3,
+            "createdAt": "2026-10-04T04:27:55.252Z",
+            "updatedAt": "2026-10-04T04:27:55.395Z"
+          }
+        ],
+        "task_proposals": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "command": "node --version",
+            "cwd": ".",
+            "status": "pending"
+          },
+          {
+            "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "status": "pending"
+          },
+          {
+            "taskId": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "status": "pending"
+          }
+        ],
+        "task_executions": [
+          {
+            "id": "d4e39bbe-7fec-4b41-8fc2-b85848e40fe1",
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 2,
+            "command": "node --version",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"--version\"]",
+            "state": "completed",
+            "startedAt": "2026-10-04T04:27:54.281Z",
+            "finishedAt": "2026-10-04T04:27:54.407Z",
+            "result": "{\"status\":\"PASS\",\"rootPid\":2968156,\"rootExitCode\":0,\"timedOut\":false,\"cleanupVerified\":true,\"error\":null,\"stdout\":\"v24.14.0\\r\\n\",\"stderr\":\"\"}",
+            "approvalRevision": 2
+          },
+          {
+            "id": "026dec3f-3221-4a63-8b36-0aa114b9faea",
+            "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "proposalRevision": 2,
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh\\\\lib\\\\slow-command.mjs\"]",
+            "state": "failed",
+            "startedAt": "2026-10-04T04:27:54.917Z",
+            "finishedAt": "2026-10-04T04:27:55.123Z",
+            "result": "{\"status\":\"FAIL\",\"rootPid\":579140,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 579140; descendant 1039612; started\\nM3 slow descendant 1039612; started\\n\",\"stderr\":\"\"}",
+            "approvalRevision": 2
+          },
+          {
+            "id": "aa6e60aa-6cae-4fd7-a7ff-2ce889209fb9",
+            "taskId": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+            "proposalRevision": 2,
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh\\\\lib\\\\slow-command.mjs\"]",
+            "state": "running",
+            "startedAt": "2026-10-04T04:27:55.395Z",
+            "finishedAt": null,
+            "result": null,
+            "approvalRevision": 2
+          }
+        ],
+        "task_proposal_decisions": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 5,
+            "status": "denied",
+            "executionId": null
+          },
+          {
+            "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "proposalRevision": 2,
+            "status": "failed",
+            "executionId": "026dec3f-3221-4a63-8b36-0aa114b9faea"
+          },
+          {
+            "taskId": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+            "proposalRevision": 2,
+            "status": "running",
+            "executionId": "aa6e60aa-6cae-4fd7-a7ff-2ce889209fb9"
+          }
+        ]
+      },
+      "recovered": {
+        "id": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+        "title": "M6 actual standalone crash recovery",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 4,
+        "createdAt": "2026-10-04T04:27:55.252Z",
+        "updatedAt": "2026-10-04T04:27:55.787Z",
+        "proposal": {
+          "command": "node lib/slow-command.mjs",
+          "cwd": "."
+        },
+        "proposalStatus": "failed",
+        "execution": {
+          "id": "aa6e60aa-6cae-4fd7-a7ff-2ce889209fb9",
+          "taskId": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+          "proposalRevision": 2,
+          "command": "node lib/slow-command.mjs",
+          "cwd": ".",
+          "actualCwd": "D:\\Dev\\Onoes-Mesh",
+          "argv": [
+            "C:\\Program Files\\node.exe",
+            "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+          ],
+          "state": "failed",
+          "startedAt": "2026-10-04T04:27:55.395Z",
+          "finishedAt": "2026-10-04T04:27:55.787Z",
+          "result": {
+            "status": "UNKNOWN",
+            "outcome": "unknown",
+            "reason": "server_restart",
+            "rootPid": null,
+            "rootExitCode": null,
+            "timedOut": null,
+            "cleanupVerified": null,
+            "error": "Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.",
+            "stdout": null,
+            "stderr": null
+          },
+          "approvalRevision": 2
+        }
+      },
+      "afterCrash": {
+        "tasks": [
+          {
+            "id": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "title": "M6 actual standalone node version",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 6,
+            "createdAt": "2026-10-04T04:27:54.122Z",
+            "updatedAt": "2026-10-04T04:27:54.704Z"
+          },
+          {
+            "id": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "title": "M6 actual standalone cancellation",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 4,
+            "createdAt": "2026-10-04T04:27:54.775Z",
+            "updatedAt": "2026-10-04T04:27:55.124Z"
+          },
+          {
+            "id": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+            "title": "M6 actual standalone crash recovery",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 4,
+            "createdAt": "2026-10-04T04:27:55.252Z",
+            "updatedAt": "2026-10-04T04:27:55.787Z"
+          }
+        ],
+        "task_proposals": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "command": "node --version",
+            "cwd": ".",
+            "status": "pending"
+          },
+          {
+            "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "status": "pending"
+          },
+          {
+            "taskId": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "status": "pending"
+          }
+        ],
+        "task_executions": [
+          {
+            "id": "d4e39bbe-7fec-4b41-8fc2-b85848e40fe1",
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 2,
+            "command": "node --version",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"--version\"]",
+            "state": "completed",
+            "startedAt": "2026-10-04T04:27:54.281Z",
+            "finishedAt": "2026-10-04T04:27:54.407Z",
+            "result": "{\"status\":\"PASS\",\"rootPid\":2968156,\"rootExitCode\":0,\"timedOut\":false,\"cleanupVerified\":true,\"error\":null,\"stdout\":\"v24.14.0\\r\\n\",\"stderr\":\"\"}",
+            "approvalRevision": 2
+          },
+          {
+            "id": "026dec3f-3221-4a63-8b36-0aa114b9faea",
+            "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "proposalRevision": 2,
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh\\\\lib\\\\slow-command.mjs\"]",
+            "state": "failed",
+            "startedAt": "2026-10-04T04:27:54.917Z",
+            "finishedAt": "2026-10-04T04:27:55.123Z",
+            "result": "{\"status\":\"FAIL\",\"rootPid\":579140,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 579140; descendant 1039612; started\\nM3 slow descendant 1039612; started\\n\",\"stderr\":\"\"}",
+            "approvalRevision": 2
+          },
+          {
+            "id": "aa6e60aa-6cae-4fd7-a7ff-2ce889209fb9",
+            "taskId": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+            "proposalRevision": 2,
+            "command": "node lib/slow-command.mjs",
+            "cwd": ".",
+            "actualCwd": "D:\\Dev\\Onoes-Mesh",
+            "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh\\\\lib\\\\slow-command.mjs\"]",
+            "state": "failed",
+            "startedAt": "2026-10-04T04:27:55.395Z",
+            "finishedAt": "2026-10-04T04:27:55.787Z",
+            "result": "{\"status\":\"UNKNOWN\",\"outcome\":\"unknown\",\"reason\":\"server_restart\",\"rootPid\":null,\"rootExitCode\":null,\"timedOut\":null,\"cleanupVerified\":null,\"error\":\"Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.\",\"stdout\":null,\"stderr\":null}",
+            "approvalRevision": 2
+          }
+        ],
+        "task_proposal_decisions": [
+          {
+            "taskId": "4b6c2b9b-2b4c-4dcf-8bd8-7d179e606c20",
+            "proposalRevision": 5,
+            "status": "denied",
+            "executionId": null
+          },
+          {
+            "taskId": "58df54a8-dd88-4654-8ddf-0c4ce5fffbad",
+            "proposalRevision": 2,
+            "status": "failed",
+            "executionId": "026dec3f-3221-4a63-8b36-0aa114b9faea"
+          },
+          {
+            "taskId": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+            "proposalRevision": 2,
+            "status": "failed",
+            "executionId": "aa6e60aa-6cae-4fd7-a7ff-2ce889209fb9"
+          }
+        ]
+      },
+      "crashReplay": {
+        "status": 200,
+        "noStore": "no-store",
+        "value": {
+          "task": {
+            "id": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+            "title": "M6 actual standalone crash recovery",
+            "description": "",
+            "label": "",
+            "status": "open",
+            "revision": 4,
+            "createdAt": "2026-10-04T04:27:55.252Z",
+            "updatedAt": "2026-10-04T04:27:55.787Z",
+            "proposal": {
+              "command": "node lib/slow-command.mjs",
+              "cwd": "."
+            },
+            "proposalStatus": "failed",
+            "execution": {
+              "id": "aa6e60aa-6cae-4fd7-a7ff-2ce889209fb9",
+              "taskId": "912577a9-e911-4c3a-8037-54bb42e21fa9",
+              "proposalRevision": 2,
+              "command": "node lib/slow-command.mjs",
+              "cwd": ".",
+              "actualCwd": "D:\\Dev\\Onoes-Mesh",
+              "argv": [
+                "C:\\Program Files\\node.exe",
+                "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+              ],
+              "state": "failed",
+              "startedAt": "2026-10-04T04:27:55.395Z",
+              "finishedAt": "2026-10-04T04:27:55.787Z",
+              "result": {
+                "status": "UNKNOWN",
+                "outcome": "unknown",
+                "reason": "server_restart",
+                "rootPid": null,
+                "rootExitCode": null,
+                "timedOut": null,
+                "cleanupVerified": null,
+                "error": "Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.",
+                "stdout": null,
+                "stderr": null
+              },
+              "approvalRevision": 2
+            }
+          }
+        }
+      },
+      "crashExits": [
+        {
+          "role": "Owned M6 descendant",
+          "pid": 3600020,
+          "creationTime100ns": "134355616722303162",
+          "executable": "C:\\Program Files\\node.exe",
+          "parentPid": 1458156,
+          "commandLine": "node  test/m1-serve.mjs",
+          "purpose": "Disposable actual Agent / Workroom server",
+          "exitSignaled": true,
+          "exitCode": 1
+        },
+        {
+          "role": "Owned M6 descendant",
+          "pid": 1213752,
+          "creationTime100ns": "134355616754045408",
+          "executable": "C:\\Python314\\python.exe",
+          "parentPid": 3600020,
+          "commandLine": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py",
+          "purpose": "Original native command ownership bridge",
+          "exitSignaled": true,
+          "exitCode": 0
+        },
+        {
+          "role": "Owned M6 descendant",
+          "pid": 2646460,
+          "creationTime100ns": "134355616754627005",
+          "executable": "C:\\Program Files\\node.exe",
+          "parentPid": 1213752,
+          "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs",
+          "purpose": "Fixed slow-command root",
+          "exitSignaled": true,
+          "exitCode": 0
+        },
+        {
+          "role": "Owned M6 descendant",
+          "pid": 1995164,
+          "creationTime100ns": "134355616755034071",
+          "executable": "C:\\Program Files\\node.exe",
+          "parentPid": 2646460,
+          "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs --owned-child",
+          "purpose": "Fixed slow-command descendant",
+          "exitSignaled": true,
+          "exitCode": 0
+        }
+      ],
+      "restarted": {
+        "role": "Owned M6 descendant",
+        "pid": 106180,
+        "creationTime100ns": "134355616757365275",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 595028,
+        "commandLine": "node  test/m1-serve.mjs",
+        "purpose": "Disposable actual Agent / Workroom server",
+        "exitSignaled": false
+      },
+      "inspection": {
+        "focus": "result-heading",
+        "top": 800.765625,
+        "bannerBottom": 55
+      },
+      "rendered": "Run aa6e60aa-6cae-4fd7-a7ff-2ce889209fb9\nState: failed\nOutcome: unknown\nInterrupted by server restart. Process result was not recorded.\nPID: unknown\nExit code: unknown\nCleanup verified: unknown\nTimeout: unknown\nstdout: unknown\nstderr: unknown\nRecovery recorded at: 2026-10-04T04:27:55.787Z\nNo automatic retry. Save a new proposal to request another execution."
+    }
+  ],
+  "errors": [],
+  "initial": {
+    "url": "http://127.0.0.1:51632",
+    "backend": "http://127.0.0.1:51631",
+    "app": {
+      "role": "Owned M6 descendant",
+      "pid": 3600020,
+      "creationTime100ns": "134355616722303162",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 1458156,
+      "commandLine": "node  test/m1-serve.mjs",
+      "purpose": "Disposable actual Agent / Workroom server",
+      "exitSignaled": false
+    },
+    "mode": "standalone"
+  },
+  "browser": {
+    "pid": 4014424,
+    "executable": "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+    "argv": [
+      "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+      "--disable-field-trial-config",
+      "--disable-background-networking",
+      "--disable-background-timer-throttling",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-back-forward-cache",
+      "--disable-breakpad",
+      "--disable-client-side-phishing-detection",
+      "--disable-component-extensions-with-background-pages",
+      "--disable-component-update",
+      "--no-default-browser-check",
+      "--disable-default-apps",
+      "--disable-dev-shm-usage",
+      "--disable-edgeupdater",
+      "--disable-extensions",
+      "--disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion",
+      "--enable-features=CDPScreenshotNewSurface",
+      "--allow-pre-commit-input",
+      "--disable-hang-monitor",
+      "--disable-ipc-flooding-protection",
+      "--disable-popup-blocking",
+      "--disable-prompt-on-repost",
+      "--disable-renderer-backgrounding",
+      "--disable-updater-scheduler",
+      "--force-color-profile=srgb",
+      "--metrics-recording-only",
+      "--no-first-run",
+      "--password-store=basic",
+      "--use-mock-keychain",
+      "--no-service-autorun",
+      "--export-tagged-pdf",
+      "--disable-search-engine-choice-screen",
+      "--unsafely-disable-devtools-self-xss-warnings",
+      "--edge-skip-compat-layer-relaunch",
+      "--disable-infobars",
+      "--disable-search-engine-choice-screen",
+      "--disable-sync",
+      "--enable-unsafe-swiftshader",
+      "--headless",
+      "--hide-scrollbars",
+      "--mute-audio",
+      "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
+      "--no-sandbox",
+      "--user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN",
+      "--remote-debugging-pipe",
+      "--no-startup-window"
+    ],
+    "exitCode": 0,
+    "signalCode": null
+  },
+  "absent": {
+    "health": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "state": "ok",
+        "persistence": "sqlite",
+        "scope": "local_trial",
+        "url": "http://127.0.0.1:51631",
+        "integrations": "not_connected",
+        "mode": "standalone",
+        "activity": {
+          "adapter": "present",
+          "registry": "not_configured",
+          "source": "none"
+        }
+      }
+    },
+    "services": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "schemaVersion": "mesh-service-connections/v1",
+        "observedAt": "2026-10-04T04:27:53.950Z",
+        "services": [
+          {
+            "id": "relay",
+            "label": "Relay",
+            "status": "not_configured",
+            "source": "none",
+            "observedAt": "2026-10-04T04:27:53.950Z",
+            "elapsedMs": 0,
+            "errors": []
+          },
+          {
+            "id": "inference",
+            "label": "Inference",
+            "status": "not_configured",
+            "source": "none",
+            "observedAt": "2026-10-04T04:27:53.950Z",
+            "elapsedMs": 0,
+            "errors": []
+          },
+          {
+            "id": "agent",
+            "label": "Agent",
+            "status": "not_configured",
+            "source": "none",
+            "observedAt": "2026-10-04T04:27:53.950Z",
+            "elapsedMs": 0,
+            "errors": []
+          },
+          {
+            "id": "mind",
+            "label": "Mind",
+            "status": "not_configured",
+            "source": "none",
+            "observedAt": "2026-10-04T04:27:53.950Z",
+            "elapsedMs": 0,
+            "errors": []
+          }
+        ]
+      }
+    },
+    "inference": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "schemaVersion": "mesh-inference-observation/v1",
+        "observedAt": "2026-10-04T04:27:53.955Z",
+        "status": "not_configured",
+        "nodes": [],
+        "errors": []
+      }
+    },
+    "nodes": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "schemaVersion": "mesh-node-probes/v1",
+        "observedAt": "2026-10-04T04:27:53.959Z",
+        "status": "not_configured",
+        "source": "none",
+        "scope": "standalone",
+        "nodes": []
+      }
+    },
+    "relay": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "status": "not_configured",
+        "conversationId": null,
+        "links": [],
+        "error": null
+      }
+    },
+    "launches": [
+      {
+        "event": "spawn",
+        "parentPid": 1348308,
+        "pid": 1458156,
+        "executable": "C:\\WINDOWS\\system32\\cmd.exe",
+        "argv": [
+          "C:\\WINDOWS\\system32\\cmd.exe",
+          "/d",
+          "/s",
+          "/c",
+          "node test/m1-serve.mjs"
+        ],
+        "at": "2026-10-04T04:27:52.220Z"
+      }
+    ]
+  },
+  "afterRestartAbsent": {
+    "health": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "state": "ok",
+        "persistence": "sqlite",
+        "scope": "local_trial",
+        "url": "http://127.0.0.1:63935",
+        "integrations": "not_connected",
+        "mode": "standalone",
+        "activity": {
+          "adapter": "present",
+          "registry": "not_configured",
+          "source": "none"
+        }
+      }
+    },
+    "services": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "schemaVersion": "mesh-service-connections/v1",
+        "observedAt": "2026-10-04T04:27:56.119Z",
+        "services": [
+          {
+            "id": "relay",
+            "label": "Relay",
+            "status": "not_configured",
+            "source": "none",
+            "observedAt": "2026-10-04T04:27:56.119Z",
+            "elapsedMs": 0,
+            "errors": []
+          },
+          {
+            "id": "inference",
+            "label": "Inference",
+            "status": "not_configured",
+            "source": "none",
+            "observedAt": "2026-10-04T04:27:56.119Z",
+            "elapsedMs": 0,
+            "errors": []
+          },
+          {
+            "id": "agent",
+            "label": "Agent",
+            "status": "not_configured",
+            "source": "none",
+            "observedAt": "2026-10-04T04:27:56.119Z",
+            "elapsedMs": 0,
+            "errors": []
+          },
+          {
+            "id": "mind",
+            "label": "Mind",
+            "status": "not_configured",
+            "source": "none",
+            "observedAt": "2026-10-04T04:27:56.119Z",
+            "elapsedMs": 0,
+            "errors": []
+          }
+        ]
+      }
+    },
+    "inference": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "schemaVersion": "mesh-inference-observation/v1",
+        "observedAt": "2026-10-04T04:27:56.122Z",
+        "status": "not_configured",
+        "nodes": [],
+        "errors": []
+      }
+    },
+    "nodes": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "schemaVersion": "mesh-node-probes/v1",
+        "observedAt": "2026-10-04T04:27:56.125Z",
+        "status": "not_configured",
+        "source": "none",
+        "scope": "standalone",
+        "nodes": []
+      }
+    },
+    "relay": {
+      "status": 200,
+      "noStore": "no-store",
+      "value": {
+        "status": "not_configured",
+        "conversationId": null,
+        "links": [],
+        "error": null
+      }
+    },
+    "launches": [
+      {
+        "event": "spawn",
+        "parentPid": 1348308,
+        "pid": 1458156,
+        "executable": "C:\\WINDOWS\\system32\\cmd.exe",
+        "argv": [
+          "C:\\WINDOWS\\system32\\cmd.exe",
+          "/d",
+          "/s",
+          "/c",
+          "node test/m1-serve.mjs"
+        ],
+        "at": "2026-10-04T04:27:52.220Z"
+      },
+      {
+        "event": "spawn",
+        "parentPid": 3600020,
+        "pid": 1498396,
+        "executable": "C:\\Python314\\python.exe",
+        "argv": [
+          "C:\\Python314\\python.exe",
+          "-I",
+          "-B",
+          "D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py"
+        ],
+        "at": "2026-10-04T04:27:54.312Z"
+      },
+      {
+        "event": "close",
+        "parentPid": 3600020,
+        "pid": 1498396,
+        "exitCode": 0,
+        "signal": null,
+        "at": "2026-10-04T04:27:54.406Z"
+      },
+      {
+        "event": "spawn",
+        "parentPid": 3600020,
+        "pid": 2969432,
+        "executable": "C:\\Python314\\python.exe",
+        "argv": [
+          "C:\\Python314\\python.exe",
+          "-I",
+          "-B",
+          "D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py"
+        ],
+        "at": "2026-10-04T04:27:54.926Z"
+      },
+      {
+        "event": "close",
+        "parentPid": 3600020,
+        "pid": 2969432,
+        "exitCode": 0,
+        "signal": null,
+        "at": "2026-10-04T04:27:55.123Z"
+      },
+      {
+        "event": "spawn",
+        "parentPid": 3600020,
+        "pid": 1213752,
+        "executable": "C:\\Python314\\python.exe",
+        "argv": [
+          "C:\\Python314\\python.exe",
+          "-I",
+          "-B",
+          "D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py"
+        ],
+        "at": "2026-10-04T04:27:55.405Z"
+      },
+      {
+        "event": "close",
+        "parentPid": 1348308,
+        "pid": 1458156,
+        "exitCode": 1,
+        "signal": null,
+        "at": "2026-10-04T04:27:55.562Z"
+      },
+      {
+        "event": "spawn",
+        "parentPid": 3478352,
+        "pid": 595028,
+        "executable": "C:\\WINDOWS\\system32\\cmd.exe",
+        "argv": [
+          "C:\\WINDOWS\\system32\\cmd.exe",
+          "/d",
+          "/s",
+          "/c",
+          "node test/m1-serve.mjs"
+        ],
+        "at": "2026-10-04T04:27:55.728Z"
+      }
+    ]
+  },
+  "versionNative": {
+    "role": "Owned M6 descendant",
+    "pid": 2968156,
+    "creationTime100ns": "134355616743715169",
+    "executable": "C:\\Program Files\\node.exe",
+    "parentPid": 1498396,
+    "commandLine": "\"C:\\Program Files\\node.exe\" --version",
+    "purpose": "Actual node version root",
+    "exitSignaled": true,
+    "exitCode": 0
+  },
+  "status": "PASS",
+  "cleanup": [
+    {
+      "role": "M6 verification harness",
+      "pid": 497040,
+      "creationTime100ns": "134355616717441073",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": null,
+      "commandLine": "\"C:/Program Files/node.exe\" test/m6-standalone-browser.mjs",
+      "purpose": "M6 verification harness",
+      "exitSignaled": false
+    },
+    {
+      "role": "M6 native custody observer",
+      "pid": 2826812,
+      "creationTime100ns": "134355616719754410",
+      "executable": "C:\\Python314\\pythonw.exe",
+      "parentPid": 497040,
+      "commandLine": "C:\\Python314\\pythonw.exe -B D:\\Dev\\Onoes-Mesh\\test\\app03-m6-standalone-browser-6384e7d1-464c-4d23-874c-da49243d6407\\native-observer.py 497040",
+      "purpose": "Read-only native process observer",
+      "exitSignaled": false
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 1348308,
+      "creationTime100ns": "134355616720633398",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 497040,
+      "commandLine": "\"C:\\Program Files\\node.exe\" \"C:\\Program Files\\node_modules\\npm\\bin\\npm-cli.js\" start",
+      "purpose": "Actual npm entry point / local qualification",
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 2828804,
+      "creationTime100ns": "134355616720683973",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "parentPid": 1348308,
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "purpose": "Console host of an owned temporary child",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 1458156,
+      "creationTime100ns": "134355616722139589",
+      "executable": "C:\\Windows\\System32\\cmd.exe",
+      "parentPid": 1348308,
+      "commandLine": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c node test/m1-serve.mjs",
+      "purpose": "Disposable actual Agent / Workroom server",
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 3600020,
+      "creationTime100ns": "134355616722303162",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 1458156,
+      "commandLine": "node  test/m1-serve.mjs",
+      "purpose": "Disposable actual Agent / Workroom server",
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 4014424,
+      "creationTime100ns": "134355616723537698",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "parentPid": 497040,
+      "commandLine": "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN --remote-debugging-pipe --no-startup-window",
+      "purpose": "Owned headless verification browser",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 807160,
+      "creationTime100ns": "134355616723768428",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "parentPid": 4014424,
+      "commandLine": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe --type=crashpad-handler --user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN /prefetch:4 --monitor-self-annotation=ptype=crashpad-handler --database=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN\\Crashpad --annotation=plat=Win64 \"--annotation=prod=Google Chrome for Testing\" --annotation=ver=153.0.8010.12 --initial-client-data=0x124,0x128,0x12c,0x100,0x130,0x7ffeea6ace80,0x7ffeea6ace90,0x7ffeea6acea0",
+      "purpose": "Owned headless verification browser",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 4037116,
+      "creationTime100ns": "134355616724851125",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "parentPid": 4014424,
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=gpu-process --no-sandbox --disable-breakpad --headless --enable-unsafe-swiftshader --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN\" --no-pre-read-main-dll --start-stack-profiler --gpu-preferences=WAAAAAAAAADgAAAEAAAAAAAAAAAAAGAAQAAAAAAAAAADAAAAAAAAADgAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAoAAAAAAAAAAgAAAAAAAAAEAAAAAIAAAABAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= --field-trial-handle=1812,i,12816738815997734328,5806775138193488843,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1816,i,8853147157660267264,14376834372174923632,4 --trace-process-track-uuid=3190708988185955192 --mojo-platform-channel-handle=1808 /prefetch:2",
+      "purpose": "Owned headless verification browser",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 3395816,
+      "creationTime100ns": "134355616724925189",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "parentPid": 4014424,
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --no-sandbox --mute-audio --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN\" --no-pre-read-main-dll --start-stack-profiler --field-trial-handle=1812,i,12816738815997734328,5806775138193488843,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1816,i,8853147157660267264,14376834372174923632,4 --trace-process-track-uuid=3190708989122997041 --mojo-platform-channel-handle=2024 /prefetch:11",
+      "purpose": "Owned headless verification browser",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 525556,
+      "creationTime100ns": "134355616725114118",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "parentPid": 4014424,
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --no-sandbox --mute-audio --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN\" --no-pre-read-main-dll --field-trial-handle=1812,i,12816738815997734328,5806775138193488843,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1816,i,8853147157660267264,14376834372174923632,4 --trace-process-track-uuid=3190708990060038890 --mojo-platform-channel-handle=2420 /prefetch:13",
+      "purpose": "Owned headless verification browser",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 960104,
+      "creationTime100ns": "134355616725872602",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "parentPid": 4014424,
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --top-chrome-webui --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=5 --launch-time-ticks=803610434001 --field-trial-handle=1812,i,12816738815997734328,5806775138193488843,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1816,i,8853147157660267264,14376834372174923632,4 --trace-process-track-uuid=3190708990997080739 --mojo-platform-channel-handle=3740 /prefetch:1",
+      "purpose": "Owned headless verification browser",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 1387180,
+      "creationTime100ns": "134355616737363576",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "parentPid": 4014424,
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=7 --launch-time-ticks=803611583239 --field-trial-handle=1812,i,12816738815997734328,5806775138193488843,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1816,i,8853147157660267264,14376834372174923632,4 --trace-process-track-uuid=3190708992871164437 --mojo-platform-channel-handle=3840 /prefetch:1",
+      "purpose": "Owned headless verification browser",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 3045392,
+      "creationTime100ns": "134355616737406321",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "parentPid": 4014424,
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=6 --launch-time-ticks=803611587622 --field-trial-handle=1812,i,12816738815997734328,5806775138193488843,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1816,i,8853147157660267264,14376834372174923632,4 --trace-process-track-uuid=3190708991934122588 --mojo-platform-channel-handle=3852 /prefetch:1",
+      "purpose": "Owned headless verification browser",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 1498396,
+      "creationTime100ns": "134355616743086394",
+      "executable": "C:\\Python314\\python.exe",
+      "parentPid": 3600020,
+      "commandLine": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py",
+      "purpose": "Original native command ownership bridge",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 1379320,
+      "creationTime100ns": "134355616743144939",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "parentPid": 1498396,
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "purpose": "Console host of an owned temporary child",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 2968156,
+      "creationTime100ns": "134355616743715169",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 1498396,
+      "commandLine": "\"C:\\Program Files\\node.exe\" --version",
+      "purpose": "Actual node version root",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 2458960,
+      "creationTime100ns": "134355616743759047",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "parentPid": 2968156,
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "purpose": "Console host of an owned temporary child",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 2969432,
+      "creationTime100ns": "134355616749257825",
+      "executable": "C:\\Python314\\python.exe",
+      "parentPid": 3600020,
+      "commandLine": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py",
+      "purpose": "Original native command ownership bridge",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 3696912,
+      "creationTime100ns": "134355616749286968",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "parentPid": 2969432,
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "purpose": "Console host of an owned temporary child",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 579140,
+      "creationTime100ns": "134355616749872558",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 2969432,
+      "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs",
+      "purpose": "Fixed slow-command root",
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 566756,
+      "creationTime100ns": "134355616749914542",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "parentPid": 579140,
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "purpose": "Console host of an owned temporary child",
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 1039612,
+      "creationTime100ns": "134355616750271691",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 579140,
+      "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs --owned-child",
+      "purpose": "Fixed slow-command descendant",
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 1213752,
+      "creationTime100ns": "134355616754045408",
+      "executable": "C:\\Python314\\python.exe",
+      "parentPid": 3600020,
+      "commandLine": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py",
+      "purpose": "Original native command ownership bridge",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 1099344,
+      "creationTime100ns": "134355616754074729",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "parentPid": 1213752,
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "purpose": "Console host of an owned temporary child",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 2646460,
+      "creationTime100ns": "134355616754627005",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 1213752,
+      "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs",
+      "purpose": "Fixed slow-command root",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 2132828,
+      "creationTime100ns": "134355616754671553",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "parentPid": 2646460,
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "purpose": "Console host of an owned temporary child",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 1995164,
+      "creationTime100ns": "134355616755034071",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 2646460,
+      "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs --owned-child",
+      "purpose": "Fixed slow-command descendant",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 3478352,
+      "creationTime100ns": "134355616755907678",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 497040,
+      "commandLine": "\"C:\\Program Files\\node.exe\" \"C:\\Program Files\\node_modules\\npm\\bin\\npm-cli.js\" start",
+      "purpose": "Actual npm entry point / local qualification",
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 2890976,
+      "creationTime100ns": "134355616755936310",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "parentPid": 3478352,
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "purpose": "Console host of an owned temporary child",
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 595028,
+      "creationTime100ns": "134355616757225441",
+      "executable": "C:\\Windows\\System32\\cmd.exe",
+      "parentPid": 3478352,
+      "commandLine": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c node test/m1-serve.mjs",
+      "purpose": "Disposable actual Agent / Workroom server",
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 106180,
+      "creationTime100ns": "134355616757365275",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 595028,
+      "commandLine": "node  test/m1-serve.mjs",
+      "purpose": "Disposable actual Agent / Workroom server",
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "role": "Owned M6 descendant",
+      "pid": 3709656,
+      "creationTime100ns": "134355616758595211",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "parentPid": 4014424,
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=chrome.mojom.ProcessorMetrics --lang=en-US --service-sandbox-type=none --no-sandbox --mute-audio --video-capture-use-gpu-memory-buffer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-tJJqQN\" --no-pre-read-main-dll --field-trial-handle=1812,i,12816738815997734328,5806775138193488843,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1816,i,8853147157660267264,14376834372174923632,4 --trace-process-track-uuid=3190708993808206286 --mojo-platform-channel-handle=4980 /prefetch:14",
+      "purpose": "Owned headless verification browser",
+      "exitSignaled": true,
+      "exitCode": 0
+    }
+  ],
+  "launches": [
+    {
+      "event": "spawn",
+      "parentPid": 1348308,
+      "pid": 1458156,
+      "executable": "C:\\WINDOWS\\system32\\cmd.exe",
+      "argv": [
+        "C:\\WINDOWS\\system32\\cmd.exe",
+        "/d",
+        "/s",
+        "/c",
+        "node test/m1-serve.mjs"
+      ],
+      "at": "2026-10-04T04:27:52.220Z"
+    },
+    {
+      "event": "spawn",
+      "parentPid": 3600020,
+      "pid": 1498396,
+      "executable": "C:\\Python314\\python.exe",
+      "argv": [
+        "C:\\Python314\\python.exe",
+        "-I",
+        "-B",
+        "D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py"
+      ],
+      "at": "2026-10-04T04:27:54.312Z"
+    },
+    {
+      "event": "close",
+      "parentPid": 3600020,
+      "pid": 1498396,
+      "exitCode": 0,
+      "signal": null,
+      "at": "2026-10-04T04:27:54.406Z"
+    },
+    {
+      "event": "spawn",
+      "parentPid": 3600020,
+      "pid": 2969432,
+      "executable": "C:\\Python314\\python.exe",
+      "argv": [
+        "C:\\Python314\\python.exe",
+        "-I",
+        "-B",
+        "D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py"
+      ],
+      "at": "2026-10-04T04:27:54.926Z"
+    },
+    {
+      "event": "close",
+      "parentPid": 3600020,
+      "pid": 2969432,
+      "exitCode": 0,
+      "signal": null,
+      "at": "2026-10-04T04:27:55.123Z"
+    },
+    {
+      "event": "spawn",
+      "parentPid": 3600020,
+      "pid": 1213752,
+      "executable": "C:\\Python314\\python.exe",
+      "argv": [
+        "C:\\Python314\\python.exe",
+        "-I",
+        "-B",
+        "D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py"
+      ],
+      "at": "2026-10-04T04:27:55.405Z"
+    },
+    {
+      "event": "close",
+      "parentPid": 1348308,
+      "pid": 1458156,
+      "exitCode": 1,
+      "signal": null,
+      "at": "2026-10-04T04:27:55.562Z"
+    },
+    {
+      "event": "spawn",
+      "parentPid": 3478352,
+      "pid": 595028,
+      "executable": "C:\\WINDOWS\\system32\\cmd.exe",
+      "argv": [
+        "C:\\WINDOWS\\system32\\cmd.exe",
+        "/d",
+        "/s",
+        "/c",
+        "node test/m1-serve.mjs"
+      ],
+      "at": "2026-10-04T04:27:55.728Z"
+    },
+    {
+      "event": "close",
+      "parentPid": 3478352,
+      "pid": 595028,
+      "exitCode": 1,
+      "signal": null,
+      "at": "2026-10-04T04:27:56.462Z"
+    }
+  ]
+}

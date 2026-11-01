@@ -1,0 +1,11 @@
+{
+  "status": "FAIL",
+  "rootPid": 1872116,
+  "rootExitCode": 1,
+  "timedOut": false,
+  "cleanupVerified": true,
+  "error": "execution cancelled; root exited with nonzero code",
+  "cancelled": true,
+  "stdout": "",
+  "stderr": ""
+}

@@ -1,0 +1,43 @@
+{
+  "id": "f5a8103b-7f64-4a9b-b301-4b884e8d7945",
+  "title": "Interrupted execution",
+  "description": "",
+  "label": "",
+  "status": "open",
+  "revision": 4,
+  "createdAt": "2026-10-04T00:41:11.825Z",
+  "updatedAt": "2026-10-04T00:41:12.424Z",
+  "proposal": {
+    "command": "node --version",
+    "cwd": "."
+  },
+  "proposalStatus": "failed",
+  "execution": {
+    "id": "b89e58ca-0fca-4cc2-91b3-ac7a321f495c",
+    "taskId": "f5a8103b-7f64-4a9b-b301-4b884e8d7945",
+    "proposalRevision": 2,
+    "command": "node --version",
+    "cwd": ".",
+    "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\m4-link",
+    "argv": [
+      "C:\\Program Files\\node.exe",
+      "--version"
+    ],
+    "state": "failed",
+    "startedAt": "2026-10-04T00:41:11.852Z",
+    "finishedAt": "2026-10-04T00:41:12.424Z",
+    "result": {
+      "status": "UNKNOWN",
+      "outcome": "unknown",
+      "reason": "server_restart",
+      "rootPid": null,
+      "rootExitCode": null,
+      "timedOut": null,
+      "cleanupVerified": null,
+      "error": "Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.",
+      "stdout": null,
+      "stderr": null
+    },
+    "approvalRevision": 2
+  }
+}

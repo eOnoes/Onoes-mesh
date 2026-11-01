@@ -1,0 +1,38 @@
+{
+  "event": "verified",
+  "action": "kill-caller",
+  "identities": [
+    {
+      "role": "caller",
+      "pid": 2367860,
+      "creationTime100ns": "134355568773995786",
+      "executable": "C:\\Program Files\\node.exe",
+      "exitSignaled": true
+    },
+    {
+      "role": "bridge",
+      "pid": 1055048,
+      "creationTime100ns": "134355568778889330",
+      "executable": "C:\\Python314\\python.exe",
+      "parentPid": 2367860,
+      "exitSignaled": true
+    },
+    {
+      "role": "root",
+      "pid": 607804,
+      "creationTime100ns": "134355568779593888",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 1055048,
+      "exitSignaled": true
+    },
+    {
+      "role": "descendant",
+      "pid": 2827576,
+      "creationTime100ns": "134355568780059157",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 607804,
+      "exitSignaled": true
+    }
+  ],
+  "elapsedMs": 12.11230002809316
+}

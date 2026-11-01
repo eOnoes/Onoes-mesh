@@ -1,0 +1,53 @@
+{
+  "provenance": "disposable process input; not a live tailnet observation",
+  "calls": [
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 4037000,
+      "input": "D:\\Dev\\Onoes-Mesh-wt\\m5-node-probes\\test\\app03-m5-node-probes-UgeH3s\\input-6.json"
+    },
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 2821708,
+      "input": "D:\\Dev\\Onoes-Mesh-wt\\m5-node-probes\\test\\app03-m5-node-probes-UgeH3s\\input-7.json"
+    }
+  ],
+  "exits": [
+    {
+      "pid": 4037000,
+      "exitCode": 0,
+      "signalCode": null
+    },
+    {
+      "pid": 2821708,
+      "exitCode": 1,
+      "signalCode": null
+    }
+  ]
+}

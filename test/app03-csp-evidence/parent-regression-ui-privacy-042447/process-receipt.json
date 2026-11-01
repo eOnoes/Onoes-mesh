@@ -1,0 +1,156 @@
+{
+  "label": "parent-regression-ui-privacy-042447",
+  "worktree": "D:\\Dev\\Onoes-Mesh",
+  "launch": [
+    "C:/Program Files/node.exe",
+    "--test",
+    "--test-timeout=60000",
+    "test/owner-deny-cancel-ui.test.mjs",
+    "test/ui.test.mjs",
+    "test/privacy01.test.mjs",
+    "test/m3-idempotent-ui.test.mjs",
+    "test/m3-crash-compose-ui.test.mjs",
+    "test/m3-crash-recovery-ui.test.mjs"
+  ],
+  "identities": [
+    {
+      "pid": 2111164,
+      "parentPid": 857624,
+      "creationTime100ns": "134355614870045411",
+      "executable": "C:\\Python314\\pythonw.exe",
+      "argv": "C:/Python314/pythonw.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-csp-evidence\\supervisor.py parent-regression-ui-privacy-042447 \"C:/Program Files/node.exe\" --test --test-timeout=60000 test/owner-deny-cancel-ui.test.mjs test/ui.test.mjs test/privacy01.test.mjs test/m3-idempotent-ui.test.mjs test/m3-crash-compose-ui.test.mjs test/m3-crash-recovery-ui.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-ui-privacy-042447 console-free supervisor",
+      "ancestry": [
+        857624
+      ],
+      "exitSignaled": false
+    },
+    {
+      "pid": 163824,
+      "parentPid": 2111164,
+      "creationTime100ns": "134355614872621940",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:/Program Files/node.exe\" --test --test-timeout=60000 test/owner-deny-cancel-ui.test.mjs test/ui.test.mjs test/privacy01.test.mjs test/m3-idempotent-ui.test.mjs test/m3-crash-compose-ui.test.mjs test/m3-crash-recovery-ui.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-ui-privacy-042447 root test command",
+      "ancestry": [
+        2111164
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2898724,
+      "parentPid": 163824,
+      "creationTime100ns": "134355614872673067",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-ui-privacy-042447 owned descendant conhost.exe",
+      "ancestry": [
+        163824,
+        2111164
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 622424,
+      "parentPid": 163824,
+      "creationTime100ns": "134355614873052740",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --use-largepages=off --trace-event-file-pattern=node_trace.${rotation}.log --v8-pool-size=4 --node-snapshot --cpu-prof-interval=1000 --report-signal=SIGUSR2 --tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA --secure-heap=0 --secure-heap-min=2 --stack-trace-limit=10 --test-isolation=process --network-family-autoselection-attempt-timeout=250 --heapsnapshot-near-heap-limit=0 --heap-prof-interval=524288 --max-http-header-size=16384 --test-concurrency=0 --test-timeout=60000 --test-coverage-branches=0 --test-coverage-functions=0 --test-coverage-lines=0 --watch-kill-signal=SIGTERM --inspect-port=127.0.0.1:9229 --inspect-publish-uid=stderr,http --test-timeout=60000 test\\m3-crash-compose-ui.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-ui-privacy-042447 owned descendant node.exe",
+      "ancestry": [
+        163824,
+        2111164
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 492920,
+      "parentPid": 163824,
+      "creationTime100ns": "134355614873109064",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --use-largepages=off --trace-event-file-pattern=node_trace.${rotation}.log --v8-pool-size=4 --node-snapshot --cpu-prof-interval=1000 --report-signal=SIGUSR2 --tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA --secure-heap=0 --secure-heap-min=2 --stack-trace-limit=10 --test-isolation=process --network-family-autoselection-attempt-timeout=250 --heapsnapshot-near-heap-limit=0 --heap-prof-interval=524288 --max-http-header-size=16384 --test-concurrency=0 --test-timeout=60000 --test-coverage-branches=0 --test-coverage-functions=0 --test-coverage-lines=0 --watch-kill-signal=SIGTERM --inspect-port=127.0.0.1:9229 --inspect-publish-uid=stderr,http --test-timeout=60000 test\\m3-crash-recovery-ui.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-ui-privacy-042447 owned descendant node.exe",
+      "ancestry": [
+        163824,
+        2111164
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3461908,
+      "parentPid": 163824,
+      "creationTime100ns": "134355614873156897",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --use-largepages=off --trace-event-file-pattern=node_trace.${rotation}.log --v8-pool-size=4 --node-snapshot --cpu-prof-interval=1000 --report-signal=SIGUSR2 --tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA --secure-heap=0 --secure-heap-min=2 --stack-trace-limit=10 --test-isolation=process --network-family-autoselection-attempt-timeout=250 --heapsnapshot-near-heap-limit=0 --heap-prof-interval=524288 --max-http-header-size=16384 --test-concurrency=0 --test-timeout=60000 --test-coverage-branches=0 --test-coverage-functions=0 --test-coverage-lines=0 --watch-kill-signal=SIGTERM --inspect-port=127.0.0.1:9229 --inspect-publish-uid=stderr,http --test-timeout=60000 test\\m3-idempotent-ui.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-ui-privacy-042447 owned descendant node.exe",
+      "ancestry": [
+        163824,
+        2111164
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1168464,
+      "parentPid": 163824,
+      "creationTime100ns": "134355614873214270",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --use-largepages=off --trace-event-file-pattern=node_trace.${rotation}.log --v8-pool-size=4 --node-snapshot --cpu-prof-interval=1000 --report-signal=SIGUSR2 --tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA --secure-heap=0 --secure-heap-min=2 --stack-trace-limit=10 --test-isolation=process --network-family-autoselection-attempt-timeout=250 --heapsnapshot-near-heap-limit=0 --heap-prof-interval=524288 --max-http-header-size=16384 --test-concurrency=0 --test-timeout=60000 --test-coverage-branches=0 --test-coverage-functions=0 --test-coverage-lines=0 --watch-kill-signal=SIGTERM --inspect-port=127.0.0.1:9229 --inspect-publish-uid=stderr,http --test-timeout=60000 test\\owner-deny-cancel-ui.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-ui-privacy-042447 owned descendant node.exe",
+      "ancestry": [
+        163824,
+        2111164
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3676424,
+      "parentPid": 163824,
+      "creationTime100ns": "134355614873263101",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --use-largepages=off --trace-event-file-pattern=node_trace.${rotation}.log --v8-pool-size=4 --node-snapshot --cpu-prof-interval=1000 --report-signal=SIGUSR2 --tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA --secure-heap=0 --secure-heap-min=2 --stack-trace-limit=10 --test-isolation=process --network-family-autoselection-attempt-timeout=250 --heapsnapshot-near-heap-limit=0 --heap-prof-interval=524288 --max-http-header-size=16384 --test-concurrency=0 --test-timeout=60000 --test-coverage-branches=0 --test-coverage-functions=0 --test-coverage-lines=0 --watch-kill-signal=SIGTERM --inspect-port=127.0.0.1:9229 --inspect-publish-uid=stderr,http --test-timeout=60000 test\\privacy01.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-ui-privacy-042447 owned descendant node.exe",
+      "ancestry": [
+        163824,
+        2111164
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1432304,
+      "parentPid": 163824,
+      "creationTime100ns": "134355614873314739",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --use-largepages=off --trace-event-file-pattern=node_trace.${rotation}.log --v8-pool-size=4 --node-snapshot --cpu-prof-interval=1000 --report-signal=SIGUSR2 --tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA --secure-heap=0 --secure-heap-min=2 --stack-trace-limit=10 --test-isolation=process --network-family-autoselection-attempt-timeout=250 --heapsnapshot-near-heap-limit=0 --heap-prof-interval=524288 --max-http-header-size=16384 --test-concurrency=0 --test-timeout=60000 --test-coverage-branches=0 --test-coverage-functions=0 --test-coverage-lines=0 --watch-kill-signal=SIGTERM --inspect-port=127.0.0.1:9229 --inspect-publish-uid=stderr,http --test-timeout=60000 test\\ui.test.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-ui-privacy-042447 owned descendant node.exe",
+      "ancestry": [
+        163824,
+        2111164
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    }
+  ],
+  "windows": [],
+  "acquisitionRaces": [],
+  "commandExit": 0,
+  "protectedBefore": 200,
+  "protectedAfter": 200,
+  "descendantsExited": true,
+  "hiddenWindows": true
+}

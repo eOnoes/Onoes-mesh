@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <title>Onoes-mesh synthetic local trial</title>
+  <rect width="192" height="192" fill="#000000"/>
+  <rect x="16" y="16" width="160" height="160" fill="#111111"/>
+  <path d="M48 136V56h24l24 40 24-40h24v80h-20V88l-28 44-28-44v48Z" fill="#FFFFFF"/>
+  <rect x="144" y="144" width="16" height="16" fill="#39FF14"/>
+</svg>

@@ -1,0 +1,139 @@
+{
+  "filter": "open",
+  "openHeader": "app",
+  "openCard": "shape",
+  "showFinished": true,
+  "showTrash": false,
+  "headers": [
+    {
+      "id": "app",
+      "name": "App build/edit"
+    },
+    {
+      "id": "research",
+      "name": "Research"
+    },
+    {
+      "id": "model-test",
+      "name": "Model test"
+    },
+    {
+      "id": "house",
+      "name": "House"
+    }
+  ],
+  "cards": [
+    {
+      "id": "shape",
+      "header": "app",
+      "title": "To-do tab shape",
+      "note": "Headers, play, and trash. Sample only.",
+      "who": "Echo",
+      "added": "2026-10-08T18:40:00",
+      "state": "sample",
+      "line": "sample only",
+      "pinned": false,
+      "trashedAt": null,
+      "sample": true,
+      "sampleState": "running"
+    },
+    {
+      "id": "wire",
+      "header": "app",
+      "title": "Wire the shell",
+      "note": "Coding handoff. Sample line names Codex because Echo already handed it. View is the handoff.",
+      "who": "Eddie",
+      "added": "2026-10-08T16:10:00",
+      "state": "sample",
+      "line": "sample only",
+      "pinned": false,
+      "trashedAt": null,
+      "sample": true,
+      "sampleState": "paused"
+    },
+    {
+      "id": "column",
+      "header": "app",
+      "title": "Column layout chosen",
+      "note": "Option 4. Menu left, settings right. This card is finished, not trash.",
+      "who": "Eddie",
+      "added": "2026-10-08T12:00:00",
+      "state": "sample",
+      "line": "sample only",
+      "pinned": false,
+      "trashedAt": null,
+      "sample": true,
+      "sampleState": "finished"
+    },
+    {
+      "id": "ngram",
+      "header": "model-test",
+      "title": "N-gram shard on D",
+      "note": "The n-gram shard stays on the D SSD. Sample only.",
+      "who": "Eddie",
+      "added": "2026-10-08T15:20:00",
+      "state": "sample",
+      "line": "sample only",
+      "pinned": false,
+      "trashedAt": null,
+      "sample": true,
+      "sampleState": "ready"
+    },
+    {
+      "id": "iq3",
+      "header": "model-test",
+      "title": "IQ3_S not loaded",
+      "note": "Weight is on disk. Do not load it from this page.",
+      "who": "Eddie",
+      "added": "2026-10-08T11:00:00",
+      "state": "sample",
+      "line": "sample only",
+      "pinned": false,
+      "trashedAt": null,
+      "sample": true,
+      "sampleState": "ready"
+    },
+    {
+      "id": "forge",
+      "header": "app",
+      "title": "Leave Forge tree",
+      "note": "Do not clone over the hardening worktree. Sample card. Play would only change this local line.",
+      "who": "Echo",
+      "added": "2026-10-07T20:00:00",
+      "state": "sample",
+      "line": "sample only",
+      "pinned": false,
+      "trashedAt": null,
+      "sample": true,
+      "sampleState": "ready"
+    },
+    {
+      "id": "scout",
+      "header": "house",
+      "title": "Scout stays stopped",
+      "note": "Scout, Quill, and Clerk are stopped. This line does not name them until a real handoff.",
+      "who": "Echo",
+      "added": "2026-10-07T18:00:00",
+      "state": "sample",
+      "line": "sample only",
+      "pinned": false,
+      "trashedAt": null,
+      "sample": true,
+      "sampleState": "ready"
+    },
+    {
+      "id": "scrap",
+      "header": "app",
+      "title": "Scrap the old shell",
+      "note": "A scrapped plan. Held so it can be recovered. Not a fifth header.",
+      "who": "Eddie",
+      "added": "2026-09-28T12:00:00",
+      "state": "trash",
+      "line": "sample only",
+      "pinned": false,
+      "trashedAt": "2026-10-05T12:00:00",
+      "sample": true,
+      "sampleState": "trash"
+    }
+  ]
+}

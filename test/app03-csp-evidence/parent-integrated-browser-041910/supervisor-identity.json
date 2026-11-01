@@ -1,0 +1,13 @@
+{
+  "pid": 3396028,
+  "parentPid": 2364376,
+  "creationTime100ns": "134355611508024504",
+  "executable": "C:\\Python314\\pythonw.exe",
+  "argv": "C:/Python314/pythonw.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-csp-evidence\\supervisor.py parent-integrated-browser-041910 \"C:/Program Files/node.exe\" test/fix-relay-csp-native.mjs",
+  "worktree": "D:\\Dev\\Onoes-Mesh",
+  "purpose": "parent-integrated-browser-041910 console-free supervisor",
+  "ancestry": [
+    2364376
+  ],
+  "exitSignaled": false
+}

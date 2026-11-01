@@ -1,0 +1,636 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "url": "http://127.0.0.1:56395",
+  "dataDir": "test/app03-owner-inspect-after-831fce8b-f48a-4104-b2da-53c1b9275eaf",
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ],
+  "responses": [
+    {
+      "route": "/api/trial-session/bootstrap",
+      "status": 201
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/commands",
+      "status": 200
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 201
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 201
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/commands",
+      "status": 200
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18/proposal",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18/approve",
+      "status": 202
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18/proposal",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18/deny",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18/proposal",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18/approve",
+      "status": 202
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18/cancel",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/commands",
+      "status": 200
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/commands",
+      "status": 200
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 409
+    },
+    {
+      "route": "/api/tasks/e6c03ed7-5327-4fe5-a256-4bfee9914f18",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/trial-session/logout",
+      "status": 204
+    }
+  ],
+  "stages": [
+    {
+      "label": "created inspection",
+      "target": "inspection-heading",
+      "scrollY": 467,
+      "top": 673.515625,
+      "bottom": 695.109375,
+      "height": 21.59375,
+      "focus": "inspection-heading",
+      "text": "Inspect: Phone inspection check",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Stored description from disposable UI",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 1",
+      "titleBounds": {
+        "top": 821.203125,
+        "bottom": 868
+      },
+      "descriptionBounds": {
+        "top": 903.5,
+        "bottom": 981.5
+      },
+      "resultBounds": {
+        "top": 1360.140625,
+        "bottom": 1403.515625
+      },
+      "proposal": "",
+      "state": "No proposal saved. Proposing grants no execution approval."
+    },
+    {
+      "label": "before selecting saved task",
+      "target": "execution-result",
+      "scrollY": 847,
+      "top": 0,
+      "bottom": 0,
+      "height": 0,
+      "focus": "tab-workroom",
+      "text": "",
+      "bannerBottom": 55,
+      "title": "",
+      "description": "",
+      "identity": "",
+      "titleBounds": {
+        "top": 0,
+        "bottom": 0
+      },
+      "descriptionBounds": {
+        "top": 0,
+        "bottom": 0
+      },
+      "resultBounds": {
+        "top": 0,
+        "bottom": 0
+      },
+      "proposal": "",
+      "state": ""
+    },
+    {
+      "label": "selected task inspection",
+      "target": "inspection-heading",
+      "scrollY": 847,
+      "top": 293.515625,
+      "bottom": 315.109375,
+      "height": 21.59375,
+      "focus": "inspection-heading",
+      "text": "Inspect: Phone inspection check",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Stored description from disposable UI",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 1",
+      "titleBounds": {
+        "top": 441.203125,
+        "bottom": 488
+      },
+      "descriptionBounds": {
+        "top": 523.5,
+        "bottom": 601.5
+      },
+      "resultBounds": {
+        "top": 980.140625,
+        "bottom": 1023.515625
+      },
+      "proposal": "",
+      "state": "No proposal saved. Proposing grants no execution approval."
+    },
+    {
+      "label": "not run details",
+      "target": "result-heading",
+      "scrollY": 1323,
+      "top": 411.171875,
+      "bottom": 432.765625,
+      "height": 21.59375,
+      "focus": "result-heading",
+      "text": "Command proposal and execution result",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Stored description from disposable UI",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 1",
+      "titleBounds": {
+        "top": -34.796875,
+        "bottom": 12
+      },
+      "descriptionBounds": {
+        "top": 47.5,
+        "bottom": 125.5
+      },
+      "resultBounds": {
+        "top": 504.140625,
+        "bottom": 547.515625
+      },
+      "proposal": "",
+      "state": "No proposal saved. Proposing grants no execution approval."
+    },
+    {
+      "label": "completed task selection",
+      "target": "inspection-heading",
+      "scrollY": 729,
+      "top": 411.515625,
+      "bottom": 433.109375,
+      "height": 21.59375,
+      "focus": "inspection-heading",
+      "text": "Inspect: Phone inspection check",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Stored description from disposable UI",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 4",
+      "titleBounds": {
+        "top": 559.203125,
+        "bottom": 606
+      },
+      "descriptionBounds": {
+        "top": 641.5,
+        "bottom": 719.5
+      },
+      "resultBounds": {
+        "top": 1111.046875,
+        "bottom": 1327.921875
+      },
+      "proposal": "{\"command\":\"node --version\",\"cwd\":\".\"}",
+      "state": "Completed · exit code 0 · owned cleanup verified."
+    },
+    {
+      "label": "actual completed result",
+      "target": "result-heading",
+      "scrollY": 1323,
+      "top": 411.171875,
+      "bottom": 432.765625,
+      "height": 21.59375,
+      "focus": "result-heading",
+      "text": "Command proposal and execution result",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Stored description from disposable UI",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 4",
+      "titleBounds": {
+        "top": -34.796875,
+        "bottom": 12
+      },
+      "descriptionBounds": {
+        "top": 47.5,
+        "bottom": 125.5
+      },
+      "resultBounds": {
+        "top": 517.046875,
+        "bottom": 733.921875
+      },
+      "proposal": "{\"command\":\"node --version\",\"cwd\":\".\"}",
+      "state": "Completed · exit code 0 · owned cleanup verified."
+    },
+    {
+      "label": "return to editable details",
+      "target": "inspection-heading",
+      "scrollY": 729,
+      "top": 411.515625,
+      "bottom": 433.109375,
+      "height": 21.59375,
+      "focus": "inspection-heading",
+      "text": "Inspect: Phone inspection check",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Stored description from disposable UI",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 4",
+      "titleBounds": {
+        "top": 559.203125,
+        "bottom": 606
+      },
+      "descriptionBounds": {
+        "top": 641.5,
+        "bottom": 719.5
+      },
+      "resultBounds": {
+        "top": 1111.046875,
+        "bottom": 1327.921875
+      },
+      "proposal": "{\"command\":\"node --version\",\"cwd\":\".\"}",
+      "state": "Completed · exit code 0 · owned cleanup verified."
+    },
+    {
+      "label": "cancelled task selection",
+      "target": "inspection-heading",
+      "scrollY": 729,
+      "top": 411.515625,
+      "bottom": 433.109375,
+      "height": 21.59375,
+      "focus": "inspection-heading",
+      "text": "Inspect: Phone inspection check",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Edited and saved on phone viewport",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 12",
+      "titleBounds": {
+        "top": 559.203125,
+        "bottom": 606
+      },
+      "descriptionBounds": {
+        "top": 641.5,
+        "bottom": 719.5
+      },
+      "resultBounds": {
+        "top": 1111.046875,
+        "bottom": 1392.984375
+      },
+      "proposal": "{\"command\":\"node lib/slow-command.mjs\",\"cwd\":\".\"}",
+      "state": "Failed · inspect the process result and cleanup below."
+    },
+    {
+      "label": "actual cancellation details",
+      "target": "result-heading",
+      "scrollY": 1323,
+      "top": 411.171875,
+      "bottom": 432.765625,
+      "height": 21.59375,
+      "focus": "result-heading",
+      "text": "Command proposal and execution result",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Edited and saved on phone viewport",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 12",
+      "titleBounds": {
+        "top": -34.796875,
+        "bottom": 12
+      },
+      "descriptionBounds": {
+        "top": 47.5,
+        "bottom": 125.5
+      },
+      "resultBounds": {
+        "top": 517.046875,
+        "bottom": 798.984375
+      },
+      "proposal": "{\"command\":\"node lib/slow-command.mjs\",\"cwd\":\".\"}",
+      "state": "Failed · inspect the process result and cleanup below."
+    },
+    {
+      "label": "stored task after reload",
+      "target": "inspection-heading",
+      "scrollY": 847,
+      "top": 293.515625,
+      "bottom": 315.109375,
+      "height": 21.59375,
+      "focus": "inspection-heading",
+      "text": "Inspect: Phone inspection check",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Edited and saved on phone viewport",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 12",
+      "titleBounds": {
+        "top": 441.203125,
+        "bottom": 488
+      },
+      "descriptionBounds": {
+        "top": 523.5,
+        "bottom": 601.5
+      },
+      "resultBounds": {
+        "top": 993.046875,
+        "bottom": 1274.984375
+      },
+      "proposal": "{\"command\":\"node lib/slow-command.mjs\",\"cwd\":\".\"}",
+      "state": "Failed · inspect the process result and cleanup below."
+    },
+    {
+      "label": "stored cancellation after reload",
+      "target": "result-heading",
+      "scrollY": 1323,
+      "top": 411.171875,
+      "bottom": 432.765625,
+      "height": 21.59375,
+      "focus": "result-heading",
+      "text": "Command proposal and execution result",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Edited and saved on phone viewport",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 12",
+      "titleBounds": {
+        "top": -34.796875,
+        "bottom": 12
+      },
+      "descriptionBounds": {
+        "top": 47.5,
+        "bottom": 125.5
+      },
+      "resultBounds": {
+        "top": 517.046875,
+        "bottom": 798.984375
+      },
+      "proposal": "{\"command\":\"node lib/slow-command.mjs\",\"cwd\":\".\"}",
+      "state": "Failed · inspect the process result and cleanup below."
+    },
+    {
+      "label": "actual stale-save error",
+      "target": "message",
+      "scrollY": 0,
+      "top": 336.375,
+      "bottom": 360.375,
+      "height": 24,
+      "focus": "message",
+      "text": "Task changed. Reload current task before editing.",
+      "bannerBottom": 118,
+      "title": "Phone inspection check",
+      "description": "Edited and saved on phone viewport",
+      "identity": "Task e6c03ed7-5327-4fe5-a256-4bfee9914f18 · revision 12",
+      "titleBounds": {
+        "top": 1288.203125,
+        "bottom": 1335
+      },
+      "descriptionBounds": {
+        "top": 1370.5,
+        "bottom": 1448.5
+      },
+      "resultBounds": {
+        "top": 1840.046875,
+        "bottom": 2121.984375
+      },
+      "proposal": "{\"command\":\"node lib/slow-command.mjs\",\"cwd\":\".\"}",
+      "state": "Failed · inspect the process result and cleanup below."
+    }
+  ],
+  "completedResult": "Run 2ec2674e-4b26-4004-a5be-1c2bf20e8df9\nState: completed\nCancelled: false\nExit code: 0\nCleanup verified: true\nError: none\nstdout:\nv24.14.0\r\n\nstderr:\n",
+  "cancelledResult": "Run 75d3e675-a0ad-40ff-b3b8-306a17421fdd\nState: failed\nCancelled: true\nExit code: 1\nCleanup verified: true\nError: execution cancelled; root exited with nonzero code\nstdout:\nM3 slow root 757872; descendant 2566708; started\nM3 slow descendant 2566708; started\n\nstderr:\n",
+  "freshness": {
+    "/": {
+      "status": 200,
+      "fromServiceWorker": true,
+      "sha256": "8f944a646669ac9549d521b67e3f64a0a8584b440d0aa864b40fe30aaeeb0f87",
+      "localHash": "8f944a646669ac9549d521b67e3f64a0a8584b440d0aa864b40fe30aaeeb0f87"
+    },
+    "/app.js": {
+      "status": 200,
+      "fromServiceWorker": true,
+      "sha256": "2f18a593b6725c1e1a83c782726bee0b08ffeec40ce72a42cfee6e38ac476bc5",
+      "localHash": "2f18a593b6725c1e1a83c782726bee0b08ffeec40ce72a42cfee6e38ac476bc5"
+    }
+  },
+  "serviceWorker": {
+    "controlled": true,
+    "script": "http://127.0.0.1:56395/sw.js"
+  },
+  "pass": true
+}

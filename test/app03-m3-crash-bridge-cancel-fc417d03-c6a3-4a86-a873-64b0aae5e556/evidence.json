@@ -1,0 +1,61 @@
+{
+  "outcome": "interrupted",
+  "result": {
+    "result": {
+      "status": "FAIL",
+      "rootPid": 2066964,
+      "rootExitCode": 1,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": "execution cancelled; root exited with nonzero code",
+      "cancelled": true,
+      "stdout": "M3 slow root 2066964; descendant 1677892; started\nM3 slow descendant 1677892; started\n",
+      "stderr": ""
+    },
+    "elapsedMs": 440.48150000000004,
+    "callerPid": 1024356
+  },
+  "observation": {
+    "event": "verified",
+    "action": "wait",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 1024356,
+        "creationTime100ns": "134355452298497048",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 2816616,
+        "creationTime100ns": "134355452298893282",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 1024356,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 2066964,
+        "creationTime100ns": "134355452299458696",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 2816616,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 1677892,
+        "creationTime100ns": "134355452299823798",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 2066964,
+        "exitSignaled": true
+      }
+    ],
+    "cleanupVerified": true,
+    "elapsedMs": 64.785
+  },
+  "output": "{\"result\":{\"status\":\"FAIL\",\"rootPid\":2066964,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 2066964; descendant 1677892; started\\nM3 slow descendant 1677892; started\\n\",\"stderr\":\"\"},\"elapsedMs\":440.48150000000004,\"callerPid\":1024356}\n",
+  "errors": "",
+  "elapsedMs": 495.0007999999998,
+  "nativeResultUnavailable": false
+}

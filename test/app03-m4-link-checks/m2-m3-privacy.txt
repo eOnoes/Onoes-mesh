@@ -1,0 +1,73 @@
+(node:2399264) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+M2 APPROVAL PROOF: URL http://127.0.0.1:49356/; task 51b8d61d-a328-4473-ae91-e45149b230f7; run 44c68148-dd09-4d48-8996-5a818ae77810; root PID 864652; stdout "v24.14.0\r\n"; exit 0; cleanup true; server PID 846296 -> 3030832; denial has no run; retained test/app03-m2-approve-b47467d8-ac17-43d5-8a4a-e861068e2e29
+✔ M2 approval real HTTP/process/SQLite: exact node result survives server restart; repropose/deny creates no run (643.4366ms)
+✔ M2 deny real HTTP: executor tripwire remains untouched through propose, deny and restart (252.0725ms)
+✔ M2 approve/deny actual boundary: auth, origin, CSRF, revision, fields and methods fail without executor/records (165.7617ms)
+✔ M2 git status executes only fixed argv at actual repo root through native custody (406.3883ms)
+✔ M2 invalid persistence rejects approval/denial and preserves exact bytes with no executor (84.4604ms)
+✔ M2 invalid completed cleanup cannot be accepted after restart; data remains intact (375.7623ms)
+✔ M2 additive v2 migration preserves saved pending proposal and all task fields; deny still has zero runs (195.5762ms)
+✔ M2 store busy claim prevents proposal replacement and duplicate decisions before any process runs (124.7466ms)
+✔ M2 unavailable bridge persists failure without fabricated exit/cleanup and permits a new proposal (185.1813ms)
+(node:1522092) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+M2 restart proof: http://127.0.0.1:49358/; task fbbf3cbd-d5be-4d6f-bd23-545ddc3678d9; store test/app03-m2-approve-proposal-http-a58f6070-bdbf-49a0-a335-4fc2a74142fb; PID 1832520 -> 2949132; exact pending {"command":"node --version","cwd":"."}; executor tripwire untouched
+✔ M2 real HTTP + SQLite: saved task -> proposal -> read -> actual process restart -> same pending proposal, no executor (308.1512ms)
+✔ M2 real HTTP: exact whitelist/cwd/fields and task revision; one current proposal; edits preserve proposals (193.3959ms)
+✔ M2 real HTTP: unadmitted, origin, CSRF and authority claims denied without writes or executor (134.365ms)
+✔ M2 additive migration preserves an existing v1 task and persists its proposal across real restart (294.8903ms)
+✔ M2 preserves invalid existing data without migration or proposal writes (87.4043ms)
+✔ M3 UI selects a fresh task without an execution and keeps decisions disabled (5.4235ms)
+✔ M3 UI releases Approve lock, Cancel targets current run and stays honest pending actual response (2.7754ms)
+✔ M3 UI reads a reopened running result without approving and ignores delayed cancel after private clearance (3.0775ms)
+(node:1471904) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+M3 COMPOSE CANCEL {"dataDir":"test/app03-m3-crash-compose-cancel-6385a76a-ecb6-4a07-a41a-b95c97fb25e0","taskId":"3d977fe6-9a1e-4499-90eb-350f5a1cb2e0","runId":"dd2400b9-310d-43da-9433-9b3db3a70eba","result":{"status":"FAIL","rootPid":2574628,"rootExitCode":1,"timedOut":false,"cleanupVerified":true,"error":"execution cancelled; root exited with nonzero code","cancelled":true,"stdout":"M3 slow root 2574628; descendant 2247948; started\nM3 slow descendant 2247948; started\n","stderr":""},"elapsedMs":512.7931}
+✔ M3 composed API Cancel awaits real root/descendant cleanup, fences targets, persists and reopens actual failure (3068.0594ms)
+M3 COMPOSE CRASH {"dataDir":"test/app03-m3-crash-compose-crash-f2f942c3-3487-4e0c-8a28-19c3d3d18e21","taskId":"6d7a5be4-1314-4879-beed-50f418c20008","runId":"2be0dad2-2c61-464c-a85f-2372dd4d1dcd","servers":[{"pid":2156488,"createdAt":"2026-10-04T01:31:04.8494089Z","executable":"C:\\Program Files\\node.exe"},{"pid":795804,"createdAt":"2026-10-04T01:31:06.1930981Z","executable":"C:\\Program Files\\node.exe"},{"pid":1962560,"createdAt":"2026-10-04T01:31:07.0333464Z","executable":"C:\\Program Files\\node.exe"}],"result":{"status":"UNKNOWN","outcome":"unknown","reason":"server_restart","rootPid":null,"rootExitCode":null,"timedOut":null,"cleanupVerified":null,"error":"Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.","stdout":null,"stderr":null},"verified":{"event":"verified","action":"kill-caller","identities":[{"role":"caller","pid":2156488,"creationTime100ns":"134355510648494089","executable":"C:\\Program Files\\node.exe","exitSignaled":true},{"role":"bridge","pid":3904288,"creationTime100ns":"134355510654023373","executable":"C:\\Python314\\python.exe","parentPid":2156488,"exitSignaled":true},{"role":"root","pid":2388676,"creationTime100ns":"134355510654820646","executable":"C:\\Program Files\\node.exe","parentPid":3904288,"exitSignaled":true},{"role":"descendant","pid":1900976,"creationTime100ns":"134355510655216609","executable":"C:\\Program Files\\node.exe","parentPid":2388676,"exitSignaled":true}],"elapsedMs":8.55040003079921},"elapsedMs":812.7611000000002}
+✔ M3 actual ten-second server crash: original retained process handles exit, same store/URL recovers UNKNOWN with no replay (3059.069ms)
+(node:2039956) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ M3 startup retires approved and running attempts atomically once, without executing or inventing observations (222.8355ms)
+(node:93864) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+M3 RECOVERY PROOF: {"dataDir":"test/app03-m3-crash-recovery-8f71fd92-1149-456c-aafd-4195bf852828","taskId":"8b05cb94-a819-4c99-a051-885e2dd436d6","runId":"1b3d2bb4-7d80-47c2-8737-d286aa794b97","url":"http://127.0.0.1:49361","servers":[{"pid":812312,"createdAt":"2026-10-04T01:31:01.7961267Z","executable":"C:\\Program Files\\node.exe"},{"pid":1144460,"createdAt":"2026-10-04T01:31:03.3034017Z","executable":"C:\\Program Files\\node.exe"},{"pid":2753852,"createdAt":"2026-10-04T01:31:04.2176534Z","executable":"C:\\Program Files\\node.exe"}],"recovered":{"status":"UNKNOWN","outcome":"unknown","reason":"server_restart","rootPid":null,"rootExitCode":null,"timedOut":null,"cleanupVerified":null,"error":"Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.","stdout":null,"stderr":null}}
+✔ M3 real server restart recovers an interrupted persisted run as unknown, preserves data and never replays execution (3451.0734ms)
+✔ M3 UI: ordinary navigation clears private state, preserves nonce only, rechecks admission, reads existing run without approval (9.2609ms)
+✔ M3 UI: suspension, restored pages and cancelled navigation keep privacy clearance; invalidated server proof cannot reopen a run (7.1998ms)
+(node:1290156) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+M3 IDEMPOTENT PROOF: {"taskId":"10e83024-664b-4f84-a905-a070709a91dd","firstRun":{"id":"88d04a39-e27b-4325-980f-980c3091397f","taskId":"10e83024-664b-4f84-a905-a070709a91dd","proposalRevision":2,"command":"node --version","cwd":".","actualCwd":"D:\\Dev\\Onoes-Mesh-wt\\m4-link","argv":["C:\\Program Files\\node.exe","--version"],"state":"completed","startedAt":"2026-10-04T01:31:02.017Z","finishedAt":"2026-10-04T01:31:02.153Z","result":{"status":"PASS","rootPid":3785872,"rootExitCode":0,"timedOut":false,"cleanupVerified":true,"error":null,"stdout":"v24.14.0\r\n","stderr":""},"approvalRevision":3},"firstResultTaskRevision":5,"serverPids":[471900,3439512,1271180],"url":"http://127.0.0.1:49362","countAfterRestart":1,"countAfterDeliberateReplacement":2,"replacementRun":{"id":"1f398d86-a108-4616-8ae5-b269b5b296c7","taskId":"10e83024-664b-4f84-a905-a070709a91dd","proposalRevision":6,"command":"node --version","cwd":".","actualCwd":"D:\\Dev\\Onoes-Mesh-wt\\m4-link","argv":["C:\\Program Files\\node.exe","--version"],"state":"completed","startedAt":"2026-10-04T01:31:02.396Z","finishedAt":"2026-10-04T01:31:02.547Z","result":{"status":"PASS","rootPid":1848772,"rootExitCode":0,"timedOut":false,"cleanupVerified":true,"error":null,"stdout":"v24.14.0\r\n","stderr":""},"approvalRevision":6},"tripwireUntouched":true,"dataDir":"test/app03-m3-idempotent-b8894de5-5490-4f6f-b450-6ab890652a6a"}
+✔ M3 actual concurrent approval/replay/restart: one native result, no replay spawn, replacement fenced (781.0997ms)
+✔ M3 pending approval held in preparation rejects replacement and task-edit races without spawning (298.4787ms)
+✔ M3 additive v3 migration preserves an actual captured result and replays without execution or revision churn (614.4929ms)
+✔ PRIVACY01: valid current proof renders tasks/observations; explicit bootstrap, same-tab reload, HEAD and 204 preserved (10.3838ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after expiry (2.4676ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after observed-403 (2.9495ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after logout (2.0169ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after replacement (2.3739ms)
+✔ PRIVACY01: old 401 response cannot revoke newer valid proof (2.5393ms)
+✔ PRIVACY01: old 403 response cannot revoke newer valid proof (2.1618ms)
+✔ PRIVACY01: old network failure during body read cannot clear replacement (2.3005ms)
+✔ PRIVACY01: old abort failure during body read cannot clear replacement (2.5703ms)
+✔ PRIVACY01: pending old logout finally cannot wipe newer session (1.5933ms)
+✔ PRIVACY01: explicit admission health body delayed across expiry cannot admit stale proof (1.0081ms)
+✔ PRIVACY01: explicit admission health body delayed across observed-403 cannot admit stale proof (1.7118ms)
+✔ PRIVACY01: explicit admission health body delayed across logout cannot admit stale proof (1.1089ms)
+✔ PRIVACY01: explicit admission health body delayed across replacement cannot admit stale proof (1.3146ms)
+✔ PRIVACY01: reload admission health body delayed across expiry cannot admit stale proof (0.8665ms)
+✔ PRIVACY01: reload admission health body delayed across observed-403 cannot admit stale proof (0.9545ms)
+✔ PRIVACY01: reload admission health body delayed across logout cannot admit stale proof (0.8856ms)
+✔ PRIVACY01: reload admission health body delayed across replacement cannot admit stale proof (1.2406ms)
+✔ PRIVACY01: local expiry timer clears an already rendered private board and observations (1.3242ms)
+✔ PRIVACY01: approval controls follow current execution state and raw results clear on expiry (1.4205ms)
+✔ PRIVACY01: stale revision disables proposal decisions until the current task is loaded (1.2152ms)
+ℹ tests 47
+ℹ suites 0
+ℹ pass 47
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6222.5399

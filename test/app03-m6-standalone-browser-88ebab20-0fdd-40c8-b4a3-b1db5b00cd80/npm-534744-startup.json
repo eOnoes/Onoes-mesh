@@ -1,0 +1,32 @@
+{
+  "info": {
+    "event": "mesh_listening",
+    "pid": 2891900,
+    "url": "http://127.0.0.1:56086",
+    "previewUrl": "http://127.0.0.1:60000",
+    "dataDir": "test/app03-m6-standalone-browser-88ebab20-0fdd-40c8-b4a3-b1db5b00cd80",
+    "mode": "standalone"
+  },
+  "identity": {
+    "role": "Owned M6 descendant",
+    "pid": 2891900,
+    "creationTime100ns": "134355614727580586",
+    "executable": "C:\\Program Files\\node.exe",
+    "parentPid": 4024360,
+    "commandLine": "node  test/m1-serve.mjs",
+    "purpose": "Disposable actual Agent / Workroom server",
+    "exitSignaled": false
+  },
+  "executable": "C:\\Program Files\\node.exe",
+  "argv": [
+    "C:\\Program Files\\node.exe",
+    "C:\\Program Files\\node_modules\\npm\\bin\\npm-cli.js",
+    "start"
+  ],
+  "env": {
+    "MESH_STANDALONE": "1",
+    "MESH_RELAY": "1",
+    "MESH_DATA_DIR": "test/app03-m6-standalone-browser-88ebab20-0fdd-40c8-b4a3-b1db5b00cd80",
+    "MESH_PREVIEW_PORT": "60000"
+  }
+}

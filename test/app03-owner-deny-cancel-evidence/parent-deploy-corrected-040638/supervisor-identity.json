@@ -1,0 +1,10 @@
+{
+  "pid": 2038792,
+  "parentPid": 1740500,
+  "creationTime100ns": "134355603984907623",
+  "executable": "C:\\Python314\\python.exe",
+  "argv": "C:/Python314/python.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-owner-deny-cancel-evidence\\supervise.py parent-deploy-corrected-040638 \"C:/Program Files/node.exe\" .runner/owner-deny-cancel-labels/deploy-readonly.mjs",
+  "argvStatus": 0,
+  "purpose": "owned disposable verification descendant",
+  "visibleWindows": []
+}

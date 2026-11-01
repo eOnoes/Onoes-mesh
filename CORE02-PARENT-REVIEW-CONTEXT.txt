@@ -1,0 +1,289 @@
+#MUNCH/1 tool=get_context_bundle enc=gen1
+
+@1=build/mesh-session-pwa-v1/lib/
+@2=build/mesh-session-pwa-v1/
+@3=build/mesh-session-pwa-v1/lib/trial-session.mjs
+@4=const TRIAL_ACTOR = Object.freeze({
+  type: 'SYNTHETIC_TRIAL',
+  role: 'SYNTHETIC_TRIAL',
+  capabilities: Object.freeze(['trial:read', 'trial:mutate']),
+});
+@5=build/
+@6=const forbidden = key => CLAIMS.has(key.toLowerCase()) || CLAIMS.has(normalize(key));
+@7=const normalize = value => value.toLowerCase().replace(/[-_]/g, '');
+@8=fresh
+@9=const normalize = value => value.toLowerCase().replace(/[-_]/
+@10=const WRITE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+@11=const deny = status => { throw new HttpFailure(status); };
+@12=function
+@13=const normalize = value => value.toLowerCase().replace(/
+@14=const SESSION_COOKIE_NAME = 'mesh_trial';
+@15=const READ = new Set(['GET', 'HEAD']);
+@16=const ID = /^[A-Za-z0-9_-]{43}$/;
+@17=const ID = /^[A-Za-z0-9_-]{43}$/
+@18=const managers = new WeakSet();
+@19=constant
+@20=const ID = /
+
+repo=local/fleet-consolidation-20260929 symbol_count=21 __json.files="{""build/mesh-session-pwa-v1/lib/trial-session.mjs"":{""imports"":[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]}}" __json._meta="{""timing_ms"":29.9,""tokens_saved"":55,""total_tokens_saved"":44721208,""freshness"":{""fresh"":21,""edited_uncommitted"":0,""stale_index"":0,""unknown"":0,""repo_is_stale"":false}}" __stypes=symbol_count:int __tables=t:symbols:symbol_id|name|kind|file|line|end_line|signature|docstring|source|imports|_freshness:str|str|str|str|int|int|str|str|str|str|str
+
+t,@1trial-session.mjs::SESSION_COOKIE_NAME#constant,SESSION_COOKIE_NAME,@19,@1trial-session.mjs,3,3,@14,,@14,"[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::TRIAL_ACTOR#constant,TRIAL_ACTOR,@19,@1trial-session.mjs,4,8,@4,,@4,"[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::ID#constant,ID,@19,@1trial-session.mjs,10,10,@16,,@16,"[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::managers#constant,managers,@19,@1trial-session.mjs,11,11,@18,,@18,"[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::READ#constant,READ,@19,@1trial-session.mjs,12,12,@15,,@15,"[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::WRITE#constant,WRITE,@19,@1trial-session.mjs,13,13,@10,,@10,"[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::CLAIMS#constant,CLAIMS,@19,@1trial-session.mjs,14,16,"const CLAIMS = new Set(['actor', 'role', 'roles', 'capability', 'capabilities',
+  'identity', 'user', 'userid', 'credentials', 'credential', 'password', 'authorization',
+  '__proto__', 'prototype', 'c",,"const CLAIMS = new Set(['actor', 'role', 'roles', 'capability', 'capabilities',
+  'identity', 'user', 'userid', 'credentials', 'credential', 'password', 'authorization',
+  '__proto__', 'prototype', 'constructor']);","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::normalize#function,normalize,@12,@1trial-session.mjs,17,17,@7,,@7,"[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::forbidden#function,forbidden,@12,@1trial-session.mjs,18,18,@6,,@6,"[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::options#function,options,@12,@1trial-session.mjs,20,25,"@12 options(value, allowed)",,"@12 options(value, allowed) {
+  if (!value || Object.getPrototypeOf(value) !== Object.prototype ||
+      Reflect.ownKeys(value).some(key => !allowed.includes(key))) {
+    throw new TypeError('Invalid settings');
+  }
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::integer#function,integer,@12,@1trial-session.mjs,27,31,"@12 integer(value, min, max)",,"@12 integer(value, min, max) {
+  if (!Number.isSafeInteger(value) || value < min || value > max) {
+    throw new TypeError('Invalid settings');
+  }
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::createTrialSessionManager#function,createTrialSessionManager,@12,@1trial-session.mjs,33,92,@12 createTrialSessionManager(settings),,"@12 createTrialSessionManager(settings) {
+  options(settings, ['ttlMs', 'maxSessions', 'now']);
+  const { ttlMs, maxSessions, now = Date.now } = settings;
+  integer(ttlMs, 1, 86_400_000);
+  integer(maxSessions, 1, 10_000);
+  if (typeof now !== 'function') throw new TypeError('Invalid settings');
+  const sessions = new Map();
+  let lastTime = -1;
+  function time() {
+    const value = now();
+    integer(value, 0, Number.MAX_SAFE_INTEGER - ttlMs);
+    if (value < lastTime) throw new RangeError('Clock moved backwards');
+    lastTime = value;
+    return value;
+  }
+  time();
+  function sweep(at) {
+    for (const [id, session] of sessions) {
+      if (session.expiresAt <= at) sessions.delete(id);
+    }
+  }
+  const manager = Object.freeze({
+    createSession(...args) {
+      if (args.length) throw new TypeError('Client claims are not accepted');
+      const at = time();
+      sweep(at);
+      if (sessions.size >= maxSessions) {
+        const error = new Error('Session capacity reached');
+        error.code = 'TRIAL_CAPACITY';
+        throw error;
+      }
+      let sessionId;
+      do { sessionId = randomBytes(32).toString('base64url'); } while (sessions.has(sessionId));
+      const session = Object.freeze({ sessionId, csrfToken: randomBytes(32).toString('base64url'),
+        actor: TRIAL_ACTOR, createdAt: at, expiresAt: at + ttlMs });
+      sessions.set(sessionId, session);
+      return session;
+    },
+    authorize(sessionId, settings = {}) {
+      options(settings, ['mutation', 'csrfToken']);
+      const { mutation = false, csrfToken } = settings;
+      if (typeof mutation !== 'boolean') throw new TypeError('Invalid authorization settings');
+      const at = time();
+      sweep(at);
+      if (typeof sessionId !== 'string' || !ID.test(sessionId)) return null;
+      const session = sessions.get(sessionId);
+      if (!session) return null;
+      if (mutation && (typeof csrfToken !== 'string' || !ID.test(csrfToken) ||
+          !timingSafeEqual(Buffer.from(csrfToken), Buffer.from(session.csrfToken)))) return null;
+      return Object.freeze({ actor: TRIAL_ACTOR, expiresAt: session.expiresAt });
+    },
+    revoke(sessionId) {
+      return typeof sessionId === 'string' && ID.test(sessionId) && sessions.delete(sessionId);
+    },
+    sweepExpired() { sweep(time()); return sessions.size; },
+    size() { sweep(time()); return sessions.size; },
+  });
+  managers.add(manager);
+  return manager;
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::HttpFailure#class,HttpFailure,class,@1trial-session.mjs,94,96,class HttpFailure extends Error,,"class HttpFailure extends Error {
+  constructor(status) { super('Trial request denied'); this.status = status; }
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::deny#function,deny,@12,@1trial-session.mjs,97,97,@11,,@11,"[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::inspectClaims#function,inspectClaims,@12,@1trial-session.mjs,99,107,"@12 inspectClaims(value, depth = 0)",,"@12 inspectClaims(value, depth = 0) {
+  if (depth > 16) deny(400);
+  if (value && typeof value === 'object') {
+    for (const [key, child] of Object.entries(value)) {
+      if (forbidden(key)) deny(403);
+      inspectClaims(child, depth + 1);
+    }
+  }
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::requestHeaders#function,requestHeaders,@12,@1trial-session.mjs,109,136,"@12 requestHeaders(req, host, origin)",,"@12 requestHeaders(req, host, origin) {
+  if (req.socket?.remoteAddress !== '127.0.0.1' || req.socket?.encrypted) deny(403);
+  const raw = req.rawHeaders;
+  if (!Array.isArray(raw) || raw.length % 2 || raw.length > 128) deny(400);
+  let bytes = 0;
+  const found = new Map();
+  for (let i = 0; i < raw.length; i += 2) {
+    const name = raw[i];
+    const value = raw[i + 1];
+    if (typeof name !== 'string' || typeof value !== 'string') deny(400);
+    bytes += Buffer.byteLength(name) + Buffer.byteLength(value);
+    if (bytes > 8192 || !/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name) ||
+        /[^\x20-\x7e]/.test(value)) deny(400);
+    const key = name.toLowerCase();
+    if (['host', 'origin', 'cookie', 'x-trial-csrf', 'content-type', 'content-length'].includes(key) &&
+        found.has(key)) deny(400);
+    if (key === 'authorization' || (key.startsWith('x-') && forbidden(key.slice(2)))) deny(403);
+    found.set(key, value);
+  }
+  if (found.get('host') !== host || found.get('origin') !== origin) deny(403);
+  if (typeof req.url !== 'string' || req.url.length > 2048 ||
+      !req.url.startsWith('/') || req.url.startsWith('//') || req.url.includes('#')) deny(400);
+  let url;
+  try { decodeURIComponent(req.url); url = new URL(req.url, origin); } catch { deny(400); }
+  if (url.origin !== origin) deny(403);
+  for (const key of url.searchParams.keys()) if (forbidden(key)) deny(403);
+  return found;
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::cookieId#function,cookieId,@12,@1trial-session.mjs,138,157,@12 cookieId(headers),,"@12 cookieId(headers) {
+  const cookie = headers.get('cookie');
+  if (cookie === undefined) return null;
+  if (!cookie || Buffer.byteLength(cookie) > 2048) deny(400);
+  const pairs = cookie.split(';');
+  if (pairs.length > 32) deny(400);
+  const names = new Set();
+  let id = null;
+  for (const pair of pairs) {
+    const item = pair.trim();
+    const match = /^([!#$%&'*+.^_`|~0-9A-Za-z-]+)=([\x21\x23-\x2b\x2d-\x3a\x3c-\x5b\x5d-\x7e]*)$/.exec(item);
+    if (!match || names.has(match[1])) deny(400);
+    names.add(match[1]);
+    if (match[1] === SESSION_COOKIE_NAME) {
+      if (!ID.test(match[2])) deny(400);
+      id = match[2];
+    }
+  }
+  return id;
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::jsonBody#function,jsonBody,@12,@1trial-session.mjs,159,192,"@12 jsonBody(req, headers)",,"@12 jsonBody(req, headers) {
+  if (headers.get('content-type') !== 'application/json') deny(415);
+  const length = headers.get('content-length');
+  if (length !== undefined && (!/^(0|[1-9][0-9]*)$/.test(length) || Number(length) > 4096)) deny(413);
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let bytes = 0;
+    let settled = false;
+    const timer = setTimeout(() => finish(new HttpFailure(408)), 2000);
+    timer.unref();
+    function finish(error, body) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      req.off('data', data); req.off('end', end); req.off('error', failed); req.off('aborted', failed);
+      if (error) { req.resume(); reject(error); } else resolve(body);
+    }
+    function data(chunk) {
+      bytes += chunk.length;
+      if (bytes > 4096) return finish(new HttpFailure(413));
+      chunks.push(chunk);
+    }
+    function failed() { finish(new HttpFailure(400)); }
+    function end() {
+      try {
+        const body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks)));
+        if (!body || Array.isArray(body) || typeof body !== 'object') deny(400);
+        inspectClaims(body);
+        finish(null, body);
+      } catch (error) { finish(error instanceof HttpFailure ? error : new HttpFailure(400)); }
+    }
+    req.on('data', data); req.on('end', end); req.on('error', failed); req.on('aborted', failed);
+  });
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::noStore#function,noStore,@12,@1trial-session.mjs,194,198,@12 noStore(res),,"@12 noStore(res) {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::failure#function,failure,@12,@1trial-session.mjs,200,206,"@12 failure(req, res, error)",,"@12 failure(req, res, error) {
+  req.resume();
+  res.statusCode = error instanceof HttpFailure ? error.status :
+    error?.code === 'TRIAL_CAPACITY' ? 503 : 500;
+  res.end();
+  return null;
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8
+t,@1trial-session.mjs::createTrialHttpGuard#function,createTrialHttpGuard,@12,@1trial-session.mjs,209,277,@12 createTrialHttpGuard(settings),,"@12 createTrialHttpGuard(settings) {
+  options(settings, ['manager', 'port']);
+  const { manager, port } = settings;
+  integer(port, 1, 65535);
+  if (!managers.has(manager)) throw new TypeError('Invalid manager');
+  const host = `127.0.0.1:${port}`;
+  const origin = `http://${host}`;
+  const clearCookie = `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`;
+  function boundary(req, res) {
+    noStore(res);
+    const headers = requestHeaders(req, host, origin);
+    const id = cookieId(headers);
+    return { headers, id };
+  }
+  async function admitted(req, res, onlyPost = false) {
+    const { headers, id } = boundary(req, res);
+    if ((onlyPost && req.method !== 'POST') || (!READ.has(req.method) && !WRITE.has(req.method))) deny(405);
+    const session = manager.authorize(id);
+    if (!session) deny(401);
+    const mutation = WRITE.has(req.method);
+    if (mutation && !manager.authorize(id, { mutation: true, csrfToken: headers.get('x-trial-csrf') })) deny(403);
+    const body = mutation ? await jsonBody(req, headers) : null;
+    if (!mutation && (headers.has('transfer-encoding') ||
+        (headers.has('content-length') && headers.get('content-length') !== '0'))) deny(400);
+    // Recheck after asynchronous body input: expiry and revocation may happen while it is arriving.
+    if (!manager.authorize(id, { mutation, csrfToken: headers.get('x-trial-csrf') })) deny(401);
+    return { id, session, body };
+  }
+  return Object.freeze({
+    trustedOrigin: origin,
+    async bootstrap(req, res) {
+      try {
+        const { headers, id } = boundary(req, res);
+        if (req.method !== 'POST') deny(405);
+        if (id !== null) {
+          if (!manager.authorize(id)) deny(401);
+          if (!manager.authorize(id, { mutation: true, csrfToken: headers.get('x-trial-csrf') })) deny(403);
+          deny(409);
+        }
+        const body = await jsonBody(req, headers);
+        if (Object.keys(body).length) deny(400);
+        const session = manager.createSession();
+        res.setHeader('Set-Cookie', `${SESSION_COOKIE_NAME}=${session.sessionId}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Math.ceil((session.expiresAt - session.createdAt) / 1000)}`);
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.statusCode = 201;
+        res.end(JSON.stringify({ admission: 'EXPLICIT_SYNTHETIC_DEMO', actor: session.actor,
+          csrfToken: session.csrfToken, expiresAt: session.expiresAt }));
+        return true;
+      } catch (error) { return failure(req, res, error); }
+    },
+    async authorize(req, res) {
+      try {
+        const { session, body } = await admitted(req, res);
+        return Object.freeze({ actor: session.actor, expiresAt: session.expiresAt, body });
+      } catch (error) { return failure(req, res, error); }
+    },
+    async logout(req, res) {
+      try {
+        const { id, body } = await admitted(req, res, true);
+        if (Object.keys(body).length) deny(400);
+        manager.revoke(id);
+        res.setHeader('Set-Cookie', clearCookie);
+        res.statusCode = 204;
+        res.end();
+        return true;
+      } catch (error) { return failure(req, res, error); }
+    },
+  });
+}","[""import { randomBytes, timingSafeEqual } from 'node:crypto';""]",@8

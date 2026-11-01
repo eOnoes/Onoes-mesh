@@ -1,0 +1,32 @@
+{
+  "event": "ready",
+  "identities": [
+    {
+      "role": "caller",
+      "pid": 1458536,
+      "creationTime100ns": "134355480739290383",
+      "executable": "C:\\Program Files\\node.exe"
+    },
+    {
+      "role": "bridge",
+      "pid": 3945988,
+      "creationTime100ns": "134355480744211571",
+      "executable": "C:\\Python314\\python.exe",
+      "parentPid": 1458536
+    },
+    {
+      "role": "root",
+      "pid": 2851212,
+      "creationTime100ns": "134355480744781694",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 3945988
+    },
+    {
+      "role": "descendant",
+      "pid": 2857664,
+      "creationTime100ns": "134355480745139921",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 2851212
+    }
+  ]
+}

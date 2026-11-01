@@ -1,0 +1,96 @@
+Browser tab: 1014724552, Title: "Onoes-mesh / Tasks", URL: "http://127.0.0.1:61474/".
+1 AXWebArea Onoes-mesh / Tasks, URL: 127.0.0.1:61474/
+	2 container
+		3 text >  Onoes-mesh  / Mesh Terminal //  MESH / LOCAL TASKS
+	4 text Local task board · SQLite persistence · task session only · no automatic dispatch
+	5 text Seven workspaces · loopback only
+	6 button Refresh app status and tasks, ID: refresh
+	7 button (disabled) Start local session, ID: demo-start
+	8 button End local session, ID: demo-end
+	9 text Local task access verified by server. No human identity or execution approval.
+	55 text Saved task loaded.
+	11 text MAIN
+	12 tab group MAIN workspaces
+		13 tab (selectable, settable, boolean) 01 Overview, Value: 0, ID: tab-overview
+		14 tab (selectable, settable, boolean) 02 Relay, Value: 0, ID: tab-relay
+		15 tab (selectable, settable, boolean) 03 Inference, Value: 0, ID: tab-inference
+		16 tab (selected, settable, boolean) 04 Workroom, Value: 1, ID: tab-workroom
+		17 tab (selectable, settable, boolean) 05 Agent, Value: 0, ID: tab-agent
+		18 tab (selectable, settable, boolean) 06 Mind, Value: 0, ID: tab-mind
+		19 tab (selectable, settable, boolean) 07 Control, Value: 0, ID: tab-control
+	20 container Description: 04 Workroom, ID: panel-workroom
+		21 container
+			22 text //  WORKROOM / SAVED TASKS
+		23 heading Make the work visible, Value: 1
+			24 text Make the work visible
+		25 text Create and revise tasks in local SQLite. Approve a saved whitelisted command to run it locally. Task open/done is separate from execution.
+		26 container
+			27 heading Create task, Value: 2
+				28 text Create task
+			29 container create-form
+				30 text Title
+				31 text field (settable) Title, ID: create-title
+				32 text Description
+				33 text entry area (settable) Description, ID: create-description
+				34 text Assignment label (optional)
+				35 text field (settable) Assignment label (optional), ID: create-label
+				36 button Create task
+		37 container
+			38 heading Inspect and edit, Value: 2
+				39 text Inspect and edit
+			56 container edit-form
+				57 text Task 5802d13c-02ff-4512-b038-83465d0eae5f · revision 4
+				58 text Title
+				59 text field (settable) Title, Value: M3 browser real crash, ID: edit-title
+				60 text Description
+				61 text entry area (settable) Description, ID: edit-description
+				62 text Assignment label
+				63 text field (settable) Assignment label, ID: edit-label
+				64 text Saved status: open
+				65 button Save task changes
+				66 button Mark done, ID: toggle-status
+				67 button Reload current task, ID: reload-task
+		68 container
+			69 heading Command proposal for selected task, Value: 2
+				70 text Command proposal for selected task
+			71 container proposal-form
+				72 text Interrupted by server restart · outcome unknown. No automatic retry. Save a new proposal, then deliberately Approve to run again.
+				73 text {"command":"node lib/slow-command.mjs","cwd":"."}
+				74 text Whitelisted command
+				75 pop up button (collapsed, settable) Whitelisted command, Value: node lib/slow-command.mjs, ID: proposal-command, Secondary Actions: Expand
+					76 menu
+						77 node --version
+						78 git status
+						79 (selected) node lib/slow-command.mjs
+				80 text Working directory: . (fixed repository root).
+				81 text One current proposal per task. Save a proposal, then deliberately Approve or Deny. After a result or an interrupted attempt with unknown outcome, save a new proposal to request another execution. Interrupted attempts are never automatically retried. A local session does not verify Eddie's identity.
+				82 button Save pending proposal, ID: propose-command
+				83 button (disabled) Approve, ID: approve-command
+				84 button (disabled) Deny, ID: deny-command
+				85 button (disabled) Cancel, ID: cancel-command
+				86 text Run 1a0f2b96-9f59-4f52-8f76-355f09d40628
+State: failed
+Outcome: unknown
+Interrupted by server restart. Process result was not recorded.
+PID: unknown
+Exit code: unknown
+Cleanup verified: unknown
+Timeout: unknown
+stdout: unknown
+stderr: unknown
+Recovery recorded at: 2026-10-04T00:04:02.433Z
+No automatic retry. Save a new proposal to request another execution.
+		43 container
+			44 heading Saved tasks, Value: 2
+				45 text Saved tasks
+			46 text Choose a saved task to inspect.
+			47 container tasks
+				48 checkbox M3 browser real Cancel open · No assignment label · revision 4, Value: 0
+					49 text M3 browser real Cancel
+					50 text open · No assignment label · revision 4
+				51 checkbox M3 browser real crash open · No assignment label · revision 4, Value: 1
+					52 text M3 browser real crash
+					53 text open · No assignment label · revision 4
+	54 text Onoes-mesh / local task board · data stays in the configured SQLite store
+
+The focused UI element is 51 checkbox M3 browser real crash open · No assignment label · revision 4, Value: 1

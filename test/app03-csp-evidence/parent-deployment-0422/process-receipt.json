@@ -1,0 +1,357 @@
+{
+  "label": "parent-deployment-0422",
+  "worktree": "D:\\Dev\\Onoes-Mesh",
+  "launch": [
+    "C:/Program Files/node.exe",
+    ".runner/fix-relay-csp-inline/deploy-readonly.mjs"
+  ],
+  "identities": [
+    {
+      "pid": 2323564,
+      "parentPid": 2390144,
+      "creationTime100ns": "134355612764498664",
+      "executable": "C:\\Python314\\pythonw.exe",
+      "argv": "C:/Python314/pythonw.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-csp-evidence\\supervisor.py parent-deployment-0422 \"C:/Program Files/node.exe\" .runner/fix-relay-csp-inline/deploy-readonly.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 console-free supervisor",
+      "ancestry": [
+        2390144
+      ],
+      "exitSignaled": false
+    },
+    {
+      "pid": 743492,
+      "parentPid": 2323564,
+      "creationTime100ns": "134355612767003901",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:/Program Files/node.exe\" .runner/fix-relay-csp-inline/deploy-readonly.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 root test command",
+      "ancestry": [
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 577548,
+      "parentPid": 743492,
+      "creationTime100ns": "134355612767068927",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant conhost.exe",
+      "ancestry": [
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 291048,
+      "parentPid": 743492,
+      "creationTime100ns": "134355612769160905",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml --remote-debugging-pipe --no-startup-window",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2167348,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612769364683",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe --type=crashpad-handler --user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml /prefetch:4 --monitor-self --monitor-self-argument=--type=crashpad-handler --monitor-self-argument=--user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml --monitor-self-argument=/prefetch:4 --monitor-self-annotation=ptype=crashpad-handler --database=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\\Crashpad --annotation=plat=Win64 \"--annotation=prod=Google Chrome for Testing\" --annotation=ver=153.0.8010.12 --initial-client-data=0x130,0x134,0x138,0x10c,0x13c,0x7ffef7edce80,0x7ffef7edce90,0x7ffef7edcea0",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1532624,
+      "parentPid": 2167348,
+      "creationTime100ns": "134355612769479988",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe --type=crashpad-handler --user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml /prefetch:4 --no-periodic-tasks --monitor-self-annotation=ptype=crashpad-handler --database=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\\Crashpad --annotation=plat=Win64 \"--annotation=prod=Google Chrome for Testing\" --annotation=ver=153.0.8010.12 --initial-client-data=0x188,0x18c,0x190,0x12c,0x198,0x7ff60c939440,0x7ff60c939450,0x7ff60c939460",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        2167348,
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1637704,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612770377681",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=gpu-process --no-sandbox --disable-breakpad --headless --enable-unsafe-swiftshader --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\" --no-pre-read-main-dll --start-stack-profiler --gpu-preferences=WAAAAAAAAADgAAAEAAAAAAAAAAAAAGAAQAAAAAAAAAADAAAAAAAAADgAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAoAAAAAAAAAAgAAAAAAAAAEAAAAAIAAAABAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= --field-trial-handle=1836,i,5121228496155775549,2820741482948993689,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1868,i,10418830883382662120,4025658496870280154,4 --trace-process-track-uuid=3190708988185955192 --mojo-platform-channel-handle=1832 /prefetch:2",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3187952,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612770428335",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --no-sandbox --mute-audio --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\" --no-pre-read-main-dll --start-stack-profiler --field-trial-handle=1836,i,5121228496155775549,2820741482948993689,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1868,i,10418830883382662120,4025658496870280154,4 --trace-process-track-uuid=3190708989122997041 --mojo-platform-channel-handle=2024 /prefetch:11",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1145532,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612770594395",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --no-sandbox --mute-audio --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\" --no-pre-read-main-dll --field-trial-handle=1836,i,5121228496155775549,2820741482948993689,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1868,i,10418830883382662120,4025658496870280154,4 --trace-process-track-uuid=3190708990060038890 --mojo-platform-channel-handle=2428 /prefetch:13",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 230672,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612771017541",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --top-chrome-webui --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=5 --launch-time-ticks=803214948620 --field-trial-handle=1836,i,5121228496155775549,2820741482948993689,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1868,i,10418830883382662120,4025658496870280154,4 --trace-process-track-uuid=3190708990997080739 --mojo-platform-channel-handle=3644 /prefetch:1",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2746692,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612803911023",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=7 --launch-time-ticks=803218237907 --field-trial-handle=1836,i,5121228496155775549,2820741482948993689,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1868,i,10418830883382662120,4025658496870280154,4 --trace-process-track-uuid=3190708992871164437 --mojo-platform-channel-handle=2768 /prefetch:1",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 695260,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612803955971",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=6 --launch-time-ticks=803218242522 --field-trial-handle=1836,i,5121228496155775549,2820741482948993689,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1868,i,10418830883382662120,4025658496870280154,4 --trace-process-track-uuid=3190708991934122588 --mojo-platform-channel-handle=3868 /prefetch:1",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3282732,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612810471799",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --top-chrome-webui --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=8 --launch-time-ticks=803218894056 --field-trial-handle=1836,i,5121228496155775549,2820741482948993689,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1868,i,10418830883382662120,4025658496870280154,4 --trace-process-track-uuid=3190708993808206286 --mojo-platform-channel-handle=3828 /prefetch:1",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 563724,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612810611379",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=10 --launch-time-ticks=803218907927 --field-trial-handle=1836,i,5121228496155775549,2820741482948993689,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1868,i,10418830883382662120,4025658496870280154,4 --trace-process-track-uuid=3190708995682289984 --mojo-platform-channel-handle=3844 /prefetch:1",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1387644,
+      "parentPid": 291048,
+      "creationTime100ns": "134355612810653261",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-NYu6ml\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=9 --launch-time-ticks=803218912295 --field-trial-handle=1836,i,5121228496155775549,2820741482948993689,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1868,i,10418830883382662120,4025658496870280154,4 --trace-process-track-uuid=3190708994745248135 --mojo-platform-channel-handle=3872 /prefetch:1",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-deployment-0422 owned descendant chrome.exe",
+      "ancestry": [
+        291048,
+        743492,
+        2323564
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    }
+  ],
+  "windows": [
+    {
+      "pid": 1532624,
+      "hwnd": "11405666",
+      "title": "",
+      "windowClass": "crashpad_SessionEndWatcher",
+      "everVisible": false
+    },
+    {
+      "pid": 2167348,
+      "hwnd": "33362598",
+      "title": "",
+      "windowClass": "crashpad_SessionEndWatcher",
+      "everVisible": false
+    },
+    {
+      "pid": 1532624,
+      "hwnd": "26284738",
+      "title": "Default IME",
+      "windowClass": "IME",
+      "everVisible": false
+    },
+    {
+      "pid": 2167348,
+      "hwnd": "2562524",
+      "title": "Default IME",
+      "windowClass": "IME",
+      "everVisible": false
+    },
+    {
+      "pid": 291048,
+      "hwnd": "31328518",
+      "title": "",
+      "windowClass": "Base_PowerMessageWindow",
+      "everVisible": false
+    },
+    {
+      "pid": 291048,
+      "hwnd": "23727566",
+      "title": "Default IME",
+      "windowClass": "IME",
+      "everVisible": false
+    },
+    {
+      "pid": 291048,
+      "hwnd": "6034894",
+      "title": "",
+      "windowClass": "Chrome_StatusTrayWindow",
+      "everVisible": false
+    },
+    {
+      "pid": 291048,
+      "hwnd": "6232858",
+      "title": "",
+      "windowClass": "Chrome_WidgetWin_0",
+      "everVisible": false
+    },
+    {
+      "pid": 291048,
+      "hwnd": "7740128",
+      "title": "Onoes-mesh / Tasks - Google Chrome for Testing",
+      "windowClass": "Chrome_WidgetWin_1",
+      "everVisible": false
+    },
+    {
+      "pid": 1637704,
+      "hwnd": "10294000",
+      "title": "",
+      "windowClass": "Chrome_WidgetWin_0",
+      "everVisible": false
+    },
+    {
+      "pid": 1637704,
+      "hwnd": "19336254",
+      "title": "Default IME",
+      "windowClass": "IME",
+      "everVisible": false
+    },
+    {
+      "pid": 291048,
+      "hwnd": "10755492",
+      "title": "",
+      "windowClass": "Chrome_WidgetWin_0",
+      "everVisible": false
+    },
+    {
+      "pid": 291048,
+      "hwnd": "10359536",
+      "title": "Onoes-mesh / Tasks - Google Chrome for Testing",
+      "windowClass": "Chrome_WidgetWin_1",
+      "everVisible": false
+    },
+    {
+      "pid": 1637704,
+      "hwnd": "7476806",
+      "title": "",
+      "windowClass": "Chrome_WidgetWin_0",
+      "everVisible": false
+    },
+    {
+      "pid": 1637704,
+      "hwnd": "86311874",
+      "title": "Default IME",
+      "windowClass": "IME",
+      "everVisible": false
+    }
+  ],
+  "acquisitionRaces": [],
+  "commandExit": 1,
+  "protectedBefore": 200,
+  "protectedAfter": 200,
+  "descendantsExited": true,
+  "hiddenWindows": true
+}

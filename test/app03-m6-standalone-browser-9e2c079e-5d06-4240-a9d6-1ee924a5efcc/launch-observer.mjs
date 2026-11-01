@@ -1,0 +1,5 @@
+import cp from 'node:child_process'; import {appendFileSync} from 'node:fs';
+    const original = cp.ChildProcess.prototype.spawn;
+    cp.ChildProcess.prototype.spawn = function(options) { const result = original.call(this, options);
+      appendFileSync("D:\\Dev\\Onoes-Mesh\\test\\app03-m6-standalone-browser-9e2c079e-5d06-4240-a9d6-1ee924a5efcc\\js-launches.jsonl", JSON.stringify({event:'spawn',parentPid:process.pid,pid:this.pid,executable:this.spawnfile,argv:this.spawnargs,at:new Date().toISOString()})+'\n');
+      this.once('close',(exitCode,signal)=>appendFileSync("D:\\Dev\\Onoes-Mesh\\test\\app03-m6-standalone-browser-9e2c079e-5d06-4240-a9d6-1ee924a5efcc\\js-launches.jsonl",JSON.stringify({event:'close',parentPid:process.pid,pid:this.pid,exitCode,signal,at:new Date().toISOString()})+'\n')); return result; };

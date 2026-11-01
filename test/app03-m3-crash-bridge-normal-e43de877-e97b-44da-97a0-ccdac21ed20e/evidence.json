@@ -1,0 +1,24 @@
+{
+  "version": {
+    "status": "PASS",
+    "rootPid": 2147316,
+    "rootExitCode": 0,
+    "timedOut": false,
+    "cleanupVerified": true,
+    "error": null,
+    "stdout": "v24.14.0\r\n",
+    "stderr": ""
+  },
+  "result": {
+    "status": "PASS",
+    "rootPid": 3130740,
+    "rootExitCode": 0,
+    "timedOut": false,
+    "cleanupVerified": true,
+    "error": null,
+    "stdout": "M3 slow root 3130740; descendant 2786720; started\nM3 slow descendant 2786720; started\nM3 slow root completed after 10 seconds\nM3 slow descendant completed after 10 seconds\n",
+    "stderr": ""
+  },
+  "slowElapsedMs": 10158.3567,
+  "elapsedMs": 10274.0286
+}

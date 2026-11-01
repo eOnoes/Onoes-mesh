@@ -1,0 +1,13 @@
+{
+  "pid": 1194656,
+  "parentPid": 2364376,
+  "creationTime100ns": "134355611433741594",
+  "executable": "C:\\Python314\\pythonw.exe",
+  "argv": "C:/Python314/pythonw.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-csp-evidence\\supervisor.py parent-integrated-npm-041903 \"C:/Program Files/node.exe\" \"C:/Program Files/node_modules/npm/bin/npm-cli.js\" test",
+  "worktree": "D:\\Dev\\Onoes-Mesh",
+  "purpose": "parent-integrated-npm-041903 console-free supervisor",
+  "ancestry": [
+    2364376
+  ],
+  "exitSignaled": false
+}

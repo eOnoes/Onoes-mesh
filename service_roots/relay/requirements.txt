@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+httpx>=0.27
+
+# tools/backup_relay.py only. The server never imports it: a missing crypto
+# library degrades backups to unencrypted rather than breaking Relay.
+cryptography>=42
+
+# tools/ui_shot.py only. The server never imports it.
+playwright>=1.40

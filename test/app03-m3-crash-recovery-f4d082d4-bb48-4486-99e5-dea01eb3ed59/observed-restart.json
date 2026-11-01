@@ -1,0 +1,43 @@
+{
+  "id": "2c298a1c-1187-49b7-a581-0125b5a0dc0a",
+  "title": "Interrupted execution",
+  "description": "",
+  "label": "",
+  "status": "open",
+  "revision": 4,
+  "createdAt": "2026-10-04T03:07:55.330Z",
+  "updatedAt": "2026-10-04T03:07:56.028Z",
+  "proposal": {
+    "command": "node --version",
+    "cwd": "."
+  },
+  "proposalStatus": "failed",
+  "execution": {
+    "id": "8d8f4cd8-fb17-45f7-b4c9-18865fdb5584",
+    "taskId": "2c298a1c-1187-49b7-a581-0125b5a0dc0a",
+    "proposalRevision": 2,
+    "command": "node --version",
+    "cwd": ".",
+    "actualCwd": "D:\\Dev\\Onoes-Mesh",
+    "argv": [
+      "C:\\Program Files\\node.exe",
+      "--version"
+    ],
+    "state": "failed",
+    "startedAt": "2026-10-04T03:07:55.374Z",
+    "finishedAt": "2026-10-04T03:07:56.028Z",
+    "result": {
+      "status": "UNKNOWN",
+      "outcome": "unknown",
+      "reason": "server_restart",
+      "rootPid": null,
+      "rootExitCode": null,
+      "timedOut": null,
+      "cleanupVerified": null,
+      "error": "Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.",
+      "stdout": null,
+      "stderr": null
+    },
+    "approvalRevision": 2
+  }
+}

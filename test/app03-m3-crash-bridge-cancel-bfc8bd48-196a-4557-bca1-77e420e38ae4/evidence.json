@@ -1,0 +1,61 @@
+{
+  "outcome": "interrupted",
+  "result": {
+    "result": {
+      "status": "FAIL",
+      "rootPid": 3946668,
+      "rootExitCode": 1,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": "execution cancelled; root exited with nonzero code",
+      "cancelled": true,
+      "stdout": "M3 slow root 3946668; descendant 3678372; started\nM3 slow descendant 3678372; started\n",
+      "stderr": ""
+    },
+    "elapsedMs": 445.8033,
+    "callerPid": 3648492
+  },
+  "observation": {
+    "event": "verified",
+    "action": "wait",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 3648492,
+        "creationTime100ns": "134355614480615909",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 1377608,
+        "creationTime100ns": "134355614481047685",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 3648492,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 3946668,
+        "creationTime100ns": "134355614481615599",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 1377608,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 3678372,
+        "creationTime100ns": "134355614482006857",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 3946668,
+        "exitSignaled": true
+      }
+    ],
+    "cleanupVerified": true,
+    "elapsedMs": 69.15
+  },
+  "output": "{\"result\":{\"status\":\"FAIL\",\"rootPid\":3946668,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 3946668; descendant 3678372; started\\nM3 slow descendant 3678372; started\\n\",\"stderr\":\"\"},\"elapsedMs\":445.8033,\"callerPid\":3648492}\n",
+  "errors": "",
+  "elapsedMs": 507.9516999999996,
+  "nativeResultUnavailable": false
+}

@@ -1,0 +1,13 @@
+{
+  "pid": 656196,
+  "parentPid": 2364376,
+  "creationTime100ns": "134355611451548760",
+  "executable": "C:\\Python314\\pythonw.exe",
+  "argv": "C:/Python314/pythonw.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-csp-evidence\\supervisor.py parent-integrated-m4-041905 \"C:/Program Files/node.exe\" --test --test-timeout=60000 test/m4-link-store.test.mjs test/m4-link-ui.test.mjs test/m4-link-http.test.mjs",
+  "worktree": "D:\\Dev\\Onoes-Mesh",
+  "purpose": "parent-integrated-m4-041905 console-free supervisor",
+  "ancestry": [
+    2364376
+  ],
+  "exitSignaled": false
+}

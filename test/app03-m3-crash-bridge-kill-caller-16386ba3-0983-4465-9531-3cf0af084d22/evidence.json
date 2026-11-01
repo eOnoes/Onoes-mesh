@@ -1,0 +1,47 @@
+{
+  "outcome": "interrupted",
+  "result": null,
+  "observation": {
+    "event": "verified",
+    "action": "kill-caller",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 2337352,
+        "creationTime100ns": "134356250889605619",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 1368012,
+        "creationTime100ns": "134356250889981640",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 2337352,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 46968,
+        "creationTime100ns": "134356250890556217",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 1368012,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 1048268,
+        "creationTime100ns": "134356250890921341",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 46968,
+        "exitSignaled": true
+      }
+    ],
+    "cleanupVerified": true,
+    "elapsedMs": 8.819
+  },
+  "output": "",
+  "errors": "",
+  "elapsedMs": 449.35429999999906,
+  "nativeResultUnavailable": true
+}

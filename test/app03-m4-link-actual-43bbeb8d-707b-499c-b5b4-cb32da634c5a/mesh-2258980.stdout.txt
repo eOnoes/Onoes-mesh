@@ -1,0 +1,17 @@
+{"event":"mesh_relay_spawned","pid":289968,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":289968,"port":49563}
+{"event":"mesh_listening","pid":2258980,"url":"http://127.0.0.1:49566","dataDir":"test/app03-m4-link-actual-43bbeb8d-707b-499c-b5b4-cb32da634c5a"}
+{"event":"mesh_relay_task_linked","conversationId":"7f509849-c5ca-4f0b-983f-6d4b3fa054cd","messageId":"actual_message_1","taskId":"69098640-a7e2-46b5-bf10-c0a2c8d80cfc","duplicate":false}
+{"event":"mesh_relay_stopped","pid":289968,"exitCode":0,"signal":null}
+{"event":"mesh_relay_spawned","pid":1676240,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":1676240,"port":49573}
+{"event":"mesh_relay_task_linked","conversationId":"7f509849-c5ca-4f0b-983f-6d4b3fa054cd","messageId":"actual_message_1","taskId":"69098640-a7e2-46b5-bf10-c0a2c8d80cfc","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"7f509849-c5ca-4f0b-983f-6d4b3fa054cd","messageId":"actual_message_1","taskId":"69098640-a7e2-46b5-bf10-c0a2c8d80cfc","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"7f509849-c5ca-4f0b-983f-6d4b3fa054cd","messageId":"actual_message_1","taskId":"69098640-a7e2-46b5-bf10-c0a2c8d80cfc","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"7f509849-c5ca-4f0b-983f-6d4b3fa054cd","messageId":"actual_message_1","taskId":"69098640-a7e2-46b5-bf10-c0a2c8d80cfc","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"7f509849-c5ca-4f0b-983f-6d4b3fa054cd","messageId":"actual_message_1","taskId":"69098640-a7e2-46b5-bf10-c0a2c8d80cfc","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"7f509849-c5ca-4f0b-983f-6d4b3fa054cd","messageId":"actual_message_1","taskId":"69098640-a7e2-46b5-bf10-c0a2c8d80cfc","duplicate":true}
+{"event":"mesh_relay_stopped","pid":1676240,"exitCode":0,"signal":null}
+{"event":"mesh_relay_spawned","pid":509964,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":509964,"port":49586}
+{"event":"mesh_relay_task_linked","conversationId":"7f509849-c5ca-4f0b-983f-6d4b3fa054cd","messageId":"actual_message_1","taskId":"69098640-a7e2-46b5-bf10-c0a2c8d80cfc","duplicate":true}

@@ -1,0 +1,41 @@
+{
+  "task": {
+    "id": "3dbac0b9-96a1-48bf-bbdd-5d2834b3e166",
+    "title": "M3 browser replay restart",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 4,
+    "createdAt": "2026-10-03T23:00:27.624Z",
+    "updatedAt": "2026-10-03T23:00:42.416Z"
+  },
+  "run": {
+    "id": "add70c75-557e-42b9-ae7b-eede05440439",
+    "taskId": "3dbac0b9-96a1-48bf-bbdd-5d2834b3e166",
+    "proposalRevision": 2,
+    "command": "node --version",
+    "cwd": ".",
+    "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\m3-idempotent",
+    "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"--version\"]",
+    "state": "completed",
+    "startedAt": "2026-10-03T23:00:42.272Z",
+    "finishedAt": "2026-10-03T23:00:42.415Z",
+    "result": "{\"status\":\"PASS\",\"rootPid\":2132160,\"rootExitCode\":0,\"timedOut\":false,\"cleanupVerified\":true,\"error\":null,\"stdout\":\"v24.14.0\\r\\n\",\"stderr\":\"\"}",
+    "approvalRevision": 2
+  },
+  "executionCount": 1,
+  "serverPids": [
+    328544,
+    280408,
+    2435044,
+    2399412,
+    1857872
+  ],
+  "replayStatus": 200,
+  "tripwireUntouched": true,
+  "initialServerErrors": "(node:328544) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nM3_UI_SPAWN\n",
+  "restartErrors": "(node:1857872) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n",
+  "serverStopped": true,
+  "finalScreenshot": "result-after-refresh.jpg",
+  "browserRefreshRecheckedAdmission": true
+}

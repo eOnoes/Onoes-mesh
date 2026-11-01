@@ -1,0 +1,80 @@
+{
+  "running": {
+    "id": "4adbb6ce-51bb-4c5c-9145-bf50939a1ebd",
+    "title": "Actual slow-command server crash",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 3,
+    "createdAt": "2026-10-04T00:23:15.815Z",
+    "updatedAt": "2026-10-04T00:23:15.843Z",
+    "proposal": {
+      "command": "node lib/slow-command.mjs",
+      "cwd": "."
+    },
+    "proposalStatus": "running",
+    "execution": {
+      "id": "c5f2be1e-581b-47ad-a360-1ad7a661a7a5",
+      "taskId": "4adbb6ce-51bb-4c5c-9145-bf50939a1ebd",
+      "proposalRevision": 2,
+      "command": "node lib/slow-command.mjs",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "D:\\Dev\\Onoes-Mesh-wt\\review-M3\\lib\\slow-command.mjs"
+      ],
+      "state": "running",
+      "startedAt": "2026-10-04T00:23:15.843Z",
+      "finishedAt": null,
+      "result": null,
+      "approvalRevision": 2
+    }
+  },
+  "rows": {
+    "tasks": [
+      {
+        "id": "4adbb6ce-51bb-4c5c-9145-bf50939a1ebd",
+        "title": "Actual slow-command server crash",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 3,
+        "createdAt": "2026-10-04T00:23:15.815Z",
+        "updatedAt": "2026-10-04T00:23:15.843Z"
+      }
+    ],
+    "task_proposals": [
+      {
+        "taskId": "4adbb6ce-51bb-4c5c-9145-bf50939a1ebd",
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "status": "pending"
+      }
+    ],
+    "task_executions": [
+      {
+        "id": "c5f2be1e-581b-47ad-a360-1ad7a661a7a5",
+        "taskId": "4adbb6ce-51bb-4c5c-9145-bf50939a1ebd",
+        "proposalRevision": 2,
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+        "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"D:\\\\Dev\\\\Onoes-Mesh-wt\\\\review-M3\\\\lib\\\\slow-command.mjs\"]",
+        "state": "running",
+        "startedAt": "2026-10-04T00:23:15.843Z",
+        "finishedAt": null,
+        "result": null,
+        "approvalRevision": 2
+      }
+    ],
+    "task_proposal_decisions": [
+      {
+        "taskId": "4adbb6ce-51bb-4c5c-9145-bf50939a1ebd",
+        "proposalRevision": 2,
+        "status": "running",
+        "executionId": "c5f2be1e-581b-47ad-a360-1ad7a661a7a5"
+      }
+    ]
+  }
+}

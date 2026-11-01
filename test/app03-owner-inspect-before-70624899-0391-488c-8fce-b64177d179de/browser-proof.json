@@ -1,0 +1,164 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "url": "http://127.0.0.1:58041",
+  "dataDir": "test/app03-owner-inspect-before-70624899-0391-488c-8fce-b64177d179de",
+  "consoleErrors": [],
+  "responses": [
+    {
+      "route": "/api/trial-session/bootstrap",
+      "status": 201
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/commands",
+      "status": 200
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 201
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/6a2c5dcd-1a1f-4dc1-9649-354eb0374561/proposal",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/6a2c5dcd-1a1f-4dc1-9649-354eb0374561/approve",
+      "status": 202
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks/6a2c5dcd-1a1f-4dc1-9649-354eb0374561",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 201
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200
+    },
+    {
+      "route": "/api/health",
+      "status": 200
+    },
+    {
+      "route": "/api/commands",
+      "status": 200
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200
+    },
+    {
+      "route": "/api/trial-session/logout",
+      "status": 204
+    }
+  ],
+  "stages": [
+    {
+      "label": "before selecting saved task",
+      "target": "execution-result",
+      "scrollY": 847,
+      "top": 0,
+      "bottom": 0,
+      "height": 0,
+      "focus": "tab-workroom",
+      "text": "",
+      "bannerBottom": 55,
+      "title": "",
+      "description": "",
+      "identity": ""
+    },
+    {
+      "label": "old selection leaves result outside viewport",
+      "target": "execution-result",
+      "scrollY": 847,
+      "top": 1285.703125,
+      "bottom": 1502.578125,
+      "height": 216.875,
+      "focus": "",
+      "text": "Run 221e7850-2e90-4295-85de-2e541130b50c\nState: completed\nCancelled: false\nExit code: 0\nCleanup verified: true\nError: none\nstdout:\nv24.14.0\r\n\nstderr:\n",
+      "bannerBottom": 55,
+      "title": "Phone inspection check",
+      "description": "Stored description from disposable UI",
+      "identity": "Task 6a2c5dcd-1a1f-4dc1-9649-354eb0374561 · revision 4"
+    }
+  ],
+  "freshness": {
+    "/": {
+      "status": 200,
+      "fromServiceWorker": true,
+      "sha256": "e27542f6ec6e1c5ad50a4787acf75ef2dca270db83d6765553eebbd1b9e9554b",
+      "localHash": "e27542f6ec6e1c5ad50a4787acf75ef2dca270db83d6765553eebbd1b9e9554b"
+    },
+    "/app.js": {
+      "status": 200,
+      "fromServiceWorker": true,
+      "sha256": "be2ef9dfc0f4f5b7434603abfd939f5ac4443d2b5c777a2a4ab13dab03a619d8",
+      "localHash": "be2ef9dfc0f4f5b7434603abfd939f5ac4443d2b5c777a2a4ab13dab03a619d8"
+    }
+  },
+  "serviceWorker": {
+    "controlled": true,
+    "script": "http://127.0.0.1:58041/sw.js"
+  },
+  "pass": true
+}

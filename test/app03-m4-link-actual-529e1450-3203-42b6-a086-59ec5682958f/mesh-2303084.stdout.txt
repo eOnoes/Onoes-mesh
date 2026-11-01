@@ -1,0 +1,17 @@
+{"event":"mesh_relay_spawned","pid":216300,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":216300,"port":58651}
+{"event":"mesh_listening","pid":2303084,"url":"http://127.0.0.1:58654","dataDir":"test/app03-m4-link-actual-529e1450-3203-42b6-a086-59ec5682958f","mode":"mesh"}
+{"event":"mesh_relay_task_linked","conversationId":"26e91db3-0945-4ce0-9d8e-b26eb6abb49b","messageId":"actual_message_1","taskId":"e7c487d1-a237-4274-ae03-4ba8d0054369","duplicate":false}
+{"event":"mesh_relay_stopped","pid":216300,"exitCode":0,"signal":null}
+{"event":"mesh_relay_spawned","pid":2055964,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":2055964,"port":58659}
+{"event":"mesh_relay_task_linked","conversationId":"26e91db3-0945-4ce0-9d8e-b26eb6abb49b","messageId":"actual_message_1","taskId":"e7c487d1-a237-4274-ae03-4ba8d0054369","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"26e91db3-0945-4ce0-9d8e-b26eb6abb49b","messageId":"actual_message_1","taskId":"e7c487d1-a237-4274-ae03-4ba8d0054369","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"26e91db3-0945-4ce0-9d8e-b26eb6abb49b","messageId":"actual_message_1","taskId":"e7c487d1-a237-4274-ae03-4ba8d0054369","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"26e91db3-0945-4ce0-9d8e-b26eb6abb49b","messageId":"actual_message_1","taskId":"e7c487d1-a237-4274-ae03-4ba8d0054369","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"26e91db3-0945-4ce0-9d8e-b26eb6abb49b","messageId":"actual_message_1","taskId":"e7c487d1-a237-4274-ae03-4ba8d0054369","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"26e91db3-0945-4ce0-9d8e-b26eb6abb49b","messageId":"actual_message_1","taskId":"e7c487d1-a237-4274-ae03-4ba8d0054369","duplicate":true}
+{"event":"mesh_relay_stopped","pid":2055964,"exitCode":0,"signal":null}
+{"event":"mesh_relay_spawned","pid":2330268,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":2330268,"port":58671}
+{"event":"mesh_relay_task_linked","conversationId":"26e91db3-0945-4ce0-9d8e-b26eb6abb49b","messageId":"actual_message_1","taskId":"e7c487d1-a237-4274-ae03-4ba8d0054369","duplicate":true}

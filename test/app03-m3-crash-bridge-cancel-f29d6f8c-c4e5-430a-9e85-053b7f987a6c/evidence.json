@@ -1,0 +1,61 @@
+{
+  "outcome": "interrupted",
+  "result": {
+    "result": {
+      "status": "FAIL",
+      "rootPid": 215588,
+      "rootExitCode": 1,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": "execution cancelled; root exited with nonzero code",
+      "cancelled": true,
+      "stdout": "M3 slow root 215588; descendant 3354320; started\nM3 slow descendant 3354320; started\n",
+      "stderr": ""
+    },
+    "elapsedMs": 441.508,
+    "callerPid": 3746316
+  },
+  "observation": {
+    "event": "verified",
+    "action": "wait",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 3746316,
+        "creationTime100ns": "134355965634876711",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 330824,
+        "creationTime100ns": "134355965635284654",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 3746316,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 215588,
+        "creationTime100ns": "134355965635845997",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 330824,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 3354320,
+        "creationTime100ns": "134355965636212218",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 215588,
+        "exitSignaled": true
+      }
+    ],
+    "cleanupVerified": true,
+    "elapsedMs": 82.009
+  },
+  "output": "{\"result\":{\"status\":\"FAIL\",\"rootPid\":215588,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 215588; descendant 3354320; started\\nM3 slow descendant 3354320; started\\n\",\"stderr\":\"\"},\"elapsedMs\":441.508,\"callerPid\":3746316}\n",
+  "errors": "",
+  "elapsedMs": 497.5722999999998,
+  "nativeResultUnavailable": false
+}

@@ -1,0 +1,10 @@
+{
+  "pid": 1665092,
+  "parentPid": 212376,
+  "creationTime100ns": "134355602525763797",
+  "executable": "C:\\Python314\\python.exe",
+  "argv": "C:/Python314/python.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-owner-deny-cancel-evidence\\supervise.py parent-integrated-focused-040412 \"C:/Program Files/node.exe\" --test --test-timeout=60000 test/owner-deny-cancel-ui.test.mjs test/ui.test.mjs test/privacy01.test.mjs test/m3-idempotent-ui.test.mjs test/m3-crash-compose-ui.test.mjs test/m3-crash-recovery-ui.test.mjs",
+  "argvStatus": 0,
+  "purpose": "owned disposable verification descendant",
+  "visibleWindows": []
+}

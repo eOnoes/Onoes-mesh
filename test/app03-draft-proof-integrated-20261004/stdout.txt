@@ -1,0 +1,1 @@
+{"pass":true,"dataDir":"test/app03-draft-proof-integrated-20261004","cases":[{"width":390,"pass":true},{"width":1440,"pass":true}]}

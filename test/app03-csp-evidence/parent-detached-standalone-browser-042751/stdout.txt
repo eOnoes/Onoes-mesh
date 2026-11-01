@@ -1,0 +1,1 @@
+{"status":"PASS","dataDir":"test/app03-m6-standalone-browser-6384e7d1-464c-4d23-874c-da49243d6407","url":"http://127.0.0.1:51632","stages":["approve actual version and replay once","re-propose and deny without execution","actual slow-command Cancel","exact server kill, same store and URL, UNKNOWN replay without spawn"]}

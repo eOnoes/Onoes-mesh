@@ -1,0 +1,17 @@
+{"event":"mesh_relay_spawned","pid":1618572,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":1618572,"port":57996}
+{"event":"mesh_listening","pid":1636460,"url":"http://127.0.0.1:58000","dataDir":"test/app03-m4-link-actual-44f5fefe-d5ae-47f8-aebb-c2a0e22abb67"}
+{"event":"mesh_relay_task_linked","conversationId":"d7a09a61-db2a-486f-a8c3-9f0813a2e9f3","messageId":"actual_message_1","taskId":"57163120-4ee1-4d01-9078-9028cd2eaa77","duplicate":false}
+{"event":"mesh_relay_stopped","pid":1618572,"exitCode":0,"signal":null}
+{"event":"mesh_relay_spawned","pid":116336,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":116336,"port":58005}
+{"event":"mesh_relay_task_linked","conversationId":"d7a09a61-db2a-486f-a8c3-9f0813a2e9f3","messageId":"actual_message_1","taskId":"57163120-4ee1-4d01-9078-9028cd2eaa77","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"d7a09a61-db2a-486f-a8c3-9f0813a2e9f3","messageId":"actual_message_1","taskId":"57163120-4ee1-4d01-9078-9028cd2eaa77","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"d7a09a61-db2a-486f-a8c3-9f0813a2e9f3","messageId":"actual_message_1","taskId":"57163120-4ee1-4d01-9078-9028cd2eaa77","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"d7a09a61-db2a-486f-a8c3-9f0813a2e9f3","messageId":"actual_message_1","taskId":"57163120-4ee1-4d01-9078-9028cd2eaa77","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"d7a09a61-db2a-486f-a8c3-9f0813a2e9f3","messageId":"actual_message_1","taskId":"57163120-4ee1-4d01-9078-9028cd2eaa77","duplicate":true}
+{"event":"mesh_relay_task_linked","conversationId":"d7a09a61-db2a-486f-a8c3-9f0813a2e9f3","messageId":"actual_message_1","taskId":"57163120-4ee1-4d01-9078-9028cd2eaa77","duplicate":true}
+{"event":"mesh_relay_stopped","pid":116336,"exitCode":0,"signal":null}
+{"event":"mesh_relay_spawned","pid":1277308,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":1277308,"port":58021}
+{"event":"mesh_relay_task_linked","conversationId":"d7a09a61-db2a-486f-a8c3-9f0813a2e9f3","messageId":"actual_message_1","taskId":"57163120-4ee1-4d01-9078-9028cd2eaa77","duplicate":true}

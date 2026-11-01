@@ -1,0 +1,39 @@
+(node:911996) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ M4 actual HTTP guard: unadmitted, CSRF, origin, explicit intent and configuration denials create no tasks (147.1553ms)
+✖ M4 actual copied Relay HTTP/process/SQLite: message, retries, reconnect and restart both preserve one canonical task (225.9016ms)
+(node:1477004) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ M4 canonical SQLite: scoped idempotence, changed-message refusal, no execution and two-store reopen (17.7326ms)
+✔ M4 canonical SQLite: failed reference insert rolls back task and version4 migrates without changing existing task bytes (96.7158ms)
+✔ M4 MOCK UI: explicit message retry keeps identity, reconnect recovers selectable reference, native frame uses admitted session (7.7447ms)
+✔ M4 MOCK UI: message response after private clearance cannot select or display its task (1.6218ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 442.5376
+
+✖ failing tests:
+
+test at test\m4-link-http.test.mjs:31:1
+✖ M4 actual copied Relay HTTP/process/SQLite: message, retries, reconnect and restart both preserve one canonical task (225.9016ms)
+  AssertionError [ERR_ASSERTION]: Actual Relay dependencies missing/unavailable. Host setup: test/app03-m4-link-runtime/Scripts/python.exe -m pip install fastapi uvicorn httpx cryptography. Evidence retained in test/app03-m4-link-actual-771de13b-b161-4723-b22c-23d688da5af3
+  + actual - expected
+  
+  + 'unavailable'
+  - 'fresh'
+  
+      at TestContext.<anonymous> (file:///D:/Dev/Onoes-Mesh-wt/m4-link/test/m4-link-http.test.mjs:35:10)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'unavailable',
+    expected: 'fresh',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

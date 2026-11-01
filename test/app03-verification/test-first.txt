@@ -1,0 +1,42 @@
+
+> test
+> node --test --test-timeout=55000 test/trial-session.test.mjs test/session-app.test.mjs test/ui.test.mjs
+
+(node:3426104) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ actual HTTP: public static shell and all private routes require admission (55.2368ms)
+✔ actual HTTP: originless proof, malformed/hostile input, body-free denials (21.1863ms)
+✔ actual HTTP + SQLite: create/read/edit/assignment/done/reopen/revision and restart (37.6461ms)
+✔ actual HTTP: logout revokes and expiry blocks further private writes (13.7151ms)
+✔ actual HTTP: async observation expiry rechecked before private response (37.7909ms)
+✔ actual HTTP: parser clientError returns no-store and zero body bytes (12.0605ms)
+✔ actual HTTP: unexpected SQLite preserved; services remain disconnected (49.8524ms)
+✔ manager creates unpredictable fixed synthetic sessions and validates settings (2.7232ms)
+✔ manager pressure, expiry boundary, revoke, invalid IDs and clock regression fail closed (0.5357ms)
+✔ actual loopback bootstrap, authenticated read and mutation have fixed actor and no-store (24.5885ms)
+✔ missing, fake, expired and revoked sessions cannot authorize or silently bootstrap (8.9271ms)
+✔ actual boundary rejects untrusted, null, absent, malformed and duplicate Host/Origin (9.2002ms)
+✔ actual boundary enforces CSRF on every mutation and admitted bootstrap and logout (9.5517ms)
+✔ actual boundary denies injected browser actor, roles, capabilities and credentials (12.7542ms)
+✔ actual boundary rejects malformed, duplicate, oversized cookie and headers (8.1801ms)
+✔ actual boundary limits JSON, methods and body claims without response payload on failure (8.5137ms)
+✔ HTTP capacity rejects pressure, expiry frees space, logout and restart fail closed (7.0852ms)
+✔ session expiry while mutation body is arriving is rechecked at actual HTTP boundary (40.6634ms)
+✔ originless GET and HEAD admit current cookie and matching proof with optional same-origin metadata (6.1885ms)
+✔ originless reads deny absent, wrong, malformed and duplicate proof even with same-origin metadata (15.2618ms)
+✔ originless reads deny missing, fake, malformed, expired, revoked and restart-invalid sessions (13.4963ms)
+✔ present bad Origin and nonexact Host remain denied despite valid session proof (33.9139ms)
+✔ originless mutations, demo bootstrap and logout remain forbidden with valid proof (6.6748ms)
+✔ originless reads reject invalid fetch metadata, claims and bodies without trusting metadata alone (16.8848ms)
+✔ MOCK UI: seven panels, keyboard tabs, synthetic labels and initially disabled board (1.698ms)
+✔ MOCK UI: stored nonce remains unverified until private GET; same-origin proof on GET/HEAD/mutation (3.7552ms)
+✔ MOCK UI: bootstrap only on explicit click; logout and offline clear private UI/storage (1.8503ms)
+✔ MOCK UI: 401, expired/invalid stored values and network failure never admit (2.548ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 296.476

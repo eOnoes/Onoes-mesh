@@ -1,0 +1,44 @@
+{
+  "url": "http://127.0.0.1:61060",
+  "server": {
+    "pid": 1814872,
+    "createdAt": "2026-10-03T23:32:13.0642944Z",
+    "executable": "C:\\Program Files\\node.exe"
+  },
+  "task": {
+    "id": "d088cfd6-1a8f-40fd-95e8-7f3efb1d1099",
+    "title": "Interrupted execution",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 5,
+    "createdAt": "2026-10-03T23:26:57.657Z",
+    "updatedAt": "2026-10-03T23:34:18.566Z"
+  },
+  "historicalRecoveredRun": {
+    "id": "90329b70-00ee-4bc0-aa52-3e6604fad546",
+    "taskId": "d088cfd6-1a8f-40fd-95e8-7f3efb1d1099",
+    "proposalRevision": 2,
+    "command": "node --version",
+    "cwd": ".",
+    "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\m3-crash-recovery",
+    "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"--version\"]",
+    "state": "failed",
+    "startedAt": "2026-10-03T23:26:57.683Z",
+    "finishedAt": "2026-10-03T23:32:13.129Z",
+    "result": "{\"status\":\"UNKNOWN\",\"outcome\":\"unknown\",\"reason\":\"server_restart\",\"rootPid\":null,\"rootExitCode\":null,\"timedOut\":null,\"cleanupVerified\":null,\"error\":\"Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.\",\"stdout\":null,\"stderr\":null}",
+    "approvalRevision": 2
+  },
+  "currentDecision": {
+    "taskId": "d088cfd6-1a8f-40fd-95e8-7f3efb1d1099",
+    "proposalRevision": 5,
+    "status": "pending",
+    "executionId": null
+  },
+  "actualFullRefresh": true,
+  "sameRecoveredRevisionBeforeSave": 4,
+  "deliberatePendingRevision": 5,
+  "runs": 2,
+  "noSpawn": true,
+  "preservedCompletedRun": "b0a6795e-c297-4a40-b119-234a4704676c"
+}

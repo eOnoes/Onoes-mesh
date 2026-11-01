@@ -1,0 +1,23 @@
+# gitleaks configuration for Mesh.
+#
+# Every entry below was inspected by hand on 2026-10-31 and confirmed NOT to be a
+# credential. They are listed with their reasons so a future reader - or a future
+# scanner run - can see why they were dismissed instead of rediscovering them.
+[allowlist]
+description = "Hand-verified non-secrets. See the comment above each path."
+
+paths = [
+  # REDACTION TEST FIXTURE. This file deliberately contains fake credentials
+  # ("sk-abcd...", "tok_live_123", "hunter2", and a PEM block containing the literal
+  # word "opaque") because it verifies that Relay removes secrets from anything it
+  # forwards. Flagging it is the test working as designed.
+  '''_incoming/sandbox/test_relay_mind_adapter\.py''',
+
+  # Contains FILE CONTENT HASHES, e.g. "service_roots/relay/relay_auth.py": "b8c221...".
+  # The generic-api-key rule reads a hash as a token. There is no credential here.
+  '''test/app03-m4-link-checks/current-bytes\.json''',
+
+  # Test data where "key" is a LABEL, not a credential, e.g.
+  # "uncertain_key": "phase-c-uncertain-key". Synthetic qualification fixture.
+  '''_incoming/sandbox/relay_qualification\.py''',
+]

@@ -1,0 +1,247 @@
+{
+  "running": {
+    "id": "00838129-bb90-4eed-a9fc-f1b7507542ea",
+    "title": "Interrupted execution",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 3,
+    "createdAt": "2026-10-04T00:23:13.198Z",
+    "updatedAt": "2026-10-04T00:23:13.226Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "running",
+    "execution": {
+      "id": "85acff17-6eba-466b-bdb9-8f75dc019495",
+      "taskId": "00838129-bb90-4eed-a9fc-f1b7507542ea",
+      "proposalRevision": 2,
+      "command": "node --version",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "--version"
+      ],
+      "state": "running",
+      "startedAt": "2026-10-04T00:23:13.226Z",
+      "finishedAt": null,
+      "result": null,
+      "approvalRevision": 2
+    }
+  },
+  "completed": {
+    "id": "c71b35eb-0c26-48a8-9572-d1597fef549a",
+    "title": "Preserve actual completed run",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 4,
+    "createdAt": "2026-10-04T00:23:12.891Z",
+    "updatedAt": "2026-10-04T00:23:13.094Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "completed",
+    "execution": {
+      "id": "76bc1cd2-a5ce-44a7-a69f-3867c1019e32",
+      "taskId": "c71b35eb-0c26-48a8-9572-d1597fef549a",
+      "proposalRevision": 2,
+      "command": "node --version",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "--version"
+      ],
+      "state": "completed",
+      "startedAt": "2026-10-04T00:23:12.937Z",
+      "finishedAt": "2026-10-04T00:23:13.092Z",
+      "result": {
+        "status": "PASS",
+        "rootPid": 4040072,
+        "rootExitCode": 0,
+        "timedOut": false,
+        "cleanupVerified": true,
+        "error": null,
+        "stdout": "v24.14.0\r\n",
+        "stderr": ""
+      },
+      "approvalRevision": 2
+    }
+  },
+  "pending": {
+    "id": "7261350d-f668-4493-9bfb-a79ff8dac268",
+    "title": "Preserve unapproved pending proposal",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 2,
+    "createdAt": "2026-10-04T00:23:13.123Z",
+    "updatedAt": "2026-10-04T00:23:13.138Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "pending",
+    "execution": null
+  },
+  "denied": {
+    "id": "f901e89c-d8c9-44aa-ad27-3d9c2815dd0b",
+    "title": "Preserve denial",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 3,
+    "createdAt": "2026-10-04T00:23:13.150Z",
+    "updatedAt": "2026-10-04T00:23:13.177Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "denied",
+    "execution": null
+  },
+  "before": {
+    "tasks": [
+      {
+        "id": "c71b35eb-0c26-48a8-9572-d1597fef549a",
+        "title": "Preserve actual completed run",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 4,
+        "createdAt": "2026-10-04T00:23:12.891Z",
+        "updatedAt": "2026-10-04T00:23:13.094Z"
+      },
+      {
+        "id": "7261350d-f668-4493-9bfb-a79ff8dac268",
+        "title": "Preserve unapproved pending proposal",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 2,
+        "createdAt": "2026-10-04T00:23:13.123Z",
+        "updatedAt": "2026-10-04T00:23:13.138Z"
+      },
+      {
+        "id": "f901e89c-d8c9-44aa-ad27-3d9c2815dd0b",
+        "title": "Preserve denial",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 3,
+        "createdAt": "2026-10-04T00:23:13.150Z",
+        "updatedAt": "2026-10-04T00:23:13.177Z"
+      },
+      {
+        "id": "00838129-bb90-4eed-a9fc-f1b7507542ea",
+        "title": "Interrupted execution",
+        "description": "",
+        "label": "",
+        "status": "open",
+        "revision": 3,
+        "createdAt": "2026-10-04T00:23:13.198Z",
+        "updatedAt": "2026-10-04T00:23:13.226Z"
+      }
+    ],
+    "task_proposals": [
+      {
+        "taskId": "c71b35eb-0c26-48a8-9572-d1597fef549a",
+        "command": "node --version",
+        "cwd": ".",
+        "status": "pending"
+      },
+      {
+        "taskId": "7261350d-f668-4493-9bfb-a79ff8dac268",
+        "command": "node --version",
+        "cwd": ".",
+        "status": "pending"
+      },
+      {
+        "taskId": "f901e89c-d8c9-44aa-ad27-3d9c2815dd0b",
+        "command": "node --version",
+        "cwd": ".",
+        "status": "pending"
+      },
+      {
+        "taskId": "00838129-bb90-4eed-a9fc-f1b7507542ea",
+        "command": "node --version",
+        "cwd": ".",
+        "status": "pending"
+      }
+    ],
+    "task_executions": [
+      {
+        "id": "76bc1cd2-a5ce-44a7-a69f-3867c1019e32",
+        "taskId": "c71b35eb-0c26-48a8-9572-d1597fef549a",
+        "proposalRevision": 2,
+        "command": "node --version",
+        "cwd": ".",
+        "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+        "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"--version\"]",
+        "state": "completed",
+        "startedAt": "2026-10-04T00:23:12.937Z",
+        "finishedAt": "2026-10-04T00:23:13.092Z",
+        "result": "{\"status\":\"PASS\",\"rootPid\":4040072,\"rootExitCode\":0,\"timedOut\":false,\"cleanupVerified\":true,\"error\":null,\"stdout\":\"v24.14.0\\r\\n\",\"stderr\":\"\"}",
+        "approvalRevision": 2
+      },
+      {
+        "id": "85acff17-6eba-466b-bdb9-8f75dc019495",
+        "taskId": "00838129-bb90-4eed-a9fc-f1b7507542ea",
+        "proposalRevision": 2,
+        "command": "node --version",
+        "cwd": ".",
+        "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\review-M3",
+        "argv": "[\"C:\\\\Program Files\\\\node.exe\",\"--version\"]",
+        "state": "running",
+        "startedAt": "2026-10-04T00:23:13.226Z",
+        "finishedAt": null,
+        "result": null,
+        "approvalRevision": 2
+      }
+    ],
+    "task_proposal_decisions": [
+      {
+        "taskId": "c71b35eb-0c26-48a8-9572-d1597fef549a",
+        "proposalRevision": 2,
+        "status": "completed",
+        "executionId": "76bc1cd2-a5ce-44a7-a69f-3867c1019e32"
+      },
+      {
+        "taskId": "7261350d-f668-4493-9bfb-a79ff8dac268",
+        "proposalRevision": 2,
+        "status": "pending",
+        "executionId": null
+      },
+      {
+        "taskId": "f901e89c-d8c9-44aa-ad27-3d9c2815dd0b",
+        "proposalRevision": 2,
+        "status": "denied",
+        "executionId": null
+      },
+      {
+        "taskId": "00838129-bb90-4eed-a9fc-f1b7507542ea",
+        "proposalRevision": 2,
+        "status": "running",
+        "executionId": "85acff17-6eba-466b-bdb9-8f75dc019495"
+      }
+    ]
+  },
+  "actual": {
+    "bridgePid": 1424424,
+    "bridgeExit": 0,
+    "result": {
+      "status": "PASS",
+      "rootPid": 2984392,
+      "rootExitCode": 0,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": null,
+      "stdout": "v24.14.0\r\n",
+      "stderr": ""
+    }
+  }
+}

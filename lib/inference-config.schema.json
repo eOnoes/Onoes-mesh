@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Supervisor-only Inference observation v1 config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "enabled",
+    "nodes",
+    "approvedOrigins"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean"
+    },
+    "approvedOrigins": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/origin"
+      }
+    },
+    "deadlineMs": {
+      "type": "integer",
+      "minimum": 20,
+      "maximum": 5000,
+      "default": 1000
+    },
+    "maxResponseBytes": {
+      "type": "integer",
+      "minimum": 256,
+      "maximum": 1048576,
+      "default": 65536
+    },
+    "maxAgeMs": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 300000,
+      "default": 30000
+    },
+    "nodes": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+    },
+    "label": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9 ()_-]{0,63}$"
+    },
+    "origin": {
+      "type": "string",
+      "pattern": "^http://127\\.0\\.0\\.1:[1-9][0-9]{3,4}$",
+      "description": "Runtime enforces port 1024..65535, excludes 8787/5173 and requires exact approvedOrigins membership. Only owned disposable port-0 upstreams this pass."
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "enabled",
+        "source",
+        "sourceBinding",
+        "origin",
+        "observationPath",
+        "hostId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "source": {
+          "enum": [
+            "disposable_fixture",
+            "source_bound_live"
+          ]
+        },
+        "sourceBinding": {
+          "enum": [
+            "legacy-current-v1",
+            "onoes-current-v1"
+          ]
+        },
+        "origin": {
+          "$ref": "#/$defs/origin"
+        },
+        "observationPath": {
+          "const": "/api/status"
+        },
+        "hostId": {
+          "$ref": "#/$defs/id"
+        },
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "gpuCount": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64
+            },
+            "vramTotalMiB": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000000
+            }
+          }
+        },
+        "modelBindings": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sourceId",
+              "id",
+              "label"
+            ],
+            "properties": {
+              "sourceId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "label": {
+                "$ref": "#/$defs/label"
+              }
+            }
+          }
+        }
+      },
+      "description": "Runtime rejects duplicate node IDs and duplicate model source/alias IDs. Live source always held."
+    }
+  }
+}

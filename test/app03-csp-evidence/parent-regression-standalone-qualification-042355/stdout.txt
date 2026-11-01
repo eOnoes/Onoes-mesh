@@ -1,0 +1,5 @@
+{"label":"npm-test","exitCode":0,"directory":"D:\\Dev\\Onoes-Mesh\\test\\app03-m6-standalone-checks-ccb4e411-3db1-433c-8818-7631ffcd2367"}
+{"label":"m6-and-full-mesh-boundaries","exitCode":0,"directory":"D:\\Dev\\Onoes-Mesh\\test\\app03-m6-standalone-checks-ccb4e411-3db1-433c-8818-7631ffcd2367"}
+{"label":"m2-m3-full-mesh","exitCode":0,"directory":"D:\\Dev\\Onoes-Mesh\\test\\app03-m6-standalone-checks-ccb4e411-3db1-433c-8818-7631ffcd2367"}
+{"label":"m2-m3-standalone","exitCode":0,"directory":"D:\\Dev\\Onoes-Mesh\\test\\app03-m6-standalone-checks-ccb4e411-3db1-433c-8818-7631ffcd2367"}
+{"label":"native-ownership","exitCode":0,"directory":"D:\\Dev\\Onoes-Mesh\\test\\app03-m6-standalone-checks-ccb4e411-3db1-433c-8818-7631ffcd2367"}

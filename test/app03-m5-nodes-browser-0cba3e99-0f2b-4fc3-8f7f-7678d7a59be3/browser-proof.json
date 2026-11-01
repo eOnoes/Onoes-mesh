@@ -1,0 +1,568 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "dataDir": "test/app03-m5-nodes-browser-0cba3e99-0f2b-4fc3-8f7f-7678d7a59be3",
+  "nativeUrl": "http://127.0.0.1:61899",
+  "native": [
+    {
+      "schemaVersion": "mesh-node-probes/v1",
+      "observedAt": "2026-10-04T04:24:43.310Z",
+      "source": "native_tailscale_cli",
+      "scope": "tailnet_node_state",
+      "limits": {
+        "freshMs": 30000,
+        "staleGraceMs": 60000
+      },
+      "nodes": [
+        {
+          "id": "pc",
+          "label": "PC",
+          "dnsName": "emitchell.tail8c4a75.ts.net",
+          "tailscaleIp": "100.72.250.65",
+          "status": "ready",
+          "lastProbeAt": "2026-10-04T04:24:43.310Z",
+          "lastSuccessAt": "2026-10-04T04:24:43.310Z",
+          "observationType": "tailscale_status_cached_online",
+          "timestampSource": "local_probe_completion",
+          "observationAvailability": "available",
+          "tailscaleOnline": true,
+          "packetReachability": "unknown",
+          "inferenceReadiness": "unknown",
+          "modelReadiness": "unknown",
+          "capabilities": {
+            "observation": true,
+            "control": false,
+            "load": false,
+            "inference": false,
+            "unload": false
+          },
+          "errors": []
+        },
+        {
+          "id": "laptop",
+          "label": "Laptop",
+          "dnsName": "emitchell109-rog.tail8c4a75.ts.net",
+          "tailscaleIp": "100.119.162.99",
+          "status": "offline",
+          "lastProbeAt": "2026-10-04T04:24:43.310Z",
+          "lastSuccessAt": null,
+          "observationType": "tailscale_status_cached_online",
+          "timestampSource": "local_probe_completion",
+          "observationAvailability": "available",
+          "tailscaleOnline": false,
+          "packetReachability": "unknown",
+          "inferenceReadiness": "unknown",
+          "modelReadiness": "unknown",
+          "capabilities": {
+            "observation": true,
+            "control": false,
+            "load": false,
+            "inference": false,
+            "unload": false
+          },
+          "errors": [
+            {
+              "code": "node_offline"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "controlled": [
+    {
+      "schemaVersion": "mesh-node-probes/v1",
+      "observedAt": "2026-10-04T01:00:00.000Z",
+      "source": "disposable_transport",
+      "scope": "tailnet_node_state",
+      "limits": {
+        "freshMs": 30000,
+        "staleGraceMs": 60000
+      },
+      "nodes": [
+        {
+          "id": "pc",
+          "label": "PC",
+          "dnsName": "emitchell.tail8c4a75.ts.net",
+          "tailscaleIp": "100.72.250.65",
+          "status": "ready",
+          "lastProbeAt": "2026-10-04T01:00:00.000Z",
+          "lastSuccessAt": "2026-10-04T01:00:00.000Z",
+          "observationType": "tailscale_status_cached_online",
+          "timestampSource": "local_probe_completion",
+          "observationAvailability": "available",
+          "tailscaleOnline": true,
+          "packetReachability": "unknown",
+          "inferenceReadiness": "unknown",
+          "modelReadiness": "unknown",
+          "capabilities": {
+            "observation": true,
+            "control": false,
+            "load": false,
+            "inference": false,
+            "unload": false
+          },
+          "errors": []
+        },
+        {
+          "id": "laptop",
+          "label": "Laptop",
+          "dnsName": "emitchell109-rog.tail8c4a75.ts.net",
+          "tailscaleIp": "100.119.162.99",
+          "status": "ready",
+          "lastProbeAt": "2026-10-04T01:00:00.000Z",
+          "lastSuccessAt": "2026-10-04T01:00:00.000Z",
+          "observationType": "tailscale_status_cached_online",
+          "timestampSource": "local_probe_completion",
+          "observationAvailability": "available",
+          "tailscaleOnline": true,
+          "packetReachability": "unknown",
+          "inferenceReadiness": "unknown",
+          "modelReadiness": "unknown",
+          "capabilities": {
+            "observation": true,
+            "control": false,
+            "load": false,
+            "inference": false,
+            "unload": false
+          },
+          "errors": []
+        }
+      ]
+    },
+    {
+      "schemaVersion": "mesh-node-probes/v1",
+      "observedAt": "2026-10-04T01:00:01.000Z",
+      "source": "disposable_transport",
+      "scope": "tailnet_node_state",
+      "limits": {
+        "freshMs": 30000,
+        "staleGraceMs": 60000
+      },
+      "nodes": [
+        {
+          "id": "pc",
+          "label": "PC",
+          "dnsName": "emitchell.tail8c4a75.ts.net",
+          "tailscaleIp": "100.72.250.65",
+          "status": "stale",
+          "lastProbeAt": "2026-10-04T01:00:01.000Z",
+          "lastSuccessAt": "2026-10-04T01:00:00.000Z",
+          "observationType": "tailscale_status_cached_online",
+          "timestampSource": "local_probe_completion",
+          "observationAvailability": "available",
+          "tailscaleOnline": false,
+          "packetReachability": "unknown",
+          "inferenceReadiness": "unknown",
+          "modelReadiness": "unknown",
+          "capabilities": {
+            "observation": true,
+            "control": false,
+            "load": false,
+            "inference": false,
+            "unload": false
+          },
+          "errors": [
+            {
+              "code": "node_offline"
+            }
+          ]
+        },
+        {
+          "id": "laptop",
+          "label": "Laptop",
+          "dnsName": "emitchell109-rog.tail8c4a75.ts.net",
+          "tailscaleIp": "100.119.162.99",
+          "status": "stale",
+          "lastProbeAt": "2026-10-04T01:00:01.000Z",
+          "lastSuccessAt": "2026-10-04T01:00:00.000Z",
+          "observationType": "tailscale_status_cached_online",
+          "timestampSource": "local_probe_completion",
+          "observationAvailability": "available",
+          "tailscaleOnline": false,
+          "packetReachability": "unknown",
+          "inferenceReadiness": "unknown",
+          "modelReadiness": "unknown",
+          "capabilities": {
+            "observation": true,
+            "control": false,
+            "load": false,
+            "inference": false,
+            "unload": false
+          },
+          "errors": [
+            {
+              "code": "node_offline"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "schemaVersion": "mesh-node-probes/v1",
+      "observedAt": "2026-10-04T01:01:00.000Z",
+      "source": "disposable_transport",
+      "scope": "tailnet_node_state",
+      "limits": {
+        "freshMs": 30000,
+        "staleGraceMs": 60000
+      },
+      "nodes": [
+        {
+          "id": "pc",
+          "label": "PC",
+          "dnsName": "emitchell.tail8c4a75.ts.net",
+          "tailscaleIp": "100.72.250.65",
+          "status": "offline",
+          "lastProbeAt": "2026-10-04T01:01:00.000Z",
+          "lastSuccessAt": "2026-10-04T01:00:00.000Z",
+          "observationType": "tailscale_status_cached_online",
+          "timestampSource": "local_probe_completion",
+          "observationAvailability": "unavailable",
+          "tailscaleOnline": null,
+          "packetReachability": "unknown",
+          "inferenceReadiness": "unknown",
+          "modelReadiness": "unknown",
+          "capabilities": {
+            "observation": true,
+            "control": false,
+            "load": false,
+            "inference": false,
+            "unload": false
+          },
+          "errors": [
+            {
+              "code": "cli_access_denied"
+            }
+          ]
+        },
+        {
+          "id": "laptop",
+          "label": "Laptop",
+          "dnsName": "emitchell109-rog.tail8c4a75.ts.net",
+          "tailscaleIp": "100.119.162.99",
+          "status": "offline",
+          "lastProbeAt": "2026-10-04T01:01:00.000Z",
+          "lastSuccessAt": "2026-10-04T01:00:00.000Z",
+          "observationType": "tailscale_status_cached_online",
+          "timestampSource": "local_probe_completion",
+          "observationAvailability": "unavailable",
+          "tailscaleOnline": null,
+          "packetReachability": "unknown",
+          "inferenceReadiness": "unknown",
+          "modelReadiness": "unknown",
+          "capabilities": {
+            "observation": true,
+            "control": false,
+            "load": false,
+            "inference": false,
+            "unload": false
+          },
+          "errors": [
+            {
+              "code": "cli_access_denied"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "stage": "browser running",
+      "identities": {
+        "nativeCreationTimes": [
+          {
+            "pid": 3024076,
+            "created": "2026-10-04T04:24:37.8598531Z"
+          },
+          {
+            "pid": 1736224,
+            "created": "2026-10-04T04:24:38.1014533Z"
+          }
+        ],
+        "identities": [
+          {
+            "pid": 3024076,
+            "executable": "C:\\Program Files\\node.exe",
+            "argv": [
+              "C:\\Program Files\\node.exe",
+              "D:\\Dev\\Onoes-Mesh\\test\\m5-nodes-browser.mjs"
+            ],
+            "purpose": "M5 disposable API servers and browser test"
+          },
+          {
+            "pid": 1736224,
+            "executable": "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+            "argv": [
+              "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+              "--disable-field-trial-config",
+              "--disable-background-networking",
+              "--disable-background-timer-throttling",
+              "--disable-backgrounding-occluded-windows",
+              "--disable-back-forward-cache",
+              "--disable-breakpad",
+              "--disable-client-side-phishing-detection",
+              "--disable-component-extensions-with-background-pages",
+              "--disable-component-update",
+              "--no-default-browser-check",
+              "--disable-default-apps",
+              "--disable-dev-shm-usage",
+              "--disable-edgeupdater",
+              "--disable-extensions",
+              "--disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion",
+              "--enable-features=CDPScreenshotNewSurface",
+              "--allow-pre-commit-input",
+              "--disable-hang-monitor",
+              "--disable-ipc-flooding-protection",
+              "--disable-popup-blocking",
+              "--disable-prompt-on-repost",
+              "--disable-renderer-backgrounding",
+              "--disable-updater-scheduler",
+              "--force-color-profile=srgb",
+              "--metrics-recording-only",
+              "--no-first-run",
+              "--password-store=basic",
+              "--use-mock-keychain",
+              "--no-service-autorun",
+              "--export-tagged-pdf",
+              "--disable-search-engine-choice-screen",
+              "--unsafely-disable-devtools-self-xss-warnings",
+              "--edge-skip-compat-layer-relaunch",
+              "--disable-infobars",
+              "--disable-search-engine-choice-screen",
+              "--disable-sync",
+              "--enable-unsafe-swiftshader",
+              "--headless",
+              "--hide-scrollbars",
+              "--mute-audio",
+              "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
+              "--no-sandbox",
+              "--user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-rS1S86",
+              "--remote-debugging-pipe",
+              "--no-startup-window"
+            ],
+            "purpose": "Owned 390x844 Chromium regression browser",
+            "exitCode": null,
+            "signalCode": null
+          }
+        ],
+        "limitation": "WMI process inventory denied; no shared process inspection/termination"
+      }
+    },
+    {
+      "stage": "fixed native probe in flight",
+      "identities": {
+        "nativeCreationTimes": [
+          {
+            "pid": 3024076,
+            "created": "2026-10-04T04:24:37.8598531Z"
+          },
+          {
+            "pid": 1736224,
+            "created": "2026-10-04T04:24:38.1014533Z"
+          }
+        ],
+        "identities": [
+          {
+            "pid": 3024076,
+            "executable": "C:\\Program Files\\node.exe",
+            "argv": [
+              "C:\\Program Files\\node.exe",
+              "D:\\Dev\\Onoes-Mesh\\test\\m5-nodes-browser.mjs"
+            ],
+            "purpose": "M5 disposable API servers and browser test"
+          },
+          {
+            "pid": 1736224,
+            "executable": "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+            "argv": [
+              "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+              "--disable-field-trial-config",
+              "--disable-background-networking",
+              "--disable-background-timer-throttling",
+              "--disable-backgrounding-occluded-windows",
+              "--disable-back-forward-cache",
+              "--disable-breakpad",
+              "--disable-client-side-phishing-detection",
+              "--disable-component-extensions-with-background-pages",
+              "--disable-component-update",
+              "--no-default-browser-check",
+              "--disable-default-apps",
+              "--disable-dev-shm-usage",
+              "--disable-edgeupdater",
+              "--disable-extensions",
+              "--disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion",
+              "--enable-features=CDPScreenshotNewSurface",
+              "--allow-pre-commit-input",
+              "--disable-hang-monitor",
+              "--disable-ipc-flooding-protection",
+              "--disable-popup-blocking",
+              "--disable-prompt-on-repost",
+              "--disable-renderer-backgrounding",
+              "--disable-updater-scheduler",
+              "--force-color-profile=srgb",
+              "--metrics-recording-only",
+              "--no-first-run",
+              "--password-store=basic",
+              "--use-mock-keychain",
+              "--no-service-autorun",
+              "--export-tagged-pdf",
+              "--disable-search-engine-choice-screen",
+              "--unsafely-disable-devtools-self-xss-warnings",
+              "--edge-skip-compat-layer-relaunch",
+              "--disable-infobars",
+              "--disable-search-engine-choice-screen",
+              "--disable-sync",
+              "--enable-unsafe-swiftshader",
+              "--headless",
+              "--hide-scrollbars",
+              "--mute-audio",
+              "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
+              "--no-sandbox",
+              "--user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-rS1S86",
+              "--remote-debugging-pipe",
+              "--no-startup-window"
+            ],
+            "purpose": "Owned 390x844 Chromium regression browser",
+            "exitCode": null,
+            "signalCode": null
+          },
+          {
+            "pid": 1056812,
+            "executable": "C:/Program Files/Tailscale/tailscale.exe",
+            "argv": [
+              "C:/Program Files/Tailscale/tailscale.exe",
+              "status",
+              "--json"
+            ],
+            "purpose": "Original fixed read-only Tailscale status child",
+            "exitCode": null,
+            "signalCode": null
+          }
+        ],
+        "limitation": "WMI process inventory denied; no shared process inspection/termination"
+      }
+    },
+    {
+      "stage": "after close",
+      "identities": {
+        "nativeCreationTimes": {
+          "pid": 3024076,
+          "created": "2026-10-04T04:24:37.8598531Z"
+        },
+        "identities": [
+          {
+            "pid": 3024076,
+            "executable": "C:\\Program Files\\node.exe",
+            "argv": [
+              "C:\\Program Files\\node.exe",
+              "D:\\Dev\\Onoes-Mesh\\test\\m5-nodes-browser.mjs"
+            ],
+            "purpose": "M5 disposable API servers and browser test"
+          },
+          {
+            "pid": 1736224,
+            "executable": "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+            "argv": [
+              "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe",
+              "--disable-field-trial-config",
+              "--disable-background-networking",
+              "--disable-background-timer-throttling",
+              "--disable-backgrounding-occluded-windows",
+              "--disable-back-forward-cache",
+              "--disable-breakpad",
+              "--disable-client-side-phishing-detection",
+              "--disable-component-extensions-with-background-pages",
+              "--disable-component-update",
+              "--no-default-browser-check",
+              "--disable-default-apps",
+              "--disable-dev-shm-usage",
+              "--disable-edgeupdater",
+              "--disable-extensions",
+              "--disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion",
+              "--enable-features=CDPScreenshotNewSurface",
+              "--allow-pre-commit-input",
+              "--disable-hang-monitor",
+              "--disable-ipc-flooding-protection",
+              "--disable-popup-blocking",
+              "--disable-prompt-on-repost",
+              "--disable-renderer-backgrounding",
+              "--disable-updater-scheduler",
+              "--force-color-profile=srgb",
+              "--metrics-recording-only",
+              "--no-first-run",
+              "--password-store=basic",
+              "--use-mock-keychain",
+              "--no-service-autorun",
+              "--export-tagged-pdf",
+              "--disable-search-engine-choice-screen",
+              "--unsafely-disable-devtools-self-xss-warnings",
+              "--edge-skip-compat-layer-relaunch",
+              "--disable-infobars",
+              "--disable-search-engine-choice-screen",
+              "--disable-sync",
+              "--enable-unsafe-swiftshader",
+              "--headless",
+              "--hide-scrollbars",
+              "--mute-audio",
+              "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
+              "--no-sandbox",
+              "--user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-rS1S86",
+              "--remote-debugging-pipe",
+              "--no-startup-window"
+            ],
+            "purpose": "Owned 390x844 Chromium regression browser",
+            "exitCode": 0,
+            "signalCode": null
+          },
+          {
+            "pid": 1056812,
+            "executable": "C:/Program Files/Tailscale/tailscale.exe",
+            "argv": [
+              "C:/Program Files/Tailscale/tailscale.exe",
+              "status",
+              "--json"
+            ],
+            "purpose": "Original fixed read-only Tailscale status child",
+            "exitCode": 0,
+            "signalCode": null
+          }
+        ],
+        "limitation": "WMI process inventory denied; no shared process inspection/termination"
+      }
+    }
+  ],
+  "errors": [],
+  "controlledDir": "test/app03-m5-nodes-controlled-836cd432-2603-4f5d-ba40-0154f0fdfa6b",
+  "requests": [
+    {
+      "url": "http://127.0.0.1:61899/api/node-probes/refresh",
+      "method": "POST",
+      "body": "{}"
+    }
+  ],
+  "result": "PASS: native API-to-DOM equality; controlled aging and delayed private clearance",
+  "cleanup": {
+    "browserPid": 1736224,
+    "originalBrowserExitCode": 0,
+    "originalBrowserSignal": null,
+    "appListenersClosed": true,
+    "disposableDataRetained": true,
+    "nativeChildren": [
+      {
+        "pid": 1056812,
+        "executable": "C:/Program Files/Tailscale/tailscale.exe",
+        "argv": [
+          "C:/Program Files/Tailscale/tailscale.exe",
+          "status",
+          "--json"
+        ],
+        "exitCode": 0,
+        "signalCode": null
+      }
+    ]
+  }
+}

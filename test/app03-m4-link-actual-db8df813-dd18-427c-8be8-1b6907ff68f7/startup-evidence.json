@@ -1,0 +1,18 @@
+{
+  "status": {
+    "status": "fresh",
+    "conversationId": "d3d7a7e0-934e-44c3-ac97-4715344fa6a8",
+    "links": [],
+    "pending": [],
+    "error": null
+  },
+  "events": "{\"event\":\"mesh_relay_spawned\",\"pid\":477136,\"executable\":\"C:\\\\Python314\\\\python.exe\"}\n{\"event\":\"mesh_relay_listening\",\"pid\":477136,\"port\":49157}\n{\"event\":\"mesh_listening\",\"pid\":2483304,\"url\":\"http://127.0.0.1:49160\",\"dataDir\":\"test/app03-m4-link-actual-db8df813-dd18-427c-8be8-1b6907ff68f7\"}\n",
+  "runtime": "C:\\Python314\\python.exe",
+  "dependencies": "test/app03-m4-link-runtime/Lib/site-packages",
+  "flags": [
+    "-I",
+    "-S",
+    "-B"
+  ],
+  "dependencyHandoff": "test/app03-m4-link-runtime/Scripts/python.exe -m pip install fastapi uvicorn httpx cryptography"
+}

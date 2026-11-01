@@ -1,0 +1,16 @@
+
+> test:ui
+> node --test --test-timeout=55000 test/ui.test.mjs
+
+✔ MOCK UI: seven panels, keyboard tabs, synthetic labels and initially disabled board (1.7207ms)
+✔ MOCK UI: stored nonce remains unverified until private GET; same-origin proof on GET/HEAD/mutation (3.2199ms)
+✔ MOCK UI: bootstrap only on explicit click; logout and offline clear private UI/storage (1.7106ms)
+✔ MOCK UI: 401, expired/invalid stored values and network failure never admit (2.3916ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 59.2578

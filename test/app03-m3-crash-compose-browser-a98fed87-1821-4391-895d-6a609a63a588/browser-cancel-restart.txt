@@ -1,0 +1,48 @@
+Browser tab: 1014724552, Title: "Onoes-mesh / Tasks", URL: "http://127.0.0.1:61474/".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 10, 40-42
++	55 text Saved task loaded.
++			56 container edit-form
++				57 text Task 56bc18f9-f4d9-47ca-828f-7909083cb96d · revision 4
++				58 text Title
++				59 text field (settable) Title, Value: M3 browser real Cancel, ID: edit-title
++				60 text Description
++				61 text entry area (settable) Description, ID: edit-description
++				62 text Assignment label
++				63 text field (settable) Assignment label, ID: edit-label
++				64 text Saved status: open
++				65 button Save task changes
++				66 button Mark done, ID: toggle-status
++				67 button Reload current task, ID: reload-task
++		68 container
++			69 heading Command proposal for selected task, Value: 2
++				70 text Command proposal for selected task
++			71 container proposal-form
++				72 text Failed · inspect the process result and cleanup below.
++				73 text {"command":"node lib/slow-command.mjs","cwd":"."}
++				74 text Whitelisted command
++				75 pop up button (collapsed, settable) Whitelisted command, Value: node lib/slow-command.mjs, ID: proposal-command, Secondary Actions: Expand
++					76 menu
++						77 node --version
++						78 git status
++						79 (selected) node lib/slow-command.mjs
++				80 text Working directory: . (fixed repository root).
++				81 text One current proposal per task. Save a proposal, then deliberately Approve or Deny. After a result or an interrupted attempt with unknown outcome, save a new proposal to request another execution. Interrupted attempts are never automatically retried. A local session does not verify Eddie's identity.
++				82 button Save pending proposal, ID: propose-command
++				83 button (disabled) Approve, ID: approve-command
++				84 button (disabled) Deny, ID: deny-command
++				85 button (disabled) Cancel, ID: cancel-command
++				86 text Run ab80dc11-3370-4a5e-bee1-e38c6f5a2866
+State: failed
+Cancelled: true
+Exit code: 1
+Cleanup verified: true
+Error: execution cancelled; root exited with nonzero code
+stdout:
+M3 slow root 4078752; descendant 2156760; started
+M3 slow descendant 2156760; started
+
+stderr:
+
+~				48 checkbox M3 browser real Cancel open · No assignment label · revision 4, Value: 1
+The focused UI element is 48 checkbox M3 browser real Cancel open · No assignment label · revision 4, Value: 1

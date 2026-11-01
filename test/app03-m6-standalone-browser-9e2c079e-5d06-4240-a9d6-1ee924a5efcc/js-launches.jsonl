@@ -1,0 +1,9 @@
+{"event":"spawn","parentPid":1547860,"pid":166356,"executable":"C:\\WINDOWS\\system32\\cmd.exe","argv":["C:\\WINDOWS\\system32\\cmd.exe","/d","/s","/c","node test/m1-serve.mjs"],"at":"2026-10-04T04:52:39.482Z"}
+{"event":"spawn","parentPid":856528,"pid":922292,"executable":"C:\\Python314\\python.exe","argv":["C:\\Python314\\python.exe","-I","-B","D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py"],"at":"2026-10-04T04:52:40.398Z"}
+{"event":"close","parentPid":856528,"pid":922292,"exitCode":0,"signal":null,"at":"2026-10-04T04:52:40.483Z"}
+{"event":"spawn","parentPid":856528,"pid":1504708,"executable":"C:\\Python314\\python.exe","argv":["C:\\Python314\\python.exe","-I","-B","D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py"],"at":"2026-10-04T04:52:41.044Z"}
+{"event":"close","parentPid":856528,"pid":1504708,"exitCode":0,"signal":null,"at":"2026-10-04T04:52:41.231Z"}
+{"event":"spawn","parentPid":856528,"pid":1854220,"executable":"C:\\Python314\\python.exe","argv":["C:\\Python314\\python.exe","-I","-B","D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py"],"at":"2026-10-04T04:52:41.532Z"}
+{"event":"close","parentPid":1547860,"pid":166356,"exitCode":1,"signal":null,"at":"2026-10-04T04:52:41.702Z"}
+{"event":"spawn","parentPid":593204,"pid":69740,"executable":"C:\\WINDOWS\\system32\\cmd.exe","argv":["C:\\WINDOWS\\system32\\cmd.exe","/d","/s","/c","node test/m1-serve.mjs"],"at":"2026-10-04T04:52:41.863Z"}
+{"event":"close","parentPid":593204,"pid":69740,"exitCode":1,"signal":null,"at":"2026-10-04T04:52:42.569Z"}

@@ -1,0 +1,47 @@
+{
+  "outcome": "interrupted",
+  "result": null,
+  "observation": {
+    "event": "verified",
+    "action": "kill-bridge",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 243952,
+        "creationTime100ns": "134355452308120886",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 3236756,
+        "creationTime100ns": "134355452308518990",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 243952,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 2585260,
+        "creationTime100ns": "134355452309147097",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 3236756,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 3083724,
+        "creationTime100ns": "134355452309537870",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 2585260,
+        "exitSignaled": true
+      }
+    ],
+    "cleanupVerified": true,
+    "elapsedMs": 8.643
+  },
+  "output": "",
+  "errors": "file:///D:/Dev/Onoes-Mesh-wt/m3-crash-compose/lib/command-execution.mjs:84\r\n        if (code !== 0) throw new Error(`Ownership bridge exited ${code}: ${errors}`);\r\n                              ^\r\n\r\nError: Ownership bridge exited 1: \r\n    at ChildProcess.<anonymous> (file:///D:/Dev/Onoes-Mesh-wt/m3-crash-compose/lib/command-execution.mjs:84:31)\r\n    at Object.onceWrapper (node:events:623:26)\r\n    at ChildProcess.emit (node:events:508:28)\r\n    at maybeClose (node:internal/child_process:1100:16)\r\n    at ChildProcess._handle.onexit (node:internal/child_process:305:5)\r\n\r\nNode.js v24.14.0\r\n",
+  "elapsedMs": 456.03169999999955,
+  "nativeResultUnavailable": true
+}

@@ -1,0 +1,61 @@
+{
+  "outcome": "interrupted",
+  "result": {
+    "result": {
+      "status": "FAIL",
+      "rootPid": 783272,
+      "rootExitCode": 1,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": "execution cancelled; root exited with nonzero code",
+      "cancelled": true,
+      "stdout": "M3 slow root 783272; descendant 428780; started\nM3 slow descendant 428780; started\n",
+      "stderr": ""
+    },
+    "elapsedMs": 440.3087,
+    "callerPid": 2350880
+  },
+  "observation": {
+    "event": "verified",
+    "action": "wait",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 2350880,
+        "creationTime100ns": "134356250884636193",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 35328,
+        "creationTime100ns": "134356250885022083",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 2350880,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 783272,
+        "creationTime100ns": "134356250885577064",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 35328,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 428780,
+        "creationTime100ns": "134356250885929567",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 783272,
+        "exitSignaled": true
+      }
+    ],
+    "cleanupVerified": true,
+    "elapsedMs": 64.815
+  },
+  "output": "{\"result\":{\"status\":\"FAIL\",\"rootPid\":783272,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 783272; descendant 428780; started\\nM3 slow descendant 428780; started\\n\",\"stderr\":\"\"},\"elapsedMs\":440.3087,\"callerPid\":2350880}\n",
+  "errors": "",
+  "elapsedMs": 495.90129999999954,
+  "nativeResultUnavailable": false
+}

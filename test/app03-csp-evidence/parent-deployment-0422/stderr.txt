@@ -1,0 +1,28 @@
+(node:743492) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
++ [
++   "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-wPHNqpo3SpjkH3Kp8DJjzGLrpyEP9qdxrWqlF7sgN9s='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
++   "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-wPHNqpo3SpjkH3Kp8DJjzGLrpyEP9qdxrWqlF7sgN9s='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
++ ]
+- []
+
+    at file:///D:/Dev/Onoes-Mesh/.runner/fix-relay-csp-inline/deploy-readonly.mjs:31:46 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [
+    "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-wPHNqpo3SpjkH3Kp8DJjzGLrpyEP9qdxrWqlF7sgN9s='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+    "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-wPHNqpo3SpjkH3Kp8DJjzGLrpyEP9qdxrWqlF7sgN9s='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.14.0

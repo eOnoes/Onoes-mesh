@@ -1,0 +1,54 @@
+
+> onoes-mesh-integration-foundation@0.1.0 test
+> node test/check.mjs --test && node --test --test-timeout=20000 test/m1-serve.test.mjs
+
+(node:560644) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ M1 actual server process: same URL/store survive restart and stale cookie can be replaced (301.1196ms)
+✔ actual HTTP: public static shell and all private routes require admission (60.7383ms)
+✔ actual HTTP: originless proof, malformed/hostile input, body-free denials (37.1564ms)
+✔ actual HTTP + SQLite: create/read/edit/assignment/done/reopen/revision and restart (101.5391ms)
+✔ actual HTTP: logout revokes and expiry blocks further private writes (31.6955ms)
+✔ actual HTTP: async observation expiry rechecked before private response (53.8807ms)
+✔ actual HTTP: parser clientError returns no-store and zero body bytes (29.8165ms)
+✔ actual HTTP: unexpected SQLite preserved; services remain disconnected (44.278ms)
+✔ manager creates unpredictable fixed synthetic sessions and validates settings (3.3968ms)
+✔ manager pressure, expiry boundary, revoke, invalid IDs and clock regression fail closed (0.5822ms)
+✔ actual loopback bootstrap, authenticated read and mutation have fixed actor and no-store (26.6177ms)
+✔ missing, fake, expired and revoked sessions cannot authorize or silently bootstrap (10.9474ms)
+✔ actual boundary rejects untrusted, null, absent, malformed and duplicate Host/Origin (9.4599ms)
+✔ actual boundary enforces CSRF on every mutation and admitted bootstrap and logout (9.8918ms)
+✔ actual boundary denies injected browser actor, roles, capabilities and credentials (13.0869ms)
+✔ actual boundary rejects malformed, duplicate, oversized cookie and headers (8.3905ms)
+✔ actual boundary limits JSON, methods and body claims without response payload on failure (8.9726ms)
+✔ HTTP capacity rejects pressure, expiry frees space, logout and restart fail closed (6.989ms)
+✔ session expiry while mutation body is arriving is rechecked at actual HTTP boundary (42.1523ms)
+✔ originless GET and HEAD admit current cookie and matching proof with optional same-origin metadata (6.8808ms)
+✔ originless reads deny absent, wrong, malformed and duplicate proof even with same-origin metadata (16.181ms)
+✔ originless reads deny missing, fake, malformed, expired, revoked and restart-invalid sessions (14.4364ms)
+✔ present bad Origin and nonexact Host remain denied despite valid session proof (35.4069ms)
+✔ originless mutations, demo bootstrap and logout remain forbidden with valid proof (7.0496ms)
+✔ originless reads reject invalid fetch metadata, claims and bodies without trusting metadata alone (17.7633ms)
+✔ MOCK UI: seven panels, keyboard tabs, local task labels and initially disabled board (2.4296ms)
+✔ MOCK UI: stored nonce remains unverified until private GET; same-origin proof on GET/HEAD/mutation (3.9493ms)
+✔ MOCK UI: bootstrap only on explicit click; logout and offline clear private UI/storage (2.0566ms)
+✔ MOCK UI: 401, expired/invalid stored values and network failure never admit (3.314ms)
+✔ version matches package.json (0.5744ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 733.8764
+HTTP proof: npm start; backend http://127.0.0.1:64344; preview http://127.0.0.1:64345; shell/app.js/styles.css 200 byte-identical; phone Host shell 200; bootstrap 201; task POST 201/GET 200; disposable store test/app03-m2-approve-npm-start-6032778a-f1cc-433d-8438-0752bd74240b
+✔ npm start serves actual PWA and phone-origin task requests from an isolated store (304.2816ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 366.8548

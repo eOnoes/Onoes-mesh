@@ -1,0 +1,10 @@
+{
+  "pid": 1933684,
+  "parentPid": 212376,
+  "creationTime100ns": "134355602530666899",
+  "executable": "C:\\Python314\\python.exe",
+  "argv": "C:/Python314/python.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-owner-deny-cancel-evidence\\supervise.py parent-integrated-browser-040413 \"C:/Program Files/node.exe\" test/owner-deny-cancel-browser.mjs",
+  "argvStatus": 0,
+  "purpose": "owned disposable verification descendant",
+  "visibleWindows": []
+}

@@ -1,0 +1,24 @@
+Browser tab: 1014724552, Title: "Onoes-mesh / Tasks", URL: "http://127.0.0.1:61474/".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 86, 88, 90, 92-98
++	88 text Approved. Waiting for the actual owned process result.
++				89 text Task 5802d13c-02ff-4512-b038-83465d0eae5f · revision 3
++				90 text Saved status: open
+~				91 text Running · awaiting process result and verified cleanup.
++				92 text {"command":"node lib/slow-command.mjs","cwd":"."}
+~				75 pop up button (disabled, collapsed, settable) Whitelisted command, Value: node lib/slow-command.mjs, ID: proposal-command, Secondary Actions: Expand
+~				82 button (disabled) Save pending proposal, ID: propose-command
+~				83 button (disabled) Approve, ID: approve-command
+~				84 button (disabled) Deny, ID: deny-command
+~				85 button Cancel, ID: cancel-command
++				93 text Run 1a0f2b96-9f59-4f52-8f76-355f09d40628
+State: running
+Process result not yet known.
++			94 text Choose a saved task to inspect.
++				95 checkbox M3 browser real Cancel open · No assignment label · revision 4, Value: 0
++					96 text M3 browser real Cancel
++					97 text open · No assignment label · revision 4
++				98 checkbox M3 browser real crash open · No assignment label · revision 3, Value: 1
++					99 text M3 browser real crash
++					100 text open · No assignment label · revision 3
+The focused UI element is 1 AXWebArea Onoes-mesh / Tasks, URL: 127.0.0.1:61474/

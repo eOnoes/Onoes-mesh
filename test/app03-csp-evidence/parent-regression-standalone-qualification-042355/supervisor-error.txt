@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "D:\Dev\Onoes-Mesh\test\app03-csp-evidence\supervisor.py", line 132, in <module>
+    assert not races, 'Native acquisition race retained; no fabricated exit proof'
+           ^^^^^^^^^
+AssertionError: Native acquisition race retained; no fabricated exit proof

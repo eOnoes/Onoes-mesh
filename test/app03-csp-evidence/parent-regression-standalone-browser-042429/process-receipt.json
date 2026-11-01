@@ -1,0 +1,684 @@
+{
+  "label": "parent-regression-standalone-browser-042429",
+  "worktree": "D:\\Dev\\Onoes-Mesh",
+  "launch": [
+    "C:/Program Files/node.exe",
+    "test/m6-standalone-browser.mjs"
+  ],
+  "identities": [
+    {
+      "pid": 2899848,
+      "parentPid": 857624,
+      "creationTime100ns": "134355614697713576",
+      "executable": "C:\\Python314\\pythonw.exe",
+      "argv": "C:/Python314/pythonw.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-csp-evidence\\supervisor.py parent-regression-standalone-browser-042429 \"C:/Program Files/node.exe\" test/m6-standalone-browser.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 console-free supervisor",
+      "ancestry": [
+        857624
+      ],
+      "exitSignaled": false
+    },
+    {
+      "pid": 2165872,
+      "parentPid": 2899848,
+      "creationTime100ns": "134355614700270660",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:/Program Files/node.exe\" test/m6-standalone-browser.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 root test command",
+      "ancestry": [
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 81780,
+      "parentPid": 2165872,
+      "creationTime100ns": "134355614700316893",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant conhost.exe",
+      "ancestry": [
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 921244,
+      "parentPid": 2165872,
+      "creationTime100ns": "134355614702368048",
+      "executable": "C:\\Python314\\pythonw.exe",
+      "argv": "C:\\Python314\\pythonw.exe -B D:\\Dev\\Onoes-Mesh\\test\\app03-m6-standalone-browser-88ebab20-0fdd-40c8-b4a3-b1db5b00cd80\\native-observer.py 2165872",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant pythonw.exe",
+      "ancestry": [
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3732704,
+      "parentPid": 2165872,
+      "creationTime100ns": "134355614703103981",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" \"C:\\Program Files\\node_modules\\npm\\bin\\npm-cli.js\" start",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant node.exe",
+      "ancestry": [
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 837984,
+      "parentPid": 3732704,
+      "creationTime100ns": "134355614703148621",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant conhost.exe",
+      "ancestry": [
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 102192,
+      "parentPid": 3732704,
+      "creationTime100ns": "134355614704320662",
+      "executable": "C:\\Windows\\System32\\cmd.exe",
+      "argv": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c node test/m1-serve.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant cmd.exe",
+      "ancestry": [
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 3851500,
+      "parentPid": 102192,
+      "creationTime100ns": "134355614704462296",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "node  test/m1-serve.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant node.exe",
+      "ancestry": [
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 4069160,
+      "parentPid": 2165872,
+      "creationTime100ns": "134355614705375606",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc --remote-debugging-pipe --no-startup-window",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant chrome.exe",
+      "ancestry": [
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 470860,
+      "parentPid": 4069160,
+      "creationTime100ns": "134355614705478224",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe --type=crashpad-handler --user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc /prefetch:4 --monitor-self-annotation=ptype=crashpad-handler --database=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc\\Crashpad --annotation=plat=Win64 \"--annotation=prod=Google Chrome for Testing\" --annotation=ver=153.0.8010.12 --initial-client-data=0x124,0x128,0x12c,0x100,0x130,0x7ffef7edce80,0x7ffef7edce90,0x7ffef7edcea0",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant chrome.exe",
+      "ancestry": [
+        4069160,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1384320,
+      "parentPid": 4069160,
+      "creationTime100ns": "134355614706308584",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=gpu-process --no-sandbox --disable-breakpad --headless --enable-unsafe-swiftshader --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc\" --no-pre-read-main-dll --start-stack-profiler --gpu-preferences=WAAAAAAAAADgAAAEAAAAAAAAAAAAAGAAQAAAAAAAAAADAAAAAAAAADgAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAoAAAAAAAAAAgAAAAAAAAAEAAAAAIAAAABAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= --field-trial-handle=1856,i,18367465500067468830,10273636916897131317,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1876,i,4873666019581421355,16204661464415414517,4 --trace-process-track-uuid=3190708988185955192 --mojo-platform-channel-handle=1844 /prefetch:2",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant chrome.exe",
+      "ancestry": [
+        4069160,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2430252,
+      "parentPid": 4069160,
+      "creationTime100ns": "134355614706362435",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --no-sandbox --mute-audio --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc\" --no-pre-read-main-dll --start-stack-profiler --field-trial-handle=1856,i,18367465500067468830,10273636916897131317,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1876,i,4873666019581421355,16204661464415414517,4 --trace-process-track-uuid=3190708989122997041 --mojo-platform-channel-handle=2116 /prefetch:11",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant chrome.exe",
+      "ancestry": [
+        4069160,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1865944,
+      "parentPid": 4069160,
+      "creationTime100ns": "134355614706502040",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --no-sandbox --mute-audio --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc\" --no-pre-read-main-dll --field-trial-handle=1856,i,18367465500067468830,10273636916897131317,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1876,i,4873666019581421355,16204661464415414517,4 --trace-process-track-uuid=3190708990060038890 --mojo-platform-channel-handle=2444 /prefetch:13",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant chrome.exe",
+      "ancestry": [
+        4069160,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1339388,
+      "parentPid": 4069160,
+      "creationTime100ns": "134355614707077974",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --top-chrome-webui --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=5 --launch-time-ticks=803408554697 --field-trial-handle=1856,i,18367465500067468830,10273636916897131317,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1876,i,4873666019581421355,16204661464415414517,4 --trace-process-track-uuid=3190708990997080739 --mojo-platform-channel-handle=3700 /prefetch:1",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant chrome.exe",
+      "ancestry": [
+        4069160,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3029164,
+      "parentPid": 4069160,
+      "creationTime100ns": "134355614707338930",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=7 --launch-time-ticks=803408580818 --field-trial-handle=1856,i,18367465500067468830,10273636916897131317,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1876,i,4873666019581421355,16204661464415414517,4 --trace-process-track-uuid=3190708992871164437 --mojo-platform-channel-handle=3832 /prefetch:1",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant chrome.exe",
+      "ancestry": [
+        4069160,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1122732,
+      "parentPid": 4069160,
+      "creationTime100ns": "134355614707383642",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=6 --launch-time-ticks=803408585152 --field-trial-handle=1856,i,18367465500067468830,10273636916897131317,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1876,i,4873666019581421355,16204661464415414517,4 --trace-process-track-uuid=3190708991934122588 --mojo-platform-channel-handle=3844 /prefetch:1",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant chrome.exe",
+      "ancestry": [
+        4069160,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2549136,
+      "parentPid": 3851500,
+      "creationTime100ns": "134355614713120945",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant python.exe",
+      "ancestry": [
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2935644,
+      "parentPid": 2549136,
+      "creationTime100ns": "134355614713181636",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant conhost.exe",
+      "ancestry": [
+        2549136,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1550652,
+      "parentPid": 2549136,
+      "creationTime100ns": "134355614713700526",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" --version",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant node.exe",
+      "ancestry": [
+        2549136,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1572620,
+      "parentPid": 1550652,
+      "creationTime100ns": "134355614713742687",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant conhost.exe",
+      "ancestry": [
+        1550652,
+        2549136,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1330368,
+      "parentPid": 3851500,
+      "creationTime100ns": "134355614719624396",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant python.exe",
+      "ancestry": [
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 947668,
+      "parentPid": 1330368,
+      "creationTime100ns": "134355614719649463",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant conhost.exe",
+      "ancestry": [
+        1330368,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 363120,
+      "parentPid": 1330368,
+      "creationTime100ns": "134355614720171463",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant node.exe",
+      "ancestry": [
+        1330368,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 1200052,
+      "parentPid": 363120,
+      "creationTime100ns": "134355614720215990",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant conhost.exe",
+      "ancestry": [
+        363120,
+        1330368,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 1150924,
+      "parentPid": 363120,
+      "creationTime100ns": "134355614720552195",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs --owned-child",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant node.exe",
+      "ancestry": [
+        363120,
+        1330368,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 1893312,
+      "parentPid": 3851500,
+      "creationTime100ns": "134355614724438786",
+      "executable": "C:\\Python314\\python.exe",
+      "argv": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant python.exe",
+      "ancestry": [
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 808168,
+      "parentPid": 1893312,
+      "creationTime100ns": "134355614724465559",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant conhost.exe",
+      "ancestry": [
+        1893312,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1162244,
+      "parentPid": 1893312,
+      "creationTime100ns": "134355614724994737",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant node.exe",
+      "ancestry": [
+        1893312,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1644528,
+      "parentPid": 1162244,
+      "creationTime100ns": "134355614725038906",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant conhost.exe",
+      "ancestry": [
+        1162244,
+        1893312,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2127216,
+      "parentPid": 1162244,
+      "creationTime100ns": "134355614725386431",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs --owned-child",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant node.exe",
+      "ancestry": [
+        1162244,
+        1893312,
+        3851500,
+        102192,
+        3732704,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 534744,
+      "parentPid": 2165872,
+      "creationTime100ns": "134355614726176051",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "\"C:\\Program Files\\node.exe\" \"C:\\Program Files\\node_modules\\npm\\bin\\npm-cli.js\" start",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant node.exe",
+      "ancestry": [
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 1685984,
+      "parentPid": 534744,
+      "creationTime100ns": "134355614726205974",
+      "executable": "C:\\Windows\\System32\\conhost.exe",
+      "argv": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant conhost.exe",
+      "ancestry": [
+        534744,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 4024360,
+      "parentPid": 534744,
+      "creationTime100ns": "134355614727440455",
+      "executable": "C:\\Windows\\System32\\cmd.exe",
+      "argv": "C:\\WINDOWS\\system32\\cmd.exe /d /s /c node test/m1-serve.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant cmd.exe",
+      "ancestry": [
+        534744,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 2891900,
+      "parentPid": 4024360,
+      "creationTime100ns": "134355614727580586",
+      "executable": "C:\\Program Files\\node.exe",
+      "argv": "node  test/m1-serve.mjs",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant node.exe",
+      "ancestry": [
+        4024360,
+        534744,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 2963744,
+      "parentPid": 4069160,
+      "creationTime100ns": "134355614727984454",
+      "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "argv": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=chrome.mojom.ProcessorMetrics --lang=en-US --service-sandbox-type=none --no-sandbox --mute-audio --video-capture-use-gpu-memory-buffer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-bW7zJc\" --no-pre-read-main-dll --field-trial-handle=1856,i,18367465500067468830,10273636916897131317,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1876,i,4873666019581421355,16204661464415414517,4 --trace-process-track-uuid=3190708993808206286 --mojo-platform-channel-handle=4816 /prefetch:14",
+      "worktree": "D:\\Dev\\Onoes-Mesh",
+      "purpose": "parent-regression-standalone-browser-042429 owned descendant chrome.exe",
+      "ancestry": [
+        4069160,
+        2165872,
+        2899848
+      ],
+      "exitSignaled": true,
+      "exitCode": 0
+    }
+  ],
+  "windows": [
+    {
+      "pid": 470860,
+      "hwnd": "14818958",
+      "title": "",
+      "windowClass": "crashpad_SessionEndWatcher",
+      "everVisible": false
+    },
+    {
+      "pid": 470860,
+      "hwnd": "15406316",
+      "title": "Default IME",
+      "windowClass": "IME",
+      "everVisible": false
+    },
+    {
+      "pid": 4069160,
+      "hwnd": "6165966",
+      "title": "",
+      "windowClass": "Base_PowerMessageWindow",
+      "everVisible": false
+    },
+    {
+      "pid": 4069160,
+      "hwnd": "2693596",
+      "title": "Default IME",
+      "windowClass": "IME",
+      "everVisible": false
+    },
+    {
+      "pid": 4069160,
+      "hwnd": "31459590",
+      "title": "",
+      "windowClass": "Chrome_WidgetWin_0",
+      "everVisible": false
+    },
+    {
+      "pid": 4069160,
+      "hwnd": "11798882",
+      "title": "",
+      "windowClass": "Chrome_StatusTrayWindow",
+      "everVisible": false
+    },
+    {
+      "pid": 4069160,
+      "hwnd": "43715552",
+      "title": "Onoes-mesh / Tasks - Google Chrome for Testing",
+      "windowClass": "Chrome_WidgetWin_1",
+      "everVisible": false
+    },
+    {
+      "pid": 4069160,
+      "hwnd": "6888866",
+      "title": "",
+      "windowClass": "Chrome_WidgetWin_0",
+      "everVisible": false
+    },
+    {
+      "pid": 1384320,
+      "hwnd": "7084088",
+      "title": "",
+      "windowClass": "Chrome_WidgetWin_0",
+      "everVisible": false
+    },
+    {
+      "pid": 1384320,
+      "hwnd": "86508482",
+      "title": "Default IME",
+      "windowClass": "IME",
+      "everVisible": false
+    }
+  ],
+  "acquisitionRaces": [],
+  "commandExit": 1,
+  "protectedBefore": 200,
+  "protectedAfter": 200,
+  "descendantsExited": true,
+  "hiddenWindows": true
+}

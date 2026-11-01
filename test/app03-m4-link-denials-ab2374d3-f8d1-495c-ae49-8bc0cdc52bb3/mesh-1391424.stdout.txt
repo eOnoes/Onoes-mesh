@@ -1,0 +1,1 @@
+{"event":"mesh_listening","pid":1391424,"url":"http://127.0.0.1:59489","dataDir":"test/app03-m4-link-denials-ab2374d3-f8d1-495c-ae49-8bc0cdc52bb3"}

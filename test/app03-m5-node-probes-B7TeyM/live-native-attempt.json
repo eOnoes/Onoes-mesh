@@ -1,0 +1,15 @@
+{
+  "provenance": "Actual native attempt, transcribed from exec chunk c913cf; separate from disposable process tests. This attempt preceded the final source/observationType/timestampSource naming updates.",
+  "command": "node tools/probe-mesh-nodes.mjs",
+  "binary": "C:/Program Files/Tailscale/tailscale.exe",
+  "argv": ["status", "--json"],
+  "exitCode": 1,
+  "commandWallSeconds": 2.101811,
+  "observedAt": "2026-10-04T00:44:54.934Z",
+  "nodes": [
+    {"id":"pc","dnsName":"emitchell.tail8c4a75.ts.net","tailscaleIp":"100.72.250.65","status":"offline","lastProbeAt":"2026-10-04T00:44:54.933Z","lastSuccessAt":null,"observationAvailability":"unavailable","tailscaleOnline":null,"errors":[{"code":"cli_timeout"}]},
+    {"id":"laptop","dnsName":"emitchell109-rog.tail8c4a75.ts.net","tailscaleIp":"100.119.162.99","status":"offline","lastProbeAt":"2026-10-04T00:44:54.933Z","lastSuccessAt":null,"observationAvailability":"unavailable","tailscaleOnline":null,"errors":[{"code":"cli_timeout"}]}
+  ],
+  "limitation": "Bounded native command timed out. No denial diagnostic was received, so sandbox denial is not asserted. Neither physical node state nor packet reachability was qualified by this attempt. Manager host-live check remains pending.",
+  "hostHandoff": "From D:/Dev/Onoes-Mesh-wt/m5-node-probes on host: node tools/probe-mesh-nodes.mjs"
+}

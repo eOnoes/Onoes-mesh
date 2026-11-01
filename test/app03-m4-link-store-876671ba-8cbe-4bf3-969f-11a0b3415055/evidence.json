@@ -1,0 +1,29 @@
+{
+  "identity": {
+    "scope": "relay:mesh",
+    "conversationId": "24c33779-f3af-430e-b55a-99c46b70ae3c",
+    "messageId": "message_1",
+    "text": "node --version\nThis is a message, with no command approval."
+  },
+  "task": {
+    "id": "5f20d3c4-e421-4941-a838-4f57ed9023e2",
+    "title": "node --version This is a message, with no command approval.",
+    "description": "node --version\nThis is a message, with no command approval.",
+    "label": "Relay",
+    "status": "open",
+    "revision": 1,
+    "createdAt": "2026-10-04T01:09:57.922Z",
+    "updatedAt": "2026-10-04T01:09:57.922Z"
+  },
+  "rows": [
+    {
+      "scope": "relay:mesh",
+      "conversationId": "24c33779-f3af-430e-b55a-99c46b70ae3c",
+      "messageId": "message_1",
+      "taskId": "5f20d3c4-e421-4941-a838-4f57ed9023e2",
+      "messageHash": "d0ffcffe1a05233dba0ca9f625a8f5362d9761d203eebe2be01a7927de23769b"
+    }
+  ],
+  "sameIdAfterReopen": true,
+  "executions": 0
+}

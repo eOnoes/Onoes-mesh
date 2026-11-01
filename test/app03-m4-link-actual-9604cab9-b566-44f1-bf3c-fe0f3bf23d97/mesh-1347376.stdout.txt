@@ -1,0 +1,4 @@
+{"event":"mesh_relay_spawned","pid":3761920,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_listening","pid":3761920,"port":61212}
+{"event":"mesh_listening","pid":1347376,"url":"http://127.0.0.1:61190","dataDir":"test/app03-m4-link-actual-9604cab9-b566-44f1-bf3c-fe0f3bf23d97","mode":"mesh"}
+{"event":"mesh_relay_task_linked","conversationId":"a137b840-6d44-4f7d-8417-8106f9a1b725","messageId":"actual_message_1","taskId":"c809f365-aa74-4da6-b840-952f87bfda4d","duplicate":true}

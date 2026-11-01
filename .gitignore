@@ -1,0 +1,17 @@
+node_modules/
+.runner/
+*.log
+*.sqlite
+*.sqlite-*
+*.db
+
+# Test output, not source. These were tracked at 53.7 MB across nine files - browser
+# and process dumps regenerated on every run. Removed from tracking 2026-10-31; the
+# files stay on disk so existing runs are unaffected, and .gitignore keeps them out.
+native-processes.json
+
+# Vendored Python dependencies for the embedded-Relay launcher. 32.6 MB of wheels and
+# .pyd binaries, tracked before 2026-10-31. Dependencies are reproducible and do not
+# belong in a repository: untracked here, kept on disk. A fresh clone must bootstrap
+# them - see README. lib/relay-link.mjs expects this path to exist at runtime.
+test/app03-m4-link-runtime/Lib/site-packages/

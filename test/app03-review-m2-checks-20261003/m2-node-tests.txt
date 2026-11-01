@@ -1,0 +1,49 @@
+(node:3939156) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+M2 APPROVAL PROOF: URL http://127.0.0.1:53558/; task aacd62c1-c9bd-42a6-8aff-ffa345597241; run 618d4b1a-4005-44a8-ac28-1a98f8b93326; root PID 3952356; stdout "v24.14.0\r\n"; exit 0; cleanup true; server PID 4027436 -> 3507216; denial has no run; retained test/app03-m2-approve-4a6dc66a-1d37-470c-bef6-91a746e79a00
+✔ M2 approval real HTTP/process/SQLite: exact node result survives server restart; repropose/deny creates no run (512.518ms)
+✔ M2 deny real HTTP: executor tripwire remains untouched through propose, deny and restart (215.964ms)
+✔ M2 approve/deny actual boundary: auth, origin, CSRF, revision, fields and methods fail without executor/records (141.125ms)
+✔ M2 git status executes only fixed argv at actual repo root through native custody (311.9262ms)
+✔ M2 invalid persistence rejects approval/denial and preserves exact bytes with no executor (75.6662ms)
+✔ M2 invalid completed cleanup cannot be accepted after restart; data remains intact (331.7267ms)
+✔ M2 additive v2 migration preserves saved pending proposal and all task fields; deny still has zero runs (166.9689ms)
+✔ M2 store busy claim prevents proposal replacement and duplicate decisions before any process runs (98.9383ms)
+✔ M2 unavailable bridge persists failure without fabricated exit/cleanup and permits a new proposal (170.2335ms)
+(node:1507940) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+M2 restart proof: http://127.0.0.1:53559/; task d85c0224-9f8e-416a-ba6a-ba0e4b3bf8d3; store test/app03-m2-approve-proposal-http-886221cf-fed3-4813-b63f-2d5001c0f7d4; PID 2954112 -> 3124548; exact pending {"command":"node --version","cwd":"."}; executor tripwire untouched
+✔ M2 real HTTP + SQLite: saved task -> proposal -> read -> actual process restart -> same pending proposal, no executor (221.9464ms)
+✔ M2 real HTTP: exact whitelist/cwd/fields and task revision; one current proposal; edits preserve proposals (191.5258ms)
+✔ M2 real HTTP: unadmitted, origin, CSRF and authority claims denied without writes or executor (115.1962ms)
+✔ M2 additive migration preserves an existing v1 task and persists its proposal across real restart (230.4298ms)
+✔ M2 preserves invalid existing data without migration or proposal writes (75.2586ms)
+✔ PRIVACY01: valid current proof renders tasks/observations; explicit bootstrap, same-tab reload, HEAD and 204 preserved (8.3509ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after expiry (2.0506ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after observed-403 (2.0985ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after logout (1.3912ms)
+✔ PRIVACY01: delayed complete refresh bodies fenced after replacement (1.563ms)
+✔ PRIVACY01: old 401 response cannot revoke newer valid proof (2.2354ms)
+✔ PRIVACY01: old 403 response cannot revoke newer valid proof (1.7114ms)
+✔ PRIVACY01: old network failure during body read cannot clear replacement (1.4517ms)
+✔ PRIVACY01: old abort failure during body read cannot clear replacement (1.7708ms)
+✔ PRIVACY01: pending old logout finally cannot wipe newer session (1.4657ms)
+✔ PRIVACY01: explicit admission health body delayed across expiry cannot admit stale proof (0.8664ms)
+✔ PRIVACY01: explicit admission health body delayed across observed-403 cannot admit stale proof (0.8913ms)
+✔ PRIVACY01: explicit admission health body delayed across logout cannot admit stale proof (1.2607ms)
+✔ PRIVACY01: explicit admission health body delayed across replacement cannot admit stale proof (1.0749ms)
+✔ PRIVACY01: reload admission health body delayed across expiry cannot admit stale proof (0.7855ms)
+✔ PRIVACY01: reload admission health body delayed across observed-403 cannot admit stale proof (0.821ms)
+✔ PRIVACY01: reload admission health body delayed across logout cannot admit stale proof (0.7959ms)
+✔ PRIVACY01: reload admission health body delayed across replacement cannot admit stale proof (0.9643ms)
+✔ PRIVACY01: local expiry timer clears an already rendered private board and observations (1.1087ms)
+✔ PRIVACY01: approval controls follow current execution state and raw results clear on expiry (1.1636ms)
+✔ PRIVACY01: stale revision disables proposal decisions until the current task is loaded (1.0941ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2091.7864

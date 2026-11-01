@@ -1,0 +1,92 @@
+Browser tab: 1014724552, Title: "Onoes-mesh / Tasks", URL: "http://127.0.0.1:61474/".
+1 AXWebArea Onoes-mesh / Tasks, URL: 127.0.0.1:61474/
+	2 container
+		3 text >  Onoes-mesh  / Mesh Terminal //  MESH / LOCAL TASKS
+	4 text Local task board · SQLite persistence · task session only · no automatic dispatch
+	5 text Seven workspaces · loopback only
+	6 button Refresh app status and tasks, ID: refresh
+	7 button (disabled) Start local session, ID: demo-start
+	8 button End local session, ID: demo-end
+	9 text Local task access verified after refresh. No human identity or execution approval.
+	81 text Failed · inspect the process result and cleanup below.
+	11 text MAIN
+	12 tab group MAIN workspaces
+		13 tab (selectable, settable, boolean) 01 Overview, Value: 0, ID: tab-overview
+		14 tab (selectable, settable, boolean) 02 Relay, Value: 0, ID: tab-relay
+		15 tab (selectable, settable, boolean) 03 Inference, Value: 0, ID: tab-inference
+		16 tab (selected, settable, boolean) 04 Workroom, Value: 1, ID: tab-workroom
+		17 tab (selectable, settable, boolean) 05 Agent, Value: 0, ID: tab-agent
+		18 tab (selectable, settable, boolean) 06 Mind, Value: 0, ID: tab-mind
+		19 tab (selectable, settable, boolean) 07 Control, Value: 0, ID: tab-control
+	20 container Description: 04 Workroom, ID: panel-workroom
+		21 container
+			22 text //  WORKROOM / SAVED TASKS
+		23 heading Make the work visible, Value: 1
+			24 text Make the work visible
+		25 text Create and revise tasks in local SQLite. Approve a saved whitelisted command to run it locally. Task open/done is separate from execution.
+		26 container
+			27 heading Create task, Value: 2
+				28 text Create task
+			29 container create-form
+				30 text Title
+				31 text field (settable) Title, ID: create-title
+				32 text Description
+				33 text entry area (settable) Description, ID: create-description
+				34 text Assignment label (optional)
+				35 text field (settable) Assignment label (optional), ID: create-label
+				36 button Create task
+		37 container
+			38 heading Inspect and edit, Value: 2
+				39 text Inspect and edit
+			52 container edit-form
+				82 text Task 56bc18f9-f4d9-47ca-828f-7909083cb96d · revision 4
+				54 text Title
+				55 text field (settable) Title, Value: M3 browser real Cancel, ID: edit-title
+				56 text Description
+				57 text entry area (settable) Description, ID: edit-description
+				58 text Assignment label
+				59 text field (settable) Assignment label, ID: edit-label
+				83 text Saved status: open
+				61 button Save task changes
+				62 button Mark done, ID: toggle-status
+				63 button Reload current task, ID: reload-task
+		64 container
+			65 heading Command proposal for selected task, Value: 2
+				66 text Command proposal for selected task
+			67 container proposal-form
+				84 text Failed · inspect the process result and cleanup below.
+				85 text {"command":"node lib/slow-command.mjs","cwd":"."}
+				69 text Whitelisted command
+				70 pop up button (collapsed, settable) Whitelisted command, Value: node lib/slow-command.mjs, ID: proposal-command, Secondary Actions: Expand
+					71 menu
+						72 node --version
+						73 git status
+						74 (selected) node lib/slow-command.mjs
+				75 text Working directory: . (fixed repository root).
+				76 text One current proposal per task. Save a proposal, then deliberately Approve or Deny. After a result or an interrupted attempt with unknown outcome, save a new proposal to request another execution. Interrupted attempts are never automatically retried. A local session does not verify Eddie's identity.
+				77 button Save pending proposal, ID: propose-command
+				78 button (disabled) Approve, ID: approve-command
+				79 button (disabled) Deny, ID: deny-command
+				80 button (disabled) Cancel, ID: cancel-command
+				86 text Run ab80dc11-3370-4a5e-bee1-e38c6f5a2866
+State: failed
+Cancelled: true
+Exit code: 1
+Cleanup verified: true
+Error: execution cancelled; root exited with nonzero code
+stdout:
+M3 slow root 4078752; descendant 2156760; started
+M3 slow descendant 2156760; started
+
+stderr:
+
+		43 container
+			44 heading Saved tasks, Value: 2
+				45 text Saved tasks
+			87 text Choose a saved task to inspect.
+			88 checkbox M3 browser real Cancel open · No assignment label · revision 4, Value: 1
+				89 text M3 browser real Cancel
+				90 text open · No assignment label · revision 4
+	50 text Onoes-mesh / local task board · data stays in the configured SQLite store
+
+The focused UI element is 1 AXWebArea Onoes-mesh / Tasks, URL: 127.0.0.1:61474/

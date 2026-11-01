@@ -1,0 +1,28 @@
+{
+  "purpose": "Disposable test observer validation only; actual Relay remains dependency-blocked",
+  "records": [
+    {
+      "event": "held",
+      "identities": [
+        {
+          "pid": 1901816,
+          "creationTime100ns": "134355499022368651",
+          "executable": "C:\\Program Files\\node.exe"
+        }
+      ]
+    },
+    {
+      "event": "verified",
+      "identities": [
+        {
+          "pid": 1901816,
+          "creationTime100ns": "134355499022368651",
+          "executable": "C:\\Program Files\\node.exe",
+          "exitSignaled": true
+        }
+      ]
+    }
+  ],
+  "code": 0,
+  "errors": ""
+}

@@ -1,0 +1,13 @@
+{
+  "pid": 1921320,
+  "parentPid": 857624,
+  "creationTime100ns": "134355614355779512",
+  "executable": "C:\\Python314\\pythonw.exe",
+  "argv": "C:/Python314/pythonw.exe -I -S -B D:\\Dev\\Onoes-Mesh\\test\\app03-csp-evidence\\supervisor.py parent-regression-standalone-qualification-042355 \"C:/Program Files/node.exe\" test/m6-standalone-checks.mjs",
+  "worktree": "D:\\Dev\\Onoes-Mesh",
+  "purpose": "parent-regression-standalone-qualification-042355 console-free supervisor",
+  "ancestry": [
+    857624
+  ],
+  "exitSignaled": false
+}

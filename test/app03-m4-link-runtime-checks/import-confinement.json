@@ -1,0 +1,28 @@
+{
+  "actualLaunchEvidence": "test\\app03-m4-link-actual-44f5fefe-d5ae-47f8-aebb-c2a0e22abb67\\launcher-evidence.json",
+  "exitCode": 0,
+  "stderr": "",
+  "probe": {
+    "pid": 3723280,
+    "executable": "C:\\Python314\\python.exe",
+    "isolated": 1,
+    "noSite": 1,
+    "paths": [
+      "D:\\Dev\\Onoes-Mesh-wt\\m4-runtime-fix\\service_roots\\relay",
+      "D:\\Dev\\Onoes-Mesh-wt\\m4-runtime-fix\\test\\app03-m4-link-runtime\\Lib\\site-packages",
+      "C:\\Python314\\python314.zip",
+      "C:\\Python314\\DLLs",
+      "C:\\Python314\\Lib",
+      "C:\\Python314"
+    ],
+    "moduleOrigins": {
+      "fastapi": "D:\\Dev\\Onoes-Mesh-wt\\m4-runtime-fix\\test\\app03-m4-link-runtime\\Lib\\site-packages\\fastapi\\__init__.py",
+      "uvicorn": "D:\\Dev\\Onoes-Mesh-wt\\m4-runtime-fix\\test\\app03-m4-link-runtime\\Lib\\site-packages\\uvicorn\\__init__.py",
+      "httpx": "D:\\Dev\\Onoes-Mesh-wt\\m4-runtime-fix\\test\\app03-m4-link-runtime\\Lib\\site-packages\\httpx\\__init__.py",
+      "cryptography": "D:\\Dev\\Onoes-Mesh-wt\\m4-runtime-fix\\test\\app03-m4-link-runtime\\Lib\\site-packages\\cryptography\\__init__.py",
+      "_cffi_backend": "D:\\Dev\\Onoes-Mesh-wt\\m4-runtime-fix\\test\\app03-m4-link-runtime\\Lib\\site-packages\\_cffi_backend.cp314-win_amd64.pyd",
+      "pydantic_core": "D:\\Dev\\Onoes-Mesh-wt\\m4-runtime-fix\\test\\app03-m4-link-runtime\\Lib\\site-packages\\pydantic_core\\__init__.py"
+    },
+    "ambientImportDenied": true
+  }
+}

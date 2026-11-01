@@ -1,0 +1,185 @@
+{
+  "argv": [
+    "C:\\Program Files\\node.exe",
+    "D:\\Dev\\Onoes-Mesh\\test\\wf-draft-cancel-browser.mjs",
+    "test/app03-draft-proof-integrated-cancel-20261004"
+  ],
+  "cwd": "D:\\Dev\\Onoes-Mesh",
+  "envOverrides": {
+    "MESH_STANDALONE": "1",
+    "MESH_RELAY": "0"
+  },
+  "rootPid": 745848,
+  "rootExit": 0,
+  "elapsedSeconds": 2.4707937999628484,
+  "identities": [
+    {
+      "pid": 745848,
+      "parentPid": 3600828,
+      "parentCreationTime100ns": 134356251154804319,
+      "creationTime100ns": 134356251155243299,
+      "exe": "C:\\Program Files\\node.exe",
+      "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\test\\wf-draft-cancel-browser.mjs test/app03-draft-proof-integrated-cancel-20261004",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3132588,
+      "parentPid": 745848,
+      "parentCreationTime100ns": 134356251155243299,
+      "creationTime100ns": 134356251155284582,
+      "exe": "C:\\Windows\\System32\\conhost.exe",
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3093776,
+      "parentPid": 745848,
+      "parentCreationTime100ns": 134356251155243299,
+      "creationTime100ns": 134356251157560152,
+      "exe": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "commandLine": "C:/Users/eMitchell109/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l7W6iC --remote-debugging-pipe --no-startup-window",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1206440,
+      "parentPid": 3093776,
+      "parentCreationTime100ns": 134356251157560152,
+      "creationTime100ns": 134356251157664199,
+      "exe": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "commandLine": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe --type=crashpad-handler --user-data-dir=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l7W6iC /prefetch:4 --monitor-self-annotation=ptype=crashpad-handler --database=C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l7W6iC\\Crashpad --annotation=plat=Win64 \"--annotation=prod=Google Chrome for Testing\" --annotation=ver=153.0.8010.12 --initial-client-data=0x124,0x128,0x12c,0x100,0x130,0x7ffef7edce80,0x7ffef7edce90,0x7ffef7edcea0",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 491636,
+      "parentPid": 3093776,
+      "parentCreationTime100ns": 134356251157560152,
+      "creationTime100ns": 134356251158474238,
+      "exe": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=gpu-process --no-sandbox --disable-breakpad --headless --enable-unsafe-swiftshader --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l7W6iC\" --no-pre-read-main-dll --start-stack-profiler --gpu-preferences=WAAAAAAAAADgAAAEAAAAAAAAAAAAAGAAQAAAAAAAAAADAAAAAAAAADgAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAoAAAAAAAAAAgAAAAAAAAAEAAAAAIAAAABAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= --field-trial-handle=1840,i,15306498798719170624,16929271132091320403,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1852,i,16813660282348453543,9106225693985074629,4 --trace-process-track-uuid=3190708988185955192 --mojo-platform-channel-handle=1824 /prefetch:2",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2538220,
+      "parentPid": 3093776,
+      "parentCreationTime100ns": 134356251157560152,
+      "creationTime100ns": 134356251158544300,
+      "exe": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --no-sandbox --mute-audio --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l7W6iC\" --no-pre-read-main-dll --start-stack-profiler --field-trial-handle=1840,i,15306498798719170624,16929271132091320403,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1852,i,16813660282348453543,9106225693985074629,4 --trace-process-track-uuid=3190708989122997041 --mojo-platform-channel-handle=2080 /prefetch:11",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2843432,
+      "parentPid": 3093776,
+      "parentCreationTime100ns": 134356251157560152,
+      "creationTime100ns": 134356251158719696,
+      "exe": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --no-sandbox --mute-audio --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l7W6iC\" --no-pre-read-main-dll --field-trial-handle=1840,i,15306498798719170624,16929271132091320403,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1852,i,16813660282348453543,9106225693985074629,4 --trace-process-track-uuid=3190708990060038890 --mojo-platform-channel-handle=2420 /prefetch:13",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 417040,
+      "parentPid": 3093776,
+      "parentCreationTime100ns": 134356251157560152,
+      "creationTime100ns": 134356251159109572,
+      "exe": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --top-chrome-webui --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l7W6iC\" --no-pre-read-main-dll --start-stack-profiler --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=5 --launch-time-ticks=867056528285 --field-trial-handle=1840,i,15306498798719170624,16929271132091320403,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1852,i,16813660282348453543,9106225693985074629,4 --trace-process-track-uuid=3190708990997080739 --mojo-platform-channel-handle=3608 /prefetch:1",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1403664,
+      "parentPid": 3093776,
+      "parentCreationTime100ns": 134356251157560152,
+      "creationTime100ns": 134356251159407633,
+      "exe": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l7W6iC\" --no-pre-read-main-dll --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=7 --launch-time-ticks=867056558071 --field-trial-handle=1840,i,15306498798719170624,16929271132091320403,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1852,i,16813660282348453543,9106225693985074629,4 --trace-process-track-uuid=3190708992871164437 --mojo-platform-channel-handle=3776 /prefetch:1",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2600888,
+      "parentPid": 3093776,
+      "parentCreationTime100ns": 134356251157560152,
+      "creationTime100ns": 134356251159454302,
+      "exe": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+      "commandLine": "\"C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe\" --type=renderer --noerrdialogs --user-data-dir=\"C:\\Users\\EMITCH~1\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-l7W6iC\" --no-pre-read-main-dll --start-stack-profiler --no-sandbox --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=6 --launch-time-ticks=867056562770 --field-trial-handle=1840,i,15306498798719170624,16929271132091320403,262144 --enable-features=CDPScreenshotNewSurface --disable-features=AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1852,i,16813660282348453543,9106225693985074629,4 --trace-process-track-uuid=3190708991934122588 --mojo-platform-channel-handle=3808 /prefetch:1",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 3818200,
+      "parentPid": 745848,
+      "parentCreationTime100ns": 134356251155243299,
+      "creationTime100ns": 134356251168099658,
+      "exe": "C:\\Python314\\python.exe",
+      "commandLine": "C:\\Python314\\python.exe -I -B D:\\Dev\\Onoes-Mesh\\lib\\owned-command.py",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 1286096,
+      "parentPid": 3818200,
+      "parentCreationTime100ns": 134356251168099658,
+      "creationTime100ns": 134356251168155856,
+      "exe": "C:\\Windows\\System32\\conhost.exe",
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 0
+    },
+    {
+      "pid": 2771500,
+      "parentPid": 3818200,
+      "parentCreationTime100ns": 134356251168099658,
+      "creationTime100ns": 134356251168678472,
+      "exe": "C:\\Program Files\\node.exe",
+      "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 2205644,
+      "parentPid": 2771500,
+      "parentCreationTime100ns": 134356251168678472,
+      "creationTime100ns": 134356251168724566,
+      "exe": "C:\\Windows\\System32\\conhost.exe",
+      "commandLine": "\\??\\C:\\WINDOWS\\system32\\conhost.exe 0x4",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 1
+    },
+    {
+      "pid": 3473096,
+      "parentPid": 2771500,
+      "parentCreationTime100ns": 134356251168678472,
+      "creationTime100ns": 134356251169051781,
+      "exe": "C:\\Program Files\\node.exe",
+      "commandLine": "\"C:\\Program Files\\node.exe\" D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs --owned-child",
+      "commandQueryStatus": 0,
+      "exitSignaled": true,
+      "exitCode": 1
+    }
+  ],
+  "acquisitionErrors": [],
+  "allAcquiredExited": true,
+  "limit": "Fast unobserved descendants cannot be attested; no termination or unrelated process access performed."
+}

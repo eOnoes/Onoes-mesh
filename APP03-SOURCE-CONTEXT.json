@@ -1,0 +1,149 @@
+{
+  "sourceRoot": "D:\\tmp\\fleet-consolidation-20260929\\build\\mesh-session-pwa-v1",
+  "inputSha256": {
+    "package.json": "29cfccdd7379b47f2a31700bbc1cb3bc1d141e6903b445187caedc468c36e592",
+    "server.mjs": "0cea711cfbd6d8f99cf1ebb90c21c4814bb194f9ca87256a2f42baddf2ca7820",
+    "public/app.js": "15968b81f0e64526399c878da91f51856a94155aba8defe83d5a636686650127",
+    "public/index.html": "374bf01940c05fd9eaff2062fd46020712bbd719d740e811261e8e18db3f52dd",
+    "public/styles.css": "a3915a67b86c5b5abc6d54e411b2f89c7d8554b22f0db41ec27d4309b4530d81",
+    "lib/inference-config.schema.json": "4f8a2dd46d514ceac43e3d680b80381ebbadda429955e7e682c24531ad45508e",
+    "lib/inference-observation.mjs": "66d149bf6d87bb2593b2b53183917d80f5c94c810f729aaf159d93d34288c796",
+    "lib/service-connections.mjs": "95003988e09dc4c06e1f6db7583fd06974860044bfbb1e48a4a61a0e58b7ce95",
+    "lib/task-store.mjs": "cb975a128e34805ccc13217a727d06f8d74326d91477690f957fff7d73edfece",
+    "lib/worker-activity.mjs": "5941de592fd5d40ca77bd1eb77e75ed9da541cd71fca2606f1351d7306f894b9"
+  },
+  "context": {
+    "repo": "local/fleet-consolidation-20260929",
+    "symbol_count": 5,
+    "symbols": [
+      {
+        "symbol_id": "build/mesh-session-pwa-v1/lib/task-store.mjs::openTaskStore#function",
+        "name": "openTaskStore",
+        "kind": "function",
+        "file": "build/mesh-session-pwa-v1/lib/task-store.mjs",
+        "line": 31,
+        "end_line": 71,
+        "signature": "function openTaskStore(filename)",
+        "docstring": "",
+        "source": "function openTaskStore(filename) {\n  // Never initialize or migrate a pre-existing database. Inspect read-only first.\n  if (existsSync(filename)) {\n    const fd = openSync(filename, 'r'); const header = Buffer.alloc(16);\n    try { readSync(fd, header, 0, 16, 0); } finally { closeSync(fd); }\n    if (header.toString() !== 'SQLite format 3\\0') throw new Error('Invalid persistence.');\n    const check = new DatabaseSync(filename, { readOnly: true });\n    try {\n      if (check.prepare('PRAGMA quick_check').get().quick_check !== 'ok' || check.prepare('PRAGMA user_version').get().user_version !== 1)\n        throw new Error('Invalid persistence.');\n      const columns = check.prepare('PRAGMA table_info(tasks)').all().map(x => x.name);\n      if (columns.join(',') !== 'id,title,description,label,status,revision,createdAt,updatedAt') throw new Error('Invalid persistence.');\n      for (const row of check.prepare('SELECT * FROM tasks').all()) {\n        validateTask({ title: row.title, description: row.description, label: row.label, status: row.status, revision: row.revision }, true);\n        if (!/^[0-9a-f-]{36}$/.test(row.id) || !Number.isFinite(Date.parse(row.createdAt)) || !Number.isFinite(Date.parse(row.updatedAt))) throw new Error('Invalid persistence.');\n      }\n    } finally { check.close(); }\n  }\n  const fresh = !existsSync(filename);\n  const db = new DatabaseSync(filename);\n  try { if (fresh) db.exec(schema); db.exec('PRAGMA busy_timeout = 2000;'); }\n  catch (e) { db.close(); throw e; }\n  const get = id => db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);\n  return {\n    list: () => db.prepare('SELECT * FROM tasks ORDER BY createdAt, id').all(),\n    get,\n    create(body) {\n      const t = validateTask(body); const id = randomUUID(); const now = new Date().toISOString();\n      db.prepare('INSERT INTO tasks VALUES (?,?,?,?,?,1,?,?)').run(id, t.title, t.description, t.label, t.status, now, now);\n      return get(id);\n    },\n    update(id, body) {\n      const t = validateTask(body, true);\n      const result = db.prepare('UPDATE tasks SET title=?, description=?, label=?, status=?, revision=revision+1, updatedAt=? WHERE id=? AND revision=?')\n        .run(t.title, t.description, t.label, t.status, new Date().toISOString(), id, t.revision);\n      if (!result.changes) throw new TaskError(get(id) ? 409 : 404, get(id) ? 'Task changed. Reload current task before editing.' : 'Task not found.');\n      return get(id);\n    },\n    close: () => db.close()\n  };\n}",
+        "imports": [
+          "import { DatabaseSync } from 'node:sqlite';",
+          "import { existsSync, openSync, readSync, closeSync } from 'node:fs';",
+          "import { randomUUID } from 'node:crypto';"
+        ],
+        "_freshness": "fresh"
+      },
+      {
+        "symbol_id": "build/mesh-session-pwa-v1/lib/task-store.mjs::validateTask#function",
+        "name": "validateTask",
+        "kind": "function",
+        "file": "build/mesh-session-pwa-v1/lib/task-store.mjs",
+        "line": 9,
+        "end_line": 25,
+        "signature": "function validateTask(body, editing = false)",
+        "docstring": "",
+        "source": "function validateTask(body, editing = false) {\n  if (!body || typeof body !== 'object' || Array.isArray(body) ||\n      Object.keys(body).some(k => !keys.includes(k))) throw new TaskError(400, 'Invalid task fields.');\n  if (typeof body.title !== 'string' || !body.title.trim() || body.title.length > 160 || /[\\u0000-\\u001f]/u.test(body.title))\n    throw new TaskError(400, 'Title must be 1\u2013160 characters without control characters.');\n  const description = body.description === undefined ? '' : body.description;\n  const label = body.label === undefined ? '' : body.label;\n  const status = body.status === undefined ? 'open' : body.status;\n  if (typeof description !== 'string' || description.length > 4000 || description.includes('\\0'))\n    throw new TaskError(400, 'Description must be at most 4000 characters.');\n  if (typeof label !== 'string' || label.length > 80 || /[\\u0000-\\u001f]/u.test(label))\n    throw new TaskError(400, 'Label must be at most 80 characters without control characters.');\n  if (!['open', 'done'].includes(status)) throw new TaskError(400, 'Status must be open or done.');\n  if (editing ? !Number.isSafeInteger(body.revision) || body.revision < 1 : body.revision !== undefined)\n    throw new TaskError(400, 'A valid current revision is required for edits only.');\n  return { title: body.title.trim(), description, label: label.trim(), status, revision: body.revision };\n}",
+        "imports": [
+          "import { DatabaseSync } from 'node:sqlite';",
+          "import { existsSync, openSync, readSync, closeSync } from 'node:fs';",
+          "import { randomUUID } from 'node:crypto';"
+        ],
+        "_freshness": "fresh"
+      },
+      {
+        "symbol_id": "build/mesh-session-pwa-v1/lib/service-connections.mjs::createConnectionReader#function",
+        "name": "createConnectionReader",
+        "kind": "function",
+        "file": "build/mesh-session-pwa-v1/lib/service-connections.mjs",
+        "line": 197,
+        "end_line": 225,
+        "signature": "function createConnectionReader({config={},inferenceReader,fetchImpl=fetch}={})",
+        "docstring": "",
+        "source": "function createConnectionReader({config={},inferenceReader,fetchImpl=fetch}={}) {\n  // Copy only fixed server-owned config fields; unknown fields never become URLs.\n  const settings=Object.fromEntries(SERVICE_MAP.map(s=> {\n    const c=config[s.id];\n    return [s.id,c===undefined ? undefined : {enabled:c?.enabled===true,source:c?.source,fixturePort:c?.fixturePort,timeoutMs:c?.timeoutMs}];\n  }));\n  return async()=> {\n    const observedAt=new Date().toISOString();\n    const services=await Promise.all(SERVICE_MAP.map(async service=> {\n      const c=settings[service.id];\n      const base={id:service.id,label:service.label,status:'not_configured',source:'none',observedAt,elapsedMs:0,errors:[]};\n      if(service.id==='inference') {\n        const started=performance.now();\n        try {\n          const snapshot=await inferenceReader();\n          return {...base,status:snapshot.status,source:snapshot.status === 'not_configured' ? 'none' : 'fixed_local_module',observedAt:snapshot.observedAt,elapsedMs:Math.round(performance.now()-started),errors:snapshot.errors.map(e=>({code:e.code}))};\n        } catch {return {...base,status:'unavailable',errors:[{code:'observation_unavailable'}]};}\n      }\n      if(c===undefined) return base;\n      if(!c.enabled) return {...base,status:'disabled'};\n      if(service.id==='relay' && c.source==='disposable_fixture') {\n        const r=await readDisposableHealth({port:c.fixturePort,timeoutMs:c.timeoutMs,fetchImpl});\n        return {...base,status:r.status,source:'disposable_fixture',elapsedMs:r.elapsedMs,errors:r.error ? [{code:r.error}] : []};\n      }\n      return {...base,status:'unsupported',errors:[{code:service.id==='relay' ? 'source_route_held' : 'adapter_absent'}]};\n    }));\n    return {schemaVersion:'mesh-service-connections/v1',observedAt,services};\n  };\n}",
+        "imports": [
+          "import { access } from 'node:fs/promises';",
+          "import { pathToFileURL } from 'node:url';",
+          "import { Worker } from 'node:worker_threads';",
+          "const { parentPort, workerData } = require('node:worker_threads');"
+        ],
+        "_freshness": "fresh"
+      },
+      {
+        "symbol_id": "build/mesh-session-pwa-v1/server.mjs::startApp#function",
+        "name": "startApp",
+        "kind": "function",
+        "file": "build/mesh-session-pwa-v1/server.mjs",
+        "line": 51,
+        "end_line": 120,
+        "signature": "async function startApp({ port = 0, dataDir = 'test/local-board', registryPath, activitySource = 'local_registry', serviceConfig = {}, inferenceConfig, inferenceTestReader } = {})",
+        "docstring": "",
+        "source": "async function startApp({ port = 0, dataDir = 'test/local-board', registryPath, activitySource = 'local_registry', serviceConfig = {}, inferenceConfig, inferenceTestReader } = {}) {\n  if (!Number.isInteger(port) || port < 0 || port > 65535 || [8787, 5173].includes(port)) throw new Error('Invalid port.');\n  if (!['local_registry', 'disposable_fixture', 'frozen_manager_projection'].includes(activitySource)) throw new Error('Invalid activity source label.');\n  if (registryPath && (typeof registryPath !== 'string' || /^[a-z][a-z0-9+.-]*:\\/\\//i.test(registryPath))) throw new Error('Invalid local registry path.');\n  if (inferenceTestReader !== undefined && typeof inferenceTestReader !== 'function') throw new Error('Invalid test observation reader.');\n  const fixedInferenceConfig = inferenceConfig === undefined ? undefined : structuredClone(inferenceConfig);\n  const directory = await confinedPath(dataDir);\n  const filename = await confinedPath(path.join(directory, 'tasks.sqlite'));\n  const configuredRegistry = registryPath ? await confinedPath(registryPath) : undefined;\n  await mkdir(directory, { recursive: true });\n  let store;\n  try { store = openTaskStore(filename); } catch { /* Preserve invalid data; serve a visible failure. */ }\n  // Server-only test seam; CLI and HTTP never accept a reader or module path.\n  // Validate again at the HTTP seam, including deliberately hostile test readers.\n  const inference = async () => {\n    const nowIso = new Date().toISOString();\n    try {\n      const value = inferenceTestReader ? await inferenceTestReader({config:fixedInferenceConfig,nowIso}) : await readFixedInference({ modulePath: path.join(ROOT, 'lib/inference-observation.mjs'), confine: confinedPath, config: fixedInferenceConfig, nowIso });\n      return normalizeInference(value,nowIso);\n    } catch { return normalizeInference({schemaVersion:'mesh-inference-observation/v1',observedAt:nowIso,status:'unavailable',nodes:[],errors:[]},nowIso); }\n  };\n  const connections = createConnectionReader({ config: serviceConfig, inferenceReader: inference });\n  const server = http.createServer(async (req, res) => {\n    const send = (code, body, type = 'application/json') => {\n      res.writeHead(code, { 'Content-Type': `${type}; charset=utf-8`, 'Cache-Control': 'no-store',\n        'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',\n        'Content-Security-Policy': \"default-src 'self'; connect-src 'self'; script-src 'self'; style-src 'self'; img-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'\" });\n      res.end(type === 'application/json' ? JSON.stringify(body) : body);\n    };\n    try {\n      const origin = `http://127.0.0.1:${server.address().port}`;\n      if (req.headers.host !== `127.0.0.1:${server.address().port}`) throw new TaskError(403, 'Host is not allowed.');\n      if (!['GET', 'HEAD'].includes(req.method) && (req.headers.origin !== origin || (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin')))\n        throw new TaskError(403, 'Same-origin writes are required.');\n      const route = req.url;\n      if (req.method === 'GET' && staticFiles.has(route)) {\n        const [file, type] = staticFiles.get(route); return send(200, await readFile(path.join(ROOT, file)), type);\n      }\n      if (route === '/api/health' && req.method === 'GET') return send(store ? 200 : 503, {\n        state: store ? 'ok' : 'unavailable', persistence: store ? 'sqlite' : 'unavailable', scope: 'local_trial',\n        url: origin, integrations: 'not_connected',\n        activity: { adapter: await adapterStatus(), registry: configuredRegistry ? 'configured' : 'not_configured', source: configuredRegistry ? activitySource : 'none' }\n      });\n      if (route === '/api/worker-activity' && req.method === 'GET') return send(200, await activity(configuredRegistry));\n      if (route === '/api/service-connections' && req.method === 'GET') return send(200, await connections());\n      if (route === '/api/inference-observation' && req.method === 'GET') return send(200, await inference());\n      const taskRoute = /^\\/api\\/tasks(?:\\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))?$/.exec(route);\n      if (!taskRoute) throw new TaskError(404, 'Route not found.');\n      if (!store) throw new TaskError(503, 'Persistence unavailable. Existing data has been preserved.');\n      const id = taskRoute[1];\n      if (req.method === 'GET') {\n        if (!id) return send(200, { tasks: store.list() });\n        const task = store.get(id); if (!task) throw new TaskError(404, 'Task not found.');\n        return send(200, { task });\n      }\n      if (req.method === 'POST' && !id) return send(201, { task: store.create(await jsonBody(req)) });\n      if (req.method === 'PATCH' && id) return send(200, { task: store.update(id, await jsonBody(req)) });\n      throw new TaskError(405, 'Method not allowed.');\n    } catch (e) {\n      if (!res.headersSent) send(e instanceof TaskError ? e.status : 503, { error: e instanceof TaskError ? e.message : 'Local operation unavailable. Data has not been reset.' });\n    }\n  });\n  server.requestTimeout = 10000;\n  server.headersTimeout = 10000;\n  try { await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }); }\n  catch (e) { store?.close(); throw e; }\n  return { server, url: `http://127.0.0.1:${server.address().port}`, close: async () => {\n    await new Promise((resolve, reject) => server.close(e => e ? reject(e) : resolve())); store?.close();\n  } };\n}",
+        "imports": [
+          "import http from 'node:http';",
+          "import { access, mkdir, realpath, lstat, readFile } from 'node:fs/promises';",
+          "import path from 'node:path';",
+          "import { fileURLToPath, pathToFileURL } from 'node:url';",
+          "import { openTaskStore, TaskError } from './lib/task-store.mjs';",
+          "import { createConnectionReader, readFixedInference, normalizeInference } from './lib/service-connections.mjs';"
+        ],
+        "_freshness": "fresh"
+      },
+      {
+        "symbol_id": "build/mesh-session-pwa-v1/public/app.js::api#function",
+        "name": "api",
+        "kind": "function",
+        "file": "build/mesh-session-pwa-v1/public/app.js",
+        "line": 25,
+        "end_line": 39,
+        "signature": "async function api(route, options = {})",
+        "docstring": "",
+        "source": "async function api(route, options = {}) {\n  const controller = new AbortController();\n  const timer = setTimeout(() => controller.abort(), 2500);\n  try {\n    const response = await fetch(route, { ...options, signal: controller.signal, cache: 'no-store', headers: { 'Content-Type': 'application/json' } });\n    const raw = await response.text();\n    if (raw.length > 262144) throw new Error('Response too large.');\n    let body; try { body = JSON.parse(raw); } catch { throw new Error('Local app returned an invalid response.'); }\n    if (!response.ok) throw new Error(typeof body?.error === 'string' ? body.error : 'Local app unavailable.');\n    return body;\n  } catch (e) {\n    if (e.name === 'AbortError' || e instanceof TypeError) throw new Error('Local app unreachable or observation timed out. Refresh to retry.');\n    throw e;\n  } finally { clearTimeout(timer); }\n}",
+        "imports": [],
+        "_freshness": "fresh"
+      }
+    ],
+    "files": {
+      "build/mesh-session-pwa-v1/server.mjs": {
+        "imports": [
+          "import http from 'node:http';",
+          "import { access, mkdir, realpath, lstat, readFile } from 'node:fs/promises';",
+          "import path from 'node:path';",
+          "import { fileURLToPath, pathToFileURL } from 'node:url';",
+          "import { openTaskStore, TaskError } from './lib/task-store.mjs';",
+          "import { createConnectionReader, readFixedInference, normalizeInference } from './lib/service-connections.mjs';"
+        ]
+      },
+      "build/mesh-session-pwa-v1/public/app.js": {
+        "imports": []
+      },
+      "build/mesh-session-pwa-v1/lib/task-store.mjs": {
+        "imports": [
+          "import { DatabaseSync } from 'node:sqlite';",
+          "import { existsSync, openSync, readSync, closeSync } from 'node:fs';",
+          "import { randomUUID } from 'node:crypto';"
+        ]
+      },
+      "build/mesh-session-pwa-v1/lib/service-connections.mjs": {
+        "imports": [
+          "import { access } from 'node:fs/promises';",
+          "import { pathToFileURL } from 'node:url';",
+          "import { Worker } from 'node:worker_threads';",
+          "const { parentPort, workerData } = require('node:worker_threads');"
+        ]
+      }
+    },
+    "_meta": {
+      "timing_ms": 41.5,
+      "tokens_saved": 8187,
+      "total_tokens_saved": 44721153,
+      "freshness": {
+        "fresh": 5,
+        "edited_uncommitted": 0,
+        "stale_index": 0,
+        "unknown": 0,
+        "repo_is_stale": false
+      }
+    }
+  },
+  "binding": "Parent independently found zero copied-source changes; prior MCP fresh source symbols reused, not invented."
+}

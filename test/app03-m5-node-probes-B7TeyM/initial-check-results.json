@@ -1,0 +1,8 @@
+{
+  "provenance": "Actual local tool results, summarized from exec chunks de1801 and 10adb4; not live tailnet node evidence",
+  "checks": [
+    {"command":"node --test --test-timeout=20000 test/m5-node-probes*.mjs","exitCode":0,"passed":9,"failed":0,"skipped":0,"durationMs":2875.3906},
+    {"command":"npm test","exitCode":0,"passed":31,"failed":0,"skipped":0,"suiteDurationsMs":[612.3682,310.4196]}
+  ],
+  "npmServerProof": "npm start; backend http://127.0.0.1:62690; preview http://127.0.0.1:62691; shell/app.js/styles.css 200 byte-identical; phone Host shell 200; bootstrap 201; task POST 201/GET 200; disposable store test/app03-m2-approve-npm-start-79571b18-af5b-4dea-bc4e-0ff0eff7e769"
+}

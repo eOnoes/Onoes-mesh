@@ -1,0 +1,729 @@
+{
+  "mode": "green-desktop",
+  "dataDir": "test/app03-owner-phone-session-recovery-green-desktop-1f1afaa5-d6cf-4485-b340-0773173fc547",
+  "stages": [
+    {
+      "stage": "admitted-task-visible-selectable"
+    },
+    {
+      "stage": "actual-request-failure-live-cookie-proof-private-clear"
+    },
+    {
+      "stage": "immediate-deliberate-workroom-recovery-same-id-revision",
+      "beforeOriginalExpiryMs": 299309
+    },
+    {
+      "stage": "native-hidden-freeze-resume",
+      "established": false,
+      "lifecycle": []
+    },
+    {
+      "stage": "relay-loss-clears-input-and-native-frame"
+    },
+    {
+      "stage": "immediate-deliberate-relay-recovery-composer-verified",
+      "beforeOriginalExpiryMs": 299555
+    },
+    {
+      "stage": "same-saved-task-current-revision-after-relay-recovery"
+    }
+  ],
+  "requests": [
+    {
+      "route": "/api/trial-session/bootstrap",
+      "method": "POST",
+      "cookiePresent": false,
+      "proofPresent": false
+    },
+    {
+      "route": "/api/health",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/health",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/tasks",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/service-connections",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/commands",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/relay",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/node-probes",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/tasks",
+      "method": "POST",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/tasks",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/health",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/tasks",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/service-connections",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/commands",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/relay",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/node-probes",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/trial-session/bootstrap",
+      "method": "POST",
+      "cookiePresent": false,
+      "proofPresent": false
+    },
+    {
+      "route": "/api/trial-session/recovery-challenge",
+      "method": "POST",
+      "cookiePresent": false,
+      "proofPresent": false
+    },
+    {
+      "route": "/api/trial-session/recovery-complete",
+      "method": "POST",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/health",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/health",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/tasks",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/service-connections",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/commands",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/relay",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/node-probes",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/relay/shell",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/relay/native/api/agents",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/relay/native/api/agents",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/health",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/tasks",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/service-connections",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/commands",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/relay",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/node-probes",
+      "method": "GET",
+      "cookiePresent": true,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/trial-session/bootstrap",
+      "method": "POST",
+      "cookiePresent": false,
+      "proofPresent": false
+    },
+    {
+      "route": "/api/trial-session/recovery-challenge",
+      "method": "POST",
+      "cookiePresent": false,
+      "proofPresent": false
+    },
+    {
+      "route": "/api/trial-session/recovery-complete",
+      "method": "POST",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/health",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/health",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/tasks",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/service-connections",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/commands",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/relay",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    },
+    {
+      "route": "/api/node-probes",
+      "method": "GET",
+      "cookiePresent": false,
+      "proofPresent": true
+    }
+  ],
+  "responses": [
+    {
+      "route": "/api/trial-session/bootstrap",
+      "status": 201,
+      "noStore": true
+    },
+    {
+      "route": "/api/health",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/health",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/commands",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/node-probes",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/relay",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/tasks",
+      "status": 201,
+      "noStore": true
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/health",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/commands",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/node-probes",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/relay",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/trial-session/bootstrap",
+      "status": 403,
+      "noStore": true
+    },
+    {
+      "route": "/api/trial-session/recovery-challenge",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/trial-session/recovery-complete",
+      "status": 201,
+      "noStore": true
+    },
+    {
+      "route": "/api/health",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/health",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/commands",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/node-probes",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/relay",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/relay/shell",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/relay/native/api/agents",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/relay/native/api/agents",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/health",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/commands",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/node-probes",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/relay",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/trial-session/bootstrap",
+      "status": 403,
+      "noStore": true
+    },
+    {
+      "route": "/api/trial-session/recovery-challenge",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/trial-session/recovery-complete",
+      "status": 201,
+      "noStore": true
+    },
+    {
+      "route": "/api/health",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/tasks",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/health",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/commands",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/node-probes",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/worker-activity",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/relay",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/inference-observation",
+      "status": 200,
+      "noStore": true
+    },
+    {
+      "route": "/api/service-connections",
+      "status": 200,
+      "noStore": true
+    }
+  ],
+  "errors": [],
+  "freshness": {
+    "/": {
+      "sha256": "423b79a8cc3bca7eef69ed227d8eb4d6ccecb5849b1403dcd05a1fca88d5520f",
+      "sourceSha256": "423b79a8cc3bca7eef69ed227d8eb4d6ccecb5849b1403dcd05a1fca88d5520f",
+      "fromServiceWorker": false
+    },
+    "/app.js": {
+      "sha256": "6687f4f625a3b8e45bde130de279b5169c581106a8c6c1c3fc43275213e7c3b5",
+      "sourceSha256": "6687f4f625a3b8e45bde130de279b5169c581106a8c6c1c3fc43275213e7c3b5",
+      "fromServiceWorker": false
+    }
+  },
+  "limitations": [
+    "Chromium mobile emulation with touch, not Android, in-app browser or physical owner phone.",
+    "Physical triggering event UNKNOWN; parent private8446 trusted lifecycle trace remains required review input.",
+    "Native hidden/freeze/resume unavailable in this headless context; this is not phone lifecycle acceptance."
+  ],
+  "url": "http://127.0.0.1:59558",
+  "owned": [
+    1566304,
+    2016740,
+    3790504
+  ],
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "transport": {
+    "cookie": [
+      {
+        "name": "mesh_trial",
+        "httpOnly": true,
+        "sameSite": "Strict"
+      }
+    ],
+    "scriptCookieEmpty": true,
+    "storedProofPresent": true
+  },
+  "counts": {
+    "tasks": 1,
+    "task_executions": 0
+  },
+  "passed": true,
+  "cleanup": {
+    "records": [
+      {
+        "event": "held",
+        "identities": [
+          {
+            "pid": 1566304,
+            "creationTime100ns": "134355964611403330",
+            "executable": "C:\\Program Files\\node.exe"
+          },
+          {
+            "pid": 2016740,
+            "creationTime100ns": "134355964612634283",
+            "executable": "C:\\Python314\\python.exe"
+          },
+          {
+            "pid": 3790504,
+            "creationTime100ns": "134355964622475168",
+            "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe"
+          }
+        ]
+      },
+      {
+        "event": "verified",
+        "identities": [
+          {
+            "pid": 1566304,
+            "creationTime100ns": "134355964611403330",
+            "executable": "C:\\Program Files\\node.exe",
+            "exitSignaled": true,
+            "exitCode": 0
+          },
+          {
+            "pid": 2016740,
+            "creationTime100ns": "134355964612634283",
+            "executable": "C:\\Python314\\python.exe",
+            "exitSignaled": true,
+            "exitCode": 0
+          },
+          {
+            "pid": 3790504,
+            "creationTime100ns": "134355964622475168",
+            "executable": "C:\\Users\\eMitchell109\\AppData\\Local\\ms-playwright\\chromium-1243\\chrome-win64\\chrome.exe",
+            "exitSignaled": true,
+            "exitCode": 0
+          }
+        ]
+      }
+    ],
+    "observerExit": 0,
+    "errors": ""
+  },
+  "meshExit": 0,
+  "meshOutput": "{\"event\":\"mesh_relay_spawned\",\"pid\":2016740,\"executable\":\"C:\\\\Python314\\\\python.exe\"}\n{\"event\":\"mesh_relay_listening\",\"pid\":2016740,\"port\":59555}\n{\"event\":\"mesh_listening\",\"pid\":1566304,\"url\":\"http://127.0.0.1:59558\"}\n{\"event\":\"mesh_relay_stopped\",\"pid\":2016740,\"exitCode\":0,\"signal\":null}\n",
+  "meshErrors": "(node:1566304) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+}

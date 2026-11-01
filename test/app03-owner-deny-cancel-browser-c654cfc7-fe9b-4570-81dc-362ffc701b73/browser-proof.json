@@ -1,0 +1,436 @@
+{
+  "dataDir": "test/app03-owner-deny-cancel-browser-c654cfc7-fe9b-4570-81dc-362ffc701b73",
+  "url": "http://127.0.0.1:60684",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "stages": [
+    {
+      "label": "denied-no-run",
+      "focus": "result-heading",
+      "heading": {
+        "top": 400.765625,
+        "bottom": 443.953125
+      },
+      "stateBounds": {
+        "top": 455.953125,
+        "bottom": 542.703125
+      },
+      "bannerBottom": 55,
+      "state": "Denied · no executor invoked and no execution record created for this proposal. Denial happens before execution; cancellation and process cleanup are not applicable.",
+      "result": "Not run. This proposal was denied before execution. No process result exists for this proposal. Cancellation and process cleanup: not applicable."
+    },
+    {
+      "label": "denied-after-reload",
+      "focus": "result-heading",
+      "heading": {
+        "top": 400.765625,
+        "bottom": 443.953125
+      },
+      "stateBounds": {
+        "top": 455.953125,
+        "bottom": 542.703125
+      },
+      "bannerBottom": 55,
+      "state": "Denied · no executor invoked and no execution record created for this proposal. Denial happens before execution; cancellation and process cleanup are not applicable.",
+      "result": "Not run. This proposal was denied before execution. No process result exists for this proposal. Cancellation and process cleanup: not applicable."
+    },
+    {
+      "label": "cancelled-actual-result",
+      "focus": "result-heading",
+      "heading": {
+        "top": 400.765625,
+        "bottom": 443.953125
+      },
+      "stateBounds": {
+        "top": 455.953125,
+        "bottom": 477.640625
+      },
+      "bannerBottom": 55,
+      "state": "Cancelled — cleanup verified",
+      "result": "Run 79928a58-603b-42b2-9a8b-17914e5298d4\nState: failed\nCancelled: true\nExit code: 1\nCleanup verified: true\nError: execution cancelled; root exited with nonzero code\nstdout:\nM3 slow root 2878356; descendant 961828; started\nM3 slow descendant 961828; started\n\nstderr:\n"
+    },
+    {
+      "label": "cancelled-after-reload",
+      "focus": "result-heading",
+      "heading": {
+        "top": 400.765625,
+        "bottom": 443.953125
+      },
+      "stateBounds": {
+        "top": 455.953125,
+        "bottom": 477.640625
+      },
+      "bannerBottom": 55,
+      "state": "Cancelled — cleanup verified",
+      "result": "Run 79928a58-603b-42b2-9a8b-17914e5298d4\nState: failed\nCancelled: true\nExit code: 1\nCleanup verified: true\nError: execution cancelled; root exited with nonzero code\nstdout:\nM3 slow root 2878356; descendant 961828; started\nM3 slow descendant 961828; started\n\nstderr:\n"
+    },
+    {
+      "label": "denial-after-separate-cancellation",
+      "focus": "result-heading",
+      "heading": {
+        "top": 400.765625,
+        "bottom": 443.953125
+      },
+      "stateBounds": {
+        "top": 455.953125,
+        "bottom": 542.703125
+      },
+      "bannerBottom": 55,
+      "state": "Denied · no executor invoked and no execution record created for this proposal. Denial happens before execution; cancellation and process cleanup are not applicable.",
+      "result": "Not run. This proposal was denied before execution. No process result exists for this proposal. Cancellation and process cleanup: not applicable."
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "route": "/api/trial-session/bootstrap"
+    },
+    {
+      "method": "GET",
+      "route": "/api/health"
+    },
+    {
+      "method": "GET",
+      "route": "/api/health"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "GET",
+      "route": "/api/worker-activity"
+    },
+    {
+      "method": "GET",
+      "route": "/api/service-connections"
+    },
+    {
+      "method": "GET",
+      "route": "/api/inference-observation"
+    },
+    {
+      "method": "GET",
+      "route": "/api/commands"
+    },
+    {
+      "method": "GET",
+      "route": "/api/relay"
+    },
+    {
+      "method": "GET",
+      "route": "/api/node-probes"
+    },
+    {
+      "method": "POST",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "POST",
+      "route": "/api/tasks/a814e06d-bc53-40dd-99ce-b3470cdbe879/proposal"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "POST",
+      "route": "/api/tasks/a814e06d-bc53-40dd-99ce-b3470cdbe879/deny"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "GET",
+      "route": "/api/health"
+    },
+    {
+      "method": "GET",
+      "route": "/api/health"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "GET",
+      "route": "/api/worker-activity"
+    },
+    {
+      "method": "GET",
+      "route": "/api/service-connections"
+    },
+    {
+      "method": "GET",
+      "route": "/api/inference-observation"
+    },
+    {
+      "method": "GET",
+      "route": "/api/commands"
+    },
+    {
+      "method": "GET",
+      "route": "/api/relay"
+    },
+    {
+      "method": "GET",
+      "route": "/api/node-probes"
+    },
+    {
+      "method": "POST",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "POST",
+      "route": "/api/tasks/5b7a4cfe-a44f-4269-9379-eff3aecaac8b/proposal"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "POST",
+      "route": "/api/tasks/5b7a4cfe-a44f-4269-9379-eff3aecaac8b/approve"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks/5b7a4cfe-a44f-4269-9379-eff3aecaac8b"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks/5b7a4cfe-a44f-4269-9379-eff3aecaac8b"
+    },
+    {
+      "method": "POST",
+      "route": "/api/tasks/5b7a4cfe-a44f-4269-9379-eff3aecaac8b/cancel"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "GET",
+      "route": "/api/health"
+    },
+    {
+      "method": "GET",
+      "route": "/api/health"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "GET",
+      "route": "/api/worker-activity"
+    },
+    {
+      "method": "GET",
+      "route": "/api/service-connections"
+    },
+    {
+      "method": "GET",
+      "route": "/api/inference-observation"
+    },
+    {
+      "method": "GET",
+      "route": "/api/commands"
+    },
+    {
+      "method": "GET",
+      "route": "/api/relay"
+    },
+    {
+      "method": "GET",
+      "route": "/api/node-probes"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks/5b7a4cfe-a44f-4269-9379-eff3aecaac8b"
+    },
+    {
+      "method": "GET",
+      "route": "/api/tasks"
+    },
+    {
+      "method": "POST",
+      "route": "/api/trial-session/logout"
+    }
+  ],
+  "errors": [],
+  "freshness": {
+    "/": {
+      "sha256": "423b79a8cc3bca7eef69ed227d8eb4d6ccecb5849b1403dcd05a1fca88d5520f",
+      "localHash": "423b79a8cc3bca7eef69ed227d8eb4d6ccecb5849b1403dcd05a1fca88d5520f",
+      "fromServiceWorker": true
+    },
+    "/app.js": {
+      "sha256": "6687f4f625a3b8e45bde130de279b5169c581106a8c6c1c3fc43275213e7c3b5",
+      "localHash": "6687f4f625a3b8e45bde130de279b5169c581106a8c6c1c3fc43275213e7c3b5",
+      "fromServiceWorker": true
+    }
+  },
+  "denied": {
+    "task": {
+      "id": "a814e06d-bc53-40dd-99ce-b3470cdbe879",
+      "title": "Disposable deny without execution",
+      "description": "",
+      "label": "",
+      "status": "open",
+      "revision": 3,
+      "createdAt": "2026-10-04T14:07:44.754Z",
+      "updatedAt": "2026-10-04T14:07:44.894Z"
+    },
+    "decision": {
+      "taskId": "a814e06d-bc53-40dd-99ce-b3470cdbe879",
+      "proposalRevision": 2,
+      "status": "denied",
+      "executionId": null
+    },
+    "executions": []
+  },
+  "active": {
+    "task": {
+      "id": "5b7a4cfe-a44f-4269-9379-eff3aecaac8b",
+      "title": "Disposable cancel actual running command",
+      "description": "",
+      "label": "",
+      "status": "open",
+      "revision": 3,
+      "createdAt": "2026-10-04T14:07:45.302Z",
+      "updatedAt": "2026-10-04T14:07:45.686Z"
+    },
+    "decision": {
+      "taskId": "5b7a4cfe-a44f-4269-9379-eff3aecaac8b",
+      "proposalRevision": 2,
+      "status": "running",
+      "executionId": "79928a58-603b-42b2-9a8b-17914e5298d4"
+    },
+    "executions": [
+      {
+        "id": "79928a58-603b-42b2-9a8b-17914e5298d4",
+        "taskId": "5b7a4cfe-a44f-4269-9379-eff3aecaac8b",
+        "proposalRevision": 2,
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "actualCwd": "D:\\Dev\\Onoes-Mesh",
+        "argv": [
+          "C:\\Program Files\\node.exe",
+          "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+        ],
+        "state": "running",
+        "startedAt": "2026-10-04T14:07:45.686Z",
+        "finishedAt": null,
+        "result": null,
+        "approvalRevision": 2
+      }
+    ]
+  },
+  "cancelApi": {
+    "task": {
+      "id": "5b7a4cfe-a44f-4269-9379-eff3aecaac8b",
+      "title": "Disposable cancel actual running command",
+      "description": "",
+      "label": "",
+      "status": "open",
+      "revision": 4,
+      "createdAt": "2026-10-04T14:07:45.302Z",
+      "updatedAt": "2026-10-04T14:07:46.516Z",
+      "proposal": {
+        "command": "node lib/slow-command.mjs",
+        "cwd": "."
+      },
+      "proposalStatus": "failed",
+      "execution": {
+        "id": "79928a58-603b-42b2-9a8b-17914e5298d4",
+        "taskId": "5b7a4cfe-a44f-4269-9379-eff3aecaac8b",
+        "proposalRevision": 2,
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "actualCwd": "D:\\Dev\\Onoes-Mesh",
+        "argv": [
+          "C:\\Program Files\\node.exe",
+          "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+        ],
+        "state": "failed",
+        "startedAt": "2026-10-04T14:07:45.686Z",
+        "finishedAt": "2026-10-04T14:07:46.515Z",
+        "result": {
+          "status": "FAIL",
+          "rootPid": 2878356,
+          "rootExitCode": 1,
+          "timedOut": false,
+          "cleanupVerified": true,
+          "error": "execution cancelled; root exited with nonzero code",
+          "cancelled": true,
+          "stdout": "M3 slow root 2878356; descendant 961828; started\nM3 slow descendant 961828; started\n",
+          "stderr": ""
+        },
+        "approvalRevision": 2
+      }
+    }
+  },
+  "cancelled": {
+    "task": {
+      "id": "5b7a4cfe-a44f-4269-9379-eff3aecaac8b",
+      "title": "Disposable cancel actual running command",
+      "description": "",
+      "label": "",
+      "status": "open",
+      "revision": 4,
+      "createdAt": "2026-10-04T14:07:45.302Z",
+      "updatedAt": "2026-10-04T14:07:46.516Z"
+    },
+    "decision": {
+      "taskId": "5b7a4cfe-a44f-4269-9379-eff3aecaac8b",
+      "proposalRevision": 2,
+      "status": "failed",
+      "executionId": "79928a58-603b-42b2-9a8b-17914e5298d4"
+    },
+    "executions": [
+      {
+        "id": "79928a58-603b-42b2-9a8b-17914e5298d4",
+        "taskId": "5b7a4cfe-a44f-4269-9379-eff3aecaac8b",
+        "proposalRevision": 2,
+        "command": "node lib/slow-command.mjs",
+        "cwd": ".",
+        "actualCwd": "D:\\Dev\\Onoes-Mesh",
+        "argv": [
+          "C:\\Program Files\\node.exe",
+          "D:\\Dev\\Onoes-Mesh\\lib\\slow-command.mjs"
+        ],
+        "state": "failed",
+        "startedAt": "2026-10-04T14:07:45.686Z",
+        "finishedAt": "2026-10-04T14:07:46.515Z",
+        "result": {
+          "status": "FAIL",
+          "rootPid": 2878356,
+          "rootExitCode": 1,
+          "timedOut": false,
+          "cleanupVerified": true,
+          "error": "execution cancelled; root exited with nonzero code",
+          "cancelled": true,
+          "stdout": "M3 slow root 2878356; descendant 961828; started\nM3 slow descendant 961828; started\n",
+          "stderr": ""
+        },
+        "approvalRevision": 2
+      }
+    ]
+  },
+  "pass": true
+}

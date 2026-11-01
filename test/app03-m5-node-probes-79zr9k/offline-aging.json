@@ -1,0 +1,99 @@
+{
+  "provenance": "disposable process input; not a live tailnet observation",
+  "calls": [
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 1504828,
+      "input": "D:\\Dev\\Onoes-Mesh\\test\\app03-m5-node-probes-79zr9k\\input-2.json"
+    },
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 169008,
+      "input": "D:\\Dev\\Onoes-Mesh\\test\\app03-m5-node-probes-79zr9k\\input-3.json"
+    },
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 374396,
+      "input": "D:\\Dev\\Onoes-Mesh\\test\\app03-m5-node-probes-79zr9k\\input-4.json"
+    },
+    {
+      "binary": "C:/Program Files/Tailscale/tailscale.exe",
+      "argv": [
+        "status",
+        "--json"
+      ],
+      "options": {
+        "shell": false,
+        "windowsHide": true,
+        "stdio": [
+          "ignore",
+          "pipe",
+          "pipe"
+        ]
+      },
+      "pid": 2392104,
+      "input": "D:\\Dev\\Onoes-Mesh\\test\\app03-m5-node-probes-79zr9k\\input-5.json"
+    }
+  ],
+  "exits": [
+    {
+      "pid": 1504828,
+      "exitCode": 0,
+      "signalCode": null
+    },
+    {
+      "pid": 169008,
+      "exitCode": 0,
+      "signalCode": null
+    },
+    {
+      "pid": 374396,
+      "exitCode": 0,
+      "signalCode": null
+    },
+    {
+      "pid": 2392104,
+      "exitCode": 0,
+      "signalCode": null
+    }
+  ]
+}

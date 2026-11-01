@@ -1,0 +1,1 @@
+import cp from 'node:child_process'; import {syncBuiltinESMExports} from 'node:module'; let remaining=Number(process.env.M3_TEST_SPAWNS); const original=cp.spawn; cp.spawn=(...args)=>{if(remaining--<=0){console.error('M3_UI_TRIPWIRE');throw new Error('replay executor tripwire');}console.error('M3_UI_SPAWN');return original(...args);}; syncBuiltinESMExports();

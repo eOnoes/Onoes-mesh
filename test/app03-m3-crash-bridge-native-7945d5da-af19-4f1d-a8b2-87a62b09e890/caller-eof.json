@@ -1,0 +1,42 @@
+{
+  "result": {
+    "status": "FAIL",
+    "rootPid": 2703676,
+    "rootExitCode": 1,
+    "timedOut": false,
+    "cleanupVerified": true,
+    "error": "execution cancelled; root exited with nonzero code",
+    "cancelled": true,
+    "stdout": "M3 slow root 2703676; descendant 4014928; started\nM3 slow descendant 4014928; started\n",
+    "stderr": ""
+  },
+  "identities": [
+    {
+      "role": "bridge",
+      "pid": 2935484,
+      "creationTime100ns": "134355616955767485",
+      "executable": "C:\\Python314\\python.exe",
+      "parentPid": 3065228,
+      "exitSignaled": true
+    },
+    {
+      "role": "root",
+      "pid": 2703676,
+      "creationTime100ns": "134355616956345211",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 2935484,
+      "exitSignaled": true
+    },
+    {
+      "role": "descendant",
+      "pid": 4014928,
+      "creationTime100ns": "134355616956808003",
+      "executable": "C:\\Program Files\\node.exe",
+      "parentPid": 2703676,
+      "exitSignaled": true
+    }
+  ],
+  "stdout": "{\"status\": \"FAIL\", \"rootPid\": 2703676, \"rootExitCode\": 1, \"timedOut\": false, \"cleanupVerified\": true, \"error\": \"execution cancelled; root exited with nonzero code\", \"cancelled\": true, \"stdout\": \"M3 slow root 2703676; descendant 4014928; started\\nM3 slow descendant 4014928; started\\n\", \"stderr\": \"\"}\r\n",
+  "stderr": "",
+  "elapsedMs": 321.9102999428287
+}

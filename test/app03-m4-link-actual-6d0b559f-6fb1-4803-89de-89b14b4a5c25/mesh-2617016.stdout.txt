@@ -1,0 +1,4 @@
+{"event":"mesh_relay_spawned","pid":1359620,"executable":"C:\\Python314\\python.exe"}
+{"event":"mesh_relay_stopped","pid":1359620,"exitCode":0,"signal":null}
+{"event":"mesh_relay_unavailable","reason":"runtime_or_dependency_setup"}
+{"event":"mesh_listening","pid":2617016,"url":"http://127.0.0.1:51747","dataDir":"test/app03-m4-link-actual-6d0b559f-6fb1-4803-89de-89b14b4a5c25"}

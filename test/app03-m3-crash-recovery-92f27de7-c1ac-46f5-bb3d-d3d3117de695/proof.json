@@ -1,0 +1,227 @@
+{
+  "scope": "Real command, held native close delivery before persistence; final 10-second crash/cancel awaits bridge integration",
+  "dataDir": "test/app03-m3-crash-recovery-92f27de7-c1ac-46f5-bb3d-d3d3117de695",
+  "url": "http://127.0.0.1:52237",
+  "servers": [
+    {
+      "pid": 1921744,
+      "createdAt": "2026-10-04T04:28:02.8582327Z",
+      "executable": "C:\\Program Files\\node.exe"
+    },
+    {
+      "pid": 1447744,
+      "createdAt": "2026-10-04T04:28:03.9160195Z",
+      "executable": "C:\\Program Files\\node.exe"
+    },
+    {
+      "pid": 2643420,
+      "createdAt": "2026-10-04T04:28:04.5895568Z",
+      "executable": "C:\\Program Files\\node.exe"
+    }
+  ],
+  "running": {
+    "id": "99a59932-a526-4c67-82f6-e81806d7fff0",
+    "title": "Interrupted execution",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 3,
+    "createdAt": "2026-10-04T04:28:03.461Z",
+    "updatedAt": "2026-10-04T04:28:03.471Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "running",
+    "execution": {
+      "id": "dcad9720-0d1f-44b2-81c4-6ab3c510bd57",
+      "taskId": "99a59932-a526-4c67-82f6-e81806d7fff0",
+      "proposalRevision": 2,
+      "command": "node --version",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "--version"
+      ],
+      "state": "running",
+      "startedAt": "2026-10-04T04:28:03.471Z",
+      "finishedAt": null,
+      "result": null,
+      "approvalRevision": 2
+    }
+  },
+  "recovered": {
+    "id": "99a59932-a526-4c67-82f6-e81806d7fff0",
+    "title": "Interrupted execution",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 4,
+    "createdAt": "2026-10-04T04:28:03.461Z",
+    "updatedAt": "2026-10-04T04:28:03.981Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "failed",
+    "execution": {
+      "id": "dcad9720-0d1f-44b2-81c4-6ab3c510bd57",
+      "taskId": "99a59932-a526-4c67-82f6-e81806d7fff0",
+      "proposalRevision": 2,
+      "command": "node --version",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "--version"
+      ],
+      "state": "failed",
+      "startedAt": "2026-10-04T04:28:03.471Z",
+      "finishedAt": "2026-10-04T04:28:03.981Z",
+      "result": {
+        "status": "UNKNOWN",
+        "outcome": "unknown",
+        "reason": "server_restart",
+        "rootPid": null,
+        "rootExitCode": null,
+        "timedOut": null,
+        "cleanupVerified": null,
+        "error": "Execution interrupted by server restart; outcome and cleanup are unknown. No automatic retry.",
+        "stdout": null,
+        "stderr": null
+      },
+      "approvalRevision": 2
+    }
+  },
+  "completed": {
+    "id": "353c327e-b7ec-4d1e-8418-b671b91a38ac",
+    "title": "Preserve actual completed run",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 4,
+    "createdAt": "2026-10-04T04:28:03.281Z",
+    "updatedAt": "2026-10-04T04:28:03.415Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "completed",
+    "execution": {
+      "id": "efe56270-49d1-43fa-b4a1-0b59baf31a35",
+      "taskId": "353c327e-b7ec-4d1e-8418-b671b91a38ac",
+      "proposalRevision": 2,
+      "command": "node --version",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "--version"
+      ],
+      "state": "completed",
+      "startedAt": "2026-10-04T04:28:03.293Z",
+      "finishedAt": "2026-10-04T04:28:03.414Z",
+      "result": {
+        "status": "PASS",
+        "rootPid": 1958448,
+        "rootExitCode": 0,
+        "timedOut": false,
+        "cleanupVerified": true,
+        "error": null,
+        "stdout": "v24.14.0\r\n",
+        "stderr": ""
+      },
+      "approvalRevision": 2
+    }
+  },
+  "pending": {
+    "id": "7a083fdd-3220-427f-9d0e-4262bca1c24c",
+    "title": "Preserve unapproved pending proposal",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 2,
+    "createdAt": "2026-10-04T04:28:03.437Z",
+    "updatedAt": "2026-10-04T04:28:03.442Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "pending",
+    "execution": null
+  },
+  "denied": {
+    "id": "61ebca25-ccce-43e8-87ca-7d0db639abb0",
+    "title": "Preserve denial",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 3,
+    "createdAt": "2026-10-04T04:28:03.446Z",
+    "updatedAt": "2026-10-04T04:28:03.456Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "denied",
+    "execution": null
+  },
+  "replacement": {
+    "id": "99a59932-a526-4c67-82f6-e81806d7fff0",
+    "title": "Interrupted execution",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 7,
+    "createdAt": "2026-10-04T04:28:03.461Z",
+    "updatedAt": "2026-10-04T04:28:05.054Z",
+    "proposal": {
+      "command": "node --version",
+      "cwd": "."
+    },
+    "proposalStatus": "completed",
+    "execution": {
+      "id": "f8b98a69-1cd0-4934-b5f1-950508b9586a",
+      "taskId": "99a59932-a526-4c67-82f6-e81806d7fff0",
+      "proposalRevision": 5,
+      "command": "node --version",
+      "cwd": ".",
+      "actualCwd": "D:\\Dev\\Onoes-Mesh",
+      "argv": [
+        "C:\\Program Files\\node.exe",
+        "--version"
+      ],
+      "state": "completed",
+      "startedAt": "2026-10-04T04:28:04.953Z",
+      "finishedAt": "2026-10-04T04:28:05.054Z",
+      "result": {
+        "status": "PASS",
+        "rootPid": 2239820,
+        "rootExitCode": 0,
+        "timedOut": false,
+        "cleanupVerified": true,
+        "error": null,
+        "stdout": "v24.14.0\r\n",
+        "stderr": ""
+      },
+      "approvalRevision": 5
+    }
+  },
+  "actualUndurableResult": {
+    "bridgePid": 3901324,
+    "bridgeExit": 0,
+    "result": {
+      "status": "PASS",
+      "rootPid": 3539216,
+      "rootExitCode": 0,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": null,
+      "stdout": "v24.14.0\r\n",
+      "stderr": ""
+    }
+  },
+  "repeatedRestartRowsUnchanged": true,
+  "noReplaySpawn": true
+}

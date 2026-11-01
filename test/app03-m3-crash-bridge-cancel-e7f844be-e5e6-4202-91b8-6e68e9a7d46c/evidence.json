@@ -1,0 +1,61 @@
+{
+  "outcome": "interrupted",
+  "result": {
+    "result": {
+      "status": "FAIL",
+      "rootPid": 878784,
+      "rootExitCode": 1,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": "execution cancelled; root exited with nonzero code",
+      "cancelled": true,
+      "stdout": "M3 slow root 878784; descendant 1572008; started\nM3 slow descendant 1572008; started\n",
+      "stderr": ""
+    },
+    "elapsedMs": 454.62350000000004,
+    "callerPid": 1531708
+  },
+  "observation": {
+    "event": "verified",
+    "action": "wait",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 1531708,
+        "creationTime100ns": "134355433210745431",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 1038632,
+        "creationTime100ns": "134355433211157677",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 1531708,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 878784,
+        "creationTime100ns": "134355433211780085",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 1038632,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 1572008,
+        "creationTime100ns": "134355433212166700",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 878784,
+        "exitSignaled": true
+      }
+    ],
+    "cleanupVerified": true,
+    "elapsedMs": 65.754
+  },
+  "output": "{\"result\":{\"status\":\"FAIL\",\"rootPid\":878784,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 878784; descendant 1572008; started\\nM3 slow descendant 1572008; started\\n\",\"stderr\":\"\"},\"elapsedMs\":454.62350000000004,\"callerPid\":1531708}\n",
+  "errors": "",
+  "elapsedMs": 511.0509000000002,
+  "nativeResultUnavailable": false
+}

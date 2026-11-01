@@ -1,0 +1,20 @@
+{
+  "task": {
+    "id": "fe249583-008a-43d1-9734-4d31f53477e8",
+    "title": "M2 functional review",
+    "description": "",
+    "label": "",
+    "status": "open",
+    "revision": 6,
+    "createdAt": "2026-10-03T22:54:16.650Z",
+    "updatedAt": "2026-10-03T22:57:04.238Z"
+  },
+  "decision": {
+    "taskId": "fe249583-008a-43d1-9734-4d31f53477e8",
+    "proposalRevision": 5,
+    "status": "denied",
+    "executionId": null
+  },
+  "approvedRuns": 1,
+  "deniedProposalRuns": 0
+}

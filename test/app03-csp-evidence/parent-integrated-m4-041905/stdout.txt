@@ -1,0 +1,18 @@
+(node:1490000) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ M4 actual HTTP guard: unadmitted, CSRF, origin, explicit intent and configuration denials create no tasks (128.496ms)
+✔ M4 actual copied Relay HTTP/process/SQLite: message, retries, reconnect and restart both preserve one canonical task (5124.5467ms)
+(node:1804896) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ M4 canonical SQLite: scoped idempotence, changed-message refusal, no execution and two-store reopen (24.9795ms)
+✔ M4 canonical SQLite: failed reference insert rolls back task and version4 migrates without changing existing task bytes (102.2472ms)
+✔ M4 MOCK UI: explicit message retry keeps identity, reconnect recovers selectable reference, native frame uses admitted session (7.1134ms)
+✔ M4 MOCK UI: message response after private clearance cannot select or display its task (1.627ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5318.3678

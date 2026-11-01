@@ -1,0 +1,11 @@
+{
+  "status": {
+    "status": "unavailable",
+    "conversationId": null,
+    "links": [],
+    "error": "Actual isolated Relay unavailable; verify local Python dependencies or reconnect."
+  },
+  "events": "{\"event\":\"mesh_relay_stopped\",\"pid\":3633164,\"exitCode\":1,\"signal\":null}\n{\"event\":\"mesh_relay_unavailable\",\"reason\":\"runtime_or_dependency_setup\"}\n{\"event\":\"mesh_listening\",\"pid\":441940,\"url\":\"http://127.0.0.1:61870\",\"dataDir\":\"test/app03-m4-link-actual-771de13b-b161-4723-b22c-23d688da5af3\"}\n",
+  "runtime": "test/app03-m4-link-runtime/Scripts/python.exe",
+  "dependencyHandoff": "test/app03-m4-link-runtime/Scripts/python.exe -m pip install fastapi uvicorn httpx cryptography"
+}

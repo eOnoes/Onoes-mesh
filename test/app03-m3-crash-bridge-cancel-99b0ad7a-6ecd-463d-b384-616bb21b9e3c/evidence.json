@@ -1,0 +1,61 @@
+{
+  "outcome": "interrupted",
+  "result": {
+    "result": {
+      "status": "FAIL",
+      "rootPid": 919272,
+      "rootExitCode": 1,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": "execution cancelled; root exited with nonzero code",
+      "cancelled": true,
+      "stdout": "M3 slow root 919272; descendant 2864900; started\nM3 slow descendant 2864900; started\n",
+      "stderr": ""
+    },
+    "elapsedMs": 463.6973,
+    "callerPid": 2998068
+  },
+  "observation": {
+    "event": "verified",
+    "action": "wait",
+    "identities": [
+      {
+        "role": "caller",
+        "pid": 2998068,
+        "creationTime100ns": "134355616812890599",
+        "executable": "C:\\Program Files\\node.exe",
+        "exitSignaled": true
+      },
+      {
+        "role": "bridge",
+        "pid": 1067916,
+        "creationTime100ns": "134355616813300026",
+        "executable": "C:\\Python314\\python.exe",
+        "parentPid": 2998068,
+        "exitSignaled": true
+      },
+      {
+        "role": "root",
+        "pid": 919272,
+        "creationTime100ns": "134355616813854551",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 1067916,
+        "exitSignaled": true
+      },
+      {
+        "role": "descendant",
+        "pid": 2864900,
+        "creationTime100ns": "134355616814215964",
+        "executable": "C:\\Program Files\\node.exe",
+        "parentPid": 919272,
+        "exitSignaled": true
+      }
+    ],
+    "cleanupVerified": true,
+    "elapsedMs": 94.523
+  },
+  "output": "{\"result\":{\"status\":\"FAIL\",\"rootPid\":919272,\"rootExitCode\":1,\"timedOut\":false,\"cleanupVerified\":true,\"error\":\"execution cancelled; root exited with nonzero code\",\"cancelled\":true,\"stdout\":\"M3 slow root 919272; descendant 2864900; started\\nM3 slow descendant 2864900; started\\n\",\"stderr\":\"\"},\"elapsedMs\":463.6973,\"callerPid\":2998068}\n",
+  "errors": "",
+  "elapsedMs": 520.9616999999998,
+  "nativeResultUnavailable": false
+}

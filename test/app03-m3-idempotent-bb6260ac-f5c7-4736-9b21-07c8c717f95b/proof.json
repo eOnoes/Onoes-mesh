@@ -1,0 +1,66 @@
+{
+  "taskId": "30d218af-c801-45f9-a29d-53224b985f72",
+  "firstRun": {
+    "id": "40a2bf24-9336-4683-b42e-f3e85edad7c7",
+    "taskId": "30d218af-c801-45f9-a29d-53224b985f72",
+    "proposalRevision": 2,
+    "command": "node --version",
+    "cwd": ".",
+    "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\m4-link",
+    "argv": [
+      "C:\\Program Files\\node.exe",
+      "--version"
+    ],
+    "state": "completed",
+    "startedAt": "2026-10-04T00:41:11.201Z",
+    "finishedAt": "2026-10-04T00:41:11.339Z",
+    "result": {
+      "status": "PASS",
+      "rootPid": 3421284,
+      "rootExitCode": 0,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": null,
+      "stdout": "v24.14.0\r\n",
+      "stderr": ""
+    },
+    "approvalRevision": 3
+  },
+  "firstResultTaskRevision": 5,
+  "serverPids": [
+    3916908,
+    98816,
+    2474696
+  ],
+  "url": "http://127.0.0.1:51435",
+  "countAfterRestart": 1,
+  "countAfterDeliberateReplacement": 2,
+  "replacementRun": {
+    "id": "92c35e92-3706-49a4-9330-ab0125018ca7",
+    "taskId": "30d218af-c801-45f9-a29d-53224b985f72",
+    "proposalRevision": 6,
+    "command": "node --version",
+    "cwd": ".",
+    "actualCwd": "D:\\Dev\\Onoes-Mesh-wt\\m4-link",
+    "argv": [
+      "C:\\Program Files\\node.exe",
+      "--version"
+    ],
+    "state": "completed",
+    "startedAt": "2026-10-04T00:41:11.584Z",
+    "finishedAt": "2026-10-04T00:41:11.750Z",
+    "result": {
+      "status": "PASS",
+      "rootPid": 2824420,
+      "rootExitCode": 0,
+      "timedOut": false,
+      "cleanupVerified": true,
+      "error": null,
+      "stdout": "v24.14.0\r\n",
+      "stderr": ""
+    },
+    "approvalRevision": 6
+  },
+  "tripwireUntouched": true,
+  "dataDir": "test/app03-m3-idempotent-bb6260ac-f5c7-4736-9b21-07c8c717f95b"
+}

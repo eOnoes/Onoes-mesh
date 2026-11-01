@@ -1,0 +1,332 @@
+{
+  "baseline": false,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "stages": [
+    {
+      "stage": "native-handoff",
+      "taskId": "b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "savedRows": 1,
+      "requests": [
+        {
+          "path": "/api/tasks/b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+          "method": "GET"
+        },
+        {
+          "path": "/api/tasks",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "stage": "native-reconnect-link",
+      "taskId": "b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "savedRows": 1
+    },
+    {
+      "stage": "reload",
+      "taskId": "b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "task": {
+        "id": "b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+        "title": "Native Relay Saved tasks regression fixed edited",
+        "description": "Native Relay Saved tasks regression fixed",
+        "label": "Relay",
+        "status": "open",
+        "revision": 2,
+        "createdAt": "2026-10-04T03:42:17.052Z",
+        "updatedAt": "2026-10-04T03:42:18.475Z"
+      }
+    }
+  ],
+  "errors": [],
+  "console": [
+    "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-ElGmYzarUhds9W6FsOJkRWTAij6NOggIa9BoawvcS3Q='), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked.",
+    "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-ElGmYzarUhds9W6FsOJkRWTAij6NOggIa9BoawvcS3Q='), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked.",
+    "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-ElGmYzarUhds9W6FsOJkRWTAij6NOggIa9BoawvcS3Q='), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked.",
+    "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-ElGmYzarUhds9W6FsOJkRWTAij6NOggIa9BoawvcS3Q='), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked.",
+    "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-ElGmYzarUhds9W6FsOJkRWTAij6NOggIa9BoawvcS3Q='), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked.",
+    "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-ElGmYzarUhds9W6FsOJkRWTAij6NOggIa9BoawvcS3Q='), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked.",
+    "Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'sha256-AzG9QmhRzsr96jZJA5CIwwGFvHpHjE9KJE1n8WaWLp4=''. Either the 'unsafe-inline' keyword, a hash ('sha256-ElGmYzarUhds9W6FsOJkRWTAij6NOggIa9BoawvcS3Q='), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked."
+  ],
+  "requests": [
+    {
+      "path": "/",
+      "method": "GET"
+    },
+    {
+      "path": "/styles.css",
+      "method": "GET"
+    },
+    {
+      "path": "/app.js",
+      "method": "GET"
+    },
+    {
+      "path": "/pwa-register.mjs",
+      "method": "GET"
+    },
+    {
+      "path": "/icon.svg",
+      "method": "GET"
+    },
+    {
+      "path": "/api/trial-session/bootstrap",
+      "method": "POST"
+    },
+    {
+      "path": "/api/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/worker-activity",
+      "method": "GET"
+    },
+    {
+      "path": "/api/service-connections",
+      "method": "GET"
+    },
+    {
+      "path": "/api/inference-observation",
+      "method": "GET"
+    },
+    {
+      "path": "/api/commands",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay",
+      "method": "GET"
+    },
+    {
+      "path": "/api/node-probes",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/shell",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands-openclaw.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/auth",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/message",
+      "method": "POST"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks/b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/reconnect",
+      "method": "POST"
+    },
+    {
+      "path": "/api/relay/shell",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/static/slash-commands-openclaw.json",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/auth",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay/native/api/agents",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks/b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks/b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "method": "PATCH"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks/b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/",
+      "method": "GET"
+    },
+    {
+      "path": "/styles.css",
+      "method": "GET"
+    },
+    {
+      "path": "/app.js",
+      "method": "GET"
+    },
+    {
+      "path": "/pwa-register.mjs",
+      "method": "GET"
+    },
+    {
+      "path": "/api/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api/health",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks",
+      "method": "GET"
+    },
+    {
+      "path": "/api/worker-activity",
+      "method": "GET"
+    },
+    {
+      "path": "/api/service-connections",
+      "method": "GET"
+    },
+    {
+      "path": "/api/inference-observation",
+      "method": "GET"
+    },
+    {
+      "path": "/api/commands",
+      "method": "GET"
+    },
+    {
+      "path": "/api/relay",
+      "method": "GET"
+    },
+    {
+      "path": "/api/node-probes",
+      "method": "GET"
+    },
+    {
+      "path": "/icon.svg",
+      "method": "GET"
+    },
+    {
+      "path": "/api/tasks/b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "method": "GET"
+    },
+    {
+      "path": "/api/trial-session/logout",
+      "method": "POST"
+    }
+  ],
+  "url": "http://127.0.0.1:52102",
+  "browserPid": 2492596,
+  "ref": {
+    "ok": true,
+    "conversationId": "9626e073-0ef6-4a28-921f-d1380340ccc4",
+    "messageId": "c18df6f3-0a1f-496e-8788-d8f7dded3b4c",
+    "taskId": "b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+    "duplicate": false
+  },
+  "canonical": [
+    {
+      "id": "b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "title": "Native Relay Saved tasks regression fixed",
+      "description": "Native Relay Saved tasks regression fixed",
+      "label": "Relay",
+      "status": "open",
+      "revision": 1,
+      "createdAt": "2026-10-04T03:42:17.052Z",
+      "updatedAt": "2026-10-04T03:42:17.052Z"
+    }
+  ],
+  "inspection": {
+    "heading": {
+      "x": 31,
+      "y": 54.515625,
+      "width": 328,
+      "height": 43.1875
+    },
+    "focused": "inspection-heading"
+  },
+  "counts": {
+    "tasks": 1,
+    "relay_task_links": 1,
+    "task_proposals": 0,
+    "task_executions": 0,
+    "task_proposal_decisions": 0
+  },
+  "references": [
+    {
+      "conversation_id": "9626e073-0ef6-4a28-921f-d1380340ccc4",
+      "message_id": "c18df6f3-0a1f-496e-8788-d8f7dded3b4c",
+      "task_id": "b9ab8519-0243-427f-a49d-cdeb3e8e6216",
+      "message_hash": "aa9fa1665f94098633dcb44c74cc20197312a46a6cec0a2686a70e25abc91284"
+    }
+  ],
+  "logoutCleared": true,
+  "passed": true,
+  "meshOutput": "{\"event\":\"mesh_relay_spawned\",\"pid\":2951264,\"executable\":\"C:\\\\Python314\\\\python.exe\"}\n{\"event\":\"mesh_relay_listening\",\"pid\":2951264,\"port\":52099}\n{\"event\":\"mesh_listening\",\"pid\":556756,\"url\":\"http://127.0.0.1:52102\",\"dataDir\":\"test/app03-m4-link-saved-fixed-7af5587a-7635-4010-bfb8-b10f2c8759ad\",\"mode\":\"mesh\"}\n{\"event\":\"mesh_relay_task_linked\",\"conversationId\":\"9626e073-0ef6-4a28-921f-d1380340ccc4\",\"messageId\":\"c18df6f3-0a1f-496e-8788-d8f7dded3b4c\",\"taskId\":\"b9ab8519-0243-427f-a49d-cdeb3e8e6216\",\"duplicate\":false}\n{\"event\":\"mesh_relay_stopped\",\"pid\":2951264,\"exitCode\":0,\"signal\":null}\n{\"event\":\"mesh_relay_spawned\",\"pid\":417804,\"executable\":\"C:\\\\Python314\\\\python.exe\"}\n{\"event\":\"mesh_relay_listening\",\"pid\":417804,\"port\":52762}\n",
+  "meshErrors": "(node:556756) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n{\"event\":\"M4_RELAY_RUNTIME_SPAWN\",\"executable\":\"C:\\\\Python314\\\\python.exe\",\"args\":[\"-I\",\"-S\",\"-B\",\"-c\",\"import sys; sys.path[:0]=[\\\"D:\\\\\\\\Dev\\\\\\\\Onoes-Mesh\\\\\\\\service_roots\\\\\\\\relay\\\",\\\"D:\\\\\\\\Dev\\\\\\\\Onoes-Mesh\\\\\\\\test\\\\\\\\app03-m4-link-runtime\\\\\\\\Lib\\\\\\\\site-packages\\\"]; import mesh_runtime\"],\"environmentKeys\":[\"MESH_RELAY_CAPABILITY\",\"RELAY_CONFIG_PATH\",\"RELAY_SESSION_DB\",\"SystemRoot\",\"TEMP\",\"TMP\"]}\n{\"event\":\"M4_RELAY_RUNTIME_SPAWN\",\"executable\":\"C:\\\\Python314\\\\python.exe\",\"args\":[\"-I\",\"-S\",\"-B\",\"-c\",\"import sys; sys.path[:0]=[\\\"D:\\\\\\\\Dev\\\\\\\\Onoes-Mesh\\\\\\\\service_roots\\\\\\\\relay\\\",\\\"D:\\\\\\\\Dev\\\\\\\\Onoes-Mesh\\\\\\\\test\\\\\\\\app03-m4-link-runtime\\\\\\\\Lib\\\\\\\\site-packages\\\"]; import mesh_runtime\"],\"environmentKeys\":[\"MESH_RELAY_CAPABILITY\",\"RELAY_CONFIG_PATH\",\"RELAY_SESSION_DB\",\"SystemRoot\",\"TEMP\",\"TMP\"]}\n"
+}

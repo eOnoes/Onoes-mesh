@@ -1,0 +1,62 @@
+{
+  "at": "2026-10-01T15:13:54.378393+00:00",
+  "sourceRoot": "D:\\tmp\\fleet-consolidation-20260929\\build\\mesh-integration-v2",
+  "destination": "D:\\tmp\\fleet-consolidation-20260929\\build\\mesh-session-pwa-v1",
+  "allowlist": [
+    {
+      "path": "package.json",
+      "sha256": "e650194cef38e94132abb4d978f044e4f3d8ae5c22425903dfe96e06e326ec9a",
+      "bytes": 310
+    },
+    {
+      "path": "server.mjs",
+      "sha256": "570bab5d0fbc43c589fe04e2d8ee7b9520ae6581170bcbf4a89ce8a5fc760775",
+      "bytes": 9040
+    },
+    {
+      "path": "public/app.js",
+      "sha256": "6141c8b44854ac3da6789141706fdad941934fb4c1914f2be974f066d2d80db1",
+      "bytes": 13063
+    },
+    {
+      "path": "public/index.html",
+      "sha256": "8f047c7eed8d44fd91825b9a70793452694dca88c9de0ef3cb0e3a5c856255c1",
+      "bytes": 7435
+    },
+    {
+      "path": "public/styles.css",
+      "sha256": "1c551eb1d0585251507bacc59fdcfbbf6a2e1d2757a173ca6c452cb2a1a8448f",
+      "bytes": 11139
+    },
+    {
+      "path": "lib/inference-config.schema.json",
+      "sha256": "ab4733e157b8ebb7f91d6b1856de2ab89489e04a399b0019510a7e8c9b16c042",
+      "bytes": 3582
+    },
+    {
+      "path": "lib/inference-observation.mjs",
+      "sha256": "497dc4bc9eedfbf0ab37265b90fca424ab173c3d9a709cec0e3d14f290fe46b1",
+      "bytes": 14308
+    },
+    {
+      "path": "lib/service-connections.mjs",
+      "sha256": "033ebf55174136f6abc1b527d516dbd6cbd50aafe1b2aa6c469d989e86523b3a",
+      "bytes": 18227
+    },
+    {
+      "path": "lib/task-store.mjs",
+      "sha256": "c581e9e5da9ba95f918468f9e30d5a2f39d58259b6e2e7d0a27500c03e32e446",
+      "bytes": 4556
+    },
+    {
+      "path": "lib/worker-activity.mjs",
+      "sha256": "24d2cdd06ea57f74edb57a88fc72f84a4aeccf98529812c189e9f54932fe4cc5",
+      "bytes": 7038
+    }
+  ],
+  "secretPatternFindings": [],
+  "coverage": "allowlisted code/assets only; heuristic not comprehensive secret assurance",
+  "storesEnvCredentialsCopied": false,
+  "dependenciesInstalled": false,
+  "singleWriter": true
+}

@@ -1,0 +1,3 @@
+{"event":"mesh_relay_stopped","pid":2837508,"exitCode":1,"signal":null}
+{"event":"mesh_relay_unavailable","reason":"runtime_or_dependency_setup"}
+{"event":"mesh_listening","pid":1970356,"url":"http://127.0.0.1:51426","dataDir":"test/app03-m4-link-actual-8e7a2f4c-6991-413a-a9f6-5011e5141e6b"}
