@@ -1056,3 +1056,14 @@ footer{background:transparent}
    so it clipped on desktop too. It has to be a fixed width rather than auto, otherwise
    each row's bar would end at a different place and the meters would stop lining up. */
 .ctl-meter{grid-template-columns:96px minmax(0,1fr) 156px}
+
+/* Order matters: the fixed 3-column rule above applies at every width, so the phone
+   stack has to be re-stated AFTER it to win. (This is the same trap as the grid-column
+   and #menu-open rules earlier - later wins at equal specificity.) */
+@media(max-width:600px){
+  .ctl-meter{grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"k num" "bar bar";row-gap:5px;column-gap:10px;padding:6px 0}
+  .ctl-meter .ctl-k{grid-area:k}
+  .ctl-meter .ctl-num{grid-area:num;text-align:right}
+  .ctl-meter .ctl-bar{grid-area:bar}
+}
