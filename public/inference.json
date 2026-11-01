@@ -1,25 +1,8 @@
 ﻿{
     "schema":  "mesh-inference/v1",
-    "generatedAt":  "2026-11-01T12:40:02.5255800-06:00",
+    "generatedAt":  "2026-11-01T13:05:38.7527052-06:00",
     "host":  "Echo\u0027s PC",
-    "engine":  {
-                   "name":  "unbiased-strata",
-                   "transport":  "stdio",
-                   "port":  null,
-                   "loaded":  true,
-                   "busy":  null,
-                   "modelAlias":  "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002",
-                   "modelShort":  "D:\\Test\\Strata Q3_S",
-                   "modelPath":  "D:\\Test\\Strata-FlashNext-IQ3_S-Codex-20261015\\gguf\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
-                   "contextMax":  32768,
-                   "contextLength":  null,
-                   "buildInfo":  null,
-                   "vocabSize":  null,
-                   "wrapper":  null,
-                   "wrapperPid":  39116,
-                   "wrapperRamGB":  0,
-                   "startedAt":  "2026-11-01T12:12:11.1837910-06:00"
-               },
+    "engine":  null,
     "ollama":  {
                    "running":  true,
                    "port":  11434,
@@ -27,19 +10,19 @@
                },
     "gpu":  {
                 "name":  "NVIDIA GeForce RTX 4080 SUPER",
-                "vramUsedMiB":  31760,
+                "vramUsedMiB":  1879,
                 "vramTotalMiB":  32760,
-                "vramPct":  96.9,
-                "utilPct":  34,
-                "powerW":  20.19,
+                "vramPct":  5.7,
+                "utilPct":  49,
+                "powerW":  33.26,
                 "powerLimitW":  320,
-                "tempC":  32
+                "tempC":  33
             },
     "ram":  {
                 "totalGB":  127.1,
-                "freeGB":  54.3,
-                "usedGB":  72.8,
-                "usedPct":  57.3
+                "freeGB":  101.4,
+                "usedGB":  25.7,
+                "usedPct":  20.2
             },
     "disks":  [
                   {
@@ -60,7 +43,7 @@
                        "pps":  null,
                        "contextUsed":  null,
                        "contextPct":  null,
-                       "reason":  "engine has no HTTP endpoint, so there is no request stream to time"
+                       "reason":  "no request observed since this snapshot started"
                    },
     "cost":  {
                  "simulatedUsd":  null,

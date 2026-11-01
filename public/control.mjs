@@ -68,12 +68,17 @@ function hours(seconds) {
 
 function engineSection(engine) {
   const s = section('engine');
-  if (!engine || !engine.name) {
-    s.append(row('engine', 'none running'));
-    s.append(el('p', 'fine ctl-muted', 'No inference server answered on 18090-18095, 8098 or 60409.'));
+  // The section heading already says ENGINE, so the row is the server's name, not a second
+  // ENGINE label. And the supervisor keeps /health answering with a model name after an
+  // unload, so loaded:false means nothing is resident - say that instead of naming a ghost.
+  if (!engine || !engine.name || engine.loaded === false) {
+    s.append(row('server', 'none running'));
+    s.append(el('p', 'fine ctl-muted', engine?.modelAlias
+      ? `Unloaded. ${engine.modelAlias} returns on the next request.`
+      : 'No inference server answered on 18090-18095, 8098 or 60409.'));
     return s;
   }
-  s.append(row('engine', engine.name, engine.port ? `:${engine.port}` : null));
+  s.append(row('server', engine.name, engine.port ? `:${engine.port}` : null));
   s.append(row('model', engine.modelShort || engine.modelAlias));
   s.append(row('context', engine.contextMax));
   s.append(row('state', engine.state === 'busy' ? 'generating' : (engine.state ?? 'unknown')));
