@@ -855,3 +855,19 @@ footer{background:transparent}
 .chat-msg.agent.tripp .chat-body::before{background:var(--agent-tripp)}
 .chat-msg.agent.dsh .chat-body::before{background:var(--agent-dsh)}
 .chat-msg.continues{margin-top:5px}
+
+/* ============================================================================
+   The sessions rail shows SESSIONS.
+
+   [640] [820] [1100] is the desktop chat-width control and "session controls" is the
+   legacy drawer opener - both are settings, so they belong in the menu rail, not
+   underneath a list of conversations. Theme links stay in both because they are tiny
+   and genuinely useful wherever you are.
+   ============================================================================ */
+.shell[data-rail="sessions"] .chat-width,
+.shell[data-rail="sessions"] .rail-sessions{display:none}
+.chat-width,.theme-links{padding-top:8px}
+
+/* #menu-open carries an ID rule (display:inline-flex) that outranks a class selector,
+   so the hide has to name the ID too. */
+.shell[data-rail="sessions"] #menu-open{display:none}
