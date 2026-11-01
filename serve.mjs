@@ -221,8 +221,13 @@ async function inferenceSummary() {
 
 function shortModel(name) {
   if (!name) return null;
+  // Shorten a gguf fragment ("JoyFox-Qwen3.6-35B-A3B-...-Q5_K_M" -> "JoyFox 35B-A3B Q5_K_M").
+  // An alias like "qwen3.8-flash-next-iq3-s" carries no size or quant token, so it is
+  // already as short as it gets - return it untouched instead of gluing its first
+  // fragment on the front.
   const size = name.match(/(\d+(?:\.\d+)?B-A\d+B)/)?.[1] ?? name.match(/(\d+(?:\.\d+)?B)/)?.[1] ?? '';
   const quant = name.match(/(Q\d[_A-Za-z0-9]*)/)?.[1] ?? '';
+  if (!size && !quant) return name;
   return [name.split(/[-_.]/)[0], size, quant].filter(Boolean).join(' ');
 }
 

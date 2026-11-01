@@ -1,6 +1,6 @@
 ﻿{
     "schema":  "mesh-inference/v1",
-    "generatedAt":  "2026-11-01T11:49:32.8830832-06:00",
+    "generatedAt":  "2026-11-01T11:50:09.6913848-06:00",
     "host":  "Echo\u0027s PC",
     "engine":  {
                    "name":  "node",
@@ -30,16 +30,16 @@
                 "vramUsedMiB":  31962,
                 "vramTotalMiB":  32760,
                 "vramPct":  97.6,
-                "utilPct":  23,
-                "powerW":  18.85,
+                "utilPct":  25,
+                "powerW":  19.28,
                 "powerLimitW":  320,
                 "tempC":  33
             },
     "ram":  {
                 "totalGB":  127.1,
-                "freeGB":  45.3,
-                "usedGB":  81.8,
-                "usedPct":  64.4
+                "freeGB":  45.5,
+                "usedGB":  81.6,
+                "usedPct":  64.2
             },
     "disks":  [
                   {
