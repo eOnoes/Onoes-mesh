@@ -1,8 +1,7 @@
-// Control tab: Echo's PC inference readout.
+// Control tab: what this PC is doing.
 //
-// Reads public/inference.json, a snapshot written by tools/sync-inference.ps1 from the
-// Strata API and nvidia-smi. Mesh's server only serves static files, so there is no live
-// polling endpoint - re-run the collector to refresh.
+// Reads /inference/summary, Mesh's live collector: Strata's API, nvidia-smi, the OS and the
+// other local model services in one request. Nothing here is a snapshot from disk.
 //
 // Thresholds (chosen, not inherited): utilisation meters go amber at 70% and red at 90%;
 // temperature goes amber at 70 C and red at 85 C.
@@ -31,8 +30,8 @@ function el(tag, className, text) {
   return node;
 }
 
-function section(title) {
-  const wrap = el('div', 'ctl-section');
+function section(title, wide = false) {
+  const wrap = el('div', wide ? 'ctl-section is-wide' : 'ctl-section');
   wrap.append(el('h2', null, title));
   return wrap;
 }
@@ -60,11 +59,121 @@ function meter(label, pct, text, table = LEVELS) {
   return wrap;
 }
 
+function hours(seconds) {
+  if (!Number.isFinite(seconds)) return null;
+  const days = Math.floor(seconds / 86400);
+  const rest = Math.round((seconds % 86400) / 3600);
+  return days > 0 ? `${days}d ${rest}h` : `${rest}h`;
+}
+
+function engineSection(engine) {
+  const s = section('engine');
+  if (!engine || !engine.name) {
+    s.append(row('engine', 'none running'));
+    s.append(el('p', 'fine ctl-muted', 'No inference server answered on 18090-18095, 8098 or 60409.'));
+    return s;
+  }
+  s.append(row('engine', engine.name, engine.port ? `:${engine.port}` : null));
+  s.append(row('model', engine.modelShort || engine.modelAlias));
+  s.append(row('context', engine.contextMax));
+  s.append(row('state', engine.state === 'busy' ? 'generating' : (engine.state ?? 'unknown')));
+  if (engine.buildInfo) s.append(row('build', engine.buildInfo));
+  return s;
+}
+
+function gpuSection(gpu) {
+  const s = section('gpu');
+  if (!gpu || !gpu.name) {
+    s.append(row('card', 'nvidia-smi reported nothing'));
+    return s;
+  }
+  s.append(row('card', gpu.name));
+  s.append(meter('vram', gpu.vramPct, `${gpu.vramUsedMiB} / ${gpu.vramTotalMiB} MiB`));
+  s.append(meter('utilisation', gpu.utilPct, `${gpu.utilPct}%`));
+  s.append(meter('power', gpu.powerLimitW ? (100 * gpu.powerW) / gpu.powerLimitW : null,
+    `${gpu.powerW} / ${gpu.powerLimitW} W`));
+  s.append(meter('temperature', gpu.tempC, `${gpu.tempC} \u00b0C`, TEMP_LEVELS));
+  if (gpu.fanPct !== null && gpu.fanPct !== undefined) s.append(meter('fan', gpu.fanPct, `${gpu.fanPct}%`));
+  if (gpu.clockMHz) s.append(row('core clock', `${gpu.clockMHz} MHz`));
+  if (gpu.memClockMHz) s.append(row('mem clock', `${gpu.memClockMHz} MHz`));
+  return s;
+}
+
+function systemSection(system, ram) {
+  const s = section('system');
+  if (!system) {
+    s.append(row('os', 'not reported'));
+    return s;
+  }
+  s.append(row('cpu', (system.cpuName || '').trim() || null));
+  s.append(meter('cpu load', system.cpuLoadPct, `${system.cpuLoadPct ?? '\u2014'}%`));
+  s.append(row('cores', `${system.cpuCores}c / ${system.cpuThreads}t`));
+  s.append(meter('memory', ram?.usedPct, `${ram?.usedGB ?? '\u2014'} / ${ram?.totalGB ?? '\u2014'} GB`));
+  s.append(row('uptime', hours(system.uptimeSec)));
+  s.append(row('os', `${system.os || ''} ${system.osVersion || ''}`.trim() || null));
+  s.append(row('node', system.node));
+  return s;
+}
+
+function diskSection(disks) {
+  const s = section('storage');
+  if (!disks || !disks.length) {
+    s.append(row('disks', 'not reported'));
+    return s;
+  }
+  for (const disk of disks) {
+    s.append(meter(disk.name, disk.usedPct, `${disk.usedGB} / ${disk.totalGB} GB`));
+  }
+  return s;
+}
+
+function servicesSection(services) {
+  const s = section('services');
+  for (const service of services || []) {
+    const line = el('div', 'ctl-svc');
+    line.append(el('span', 'ctl-k', service.id));
+    const up = el('span', 'ctl-up', service.reachable ? 'up' : 'down');
+    up.dataset.state = service.reachable ? 'ok' : 'off';
+    line.append(up);
+    line.append(el('span', 'ctl-note', service.detail || service.base || ''));
+    s.append(line);
+  }
+  return s;
+}
+
+function modelsSection(services) {
+  const s = section('models', true);
+  const loaded = [];
+  for (const service of services || []) {
+    for (const model of service.models || []) {
+      loaded.push({ service: service.id, name: model.name, vramGB: model.vramGB });
+    }
+  }
+  if (!loaded.length) {
+    s.append(row('resident', 'none'));
+    return s;
+  }
+  for (const model of loaded) {
+    s.append(row(model.service, model.name, model.vramGB ? `${model.vramGB} GB VRAM` : null));
+  }
+  return s;
+}
+
+function hintsSection(hints) {
+  const s = section('notes', true);
+  if (!hints || !hints.length) {
+    s.append(el('p', 'fine ctl-muted', 'Nothing needs attention.'));
+    return s;
+  }
+  for (const hint of hints) s.append(el('p', 'ctl-hint', hint));
+  return s;
+}
+
 function render() {
   if (!root) return;
   root.replaceChildren();
   if (!data) {
-    root.append(el('p', 'fine', 'No telemetry snapshot yet. Run tools/sync-inference.ps1.'));
+    root.append(el('p', 'fine', 'No telemetry yet. /inference/summary did not answer.'));
     return;
   }
 
@@ -74,45 +183,19 @@ function render() {
   head.append(el('span', 'ctl-updated', when ? `updated ${when.toLocaleTimeString()}` : 'unknown age'));
   root.append(head);
 
-  const engine = data.engine || {};
-  const gpu = data.gpu || {};
-  const ram = data.ram || {};
-
-  if (view === 'overview' || view === 'throughput') {
-    const s = section('engine');
-    if (!engine.name) {
-      // Nothing answered on the usual ports. Say that plainly rather than printing an
-      // em-dash next to a transport guess.
-      s.append(row('engine', 'none running'));
-      s.append(el('p', 'fine ctl-muted', 'No inference server answered on 60409 / 8080 / 1234 / 8000.'));
-      root.append(s);
-    } else {
-    s.append(row('engine', engine.name, engine.transport === 'http' ? `:${engine.port}` : null));
-    s.append(row('model', engine.modelShort || engine.modelAlias, engine.modelAlias));
-    s.append(row('context', engine.contextMax, engine.contextLength ? `of ${engine.contextLength}` : null));
-    s.append(// Prefer the server's own verdict: the supervisor reports loaded without a busy signal.
-    row('state', engine.state === 'busy' ? 'generating' : (engine.state ?? (engine.busy === true ? 'generating' : engine.busy === false ? 'idle' : 'unknown')),
-      engine.loaded === false ? 'not loaded' : null));
-    if (engine.buildInfo) s.append(row('build', engine.buildInfo));
-    root.append(s);
-    }
-  }
+  const grid = el('div', 'ctl-grid');
+  const engine = data.engine;
+  const gpu = data.gpu;
+  const ram = data.ram;
 
   if (view === 'overview') {
-    const s = section('resources');
-    s.append(meter('gpu vram', gpu.vramPct, `${gpu.vramUsedMiB ?? '—'} / ${gpu.vramTotalMiB ?? '—'} MiB`));
-    s.append(meter('system ram', ram.usedPct, `${ram.usedGB ?? '—'} / ${ram.totalGB ?? '—'} GB`));
-    for (const disk of data.disks || []) {
-      s.append(meter(disk.name, disk.usedPct, `${disk.usedGB} / ${disk.totalGB} GB`));
-    }
-    root.append(s);
-
-    const g = section('gpu');
-    g.append(meter('utilisation', gpu.utilPct, `${gpu.utilPct ?? '—'}%`));
-    g.append(meter('power', gpu.powerLimitW ? (100 * gpu.powerW) / gpu.powerLimitW : null,
-      `${gpu.powerW ?? '—'} / ${gpu.powerLimitW ?? '—'} W`));
-    g.append(meter('temperature', gpu.tempC, `${gpu.tempC ?? '—'} \u00b0C`, TEMP_LEVELS));
-    root.append(g);
+    grid.append(engineSection(engine));
+    grid.append(gpuSection(gpu));
+    grid.append(systemSection(data.system, ram));
+    grid.append(diskSection(data.disks));
+    grid.append(servicesSection(data.services));
+    grid.append(modelsSection(data.services));
+    grid.append(hintsSection(data.hints));
   }
 
   if (view === 'throughput') {
@@ -123,23 +206,27 @@ function render() {
     s.append(row('pps', t.pps));
     s.append(row('context used', t.contextUsed, t.contextPct ? `${t.contextPct}%` : null));
     if (!t.tps) s.append(el('p', 'fine ctl-muted', t.reason || 'no measurement available'));
-    root.append(s);
+    grid.append(s);
 
     const cs = section('cost');
-    cs.append(row('simulated', c.simulatedUsd === null || c.simulatedUsd === undefined
-      ? null : `$${c.simulatedUsd}`));
+    cs.append(row('simulated', c.simulatedUsd === null || c.simulatedUsd === undefined ? null : `$${c.simulatedUsd}`));
     if (c.reason) cs.append(el('p', 'fine ctl-muted', c.reason));
-    root.append(cs);
+    grid.append(cs);
+
+    grid.append(engineSection(engine));
+    grid.append(gpuSection(gpu));
   }
 
   if (view === 'logs') {
-    const s = section('snapshot');
+    const s = section('snapshot', true);
     const pre = el('pre', 'ctl-v');
     pre.style.whiteSpace = 'pre-wrap';
     pre.textContent = JSON.stringify(data, null, 2);
     s.append(pre);
-    root.append(s);
+    grid.append(s);
   }
+
+  root.append(grid);
 }
 
 function setView(next) {
@@ -155,8 +242,7 @@ for (const button of document.querySelectorAll('[data-ctl-view]')) {
 }
 if (loading) loading.remove();
 
-// Live telemetry, polled. /inference/summary is Mesh's gate proxy: it asks Strata's own
-// API, nvidia-smi and the OS on each call, so there is no snapshot to go stale.
+// Live telemetry, polled. The server memoises briefly, so several tabs cost one collection.
 const MACHINE_SLOT = document.getElementById('machine-tabs');
 
 async function load() {

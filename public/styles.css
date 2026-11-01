@@ -1292,3 +1292,29 @@ footer{background:transparent}
   .chat-seek.is-active{opacity:.9}
   .chat-jump{right:6px !important}
 }
+
+/* ============================================================================
+   Control becomes a readout, not a stack.
+
+   Every section is one card in a grid: three columns on a desktop so the whole
+   machine fits without scrolling, one column on a phone where width is the
+   constraint. `.is-wide` breaks a card across the full row for the two that read
+   badly in a narrow column (model list, notes).
+   ========================================================================== */
+.ctl-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;align-items:start}
+.ctl-grid .ctl-section{margin:0}
+.ctl-grid .ctl-section.is-wide{grid-column:1 / -1}
+.ctl-svc{display:grid;grid-template-columns:64px 40px minmax(0,1fr);gap:8px;align-items:baseline;
+  padding:2px 0;font-size:11px}
+.ctl-up{font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.ctl-up[data-state="ok"]{color:var(--green, var(--cyan))}
+.ctl-up[data-state="off"]{color:var(--faint)}
+.ctl-hint{margin:2px 0;font-size:11px;color:var(--muted);line-height:1.45}
+
+@media(max-width:1100px){
+  .ctl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:759px){
+  .ctl-grid{grid-template-columns:minmax(0,1fr);gap:8px}
+  .ctl-svc{grid-template-columns:56px 36px minmax(0,1fr)}
+}

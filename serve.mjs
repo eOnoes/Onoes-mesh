@@ -128,6 +128,61 @@ async function appAdmission() {
 }
 
 // --- Live telemetry -----------------------------------------------------------------
+// One short-timeout probe helper. Every service below is optional: a dead port must cost
+// a timeout, never an exception, so the summary always renders.
+async function probeJson(url, timeout = 1200) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+async function ollamaStatus() {
+  const version = await probeJson('http://127.0.0.1:11434/api/version');
+  if (!version?.version) return { reachable: false, detail: null, loadedCount: 0, libraryCount: 0, models: [] };
+  const [ps, tags] = await Promise.all([
+    probeJson('http://127.0.0.1:11434/api/ps'),
+    probeJson('http://127.0.0.1:11434/api/tags'),
+  ]);
+  const loaded = Array.isArray(ps?.models) ? ps.models : [];
+  const library = Array.isArray(tags?.models) ? tags.models : [];
+  return {
+    reachable: true,
+    detail: `v${version.version}`,
+    loadedCount: loaded.length,
+    libraryCount: library.length,
+    models: loaded.map((m) => ({
+      name: String(m.name ?? ''),
+      vramGB: m.size_vram ? Math.round((m.size_vram / 1e9) * 100) / 100 : null,
+    })),
+  };
+}
+
+async function lmStudioStatus() {
+  const models = await probeJson('http://127.0.0.1:1234/v1/models');
+  const list = Array.isArray(models?.data) ? models.data : [];
+  return {
+    reachable: Boolean(models),
+    detail: models ? `${list.length} listed` : null,
+    loadedCount: list.length,
+    libraryCount: list.length,
+    models: list.slice(0, 8).map((m) => ({ name: String(m.id ?? '') })),
+  };
+}
+
+async function comfyStatus() {
+  const stats = await probeJson('http://127.0.0.1:8188/system_stats', 1500);
+  if (!stats) return { reachable: false, detail: null, busy: null, queued: null };
+  const device = Array.isArray(stats.devices) ? stats.devices[0] : null;
+  return {
+    reachable: true,
+    detail: device ? `${device.name ?? 'device'} · ${Math.round((device.vram_total ?? 0) / 1e9)} GB` : null,
+    busy: stats.execution_start != null,
+    queued: stats.queue_remaining ?? null,
+  };
+}
+
 async function strataHealth() {
   for (const port of STRATA_PORTS) {
     try {
@@ -154,56 +209,95 @@ async function strataHealth() {
   return null;
 }
 
+let summaryCache = null;
+
 async function inferenceSummary() {
-  const [gpuOut, strata] = await Promise.all([
-    run('nvidia-smi', ['--query-gpu=name,memory.used,memory.total,utilization.gpu,power.draw,power.limit,temperature.gpu',
+  // One PowerShell pass for everything the OS knows, one nvidia-smi call for the card,
+  // and the service probes in parallel. Four separate PowerShell launches took ~2s; this
+  // takes ~300ms.
+  // A single string, NOT joined lines: joining with '; ' turns `[pscustomobject]@{` into
+  // `[pscustomobject]@{;`, which PowerShell rejects as an incomplete hash literal.
+  const psScript = `
+$os = Get-CimInstance Win32_OperatingSystem
+$cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+$disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null } | ForEach-Object { [pscustomobject]@{ name=$_.Name+':'; usedGB=[math]::Round($_.Used/1GB,1); freeGB=[math]::Round($_.Free/1GB,1); totalGB=[math]::Round(($_.Used+$_.Free)/1GB,1) } })
+[pscustomobject]@{
+  os=$os.Caption; osVersion=$os.Version
+  uptimeSec=[int]((Get-Date)-$os.LastBootUpTime).TotalSeconds
+  cpuName=$cpu.Name; cpuCores=$cpu.NumberOfCores; cpuThreads=$cpu.NumberOfLogicalProcessors; cpuLoad=$cpu.LoadPercentage
+  ramTotalGB=[math]::Round($os.TotalVisibleMemorySize/1MB,1); ramFreeGB=[math]::Round($os.FreePhysicalMemory/1MB,1)
+  disks=$disks
+} | ConvertTo-Json -Depth 5 -Compress`;
+
+  const [psOut, gpuOut, strata, ollama, lmstudio, comfyui] = await Promise.all([
+    run('powershell', ['-NoProfile', '-NonInteractive', '-Command', psScript], { timeout: 8000 })
+      .then((r) => { try { return JSON.parse(r.stdout.trim()); } catch { return null; } }).catch(() => null),
+    run('nvidia-smi', ['--query-gpu=name,memory.used,memory.total,utilization.gpu,power.draw,power.limit,temperature.gpu,fan.speed,clocks.current.graphics,clocks.current.memory',
       '--format=csv,noheader,nounits'], { timeout: 5000 }).then((r) => r.stdout.trim()).catch(() => ''),
     strataHealth(),
+    ollamaStatus(),
+    lmStudioStatus(),
+    comfyStatus(),
   ]);
 
   let gpu = null;
   if (gpuOut) {
-    const f = gpuOut.split(',').map((s) => s.trim());
+    const f = gpuOut.split(',').map((x) => x.trim());
     const used = Number(f[1]); const total = Number(f[2]);
     gpu = {
       name: f[0], vramUsedMiB: used, vramTotalMiB: total,
       vramPct: total > 0 ? Math.round((1000 * used) / total) / 10 : null,
       utilPct: Number(f[3]), powerW: Number(f[4]), powerLimitW: Number(f[5]), tempC: Number(f[6]),
+      fanPct: Number.isFinite(Number(f[7])) ? Number(f[7]) : null,
+      clockMHz: Number.isFinite(Number(f[8])) ? Number(f[8]) : null,
+      memClockMHz: Number.isFinite(Number(f[9])) ? Number(f[9]) : null,
     };
   }
 
-  const total = process.totalmem?.() ?? 0;
   const ram = { usedPct: null, usedGB: null, totalGB: null };
-  try {
-    const { stdout } = await run('powershell', ['-NoProfile', '-Command',
-      "$os=Get-CimInstance Win32_OperatingSystem; '{0}|{1}' -f $os.TotalVisibleMemorySize,$os.FreePhysicalMemory"],
-      { timeout: 5000 });
-    const [t, fr] = stdout.trim().split('|').map(Number);
-    const totalGB = Math.round((t / 1048576) * 10) / 10;
-    const freeGB = Math.round((fr / 1048576) * 10) / 10;
-    ram.totalGB = totalGB; ram.usedGB = Math.round((totalGB - freeGB) * 10) / 10;
-    ram.usedPct = Math.round((1000 * ram.usedGB) / totalGB) / 10;
-  } catch { /* leave nulls */ }
-
-  const disks = [];
-  for (const letter of ['C', 'D']) {
-    try {
-      const { stdout } = await run('powershell', ['-NoProfile', '-Command',
-        `$d=Get-PSDrive ${letter}; '{0}|{1}' -f $d.Used,$d.Free`], { timeout: 5000 });
-      const [used, free] = stdout.trim().split('|').map(Number);
-      const cap = used + free;
-      if (cap > 0) {
-        disks.push({ name: `${letter}:`, usedGB: Math.round((used / 1073741824) * 10) / 10,
-          totalGB: Math.round((cap / 1073741824) * 10) / 10,
-          usedPct: Math.round((1000 * used) / cap) / 10 });
-      }
-    } catch { /* skip */ }
+  if (psOut && psOut.ramTotalGB) {
+    ram.totalGB = psOut.ramTotalGB;
+    ram.usedGB = Math.round((psOut.ramTotalGB - psOut.ramFreeGB) * 10) / 10;
+    ram.usedPct = Math.round((1000 * ram.usedGB) / psOut.ramTotalGB) / 10;
   }
 
+  const disks = Array.isArray(psOut?.disks)
+    ? psOut.disks.map((d) => ({ name: d.name, usedGB: d.usedGB, totalGB: d.totalGB,
+        usedPct: d.totalGB > 0 ? Math.round((1000 * d.usedGB) / d.totalGB) / 10 : null }))
+    : [];
+
+  const system = psOut ? {
+    os: psOut.os, osVersion: psOut.osVersion,
+    uptimeSec: psOut.uptimeSec,
+    cpuName: psOut.cpuName, cpuCores: psOut.cpuCores, cpuThreads: psOut.cpuThreads,
+    cpuLoadPct: psOut.cpuLoad ?? null,
+    node: process.version,
+  } : null;
+
+  // Services the other control panel tracks, so Mesh can report reachability the same way.
+  const services = [strata ? {
+    id: 'strata', label: 'UnbiasedStrata', base: `127.0.0.1:${strata.port}`,
+    reachable: true, loaded: strata.health.loaded === true,
+    detail: strata.health.model ?? null,
+  } : { id: 'strata', label: 'UnbiasedStrata', base: 'ports 18090-18095', reachable: false, loaded: false, detail: null },
+    { id: 'ollama', label: 'Ollama', base: '127.0.0.1:11434', ...ollama },
+    { id: 'lmstudio', label: 'LM Studio', base: '127.0.0.1:1234', ...lmstudio },
+    { id: 'comfyui', label: 'ComfyUI', base: '127.0.0.1:8188', ...comfyui }];
+
+  const hints = [];
+  if (!strata) hints.push('No inference engine answered. Start one or none of the model controls will resolve.');
+  if (ollama.reachable && ollama.loadedCount === 0) hints.push('Ollama is up with no resident models.');
+  if (!ollama.reachable) hints.push('Ollama is not answering on 11434.');
+  if (!lmstudio.reachable) hints.push('LM Studio is not answering on 1234.');
+  if (!comfyui.reachable) hints.push('ComfyUI is not answering on 8188.');
+  if (gpu && gpu.vramPct >= 90) hints.push('VRAM is above 90% - a new load will have to evict.');
+  if (psOut && psOut.cpuLoad >= 85) hints.push('CPU is above 85%; prompt processing will be slow.');
+
   return {
-    schema: 'mesh-inference/live-v1',
+    schema: 'mesh-inference/live-v2',
     generatedAt: new Date().toISOString(),
     host: process.env.MESH_HOST_LABEL ?? "Echo's PC",
+    platform: `${process.platform} ${process.arch}`,
     engine: strata ? {
       name: strata.props?.engine ?? 'strata',
       port: strata.port,
@@ -216,7 +310,7 @@ async function inferenceSummary() {
       buildInfo: strata.props?.build_info ?? null,
       state: engineState(strata),
     } : null,
-    gpu, ram, disks,
+    gpu, ram, disks, system, services, hints,
     throughput: { tps: null, pps: null, contextUsed: null, contextPct: null,
       reason: strata ? (strata.health.busy ? 'generating - no counter exposed by this build' : 'engine is idle')
                     : 'no engine answered on the usual ports' },
@@ -348,8 +442,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (path.startsWith('/relay/')) return relayProxy(req, res, token, path.slice('/relay'.length) + url.search);
+    // The collector costs ~1.7s (one PowerShell launch + nvidia-smi + four probes). Every
+  // panel polls every 5s, so two open tabs would double that for identical numbers.
   if (path === '/inference/summary') {
-    try { return sendJson(res, 200, await inferenceSummary()); }
+    if (summaryCache && Date.now() - summaryCache.at < 2000) return sendJson(res, 200, summaryCache.value);
+    try { const value = await inferenceSummary(); summaryCache = { at: Date.now(), value }; return sendJson(res, 200, value); }
     catch (error) { return sendJson(res, 500, { ok: false, error: String(error?.message ?? error) }); }
   }
 
