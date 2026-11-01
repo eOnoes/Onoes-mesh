@@ -1228,3 +1228,17 @@ footer{background:transparent}
    `display:none` for the street-light fix, and the chained rule restored `content`
    but never reset `display`. Explicit block, and let top/bottom define the height. */
 .nav-rail .tab::after{display:block;content:"";height:auto;width:1px}
+
+/* The phantom beside the guide was the ORIGINAL tree glyph: `content:"\251C\2500 "` was
+   still winning the cascade over the later `content:""`, so a 1px box was painting a
+   three-character string that overflowed to the right of the line. Higher specificity
+   settles it for good - this rule outranks every plain `.nav-rail .tab::before`. */
+.shell .nav-rail .tab::before{content:none}
+.shell .nav-rail .tab::after{content:""}
+
+/* `content:none` removed the phantom but also removed the upper segment, since ::before
+   IS that segment. It needs an empty string, not none - stated here in full at high
+   specificity so no earlier rule can contribute geometry or a glyph again. */
+.shell .nav-rail .tab::before{content:"";display:block;position:absolute;
+  left:31px;top:0;width:1px;height:calc(50% - 6px);background:var(--border);
+  overflow:hidden;padding:0;border:0;margin:0}
