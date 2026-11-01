@@ -208,7 +208,7 @@ async function inferenceSummary() {
       modelAlias: strata.health.model ?? strata.props?.model_alias ?? null,
       modelShort: shortModel(strata.health.model ?? strata.props?.model_alias),
       modelPath: strata.props?.model_path ?? null,
-      contextMax: strata.health.max_context ?? strata.props?.default_generation_settings?.n_ctx ?? null,
+      contextMax: strata.health.max_context ?? strata.props?.default_generation_settings?.n_ctx ?? strata.models?.data?.[0]?.context_length ?? null,
       buildInfo: strata.props?.build_info ?? null,
     } : null,
     gpu, ram, disks,

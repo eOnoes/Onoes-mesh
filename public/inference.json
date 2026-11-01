@@ -1,24 +1,24 @@
 ﻿{
     "schema":  "mesh-inference/v1",
-    "generatedAt":  "2026-11-01T11:50:09.6913848-06:00",
+    "generatedAt":  "2026-11-01T11:57:49.5349256-06:00",
     "host":  "Echo\u0027s PC",
     "engine":  {
-                   "name":  "node",
+                   "name":  "unbiased-strata",
                    "transport":  "stdio",
                    "port":  null,
                    "loaded":  true,
                    "busy":  null,
                    "modelAlias":  "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002",
-                   "modelShort":  "\\\"$root\\gguf\\Qwen3 Q3_S",
-                   "modelPath":  "\\\"$root\\gguf\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
-                   "contextMax":  null,
+                   "modelShort":  "D:\\Test\\Strata Q3_S",
+                   "modelPath":  "D:\\Test\\Strata-FlashNext-IQ3_S-Codex-20261015\\gguf\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+                   "contextMax":  32768,
                    "contextLength":  null,
                    "buildInfo":  null,
                    "vocabSize":  null,
                    "wrapper":  null,
-                   "wrapperPid":  41252,
-                   "wrapperRamGB":  0.07,
-                   "startedAt":  "2026-11-01T11:47:39.1937370-06:00"
+                   "wrapperPid":  38972,
+                   "wrapperRamGB":  0.09,
+                   "startedAt":  "2026-11-01T11:56:43.1013140-06:00"
                },
     "ollama":  {
                    "running":  true,
@@ -27,19 +27,19 @@
                },
     "gpu":  {
                 "name":  "NVIDIA GeForce RTX 4080 SUPER",
-                "vramUsedMiB":  31962,
+                "vramUsedMiB":  31879,
                 "vramTotalMiB":  32760,
-                "vramPct":  97.6,
-                "utilPct":  25,
-                "powerW":  19.28,
+                "vramPct":  97.3,
+                "utilPct":  22,
+                "powerW":  19.52,
                 "powerLimitW":  320,
                 "tempC":  33
             },
     "ram":  {
                 "totalGB":  127.1,
-                "freeGB":  45.5,
-                "usedGB":  81.6,
-                "usedPct":  64.2
+                "freeGB":  50,
+                "usedGB":  77.1,
+                "usedPct":  60.7
             },
     "disks":  [
                   {

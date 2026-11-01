@@ -1,6 +1,6 @@
 {
   "schema": "mesh-relay-chat/v1",
-  "syncedAt": "2026-11-01T17:49:52.905Z",
+  "syncedAt": "2026-11-01T17:57:32.795Z",
   "source": "http://127.0.0.1:8787",
   "agent": {
     "id": "echo",
@@ -8,7 +8,7 @@
     "status": "done"
   },
   "sessionId": "6e715448-c51d-45b1-b045-cdb40731ca91",
-  "count": 41,
+  "count": 43,
   "messages": [
     {
       "id": "1",
@@ -300,6 +300,20 @@
       "k": "ag",
       "t": "Received.",
       "at": "2026-11-01T01:30:17+00:00",
+      "files": []
+    },
+    {
+      "id": "136",
+      "k": "you",
+      "t": "Eddie says hello.",
+      "at": "2026-11-01T17:52:22+00:00",
+      "files": []
+    },
+    {
+      "id": "137",
+      "k": "ag",
+      "t": "Hi Eddie!",
+      "at": "2026-11-01T17:52:25+00:00",
       "files": []
     }
   ]
