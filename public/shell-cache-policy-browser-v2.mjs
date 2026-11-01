@@ -1,6 +1,6 @@
 /** Public static shell only. No auth, API authority, messages, or mutation queues. */
 export const POLICY_VERSION = 1;
-export const CACHE_NAME = 'onoes-mesh-public-shell-cache04-v3';
+export const CACHE_NAME = 'onoes-mesh-public-shell-cache04-v4';
 export const PUBLIC_ASSETS = Object.freeze({
   '/': Object.freeze(['text/html']),
   '/app.js': Object.freeze(['text/javascript', 'application/javascript']),

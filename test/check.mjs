@@ -68,7 +68,34 @@ function assertDesign() {
     assert.notEqual(current, start, `${start} references itself, which is invalid and resolves to nothing`);
   }
 
-  console.log('design guard: tokens isolated in shared/tokens.css, no literals in rules, every var() defined, no cycles');
+  // --- Relay conformance, asserted statically -------------------------------------
+  //
+  // Until now "it matches the Relay design" was something a person measured in a browser
+  // and then the measurement died with the session. Each assertion below encodes one
+  // property that was NOT true before the restyle and would silently regress without a
+  // guard. Comments are stripped first so the prose above cannot trip its own check.
+  const code = rules.replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.equal(/(Segoe|sans-serif|system-ui|ui-monospace)/.test(code), false,
+    'every font family must come from a token - var(--mono) for content, var(--sans) for chrome');
+  assert.equal(/font-family:var\(--mono\)/.test(code), true, 'content must be monospace');
+  assert.equal(/max-width:820px/.test(code), true, 'the shell must be the 820px Relay window');
+
+  for (const token of ['--terminal-font:', '--terminal-line:', '--sans:']) {
+    assert.equal(tokens.includes(token), true, `${token} is missing from shared/tokens.css`);
+  }
+
+  const html = readFileSync('public/index.html', 'utf8');
+  const tabCount = (html.match(/role="tab"/g) || []).length;
+  assert.equal(tabCount, 7, `expected seven tab buttons, found ${tabCount}`);
+  const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '';
+  assert.equal((header.match(/role="tab"/g) || []).length, 7,
+    'all seven tabs must live in the top bar, not hidden in the drawer');
+  const dots = (header.match(/<span class="wd"[\s\S]*?<\/span>/)?.[0]?.match(/<i>/g) || []).length;
+  assert.equal(dots, 3, 'the top bar must carry exactly three traffic-light dots');
+  assert.equal(html.indexOf('/shared/tokens.css') < html.indexOf('/styles.css'), true,
+    'the token stylesheet must load before the rules that use it');
+
+  console.log('design guard: tokens isolated, no colour or font literals, 820px window, 7 tabs + 3 dots in the bar');
 }
 try {
   assertDesign();
