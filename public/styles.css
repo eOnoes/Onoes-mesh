@@ -668,3 +668,22 @@ body:has(#panel-relay:not([hidden])) footer{display:none}
 .rail-session:hover{border-color:var(--border);color:var(--ink)}
 .rail-session[aria-current="true"]{border-color:var(--border);background:var(--raised);color:var(--ink)}
 .rail-session small{display:block;color:var(--faint);font-size:10px;margin-top:2px}
+
+/* ============================================================================
+   Dark: the big grey areas go black.
+
+   The content pane was --surface (#161618), which is the largest grey surface on
+   screen. Put the WINDOW on --bg (near-black) and let the cards and bars be the
+   raised things instead - so removing the grey creates depth rather than just
+   making everything uniformly dark.
+
+     window   #0d0d0f   (was #161618)
+     cards    #161618   (was #0d0d0f - now they float above the window)
+     bars     #161618   (unchanged: top bar, composer)
+     rail     #121214   (unchanged)
+
+   Light is untouched: --bg and --surface are the light theme's own values there.
+   ============================================================================ */
+.shell{background:var(--bg)}
+.content-layout{background:transparent}
+.box{background:var(--surface)}
