@@ -335,7 +335,37 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
 .tbar .ttl{font-size:12px;color:var(--quiet);font-family:var(--mono);margin-left:auto;
       white-space:nowrap}
 /* the status line stays visible on a phone - Relay shows it */
-@media(max-width:560px){.tbar .ttl{display:block;font-size:11px}}
+@media(max-width:560px){.tbar .ttl{display:block}}
 
 /* `nav` was a vertical list inside the drawer. In the bar it is a horizontal strip. */
 .tbar .tabs{flex-direction:row}
+
+/* ============================================================================
+   RESPONSIVE, ported from the reference - the two breakpoints I had missed.
+
+   The reference is not one layout applied everywhere. It is:
+     >=760px  full-width window, no side borders, 13.5/19.5 text, roomier padding
+     <=600px  the bar becomes a 2-row GRID: dots + status on row 1, menu + tabs on row 2
+     between  one-row flex bar in the 820px window
+
+   I had shipped the narrow 820px window at every width - which is exactly why it
+   read as "the mobile style applied to desktop".
+   ============================================================================ */
+@media(min-width:760px){
+  /* The reference also bumps the size token here, but tokens are not allowed outside
+     shared/tokens.css, so the longhand is set on html body instead - same computed
+     result, and the guard stays meaningful. */
+  html body{font-size:13.5px;line-height:19.5px}
+  .shell{max-width:none;border-left:0;border-right:0}
+  .content-layout{padding:16px 20px 16px 16px}
+}
+
+@media(max-width:600px){
+  .tbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto}
+  .tbar .wd{grid-column:1;grid-row:1}
+  .tbar .ttl{grid-column:2;grid-row:1;min-width:0;overflow:hidden;
+             text-overflow:ellipsis;white-space:nowrap;justify-self:end}
+  .tbar .menu{grid-column:1;grid-row:2;margin-left:0}
+  .tbar .tabs{grid-column:2/4;grid-row:2;min-width:0;overflow-x:auto}
+  .content-layout{padding:12px}
+}
