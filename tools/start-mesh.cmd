@@ -44,7 +44,7 @@ set "MESH_PREVIEW_PORT=4317"
 
 rem Start-Process rather than `start /B` with a redirect: the latter keeps a stdout handle
 rem open and the caller waits on a server that never exits.
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'node' -ArgumentList 'test/m1-serve.mjs' -WorkingDirectory '%DIR%' -WindowStyle Hidden -RedirectStandardOutput '%DIR%\test\app03-mesh\serve.out.log' -RedirectStandardError '%DIR%\test\app03-mesh\serve.err.log'"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'node' -ArgumentList 'serve.mjs' -WorkingDirectory '%DIR%' -WindowStyle Hidden -RedirectStandardOutput '%DIR%\test\app03-mesh\serve.out.log' -RedirectStandardError '%DIR%\test\app03-mesh\serve.err.log'"
 
 rem Confirm it actually arrives rather than trusting the launch call.
 set /a TRIES=0

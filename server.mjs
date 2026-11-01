@@ -43,6 +43,7 @@ staticFiles.set('/control.mjs', ['public/control.mjs', 'text/javascript']);
 staticFiles.set('/chat.mjs', ['public/chat.mjs', 'text/javascript']);
 staticFiles.set('/theme.mjs', ['public/theme.mjs', 'text/javascript']);
 staticFiles.set('/rail.mjs', ['public/rail.mjs', 'text/javascript']);
+staticFiles.set('/auto-admit.mjs', ['public/auto-admit.mjs', 'text/javascript']);
 staticFiles.set('/shell-cache-policy.mjs', ['public/shell-cache-policy-browser-v2.mjs', 'text/javascript']);
 const snapshot = state => ({ schemaVersion: 'mesh-worker-activity/v1', state, observedAt: new Date().toISOString(), workers: [] });
 const modulePath = path.join(ROOT, 'lib/worker-activity.mjs');

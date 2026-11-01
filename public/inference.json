@@ -1,25 +1,8 @@
 ﻿{
     "schema":  "mesh-inference/v1",
-    "generatedAt":  "2026-11-01T10:28:22.2987596-06:00",
+    "generatedAt":  "2026-11-01T11:20:27.4778114-06:00",
     "host":  "Echo\u0027s PC",
-    "engine":  {
-                   "name":  "strata-poly",
-                   "transport":  "http",
-                   "port":  60409,
-                   "loaded":  true,
-                   "busy":  false,
-                   "modelAlias":  "JoyFox-Qwen3.6-35B-A3B-RP-Aggressive",
-                   "modelShort":  "JoyFox 35B-A3B",
-                   "modelPath":  "E:\\Echo-DB\\models\\JoyFox-Qwen3.6-35B-A3B-RP-Aggressive-Q5_K_M\\weights\\GGUF\\JoyFox-Qwen3.6-35B-A3B-RP-Aggressive-Q5_K_M.gguf",
-                   "contextMax":  4096,
-                   "contextLength":  4096,
-                   "buildInfo":  "b1-a6de9af",
-                   "vocabSize":  248320,
-                   "wrapper":  "unbiased-strata",
-                   "wrapperPid":  15356,
-                   "wrapperRamGB":  0.09,
-                   "startedAt":  "2026-11-01T09:05:46.3673460-06:00"
-               },
+    "engine":  null,
     "ollama":  {
                    "running":  true,
                    "port":  11434,
@@ -27,19 +10,19 @@
                },
     "gpu":  {
                 "name":  "NVIDIA GeForce RTX 4080 SUPER",
-                "vramUsedMiB":  29418,
+                "vramUsedMiB":  2324,
                 "vramTotalMiB":  32760,
-                "vramPct":  89.8,
-                "utilPct":  96,
-                "powerW":  47.82,
+                "vramPct":  7.1,
+                "utilPct":  2,
+                "powerW":  16.64,
                 "powerLimitW":  320,
-                "tempC":  41
+                "tempC":  31
             },
     "ram":  {
                 "totalGB":  127.1,
-                "freeGB":  66,
-                "usedGB":  61.1,
-                "usedPct":  48.1
+                "freeGB":  96.4,
+                "usedGB":  30.7,
+                "usedPct":  24.2
             },
     "disks":  [
                   {
@@ -60,7 +43,7 @@
                        "pps":  null,
                        "contextUsed":  null,
                        "contextPct":  null,
-                       "reason":  "engine is idle - no generation in flight to measure"
+                       "reason":  "no request observed since this snapshot started"
                    },
     "cost":  {
                  "simulatedUsd":  null,
