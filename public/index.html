@@ -32,12 +32,14 @@
 <form id="relay-form" class="cmp">
 <span class="cmperr" id="relay-error"></span>
 <span class="cmp-lead" aria-hidden="true">&gt;</span>
-<button class="cmp-add" type="button" disabled title="attachments are not wired">+</button>
-<label class="sr-only" for="relay-message-id">Stable message id (keep for retries)</label>
-<input id="relay-message-id" maxlength="80" pattern="[A-Za-z0-9_-]{1,80}" disabled>
+<div class="cmp-box">
+<button class="cmp-add" type="button" disabled title="attachments are not wired" aria-label="add files">[+]</button>
 <label class="sr-only" for="relay-text">Message</label>
 <textarea id="relay-text" maxlength="4000" required disabled placeholder="Echo · type a message…"></textarea>
-<button id="relay-send" type="submit" class="cmp-send" disabled aria-label="send">&#8593;</button>
+<button id="relay-send" type="submit" class="cmp-send" disabled aria-label="send">[&#8593;]</button>
+</div>
+<label class="sr-only" for="relay-message-id">Stable message id (keep for retries)</label>
+<input id="relay-message-id" maxlength="80" pattern="[A-Za-z0-9_-]{1,80}" disabled>
 </form>
 <div class="relay-legacy" hidden>
 <p class="service-status" data-service="relay">Connection unknown</p>

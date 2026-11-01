@@ -756,3 +756,31 @@ footer{background:transparent}
 .chat-actions .fcp:focus-visible .lbl{text-decoration:underline;text-underline-offset:2px}
 /* the targeted message marks itself in the same cyan now */
 .chat-msg.is-target .chat-body{border-left-color:var(--cyan)}
+
+/* ============================================================================
+   The composer is ONE box.
+
+   [+] and [ up-arrow ] sit INSIDE the prompt area, at its left and right edges, and the
+   textarea carries 46px of padding on both sides so the caret and the text can never
+   run underneath them. The reference kept them in separate grid columns; this keeps a
+   single visual field while protecting the same area.
+   ============================================================================ */
+.cmp{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px;
+     padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--bg);
+     border-top:1px solid var(--border);flex:none;margin:0}
+.cmp .cmperr{flex:0 0 100%;order:-1}
+.cmp-lead{color:var(--faint);font-family:var(--mono);font-size:var(--terminal-font);
+          padding-bottom:12px;flex:none}
+.cmp-box{position:relative;flex:1 1 auto;min-width:0}
+.cmp #relay-text{display:block;width:100%;min-width:0;min-height:54px;max-height:160px;
+     padding:10px 46px;border:1px solid var(--border);border-radius:8px;background:var(--bg);
+     color:var(--ink);font-family:var(--mono);font-size:var(--terminal-font);
+     line-height:var(--terminal-line);resize:none;field-sizing:content}
+.cmp-add,.cmp-send{position:absolute;top:50%;transform:translateY(-50%);padding:2px 4px;
+     border:0;border-radius:4px;background:transparent;color:var(--faint);
+     font-family:var(--mono);font-size:calc(var(--terminal-font) - 1px);line-height:1;
+     cursor:pointer;white-space:nowrap}
+.cmp-add{left:6px}
+.cmp-send{right:6px}
+.cmp-add:hover:enabled,.cmp-send:hover:enabled{color:var(--cyan);background:var(--raised)}
+.cmp-add:disabled,.cmp-send:disabled{cursor:default}
