@@ -94,3 +94,29 @@ body.menu-open .nav-wrap{transform:none}
 
 /* the chrome gets sans; nothing else does */
 .topbar,nav,nav button,.brand{font-family:var(--sans)}
+
+/* ============================================================================
+   Relay's top bar: traffic lights, a title, then horizontally scrollable tab pills.
+
+   The seven tabs used to live inside the drawer. In Relay the primary navigation is a
+   pill strip in the bar itself - on a phone that is the whole point, because switching
+   workspace should not require opening a menu. The nav element was MOVED here rather
+   than duplicated, so `[role=tab]` still has exactly seven buttons and app.js is
+   unchanged.
+   ============================================================================ */
+.wd{display:flex;gap:5px;flex:none}
+.wd i{width:9px;height:9px;border-radius:50%;background:var(--faint);display:block}
+
+.topbar{gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);
+        flex-wrap:nowrap;align-items:center}
+.topbar .brand{color:var(--quiet);font-size:12px;white-space:nowrap}
+.topbar .ttl{margin-left:auto;font-size:12px;color:var(--quiet);font-family:var(--mono)}
+
+.topbar nav{display:flex;gap:4px;overflow-x:auto;flex:1 1 auto;min-width:0;
+            scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav button{padding:4px 10px;font-size:12px;border-radius:6px;
+                   border:1px solid transparent;background:transparent;color:var(--quiet);
+                   white-space:nowrap;min-height:28px;min-width:0}
+.topbar nav button[aria-selected="true"]{background:var(--raised);
+                   border-color:var(--border);color:var(--ink)}
