@@ -922,3 +922,40 @@ footer{background:transparent}
 .theme-btn .ico-sun{display:block}
 :root[data-theme="light"] .theme-btn .ico-moon{display:block}
 :root[data-theme="light"] .theme-btn .ico-sun{display:none}
+
+/* ============================================================================
+   SECTIONS, NOT TILES.
+
+   The chat pane never used boxes: it separates blocks with a hairline and names
+   them with an uppercase kicker. The same rule applies to every panel, so nothing
+   floats as a filled card on the window.
+
+     ------------------------------     <- one hairline
+     LOCAL TASKS                        <- uppercase kicker, letter-spaced
+     4                                  <- the readout, mono
+     open
+
+   Fills and radii are gone; the divider does the separating.
+   ============================================================================ */
+.content-layout .box{background:transparent;border:0;border-radius:0;
+  border-top:1px solid var(--border);padding:10px 0 0;margin:0 0 20px}
+.content-layout .box h2{margin:0 0 8px;padding:0;font:500 10px/14px var(--mono);
+  letter-spacing:.09em;text-transform:uppercase;color:var(--quiet)}
+.content-layout .box h2+p{margin-top:0}
+.content-layout .box p{margin:0 0 6px;color:var(--muted);font-size:12px}
+.content-layout .stat{font:22px/1.15 var(--mono);color:var(--ink);display:block;margin:2px 0 0;
+  font-variant-numeric:tabular-nums}
+/* a notice keeps the chat's left-rail idiom instead of a filled panel */
+.content-layout .notice{background:transparent;border:0;border-left:2px solid var(--border);
+  border-radius:0;padding:6px 0 6px 10px;color:var(--muted);font-size:12px}
+/* labels read as bracketed terminal tags, not bordered pills */
+.content-layout .tag{border:0;background:transparent;padding:0;color:var(--faint);
+  font:10px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.content-layout .tag::before{content:"["}
+.content-layout .tag::after{content:"]"}
+
+/* the last box-like thing: the SYNTHETIC stub on Agent, Mind and Control was a dashed
+   rounded panel. Same idiom as a notice - a left rail and quiet text. */
+.content-layout .local-stub{background:transparent;border:0;
+  border-left:2px solid var(--border);border-radius:0;
+  padding:6px 0 6px 10px;color:var(--faint);font-size:12px;line-height:1.45}
