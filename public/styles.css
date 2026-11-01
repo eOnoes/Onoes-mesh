@@ -158,3 +158,16 @@ body.menu-open .nav-wrap{transform:none}
    regions with their ids intact - they are clamped to a single line instead of
    disappearing, so nothing is hidden from assistive tech. */
 #demo-state,#message{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Pills were inheriting width:100% from the drawer's vertical list, so every tab was
+   the full width of the nav (144px each, all identical) instead of its own label.
+   They must size to their text and the strip must scroll. */
+.topbar nav button{width:auto;flex:0 0 auto}
+
+/* On a phone the brand and the status text were consuming two thirds of the bar,
+   leaving the tab strip 144px - about one pill. Relay gives the tabs the room. */
+@media(max-width:560px){
+  .topbar .brand,.topbar .ttl{display:none}
+  .topbar{padding:6px 8px;gap:6px}
+  #menu-open{padding:3px 8px;font-size:12px;min-height:28px;min-width:0}
+}
