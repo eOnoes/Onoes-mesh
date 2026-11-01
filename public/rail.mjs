@@ -80,3 +80,86 @@ fetch('/chat.json', { cache: 'no-store' })
     list.replaceChildren(button);
   })
   .catch(() => { /* leave the list empty */ });
+
+// ---------------------------------------------------------------------------------
+// The picker.
+//
+// On a phone the top bar cannot hold a pill strip and the status line at once, so the
+// strip collapses into one control that names the current agent (Relay) or machine
+// (Control) and draws a menu when opened. It mirrors the strips rather than fetching
+// its own data, so there is one source of truth.
+// ---------------------------------------------------------------------------------
+const picker = document.getElementById('picker');
+const pickerLabel = document.getElementById('picker-label');
+const pickerPanel = document.getElementById('picker-panel');
+
+function pickerSource() {
+  if (isRelay()) return document.getElementById('agent-tabs');
+  if (isControl()) return document.getElementById('machine-tabs');
+  return null;
+}
+
+function closePicker() {
+  if (!picker || !pickerPanel) return;
+  pickerPanel.hidden = true;
+  picker.setAttribute('aria-expanded', 'false');
+}
+
+function buildPicker() {
+  if (!picker || !pickerPanel) return;
+  const source = pickerSource();
+  const items = source ? [...source.querySelectorAll('button')] : [];
+  if (!items.length) {
+    picker.hidden = true;
+    closePicker();
+    return;
+  }
+  picker.hidden = false;
+
+  const current = items.find((b) => b.getAttribute('aria-pressed') === 'true') || items[0];
+  if (pickerLabel) pickerLabel.textContent = (current.textContent || '').trim();
+
+  pickerPanel.replaceChildren();
+  for (const item of items) {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', String(item === current));
+    const dot = item.querySelector('.tdot');
+    if (dot) option.append(dot.cloneNode());
+    const label = document.createElement('span');
+    label.textContent = (item.textContent || '').trim();
+    option.append(label);
+    option.addEventListener('click', () => {
+      item.click();
+      if (pickerLabel) pickerLabel.textContent = (item.textContent || '').trim();
+      closePicker();
+    });
+    pickerPanel.append(option);
+  }
+}
+
+if (picker) {
+  picker.addEventListener('click', (event) => {
+    event.stopPropagation();
+    buildPicker();
+    pickerPanel.hidden = !pickerPanel.hidden;
+    picker.setAttribute('aria-expanded', String(!pickerPanel.hidden));
+  });
+  document.addEventListener('click', (event) => {
+    if (pickerPanel.hidden) return;
+    if (pickerPanel.contains(event.target) || picker.contains(event.target)) return;
+    closePicker();
+  });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closePicker(); });
+}
+
+// keep it in step with the tab and with whatever populated the strips
+for (const tab of [relayTab, controlTab]) {
+  if (tab) new MutationObserver(buildPicker).observe(tab, { attributes: true, attributeFilter: ['aria-selected'] });
+}
+const agentStrip = document.getElementById('agent-tabs');
+if (agentStrip) new MutationObserver(buildPicker).observe(agentStrip, { childList: true });
+const machineStrip = document.getElementById('machine-tabs');
+if (machineStrip) new MutationObserver(buildPicker).observe(machineStrip, { childList: true });
+buildPicker();
