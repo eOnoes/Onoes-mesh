@@ -687,3 +687,31 @@ body:has(#panel-relay:not([hidden])) footer{display:none}
 .shell{background:var(--bg)}
 .content-layout{background:transparent}
 .box{background:var(--surface)}
+
+/* ============================================================================
+   Only the MENU carries its own background.
+
+   Everything else - window, top bar, composer, status bar - sits on the same black,
+   so the rail is the single element with a different surface. The sessions rail is
+   not a panel at all: it is the chat background with a faint dividing line.
+   ============================================================================ */
+.tbar{background:var(--bg)}
+.cmp{background:var(--bg)}
+#message{background:var(--bg)}
+footer{background:transparent}
+.shell[data-rail="menu"] .nav-rail{background:var(--drawer)}
+.shell[data-rail="sessions"] .nav-rail{background:var(--bg);border-right:1px solid var(--border)}
+
+/* ============================================================================
+   The conversation is a measured column, centred in whatever space is left.
+
+   Desktop only: on a phone the chat is the screen. --chat-max is a token so the
+   width control can change it without touching a rule.
+   ============================================================================ */
+@media(min-width:760px){
+  #relay-chat,#relay-form.cmp{width:100%;max-width:var(--chat-max);margin-left:auto;margin-right:auto}
+}
+@media(max-width:759px){
+  #relay-chat,#relay-form.cmp{max-width:none;margin-left:0;margin-right:0}
+}
+.chat-width{display:flex;gap:4px;padding:0 0 6px}
