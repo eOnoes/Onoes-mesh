@@ -1218,3 +1218,8 @@ footer{background:transparent}
    tall with a zero-width box, putting its centre 5px off the guide line. */
 .nav-rail .tab .fi{display:inline-block;vertical-align:-1px;box-sizing:border-box}
 .nav-rail .tab{display:flex;align-items:center}
+
+/* The phantom dash: the lower segment inherited `height:1px` from the old tick rule, and
+   an explicit height wins over `bottom`, so instead of spanning to the next folder it
+   drew a 1px dash. Reset the height so the segment follows top/bottom again. */
+.nav-rail .tab::after{height:auto;width:1px}
