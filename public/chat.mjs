@@ -139,7 +139,10 @@ function chatWidth() {
 
 function setChatWidth(px) {
   const panel = document.getElementById('panel-relay');
-  const room = panel ? Math.max(MIN_WIDTH, panel.getBoundingClientRect().width - 24) : 1200;
+  // The panel is hidden at load, so its width is 0 and a naive clamp would collapse the
+  // remembered width to MIN_WIDTH. Only clamp against a real measurement.
+  const measured = panel ? panel.getBoundingClientRect().width : 0;
+  const room = measured > 0 ? Math.max(MIN_WIDTH, measured - 24) : Number.POSITIVE_INFINITY;
   const next = Math.round(Math.max(MIN_WIDTH, Math.min(px, room)));
   root.style.setProperty('--chat-max', next + 'px');
   return next;
