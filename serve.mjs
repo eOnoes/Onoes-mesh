@@ -323,7 +323,13 @@ const server = http.createServer(async (req, res) => {
   }
 
   // everything else needs the key
-  if (!authed(req, token)) {
+    // A browser on this PC reaches the app directly on loopback, so it is already behind the
+  // keyboard that owns it. Tailscale preserves Host, so a tailnet visitor arrives with the
+  // ts.net name and still gets the unlock page: the PC stays frictionless without reopening
+  // the tailnet hole.
+  const hostHeader = String(req.headers.host || '').toLowerCase();
+  const localHost = /^(127\.0\.0\.1|localhost)(:\d+)?$/.test(hostHeader);
+  if (!localHost && !authed(req, token)) {
     // A page gets the unlock form; anything API-shaped gets a plain 401 so the client can
     // react to it. Returning HTML to a fetch() would parse as garbage.
     const wantsJson = path.startsWith('/api/') || path.startsWith('/relay/') || path.startsWith('/inference/')

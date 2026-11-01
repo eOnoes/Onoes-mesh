@@ -1,6 +1,6 @@
 ﻿{
     "schema":  "mesh-inference/v1",
-    "generatedAt":  "2026-11-01T12:00:58.9846875-06:00",
+    "generatedAt":  "2026-11-01T12:29:00.8335150-06:00",
     "host":  "Echo\u0027s PC",
     "engine":  {
                    "name":  "unbiased-strata",
@@ -16,9 +16,9 @@
                    "buildInfo":  null,
                    "vocabSize":  null,
                    "wrapper":  null,
-                   "wrapperPid":  38972,
-                   "wrapperRamGB":  0.03,
-                   "startedAt":  "2026-11-01T11:56:43.1013140-06:00"
+                   "wrapperPid":  39116,
+                   "wrapperRamGB":  0,
+                   "startedAt":  "2026-11-01T12:12:11.1837910-06:00"
                },
     "ollama":  {
                    "running":  true,
@@ -27,24 +27,24 @@
                },
     "gpu":  {
                 "name":  "NVIDIA GeForce RTX 4080 SUPER",
-                "vramUsedMiB":  31769,
+                "vramUsedMiB":  31826,
                 "vramTotalMiB":  32760,
-                "vramPct":  97,
-                "utilPct":  11,
-                "powerW":  18.2,
+                "vramPct":  97.1,
+                "utilPct":  23,
+                "powerW":  20,
                 "powerLimitW":  320,
-                "tempC":  31
+                "tempC":  32
             },
     "ram":  {
                 "totalGB":  127.1,
-                "freeGB":  51.1,
-                "usedGB":  76,
-                "usedPct":  59.8
+                "freeGB":  53.6,
+                "usedGB":  73.5,
+                "usedPct":  57.8
             },
     "disks":  [
                   {
                       "name":  "C:",
-                      "usedGB":  1453.7,
+                      "usedGB":  1454.4,
                       "totalGB":  1862,
                       "usedPct":  78.1
                   },
