@@ -341,6 +341,12 @@ const server = http.createServer(async (req, res) => {
     return send(res, 200, GATE_PAGE, { 'Content-Type': 'text/html; charset=utf-8' });
   }
 
+  // The client asks this to learn whether it is behind the gate adapter at all; a plain
+  // m1-serve fixture has no such route, so browser tests keep their locked-board behaviour.
+  if (path === '/gate/status') {
+    return sendJson(res, 200, { local: localHost, gated: authed(req, token) });
+  }
+
   if (path.startsWith('/relay/')) return relayProxy(req, res, token, path.slice('/relay'.length) + url.search);
   if (path === '/inference/summary') {
     try { return sendJson(res, 200, await inferenceSummary()); }

@@ -1,11 +1,22 @@
-// Start the app's own session once the gate has proven you hold the key.
+// Start the app's own session when this shell came from the gate adapter.
 //
-// app.js keeps its own admitted flag and only fetches tasks from its Start handler, so a
-// valid cookie alone still shows "Locked". The readable `mesh_gate` cookie is what tells
-// this module the gate is real - browser tests never have it, so they see the plain
-// locked board exactly as they expect.
-const gated = document.cookie.split(';').some((c) => c.trim() === 'mesh_gate=1');
-if (gated) {
+// app.js keeps its own admitted flag and fetches tasks only from its Start handler, so a
+// valid cookie alone still shows "Locked". It asks /gate/status rather than reading a
+// cookie: plain m1-serve fixtures have no such route, so browser tests keep the locked
+// board they assert on.
+async function maybeStartSession() {
+  let allow = false;
+  try {
+    const response = await fetch('/gate/status', { cache: 'no-store' });
+    if (response.ok) {
+      const status = await response.json();
+      allow = Boolean(status.local || status.gated);
+    }
+  } catch {
+    allow = false;
+  }
+  if (!allow) return;
+
   const start = document.getElementById('demo-start');
   const total = document.getElementById('total-count');
   if (start && !start.disabled && total && total.textContent.trim() === 'Locked') {
@@ -13,3 +24,5 @@ if (gated) {
     if (location.hash === '#unlock') history.replaceState(null, '', location.pathname);
   }
 }
+
+maybeStartSession();
