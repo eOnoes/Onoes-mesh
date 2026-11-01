@@ -171,3 +171,22 @@ body.menu-open .nav-wrap{transform:none}
   .topbar{padding:6px 8px;gap:6px}
   #menu-open{padding:3px 8px;font-size:12px;min-height:28px;min-width:0}
 }
+
+/* ============================================================================
+   Controls now live in the drawer.
+
+   shell-label (Refresh), the actions row (Start/End session) and #demo-state used to
+   stack above the content, costing ~130px on a phone before the first pixel of a
+   panel. Relay has none of that: its bar is the top bar and then content. They keep
+   their ids and their behaviour; they just moved into the drawer, which the tabs
+   vacated, so the drawer now has a purpose again.
+   ============================================================================ */
+.drawer-controls{display:flex;flex-direction:column;gap:10px;padding:12px;
+                 border-bottom:1px solid var(--border)}
+.drawer-controls .shell-label{display:flex;align-items:center;justify-content:space-between;
+                 gap:8px;padding:0;border:0;font-size:11px;color:var(--faint)}
+.drawer-controls .actions{display:flex;flex-wrap:wrap;gap:6px;padding:0;border:0}
+/* inside the drawer it may wrap; the single-line clamp was for the bar */
+.drawer-controls #demo-state{margin:0;padding:0;border:0;font-size:11px;line-height:1.45;
+                 color:var(--faint);white-space:normal;overflow:visible;text-overflow:clip}
+.nav-head{border-bottom:1px solid var(--border)}
