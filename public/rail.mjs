@@ -163,3 +163,72 @@ if (agentStrip) new MutationObserver(buildPicker).observe(agentStrip, { childLis
 const machineStrip = document.getElementById('machine-tabs');
 if (machineStrip) new MutationObserver(buildPicker).observe(machineStrip, { childList: true });
 buildPicker();
+// ---------------------------------------------------------------------------------
+// Mobile sheets.
+//
+// Below 760px the navigation and the picker stop being inline chrome and become
+// over-panels: nav slides in from the left at 2/3 width, the picker from the top-right
+// corner at 2/3 width by 2/5 height. One scrim sits behind whichever is open, blurs the
+// content, and closes on tap. Either closes on selection.
+// ---------------------------------------------------------------------------------
+const sheetScrim = document.getElementById('sheet-scrim');
+const isMobile = () => window.matchMedia('(max-width: 759px)').matches;
+
+function openSheet(kind) {
+  document.body.dataset.sheet = kind;
+  if (sheetScrim) sheetScrim.hidden = false;
+}
+
+function closeSheets() {
+  delete document.body.dataset.sheet;
+  if (sheetScrim) sheetScrim.hidden = true;
+  if (pickerPanel) pickerPanel.hidden = true;
+  if (picker) picker.setAttribute('aria-expanded', 'false');
+}
+
+if (sheetScrim) sheetScrim.addEventListener('click', closeSheets);
+
+// [menu] opens the nav sheet on a phone, and toggles the rail on desktop
+if (menuLink) {
+  menuLink.addEventListener('click', (event) => {
+    if (!isMobile()) return;
+    // stop the same click reaching the outside-click handler below, which would
+    // otherwise open the sheet and shut it again in one gesture
+    event.stopPropagation();
+    const open = document.body.dataset.sheet === 'nav';
+    if (open) { closeSheets(); return; }
+    setRail('menu');
+    syncSessionsLink();
+    openSheet('nav');
+  });
+}
+
+// the picker opens its corner sheet on a phone, or the popover on desktop
+if (picker) {
+  picker.addEventListener('click', (event) => {
+    if (!isMobile()) return;
+    event.stopPropagation();
+    buildPicker();
+    const open = document.body.dataset.sheet === 'picker';
+    if (open) { closeSheets(); return; }
+    if (pickerPanel) pickerPanel.hidden = false;
+    picker.setAttribute('aria-expanded', 'true');
+    openSheet('picker');
+  }, true);
+}
+
+// choosing a tab or an option closes whatever is open
+document.addEventListener('click', (event) => {
+  if (!isMobile()) return;
+  if (!document.body.dataset.sheet) return;
+  // a choice always closes the sheet - checked BEFORE the "inside" test, because the
+  // picker panel lives inside .tbar and an earlier version of this guard bailed out
+  // there, leaving the scrim stuck over the page after a selection
+  if (event.target.closest('.picker-panel button') || event.target.closest('[role="tab"]')) {
+    setTimeout(closeSheets, 0);
+    return;
+  }
+  if (event.target.closest('.nav-rail, .picker-panel, #sheet-scrim')) return;
+  closeSheets();
+});
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeSheets(); });

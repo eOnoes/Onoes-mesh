@@ -1067,3 +1067,37 @@ footer{background:transparent}
   .ctl-meter .ctl-num{grid-area:num;text-align:right}
   .ctl-meter .ctl-bar{grid-area:bar}
 }
+
+/* ============================================================================
+   MOBILE SHEETS.
+
+   Left  : [menu] slides the navigation out over the content, 2/3 of the screen wide.
+   Right : the picker slides out from the top-right corner, 2/3 wide and 2/5 tall,
+           so it only covers the top corner even though it holds a list.
+
+   Both sit over a blurring scrim. Desktop is untouched: it has the rail and the strip.
+   ============================================================================ */
+.sheet-scrim{display:none}
+@media(max-width:759px){
+  .sheet-scrim{display:block;position:fixed;inset:0;z-index:55;background:var(--scrim-soft);
+    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);border:0;padding:0}
+  .sheet-scrim[hidden]{display:none}
+
+  /* the nav becomes a left sheet instead of a strip under the bar */
+  .nav-rail{position:fixed;left:0;top:0;bottom:0;width:66vw;max-width:66vw;height:auto;
+    z-index:60;background:var(--drawer);border-right:1px solid var(--border);border-bottom:0;
+    padding:12px;overflow-y:auto;transform:translateX(-102%);
+    transition:transform 170ms ease;box-shadow:var(--shadow-drawer)}
+  body[data-sheet="nav"] .nav-rail{transform:none}
+  .nav-rail .tabs{flex-direction:column;overflow-x:visible}
+  .nav-rail .tab{width:100%;justify-content:flex-start;min-height:40px}
+
+  /* the picker sheet: top-right corner only */
+  .picker-panel{position:fixed;right:0;top:0;left:auto;height:40vh;width:66vw;max-width:66vw;
+    z-index:60;min-width:0;border-left:1px solid var(--border);border-bottom:1px solid var(--border);
+    border-top:0;border-right:0;border-radius:0 0 0 10px;padding:10px;overflow-y:auto;
+    transform:translateX(102%);transition:transform 170ms ease;box-shadow:var(--shadow-drawer)}
+  .picker-panel:not([hidden]){transform:none;display:flex}
+  .picker-panel[hidden]{display:flex;transform:translateX(102%)}
+  .picker-panel button{min-height:42px}
+}
