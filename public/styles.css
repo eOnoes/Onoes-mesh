@@ -1258,3 +1258,37 @@ footer{background:transparent}
 .rail-footer .rail-btn{width:100%}
 .rail-footer #demo-state{margin:0;font-size:10px;line-height:1.4;color:var(--faint);
   white-space:normal;overflow:visible;text-overflow:clip}
+
+/* ============================================================================
+   Chat chrome: no OS scrollbar, a rail of lines instead, and a draggable edge.
+
+   The `.chat-grip` markup has existed since the shell was rebuilt, but the script
+   that moved it was lost when the chat was rewritten for live data - so the handle
+   was invisible to every pointer. Both behaviours live in public/chat.mjs again.
+   ========================================================================== */
+#relay-chat{scrollbar-width:none;-ms-overflow-style:none}
+#relay-chat::-webkit-scrollbar{display:none;width:0;height:0}
+
+.chat-seek{position:absolute;display:flex;flex-direction:column;gap:3px;width:10px;
+  padding:2px 0;cursor:pointer;touch-action:none;z-index:2;opacity:.45;
+  transition:opacity .15s ease}
+.chat-seek:hover,.chat-seek:focus-visible,.chat-seek.is-active{opacity:1}
+.chat-seek i{flex:1 1 0;min-height:2px;background:var(--rail);border-radius:1px;
+  transition:background .12s ease}
+.chat-seek i.read{background:var(--faint)}
+.chat-seek i.view{background:var(--cyan)}
+.chat-seek i.hot{background:var(--ink)}
+
+.chat-jump{position:absolute;z-index:3;display:none;align-items:center;gap:4px;
+  padding:3px 9px;border:1px solid var(--border);border-radius:999px;
+  background:var(--raised);color:var(--muted);font:10px var(--mono);cursor:pointer}
+.chat-jump[data-show="true"]{display:inline-flex}
+.chat-jump:hover{color:var(--ink);border-color:var(--faint)}
+
+/* On a phone the chat is the screen, so there is no outside for the rail to live in:
+   it tucks against the right edge and stays faint so it does not fight the text. */
+@media(max-width:759px){
+  .chat-seek{right:2px !important;width:8px;opacity:.35}
+  .chat-seek.is-active{opacity:.9}
+  .chat-jump{right:6px !important}
+}

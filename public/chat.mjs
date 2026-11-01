@@ -228,3 +228,165 @@ if (panel) {
   new MutationObserver(() => { if (!panel.hidden) toBottom(); })
     .observe(panel, { attributes: true, attributeFilter: ['hidden'] });
 }
+
+// --- chat chrome ------------------------------------------------------------------
+// Two things the conversation needs to be usable: a width you can drag, and a scroll
+// rail that is not the operating system's scrollbar. Both are re-attached here because
+// the module was rewritten for live data and dropped the originals.
+const railPanel = document.getElementById('panel-relay');
+const grip = document.getElementById('chat-grip');
+const WIDTH_KEY = 'mesh-chat-max';
+const MIN_WIDTH = 420;
+
+function setChatWidth(px) {
+  if (!railPanel) return;
+  const panelWidth = railPanel.getBoundingClientRect().width || window.innerWidth;
+  const max = Math.max(MIN_WIDTH, panelWidth - 48);
+  const width = Math.min(max, Math.max(MIN_WIDTH, Math.round(px)));
+  document.documentElement.style.setProperty('--chat-max', `${width}px`);
+  return width;
+}
+
+if (grip && railPanel) {
+  const stored = Number(localStorage.getItem(WIDTH_KEY));
+  if (Number.isFinite(stored) && stored > 0) setChatWidth(stored);
+
+  let resizing = false;
+  const fromPointer = (event) => {
+    // The grip rides the chat's RIGHT edge, so the column is symmetric about the panel
+    // centre: width = 2 x (pointer - centre). Dragging right widens, left narrows.
+    const box = railPanel.getBoundingClientRect();
+    const centre = box.left + box.width / 2;
+    return 2 * (event.clientX - centre);
+  };
+
+  grip.addEventListener('pointerdown', (event) => {
+    resizing = true;
+    grip.setPointerCapture(event.pointerId);
+    document.body.classList.add('resizing');
+    event.preventDefault();
+  });
+  grip.addEventListener('pointermove', (event) => {
+    if (!resizing) return;
+    setChatWidth(fromPointer(event));
+  });
+  const stopResize = () => {
+    if (!resizing) return;
+    resizing = false;
+    document.body.classList.remove('resizing');
+    const current = getComputedStyle(document.documentElement).getPropertyValue('--chat-max').trim();
+    if (current) localStorage.setItem(WIDTH_KEY, String(parseFloat(current) || ''));
+  };
+  grip.addEventListener('pointerup', stopResize);
+  grip.addEventListener('pointercancel', stopResize);
+
+  // A separator that only answers to a mouse is not a separator for everyone.
+  grip.addEventListener('keydown', (event) => {
+    const box = railPanel.getBoundingClientRect();
+    const current = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--chat-max')) || box.width;
+    if (event.key === 'ArrowLeft') { setChatWidth(current - 24); event.preventDefault(); }
+    if (event.key === 'ArrowRight') { setChatWidth(current + 24); event.preventDefault(); }
+  });
+}
+
+if (chat && railPanel) {
+  const TICKS = 36;
+  const seek = document.createElement('div');
+  seek.className = 'chat-seek';
+  seek.tabIndex = 0;
+  seek.setAttribute('role', 'scrollbar');
+  seek.setAttribute('aria-label', 'conversation position');
+  seek.setAttribute('aria-controls', 'relay-chat');
+  const ticks = [];
+  for (let index = 0; index < TICKS; index += 1) {
+    const tick = document.createElement('i');
+    seek.append(tick);
+    ticks.push(tick);
+  }
+  railPanel.append(seek);
+
+  const jump = document.createElement('button');
+  jump.type = 'button';
+  jump.className = 'chat-jump';
+  jump.textContent = 'jump to latest';
+  railPanel.append(jump);
+
+  let hotIndex = -1;
+
+  const place = () => {
+    const panelBox = railPanel.getBoundingClientRect();
+    const chatBox = chat.getBoundingClientRect();
+    if (!chatBox.height) return;
+    seek.style.top = `${Math.round(chatBox.top - panelBox.top)}px`;
+    seek.style.height = `${Math.round(chatBox.height)}px`;
+    // Sit just OUTSIDE the chat's right edge: the rail is 10px wide, so subtracting 22
+    // leaves a 12px gutter. Adding it puts the rail on top of the text.
+    const gutter = Math.round(panelBox.right - chatBox.right) - 22;
+    seek.style.right = `${gutter}px`;
+    jump.style.top = `${Math.round(chatBox.bottom - panelBox.top) - 34}px`;
+    jump.style.right = `${gutter}px`;
+  };
+
+  const paintRail = () => {
+    const max = chat.scrollHeight - chat.clientHeight;
+    const ratio = max > 0 ? chat.scrollTop / max : 1;
+    const visible = chat.scrollHeight > 0 ? chat.clientHeight / chat.scrollHeight : 1;
+    const count = Math.max(1, Math.round(visible * TICKS));
+    const start = Math.round(ratio * (TICKS - count));
+    ticks.forEach((tick, index) => {
+      const inView = index >= start && index < start + count;
+      const read = index < start;
+      tick.className = index === hotIndex ? 'hot' : inView ? 'view' : read ? 'read' : '';
+    });
+    seek.setAttribute('aria-valuenow', String(Math.round(ratio * 100)));
+    const atBottom = max <= 8 || chat.scrollTop >= max - 24;
+    jump.dataset.show = atBottom ? 'false' : 'true';
+    place();
+  };
+
+  const scrubTo = (event) => {
+    const box = seek.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (event.clientY - box.top) / box.height));
+    const max = chat.scrollHeight - chat.clientHeight;
+    if (max > 0) chat.scrollTop = ratio * max;
+    paintRail();
+  };
+
+  seek.addEventListener('pointerdown', (event) => {
+    seek.setPointerCapture(event.pointerId);
+    seek.classList.add('is-active');
+    scrubTo(event);
+    event.preventDefault();
+  });
+  seek.addEventListener('pointermove', (event) => {
+    if (seek.hasPointerCapture(event.pointerId)) { scrubTo(event); return; }
+    const box = seek.getBoundingClientRect();
+    hotIndex = Math.min(TICKS - 1, Math.max(0, Math.floor(((event.clientY - box.top) / box.height) * TICKS)));
+    paintRail();
+  });
+  seek.addEventListener('pointerleave', () => { hotIndex = -1; paintRail(); });
+  const endScrub = (event) => {
+    if (seek.hasPointerCapture(event.pointerId)) seek.releasePointerCapture(event.pointerId);
+    seek.classList.remove('is-active');
+  };
+  seek.addEventListener('pointerup', endScrub);
+  seek.addEventListener('pointercancel', endScrub);
+  seek.addEventListener('keydown', (event) => {
+    const step = chat.clientHeight * 0.9;
+    if (event.key === 'ArrowUp') { chat.scrollTop -= step; event.preventDefault(); }
+    if (event.key === 'ArrowDown') { chat.scrollTop += step; event.preventDefault(); }
+    if (event.key === 'Home') { chat.scrollTop = 0; event.preventDefault(); }
+    if (event.key === 'End') { chat.scrollTop = chat.scrollHeight; event.preventDefault(); }
+  });
+
+  jump.addEventListener('click', () => {
+    chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+  });
+
+  chat.addEventListener('scroll', paintRail, { passive: true });
+  window.addEventListener('resize', paintRail);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(paintRail).observe(chat);
+  new MutationObserver(paintRail).observe(chat, { childList: true });
+  paintRail();
+  requestAnimationFrame(paintRail);
+}
