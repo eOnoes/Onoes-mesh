@@ -123,6 +123,62 @@ function renderMessage(message) {
   return wrap;
 }
 
+// ---------------------------------------------------------------------------------
+// Drag the conversation column.
+//
+// The column is centred, so the pointer's distance from the centre is half the width -
+// that makes dragging either edge feel symmetric. The value is remembered per device.
+// ---------------------------------------------------------------------------------
+const WIDTH_KEY = 'mesh-chat-width';
+const MIN_WIDTH = 420;
+const root = document.documentElement;
+
+function chatWidth() {
+  return parseInt(getComputedStyle(root).getPropertyValue('--chat-max'), 10) || 820;
+}
+
+function setChatWidth(px) {
+  const panel = document.getElementById('panel-relay');
+  const room = panel ? Math.max(MIN_WIDTH, panel.getBoundingClientRect().width - 24) : 1200;
+  const next = Math.round(Math.max(MIN_WIDTH, Math.min(px, room)));
+  root.style.setProperty('--chat-max', next + 'px');
+  return next;
+}
+
+const grip = document.getElementById('chat-grip');
+if (grip) {
+  let dragging = false;
+  grip.addEventListener('pointerdown', (event) => {
+    dragging = true;
+    grip.setPointerCapture(event.pointerId);
+    document.body.classList.add('resizing');
+    event.preventDefault();
+  });
+  window.addEventListener('pointermove', (event) => {
+    if (!dragging) return;
+    const panel = document.getElementById('panel-relay')?.getBoundingClientRect();
+    if (!panel) return;
+    const centre = panel.left + panel.width / 2;
+    setChatWidth(Math.abs(event.clientX - centre) * 2);
+  });
+  window.addEventListener('pointerup', () => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.classList.remove('resizing');
+    try { localStorage.setItem(WIDTH_KEY, String(chatWidth())); } catch { /* storage may be blocked */ }
+  });
+  grip.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft') { setChatWidth(chatWidth() - 40); event.preventDefault(); }
+    if (event.key === 'ArrowRight') { setChatWidth(chatWidth() + 40); event.preventDefault(); }
+  });
+
+  // restore last width
+  try {
+    const saved = parseInt(localStorage.getItem(WIDTH_KEY) || '', 10);
+    if (Number.isFinite(saved)) setChatWidth(saved);
+  } catch { /* storage may be blocked */ }
+}
+
 async function main() {
   if (!chat) return;
   let data;

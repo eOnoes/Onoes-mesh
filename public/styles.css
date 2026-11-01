@@ -871,3 +871,33 @@ footer{background:transparent}
 /* #menu-open carries an ID rule (display:inline-flex) that outranks a class selector,
    so the hide has to name the ID too. */
 .shell[data-rail="sessions"] #menu-open{display:none}
+
+/* the theme toggle in the top bar: shows the mode you would switch TO */
+.theme-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
+  padding:0;border:1px solid transparent;border-radius:6px;background:transparent;
+  color:var(--faint);cursor:pointer;flex:none}
+.theme-btn:hover,.theme-btn:focus-visible{color:var(--ink);border-color:var(--border)}
+.theme-btn .ico{display:block}
+.theme-btn .ico-moon{display:none}
+:root[data-theme="light"] .theme-btn .ico-moon{display:block}
+:root[data-theme="light"] .theme-btn .ico-sun{display:none}
+
+/* ============================================================================
+   Drag the chat column to any width.
+
+   The grip sits exactly on the column's right edge - `50% - chat-max/2` is the maths
+   for "edge of a centred column" - so it travels with the width instead of being
+   pinned to the window. Desktop only; a phone has no column to resize.
+   ============================================================================ */
+#panel-relay{position:relative}
+.chat-grip{display:none}
+@media(min-width:760px){
+  .chat-grip{display:block;position:absolute;top:0;bottom:0;
+    right:calc(50% - var(--chat-max) / 2 - 6px);width:12px;cursor:col-resize;
+    background:transparent;z-index:4}
+  .chat-grip::after{content:"";position:absolute;top:0;bottom:0;left:5px;width:1px;
+    background:transparent;transition:background 120ms ease}
+  .chat-grip:hover::after,.chat-grip:focus-visible::after{background:var(--cyan)}
+  body.resizing{cursor:col-resize}
+  body.resizing .chat-grip::after{background:var(--cyan)}
+}
