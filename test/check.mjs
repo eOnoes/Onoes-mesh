@@ -98,7 +98,7 @@ function assertDesign() {
   const rail = html.match(/<aside class="nav-rail"[\s\S]*?<\/aside>/)?.[0] ?? '';
   assert.equal((rail.match(/role="tab"/g) || []).length, 7,
     'all seven tabs must live in the nav rail');
-  assert.equal(/id="rail-toggle"/.test(header), true,
+  assert.equal(/id="rail-menu"/.test(header), true,
     'the top rail must carry the navigation rail collapse control');
   assert.equal((header.match(/role="tab"/g) || []).length, 0,
     'tabs belong in the rail, not in the top bar');

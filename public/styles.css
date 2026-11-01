@@ -631,3 +631,40 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
    which is what the reference looks like: messages, [discard], composer. */
 body:has(#panel-relay:not([hidden])) .preview-banner,
 body:has(#panel-relay:not([hidden])) footer{display:none}
+
+/* theme links, bracketed like [copy] / [discard] */
+.theme-links{display:flex;gap:4px;padding:8px 0 4px}
+.theme-choice{padding:2px 4px;border:0;background:transparent;color:var(--faint);
+  font:11px var(--mono);cursor:pointer}
+.theme-choice:hover{color:var(--ink)}
+.theme-choice[aria-checked="true"]{color:var(--blue)}
+
+/* ============================================================================
+   ONE rail, and which one you get depends on the tab.
+
+     Relay tab      -> sessions by default; [menu] swaps in the tabs, [menu] again
+                       brings sessions back
+     any other tab  -> menu (the tabs) by default; [sessions] does not exist there
+     phone          -> same rules; sessions is only reachable on the Relay tab
+
+   state lives on the shell as data-rail="menu|sessions|none".
+   ============================================================================ */
+.link{padding:2px 4px;border:0;background:transparent;color:var(--quiet);
+  font:12px var(--mono);cursor:pointer}
+.link:hover{color:var(--ink)}
+.link[aria-expanded="true"]{color:var(--ink)}
+.link-sep{color:var(--faint);font:12px var(--mono)}
+.link[hidden]{display:none}
+
+.shell[data-rail="sessions"] #rail-tabs{display:none}
+.shell[data-rail="menu"] #rail-sessions{display:none}
+.shell[data-rail="none"] .nav-rail{display:none}
+
+.rail-kicker{display:block;color:var(--faint);font:10px/14px var(--mono);
+  letter-spacing:.08em;text-transform:uppercase;margin:2px 0 8px}
+.rail-session{padding:6px 8px;border:1px solid transparent;border-radius:6px;
+  background:transparent;color:var(--muted);font:12px var(--mono);text-align:left;
+  width:100%;display:block;cursor:pointer}
+.rail-session:hover{border-color:var(--border);color:var(--ink)}
+.rail-session[aria-current="true"]{border-color:var(--border);background:var(--raised);color:var(--ink)}
+.rail-session small{display:block;color:var(--faint);font-size:10px;margin-top:2px}

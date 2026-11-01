@@ -20,3 +20,20 @@
    it is deliberately not written as a bare `:root` block so the "exactly one :root"
    guard keeps meaning "one top-level token block". */
 @media(min-width:760px){html:root{--terminal-font:13.5px;--terminal-line:19.5px}}
+
+/* ============================================================================
+   LIGHT THEME - copied from the reference's :root[data-theme="light"] block.
+   Only the token NAMES are remapped:
+
+       relay --tx  -> --ink      --tx3 -> --quiet     --muted (a background) -> --raised
+       relay --tx2 -> --muted    --tx4 -> --faint
+
+   Dark is the default: with no data-theme attribute the :root values above apply,
+   which is exactly how the reference behaves (applyTheme() coerces anything that is
+   not "light" to "dark").
+   ============================================================================ */
+:root[data-theme="light"]{color-scheme:light;
+  --bg:#e7e7e9;--surface:#f4f4f5;--drawer:#ededee;--raised:#e3e3e6;
+  --border:#c9c9ce;--soft:#c9c9ce;--rail:#c4c4ca;
+  --ink:#18181b;--muted:#414147;--quiet:#67676f;--faint:#92929a;--agent-tx:#4f4f56;
+  --blue:#286bd6;--green:#21884b;--amber:#a56808}
