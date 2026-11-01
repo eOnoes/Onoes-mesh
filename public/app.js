@@ -84,9 +84,14 @@ try {
 function applyLocalStubs() {
   const relayState = document.getElementById('relay-state');
   if (relayState) relayState.textContent = 'SYNTHETIC. No Relay conversation. A real message is not sent.';
+  // When the gate has admitted this browser the composer talks to Relay for real, so it
+  // must not be stubbed out. Without the gate cookie (unit tests, browser fixtures) the
+  // old synthetic behaviour is unchanged.
+  const gated = (() => { try { return String(document.cookie || '').includes('mesh_gate=1'); } catch { return false; } })();
+  const liveComposer = new Set(['relay-send','relay-text','relay-message-id']);
   for (const id of ['relay-open','relay-close','relay-reconnect','relay-send','relay-new','relay-text','relay-message-id','node-probes-refresh']) {
     const el = document.getElementById(id);
-    if (el) el.disabled = true;
+    if (el) el.disabled = !(gated && liveComposer.has(id));
   }
   const refreshNodes = document.getElementById('node-probes-refresh');
   if (refreshNodes) refreshNodes.textContent = 'Refresh nodes (not on this PC)';

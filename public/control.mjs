@@ -82,13 +82,21 @@ function render() {
 
   if (view === 'overview' || view === 'throughput') {
     const s = section('engine');
-    s.append(row('engine', engine.name, engine.transport === 'http' ? `:${engine.port}` : 'stdio'));
+    if (!engine.name) {
+      // Nothing answered on the usual ports. Say that plainly rather than printing an
+      // em-dash next to a transport guess.
+      s.append(row('engine', 'none running'));
+      s.append(el('p', 'fine ctl-muted', 'No inference server answered on 60409 / 8080 / 1234 / 8000.'));
+      root.append(s);
+    } else {
+    s.append(row('engine', engine.name, engine.transport === 'http' ? `:${engine.port}` : null));
     s.append(row('model', engine.modelShort || engine.modelAlias, engine.modelAlias));
     s.append(row('context', engine.contextMax, engine.contextLength ? `of ${engine.contextLength}` : null));
     s.append(row('state', engine.busy === true ? 'generating' : engine.busy === false ? 'idle' : 'unknown',
       engine.loaded === false ? 'not loaded' : null));
     if (engine.buildInfo) s.append(row('build', engine.buildInfo));
     root.append(s);
+    }
   }
 
   if (view === 'overview') {
@@ -148,27 +156,35 @@ for (const button of document.querySelectorAll('[data-ctl-view]')) {
 }
 if (loading) loading.remove();
 
-fetch('/inference.json', { cache: 'no-store' })
-  .then((r) => (r.ok ? r.json() : null))
-  .then((json) => {
-    data = json;
-    // machine selector: one machine today, but the shape is already a list
-    if (machineSlot && data) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'tab';
-      button.setAttribute('aria-pressed', 'true');
-      button.textContent = data.host || 'this PC';
-      machineSlot.replaceChildren(button);
-    }
-    render();
-  })
-  .catch(() => render());
+// Live telemetry, polled. /inference/summary is Mesh's gate proxy: it asks Strata's own
+// API, nvidia-smi and the OS on each call, so there is no snapshot to go stale.
+const MACHINE_SLOT = document.getElementById('machine-tabs');
+
+async function load() {
+  try {
+    const response = await fetch('/inference/summary', { cache: 'no-store' });
+    data = response.ok ? await response.json() : null;
+  } catch {
+    data = null;
+  }
+  if (MACHINE_SLOT && data) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tab';
+    button.setAttribute('aria-pressed', 'true');
+    button.textContent = data.host || 'this PC';
+    MACHINE_SLOT.replaceChildren(button);
+  }
+  render();
+}
+
+load();
+setInterval(load, 5000);
 
 // The machine strip only belongs on the Control tab, like agent pills belong to Relay.
-const controlTab = document.getElementById(CONTROL_TAB);
-if (controlTab && machineSlot) {
-  const sync = () => { machineSlot.hidden = controlTab.getAttribute('aria-selected') !== 'true'; };
+const controlTab = document.getElementById('tab-control');
+if (controlTab && MACHINE_SLOT) {
+  const sync = () => { MACHINE_SLOT.hidden = controlTab.getAttribute('aria-selected') !== 'true'; };
   new MutationObserver(sync).observe(controlTab, { attributes: true, attributeFilter: ['aria-selected'] });
   sync();
 }
