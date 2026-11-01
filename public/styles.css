@@ -300,3 +300,42 @@ html body{font-family:var(--mono);font-size:var(--terminal-font);line-height:var
   border-top:1px solid var(--border);background:var(--surface);
   font-size:11px;color:var(--quiet);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
+
+/* ============================================================================
+   PORTED from D:\Mesh\design-reference\index.html - the look the operator asked
+   us to retain. These are the reference's own rules, not my interpretation of a
+   screenshot. Only the token NAMES were remapped, because Mesh's palette uses
+   different names for the same values:
+
+       reference --tx   -> --ink        --tx3 -> --quiet
+       reference --tx2  -> --muted      --tx4 -> --faint
+       reference --muted (a BACKGROUND, #1d1d20) -> --raised
+                                          --soft -> --border
+
+   Scoped under .tbar / .tabs so they beat the older `.topbar nav button` rules
+   (0,2,0 vs 0,1,2) rather than being silently overridden by them.
+   ============================================================================ */
+.tbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);
+      border-bottom:1px solid var(--border);font-family:var(--sans);flex-wrap:wrap;flex:none}
+.tbar .wd{display:flex;gap:5px;flex:none}
+.tbar .wd i{width:9px;height:9px;border-radius:50%;background:var(--faint);display:block}
+.tbar .menu{display:flex;align-items:center;justify-content:center;width:28px;height:28px;
+      padding:0;min-height:28px;min-width:28px;border:1px solid transparent;border-radius:6px;
+      background:transparent;color:var(--quiet);font-family:var(--mono);font-size:11px}
+.tbar .menu:hover,.tbar .menu[aria-expanded="true"]{border-color:var(--border);
+      background:var(--raised);color:var(--ink)}
+.tbar .tabs{display:flex;gap:4px;overflow-x:auto;flex:1 1 auto;min-width:0;
+      scrollbar-width:none}
+.tbar .tabs::-webkit-scrollbar{display:none}
+.tbar .tab{display:flex;align-items:center;gap:6px;padding:4px 10px;font-size:12px;
+      border-radius:6px;border:1px solid transparent;background:transparent;
+      color:var(--quiet);white-space:nowrap;width:auto;flex:0 0 auto;min-height:28px;min-width:0}
+.tbar .tab[aria-selected="true"]{background:var(--raised);border-color:var(--border);
+      color:var(--ink)}
+.tbar .ttl{font-size:12px;color:var(--quiet);font-family:var(--mono);margin-left:auto;
+      white-space:nowrap}
+/* the status line stays visible on a phone - Relay shows it */
+@media(max-width:560px){.tbar .ttl{display:block;font-size:11px}}
+
+/* `nav` was a vertical list inside the drawer. In the bar it is a horizontal strip. */
+.tbar .tabs{flex-direction:row}

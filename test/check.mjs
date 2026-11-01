@@ -38,12 +38,17 @@ function assertDesign() {
   const tokens = readFileSync('shared/tokens.css', 'utf8');
   const rules = readFileSync('public/styles.css', 'utf8');
   const both = tokens + rules;
+  // Comments are documentation, not code. A comment explaining WHICH literal must not
+  // appear would otherwise trip the check that forbids it - which is exactly what
+  // happened when the ported rules were annotated with the reference's colour values.
+  // Every assertion below therefore runs against comment-stripped text.
+  const code = rules.replace(/\/\*[\s\S]*?\*\//g, '');
 
   assert.equal(/#39ff14/i.test(both), false, 'the retired Mesh lime must not return');
   assert.equal((tokens.match(/:root\{/g) || []).length, 1, 'shared/tokens.css must define exactly one :root block');
   assert.equal(/:root\{/.test(rules), false, 'tokens live in shared/tokens.css, not in public/styles.css');
-  assert.equal(/#[0-9a-fA-F]{3,8}\b/.test(rules), false, 'colour literals must not appear in public/styles.css');
-  assert.equal(/rgba?\(/.test(rules), false, 'rgba() literals must not appear in public/styles.css');
+  assert.equal(/#[0-9a-fA-F]{3,8}\b/.test(code), false, 'colour literals must not appear in public/styles.css');
+  assert.equal(/rgba?\(/.test(code), false, 'rgba() literals must not appear in public/styles.css');
 
   for (const token of ['--green:#3fb96b', '--blue:#4f8cff', '--radius:6px']) {
     assert.equal(tokens.includes(token), true, `${token} is missing from shared/tokens.css`);
@@ -74,7 +79,6 @@ function assertDesign() {
   // and then the measurement died with the session. Each assertion below encodes one
   // property that was NOT true before the restyle and would silently regress without a
   // guard. Comments are stripped first so the prose above cannot trip its own check.
-  const code = rules.replace(/\/\*[\s\S]*?\*\//g, '');
   assert.equal(/(Segoe|sans-serif|system-ui|ui-monospace)/.test(code), false,
     'every font family must come from a token - var(--mono) for content, var(--sans) for chrome');
   assert.equal(/font-family:var\(--mono\)/.test(code), true, 'content must be monospace');

@@ -1,15 +1,20 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101011"><title>Onoes-mesh / Tasks</title><link rel="stylesheet" href="/shared/tokens.css"><link rel="stylesheet" href="/styles.css"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon.svg" type="image/svg+xml"><script type="module" src="/app.js"></script><script type="module" src="/text-size.mjs"></script><script type="module" src="/pwa-register.mjs"></script></head>
 <body class="variant-a"><div class="shell">
-<header class="topbar"><span class="wd" aria-hidden="true"><i></i><i></i><i></i></span><button id="menu-open" type="button" aria-controls="workspace-menu" aria-expanded="false">Menu</button><div class="brand">mesh · this PC</div><span class="ttl">local tasks</span><nav role="tablist" aria-label="MAIN workspaces" aria-orientation="horizontal">
-<button role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" tabindex="0">01 Overview</button>
-<button role="tab" id="tab-relay" aria-controls="panel-relay" aria-selected="false" tabindex="-1">02 Relay</button>
-<button role="tab" id="tab-inference" aria-controls="panel-inference" aria-selected="false" tabindex="-1">03 Inference</button>
-<button role="tab" id="tab-workroom" aria-controls="panel-workroom" aria-selected="false" tabindex="-1">04 Workroom</button>
-<button role="tab" id="tab-agent" aria-controls="panel-agent" aria-selected="false" tabindex="-1">05 Agent</button>
-<button role="tab" id="tab-mind" aria-controls="panel-mind" aria-selected="false" tabindex="-1">06 Mind</button>
-<button role="tab" id="tab-control" aria-controls="panel-control" aria-selected="false" tabindex="-1">07 Control</button>
-</nav></header>
+<header class="tbar">
+<span class="wd" aria-hidden="true"><i></i><i></i><i></i></span>
+<button class="menu" id="menu-open" type="button" aria-controls="workspace-menu" aria-expanded="false">Menu</button>
+<nav class="tabs" role="tablist" aria-label="MAIN workspaces" aria-orientation="horizontal">
+<button role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" tabindex="0" class="tab">01 Overview</button>
+<button role="tab" id="tab-relay" aria-controls="panel-relay" aria-selected="false" tabindex="-1" class="tab">02 Relay</button>
+<button role="tab" id="tab-inference" aria-controls="panel-inference" aria-selected="false" tabindex="-1" class="tab">03 Inference</button>
+<button role="tab" id="tab-workroom" aria-controls="panel-workroom" aria-selected="false" tabindex="-1" class="tab">04 Workroom</button>
+<button role="tab" id="tab-agent" aria-controls="panel-agent" aria-selected="false" tabindex="-1" class="tab">05 Agent</button>
+<button role="tab" id="tab-mind" aria-controls="panel-mind" aria-selected="false" tabindex="-1" class="tab">06 Mind</button>
+<button role="tab" id="tab-control" aria-controls="panel-control" aria-selected="false" tabindex="-1" class="tab">07 Control</button>
+</nav>
+<span class="ttl" id="ttl">mesh · local tasks</span>
+</header>
 <div class="preview-banner" role="note">Local task board · this PC only · synthetic connections are labeled</div>
 
 
