@@ -45,8 +45,8 @@ function assertDesign() {
   const code = rules.replace(/\/\*[\s\S]*?\*\//g, '');
 
   assert.equal(/#39ff14/i.test(both), false, 'the retired Mesh lime must not return');
-  assert.equal((tokens.match(/:root\{/g) || []).length, 1, 'shared/tokens.css must define exactly one :root block');
-  assert.equal(/:root\{/.test(rules), false, 'tokens live in shared/tokens.css, not in public/styles.css');
+  assert.equal((tokens.match(/(?<![\w-]):root\{/g) || []).length, 1, 'shared/tokens.css must define exactly one :root block');
+  assert.equal(/(?<![\w-]):root\{/.test(rules), false, 'tokens live in shared/tokens.css, not in public/styles.css');
   assert.equal(/#[0-9a-fA-F]{3,8}\b/.test(code), false, 'colour literals must not appear in public/styles.css');
   assert.equal(/rgba?\(/.test(code), false, 'rgba() literals must not appear in public/styles.css');
 

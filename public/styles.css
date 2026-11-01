@@ -357,7 +357,7 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
   /* The reference also bumps the size token here, but tokens are not allowed outside
      shared/tokens.css, so the longhand is set on html body instead - same computed
      result, and the guard stays meaningful. */
-  html body{font-size:13.5px;line-height:19.5px}
+  html body{line-height:19px}
   .shell{max-width:none;border-left:0;border-right:0}
   .content-layout{padding:16px 20px 16px 16px}
 }
@@ -483,8 +483,7 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
    names change (--tx3 -> --quiet, --tx -> --ink, --tx4 -> --faint).
    ============================================================================ */
 .cpy{padding:3px 10px;font-size:12px;border-radius:6px;border:1px solid var(--border);
-  color:var(--quiet);background:transparent;font-family:var(--sans);white-space:nowrap;
-  min-height:28px}
+  color:var(--quiet);background:transparent;font-family:var(--sans);white-space:nowrap}
 .cpy:hover,.cpy:focus-visible{color:var(--ink);border-color:var(--faint)}
 .cpy.oky{color:var(--green);border-color:var(--green)}
 
@@ -590,3 +589,32 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
 .cmp #relay-text{grid-column:3}
 .cmp-send{grid-column:4}
 .relay-extra{margin:0 12px 12px;background:var(--bg)}
+
+/* ============================================================================
+   The menu PUSHES the chat, it does not float over it.
+
+   The drawer was `position:fixed` with a translate, so opening it moved the chat
+   0px - it sat on top of the conversation. On desktop it now occupies a real grid
+   column between the rail and the chat, so the chat shrinks to make room. On a
+   phone there is no room to give 340px away, so it stays an overlay there.
+   ============================================================================ */
+@media(min-width:760px){
+  .shell{grid-template-columns:var(--rail-w,220px) var(--drawer-w,0px) minmax(0,1fr)}
+  .shell>.content-layout{grid-column:3;grid-row:3}
+  .shell>.nav-wrap{grid-column:2;grid-row:3;position:static;inset:auto;width:auto;height:auto;
+    transform:none;left:auto;top:auto;bottom:auto;z-index:auto;display:none;
+    background:var(--drawer);border-right:1px solid var(--border);overflow-y:auto}
+  body.menu-open .shell{--drawer-w:340px}
+  body.menu-open .shell>.nav-wrap{display:flex;flex-direction:column}
+  /* no dimming scrim: nothing is being covered */
+  body.menu-open .menu-scrim{display:none}
+}
+
+/* Relay's copy-all is 27px tall. Mesh's global button rule enforces a 44px touch
+   target, which inflated the bar from 45px to 61px. The reference wins here. */
+.tbar .cpy{min-height:0;height:auto;line-height:19px}
+.tbar .rail-toggle{min-height:0}
+
+/* Relay's menu button is 28x28, which is what sets the 45px bar height. Mine was 24px,
+   making the whole bar 1px short of the reference. */
+.tbar .rail-toggle{width:28px;height:28px;min-width:28px;min-height:28px}
