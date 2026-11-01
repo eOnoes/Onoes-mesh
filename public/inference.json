@@ -1,6 +1,6 @@
 ﻿{
     "schema":  "mesh-inference/v1",
-    "generatedAt":  "2026-11-01T11:57:49.5349256-06:00",
+    "generatedAt":  "2026-11-01T11:58:51.7196301-06:00",
     "host":  "Echo\u0027s PC",
     "engine":  {
                    "name":  "unbiased-strata",
@@ -27,11 +27,11 @@
                },
     "gpu":  {
                 "name":  "NVIDIA GeForce RTX 4080 SUPER",
-                "vramUsedMiB":  31879,
+                "vramUsedMiB":  31730,
                 "vramTotalMiB":  32760,
-                "vramPct":  97.3,
-                "utilPct":  22,
-                "powerW":  19.52,
+                "vramPct":  96.9,
+                "utilPct":  12,
+                "powerW":  19.17,
                 "powerLimitW":  320,
                 "tempC":  33
             },

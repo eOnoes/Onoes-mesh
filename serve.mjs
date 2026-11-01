@@ -144,7 +144,11 @@ async function strataHealth() {
       if (!servable || health.servable === false) continue;
       const props = await fetch(`http://127.0.0.1:${port}/props`, { signal: AbortSignal.timeout(1500) })
         .then((r) => (r.ok ? r.json() : null)).catch(() => null);
-      return { port, health, props };
+            // The supervisor's /health omits max_context, so ask /v1/models as well - without
+      // it the Control pane shows a blank context on a loaded model.
+      const models = await fetch(`http://127.0.0.1:${port}/v1/models`, { signal: AbortSignal.timeout(1500) })
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      return { port, health, props, models };
     } catch { /* try the next port */ }
   }
   return null;
