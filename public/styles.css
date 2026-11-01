@@ -901,3 +901,24 @@ footer{background:transparent}
   body.resizing{cursor:col-resize}
   body.resizing .chat-grip::after{background:var(--cyan)}
 }
+
+/* The theme button was 44px tall: Mesh's global `button{min-height:44px}` touch rule
+   overrode the 28px height, which grew the whole top bar from 45 to 61. The bar must
+   never resize when the icon flips, so the button is pinned to the same 28x28 as the
+   menu button and the icons are fixed-size blocks. */
+.theme-btn{width:28px;height:28px;min-width:0;min-height:0;padding:0;line-height:0;flex:none}
+.theme-btn .ico{width:14px;height:14px;display:block;flex:none}
+/* the crescent is a disc with a background-coloured bite taken out of it */
+.theme-btn .ico-moon .ink{fill:currentColor}
+.theme-btn .ico-moon .bite{fill:var(--bg)}
+.theme-btn .ico-sun{fill:currentColor}
+
+/* Same 44px global button rule again: the [menu] and [sessions] links were 44 tall and
+   were what actually held the bar at 61. Chrome controls in the bar are 28. */
+.link{min-height:0;min-width:0;line-height:19px}
+
+/* and re-assert the icon flip AFTER the generic .ico rule that re-showed both */
+.theme-btn .ico-moon{display:none}
+.theme-btn .ico-sun{display:block}
+:root[data-theme="light"] .theme-btn .ico-moon{display:block}
+:root[data-theme="light"] .theme-btn .ico-sun{display:none}
