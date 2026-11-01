@@ -1,7 +1,7 @@
 @echo off
 rem Start the Mesh app, detached, at logon - the same pattern tools\start-relay.cmd uses.
 rem
-rem Mesh is hosted on the tailnet so the URL works the same from this PC or from a phone:
+rem Mesh is hosted on the tailnet so the URL works from this PC or from a phone:
 rem     https://emitchell.tail8c4a75.ts.net:8446
 rem published by `tailscale serve --bg --https=8446 http://127.0.0.1:4317`.
 rem The serve mapping persists on its own; this script only has to keep the app running.
@@ -28,9 +28,19 @@ if not errorlevel 1 (
 )
 
 echo [%DATE% %TIME%] launching Mesh>>"%LOG%"
+
+rem The app reads these two from its environment. They are set HERE, in the shell that
+rem spawns it, so the child inherits them. Do NOT pass Start-Process -Environment: that
+rem parameter only exists in PowerShell 7, and this script may run under Windows
+rem PowerShell 5.1, where it fails with "parameter cannot be found". That bug was latent
+rem for exactly as long as the app was already running, because the check above returned
+rem first every time.
+set "MESH_DATA_DIR=test/app03-mesh"
+set "MESH_PREVIEW_PORT=4317"
+
 rem Start-Process rather than `start /B` with a redirect: the latter keeps a stdout handle
 rem open and the caller waits on a server that never exits.
-powershell -NoProfile -Command "Start-Process -FilePath 'node' -ArgumentList 'test/m1-serve.mjs' -WorkingDirectory '%DIR%' -WindowStyle Hidden -RedirectStandardOutput '%DIR%\test\app03-mesh\serve.out.log' -RedirectStandardError '%DIR%\test\app03-mesh\serve.err.log' -Environment @{ MESH_DATA_DIR = 'test/app03-mesh'; MESH_PREVIEW_PORT = '4317' }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'node' -ArgumentList 'test/m1-serve.mjs' -WorkingDirectory '%DIR%' -WindowStyle Hidden -RedirectStandardOutput '%DIR%\test\app03-mesh\serve.out.log' -RedirectStandardError '%DIR%\test\app03-mesh\serve.err.log'"
 
 rem Confirm it actually arrives rather than trusting the launch call.
 set /a TRIES=0

@@ -35,6 +35,7 @@ for (const [file, type] of [
   ['pwa-register.mjs', 'text/javascript'], ['sw.js', 'text/javascript'],
 ]) staticFiles.set('/' + file, ['public/' + file, type]);
 staticFiles.set('/shared/tokens.css', ['shared/tokens.css', 'text/css']);
+staticFiles.set('/text-size.mjs', ['public/text-size.mjs', 'text/javascript']);
 staticFiles.set('/shell-cache-policy.mjs', ['public/shell-cache-policy-browser-v2.mjs', 'text/javascript']);
 const snapshot = state => ({ schemaVersion: 'mesh-worker-activity/v1', state, observedAt: new Date().toISOString(), workers: [] });
 const modulePath = path.join(ROOT, 'lib/worker-activity.mjs');
