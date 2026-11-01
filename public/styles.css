@@ -1051,3 +1051,8 @@ footer{background:transparent}
   .picker{display:inline-flex}
   .tbar .agent-tabs,.tbar .machine-tabs{display:none}
 }
+
+/* The number column was 92px, but "29418 / 32760 MiB" needs about 130px at 12px mono,
+   so it clipped on desktop too. It has to be a fixed width rather than auto, otherwise
+   each row's bar would end at a different place and the meters would stop lining up. */
+.ctl-meter{grid-template-columns:96px minmax(0,1fr) 156px}
