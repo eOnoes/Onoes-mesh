@@ -1,15 +1,23 @@
 // Which rail is showing.
 //
-// One rail at a time, and the default depends on the tab: the Relay tab opens sessions,
-// every other tab opens the menu. On the Relay tab [menu] swaps sessions out and back
-// again; elsewhere [menu] simply shows or hides the tabs, and [sessions] is not offered.
+// One rail at a time, and the default depends on the tab:
+//
+//   Relay tab     sessions   (what you were talking to)
+//   Control tab   control    (overview / throughput / logs)
+//   every other   menu       (the workspace tabs)
+//
+// [menu] always swaps to the tabs. On the Relay and Control tabs it swaps back to that
+// tab's own rail, so closing the menu never leaves you without navigation.
 const shell = document.querySelector('.shell');
 const menuLink = document.getElementById('rail-menu');
 const sessionsLink = document.getElementById('rail-sessions-toggle');
 const relayTab = document.getElementById('tab-relay');
+const controlTab = document.getElementById('tab-control');
 const sessionsPanel = document.getElementById('rail-sessions');
 
 const isRelay = () => relayTab?.getAttribute('aria-selected') === 'true';
+const isControl = () => controlTab?.getAttribute('aria-selected') === 'true';
+const defaultView = () => (isRelay() ? 'sessions' : isControl() ? 'control' : 'menu');
 
 function setRail(view) {
   if (!shell) return;
@@ -26,14 +34,15 @@ function syncSessionsLink() {
 }
 
 function applyTabDefault() {
-  setRail(isRelay() ? 'sessions' : 'menu');
+  setRail(defaultView());
   syncSessionsLink();
 }
 
 if (menuLink) {
   menuLink.addEventListener('click', () => {
     const view = shell?.dataset.rail;
-    if (isRelay()) setRail(view === 'menu' ? 'sessions' : 'menu');
+    // on a tab that owns a rail of its own, [menu] toggles between the two
+    if (isRelay() || isControl()) setRail(view === 'menu' ? defaultView() : 'menu');
     else setRail(view === 'menu' ? 'none' : 'menu');
     syncSessionsLink();
   });
@@ -45,9 +54,11 @@ if (sessionsLink) {
   });
 }
 
-if (relayTab) {
-  new MutationObserver(applyTabDefault)
-    .observe(relayTab, { attributes: true, attributeFilter: ['aria-selected'] });
+for (const tab of [relayTab, controlTab]) {
+  if (tab) {
+    new MutationObserver(applyTabDefault)
+      .observe(tab, { attributes: true, attributeFilter: ['aria-selected'] });
+  }
 }
 
 applyTabDefault();
