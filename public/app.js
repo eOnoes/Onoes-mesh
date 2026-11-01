@@ -25,7 +25,14 @@ const menuMedia = typeof window.matchMedia === 'function'
   : { matches: false, addEventListener() {} };
 function setMenu(open) {
   const narrow = menuMedia.matches;
-  const show = open && narrow;
+  // The drawer opens at EVERY width, not just under 760px.
+  //
+  // It used to be `open && narrow`, because Mesh was a two-column grid on desktop with a
+  // permanent sidebar. The design is now an 820px window whose navigation slides in over
+  // the content - and all seven tabs live inside that nav, so gating it on viewport width
+  // left a desktop user with no navigation at all. When wide, the inline styles below are
+  // removed and the `body.menu-open .nav-wrap` rule in public/styles.css does the work.
+  const show = open;
   document.body.classList.toggle('menu-open', show);
   const opener = $('menu-open');
   if (opener) opener.setAttribute('aria-expanded', String(show));
