@@ -35,3 +35,27 @@ if (button) {
     try { localStorage.setItem(KEY, next); } catch { /* storage may be blocked */ }
   });
 }
+// Navigation rail collapse (desktop). Same storage discipline as the text size: the
+// preference is local, best-effort, and never blocks rendering if storage is refused.
+const RAIL_KEY = 'mesh-rail-collapsed';
+const shellEl = document.querySelector('.shell');
+const railButton = document.getElementById('rail-toggle');
+function applyRail(collapsed) {
+  if (!shellEl) return;
+  shellEl.classList.toggle('rail-collapsed', collapsed);
+  if (railButton) {
+    railButton.setAttribute('aria-expanded', String(!collapsed));
+    railButton.textContent = collapsed ? '»' : '«';
+    railButton.setAttribute('title', collapsed ? 'show navigation' : 'collapse navigation');
+  }
+}
+let railSaved = false;
+try { railSaved = localStorage.getItem(RAIL_KEY) === '1'; } catch { /* storage may be blocked */ }
+applyRail(railSaved);
+if (railButton) {
+  railButton.addEventListener('click', () => {
+    const next = !(shellEl && shellEl.classList.contains('rail-collapsed'));
+    applyRail(next);
+    try { localStorage.setItem(RAIL_KEY, next ? '1' : '0'); } catch { /* storage may be blocked */ }
+  });
+}

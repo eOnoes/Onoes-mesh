@@ -91,9 +91,17 @@ function assertDesign() {
   const html = readFileSync('public/index.html', 'utf8');
   const tabCount = (html.match(/role="tab"/g) || []).length;
   assert.equal(tabCount, 7, `expected seven tab buttons, found ${tabCount}`);
+  // The navigation lives in its own rail, not in the top bar. Desktop is a rail + top
+  // rail + body layout (the operator's brief); on a phone the same rail element lays out
+  // as the horizontal strip under the bar, so there is one navigation source at any width.
   const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '';
-  assert.equal((header.match(/role="tab"/g) || []).length, 7,
-    'all seven tabs must live in the top bar, not hidden in the drawer');
+  const rail = html.match(/<aside class="nav-rail"[\s\S]*?<\/aside>/)?.[0] ?? '';
+  assert.equal((rail.match(/role="tab"/g) || []).length, 7,
+    'all seven tabs must live in the nav rail');
+  assert.equal(/id="rail-toggle"/.test(header), true,
+    'the top rail must carry the navigation rail collapse control');
+  assert.equal((header.match(/role="tab"/g) || []).length, 0,
+    'tabs belong in the rail, not in the top bar');
   const dots = (header.match(/<span class="wd"[\s\S]*?<\/span>/)?.[0]?.match(/<i>/g) || []).length;
   assert.equal(dots, 3, 'the top bar must carry exactly three traffic-light dots');
   assert.equal(html.indexOf('/shared/tokens.css') < html.indexOf('/styles.css'), true,
