@@ -1101,3 +1101,31 @@ footer{background:transparent}
   .picker-panel[hidden]{display:flex;transform:translateX(102%)}
   .picker-panel button{min-height:42px}
 }
+
+/* ============================================================================
+   A touch of terminal.
+
+   One prompt line, then the tabs drawn as a file tree under the app's own name -
+   `├─` for each entry, `└─` for the last, so the vertical strokes join into one
+   continuous line. No boot log, no typing animation: the flavour is in the shape,
+   not in motion.
+   ============================================================================ */
+.tree-prompt{color:var(--faint);font:11px/1.6 var(--mono);margin:0 0 6px;padding:0 2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tree-prompt .ps1{color:var(--quiet)}
+.tree-root{color:var(--ink);font:12px/1.7 var(--mono);margin:0 0 1px;padding:0 2px}
+.nav-rail .tab{padding:3px 8px 3px 2px;border-color:transparent;background:transparent;
+  border-radius:4px;line-height:1.7}
+.nav-rail .tab::before{content:"\251C\2500 ";color:var(--faint);white-space:pre;flex:none}
+.nav-rail .tab:last-child::before{content:"\2514\2500 "}
+.nav-rail .tab[aria-selected="true"]{background:var(--raised);border-color:var(--border);
+  color:var(--ink)}
+/* the prompt and the root belong to the menu view only */
+.shell[data-rail="sessions"] .tree-prompt,
+.shell[data-rail="sessions"] .tree-root,
+.shell[data-rail="control"] .tree-prompt,
+.shell[data-rail="control"] .tree-root{display:none}
+/* the same prompt idiom inside the picker sheet */
+.picker-prompt{color:var(--faint);font:11px/1.6 var(--mono);padding:2px 4px 6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker-prompt .ps1{color:var(--quiet)}

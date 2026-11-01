@@ -120,6 +120,16 @@ function buildPicker() {
   if (pickerLabel) pickerLabel.textContent = (current.textContent || '').trim();
 
   pickerPanel.replaceChildren();
+
+  // one prompt line, naming the command that would list this set
+  const prompt = document.createElement('div');
+  prompt.className = 'picker-prompt';
+  const ps1 = document.createElement('span');
+  ps1.className = 'ps1';
+  ps1.textContent = isControl() ? '~ $' : '~ $';
+  prompt.append(ps1, document.createTextNode(isControl() ? ' ssh -l echo' : ' cd agents'));
+  pickerPanel.append(prompt);
+
   for (const item of items) {
     const option = document.createElement('button');
     option.type = 'button';
