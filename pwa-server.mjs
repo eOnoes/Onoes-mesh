@@ -28,6 +28,8 @@ const staticFiles = new Map([['/', ['public/index.html', 'text/html']], ['/app.j
 staticFiles.set('/shared/tokens.css', ['shared/tokens.css', 'text/css']);
 staticFiles.set('/text-size.mjs', ['public/text-size.mjs', 'text/javascript']);
 staticFiles.set('/agents.json', ['public/agents.json', 'application/json']);
+staticFiles.set('/chat.json', ['public/chat.json', 'application/json']);
+staticFiles.set('/chat.mjs', ['public/chat.mjs', 'text/javascript']);
 const snapshot = state => ({ schemaVersion: 'mesh-worker-activity/v1', state, observedAt: new Date().toISOString(), workers: [] });
 const modulePath = path.join(ROOT, 'lib/worker-activity.mjs');
 async function adapterStatus() {

@@ -618,3 +618,16 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
 /* Relay's menu button is 28x28, which is what sets the 45px bar height. Mine was 24px,
    making the whole bar 1px short of the reference. */
 .tbar .rail-toggle{width:28px;height:28px;min-width:28px;min-height:28px}
+
+/* The Relay pane is the conversation and nothing else: feed, [discard], composer.
+   Everything I invented earlier lives in .relay-legacy, hidden but with its ids intact
+   because four tests drive that form and two assert on the saved-references list. */
+.chat-empty{color:var(--faint);font-size:calc(var(--terminal-font) - 1px)}
+.chat-text{white-space:pre-wrap}
+.chat-files .chat-file{color:var(--muted)}
+.relay-legacy[hidden]{display:none!important}
+
+/* Mesh's own chrome is not part of the conversation. On the Relay tab it goes away,
+   which is what the reference looks like: messages, [discard], composer. */
+body:has(#panel-relay:not([hidden])) .preview-banner,
+body:has(#panel-relay:not([hidden])) footer{display:none}

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101011"><title>Onoes-mesh / Tasks</title><link rel="stylesheet" href="/shared/tokens.css"><link rel="stylesheet" href="/styles.css"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon.svg" type="image/svg+xml"><script type="module" src="/app.js"></script><script type="module" src="/text-size.mjs"></script><script type="module" src="/pwa-register.mjs"></script></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101011"><title>Onoes-mesh / Tasks</title><link rel="stylesheet" href="/shared/tokens.css"><link rel="stylesheet" href="/styles.css"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon.svg" type="image/svg+xml"><script type="module" src="/app.js"></script><script type="module" src="/chat.mjs"></script><script type="module" src="/text-size.mjs"></script><script type="module" src="/pwa-register.mjs"></script></head>
 <body class="variant-a"><div class="shell">
 <header class="tbar">
 <span class="wd" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -27,25 +27,26 @@
 <article class="box section-gap"><h2>Not on this PC</h2><div id="overview-stubs"><p>SYNTHETIC. Relay is off. This page does not start it.</p><p>Inference: fixed local PC profile; native qualification required before loading.</p><p>SYNTHETIC. Agent has no executor. None is resumed.</p><p>SYNTHETIC. Mind has no database. None is read.</p></div></article>
 </section>
 <section role="tabpanel" id="panel-relay" aria-labelledby="tab-relay" tabindex="0" hidden>
-<div class="chat" id="relay-chat">
-<div class="chat-msg agent echo">
-<div class="chat-who agent-who">Echo</div>
-<div class="chat-body">
+<div class="chat" id="relay-chat"><p class="chat-empty" id="relay-empty">No conversation yet.</p></div>
+<p class="chat-discard">[discard]</p>
+<form id="relay-form" class="cmp">
+<span class="cmperr" id="relay-error"></span>
+<span class="cmp-lead" aria-hidden="true">&gt;</span>
+<button class="cmp-add" type="button" disabled title="attachments are not wired">+</button>
+<label class="sr-only" for="relay-message-id">Stable message id (keep for retries)</label>
+<input id="relay-message-id" maxlength="80" pattern="[A-Za-z0-9_-]{1,80}" disabled>
+<label class="sr-only" for="relay-text">Message</label>
+<textarea id="relay-text" maxlength="4000" required disabled placeholder="Echo · type a message…"></textarea>
+<button id="relay-send" type="submit" class="cmp-send" disabled aria-label="send">&#8593;</button>
+</form>
+<div class="relay-legacy" hidden>
 <p class="service-status" data-service="relay">Connection unknown</p>
 <h1>Relay is off</h1>
 <span id="relay-synthetic">SYNTHETIC. Relay is on ice. This tab does not start it and does not write relay files.</span>
 <p id="relay-state" role="status">Relay unavailable until local session admission.</p>
-<button class="fcp" type="button" data-copy="relay-synthetic">[copy]</button>
-</div>
-</div>
 <div id="relay-session-recovery" class="notice" hidden>
 <p id="relay-session-state" role="status" tabindex="-1">Start a fresh local session to verify Relay access.</p>
 <button id="relay-session-start" type="button">Start fresh local session</button>
-</div>
-<div class="chat-msg you">
-<div class="chat-who you-who">You</div>
-<div class="chat-body">Nothing sent yet. This tab records a task locally; it does not message Relay until a session is admitted.</div>
-</div>
 </div>
 <article class="box relay-extra">
 <div class="actions">
@@ -58,18 +59,7 @@
 <h2>Saved Relay task references</h2>
 <div id="relay-links"></div>
 </article>
-<p class="chat-discard">[discard]</p>
-<form id="relay-form" class="cmp">
-<span class="cmperr" id="relay-error"></span>
-<span class="cmp-lead" aria-hidden="true">&gt;</span>
-<button class="cmp-add" type="button" disabled title="attachments are not wired">+</button>
-<label class="sr-only" for="relay-message-id">Stable message id (keep for retries)</label>
-<input id="relay-message-id" maxlength="80" pattern="[A-Za-z0-9_-]{1,80}" disabled>
-<label class="sr-only" for="relay-text">Message</label>
-<textarea id="relay-text" maxlength="4000" required disabled placeholder="Echo · type a message…"></textarea>
-<button id="relay-send" type="submit" class="cmp-send" disabled aria-label="send">&#8593;</button>
-</form>
-
+</div>
 </section>
 <section role="tabpanel" id="panel-inference" aria-labelledby="tab-inference" tabindex="0" hidden>
 <div class="panel-heading"><div><div class="eyebrow">Inference / this PC</div><h1>Local inference control</h1><p>Proposal → explicit approval → execution → read-back receipt. Uncertain ownership disables controls.</p></div></div>

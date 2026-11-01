@@ -37,6 +37,7 @@ rem for exactly as long as the app was already running, because the check above 
 rem first every time.
 rem Refresh the Relay agent snapshot. Best effort: never blocks the boot.
 node "%DIR%\tools\sync-relay-agents.mjs" 2>nul
+node "%DIR%\tools\sync-relay-chat.mjs" 2>nul
 set "MESH_DATA_DIR=test/app03-mesh"
 set "MESH_PREVIEW_PORT=4317"
 

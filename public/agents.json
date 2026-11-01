@@ -1,6 +1,6 @@
 {
   "schema": "mesh-relay-agents/v1",
-  "syncedAt": "2026-11-01T05:18:09.872Z",
+  "syncedAt": "2026-11-01T05:45:15.407Z",
   "source": "http://127.0.0.1:8787",
   "agents": [
     {
