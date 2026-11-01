@@ -140,7 +140,14 @@ async function main() {
   if (composer) composer.placeholder = `${agentName} · type a message…`;
 
   const fragment = document.createDocumentFragment();
-  for (const message of messages) fragment.append(renderMessage(message));
+  let previous = null;
+  for (const message of messages) {
+    const node = renderMessage(message);
+    // same speaker as the last message: this continues that turn, so it sits closer
+    if (previous && previous === message.k) node.classList.add('continues');
+    previous = message.k;
+    fragment.append(node);
+  }
   chat.replaceChildren(fragment);
 
   // Start at the newest message, like any terminal transcript. The panel is hidden when

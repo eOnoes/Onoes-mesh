@@ -833,3 +833,25 @@ footer{background:transparent}
 .chat-msg.you{margin-left:0}
 .chat-body{position:relative;padding-bottom:calc(var(--terminal-line) * 1.25)}
 .chat-actions{position:absolute;left:0;bottom:2px;margin:0}
+
+/* staircase reverted - operator preferred the straight edge */
+.chat-msg.agent,.chat-msg.you{margin-left:0}
+
+/* ============================================================================
+   Showing the thread without adding decoration.
+
+   A 4px node sits ON the rail at each speaker label, coloured by who is talking, so
+   the transcript reads as a connected run of turns rather than a stack of unrelated
+   blocks. Consecutive messages from the SAME speaker close the gap between them, so
+   an exchange groups visually and a change of speaker opens the spacing again - the
+   conversation structure becomes the thing you notice, not the styling.
+   ============================================================================ */
+.chat-body::before{content:"";position:absolute;left:-3px;top:9px;width:5px;height:5px;
+  border-radius:50%;background:var(--rail)}
+.chat-msg.you .chat-body::before{background:var(--blue)}
+.chat-msg.agent .chat-body::before{background:var(--amber)}
+.chat-msg.agent.echo .chat-body::before{background:var(--agent-echo)}
+.chat-msg.agent.cyony .chat-body::before{background:var(--agent-cyony)}
+.chat-msg.agent.tripp .chat-body::before{background:var(--agent-tripp)}
+.chat-msg.agent.dsh .chat-body::before{background:var(--agent-dsh)}
+.chat-msg.continues{margin-top:5px}
