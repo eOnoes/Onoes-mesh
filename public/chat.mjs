@@ -22,7 +22,17 @@ function actionButton(label, className, onClick) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = `fcp ${className}`;
-  button.textContent = `[${label}]`;
+  // brackets neutral, only the word takes the accent colour
+  const open = document.createElement('span');
+  open.className = 'br';
+  open.textContent = '[';
+  const word = document.createElement('span');
+  word.className = 'lbl';
+  word.textContent = label;
+  const close = document.createElement('span');
+  close.className = 'br';
+  close.textContent = ']';
+  button.append(open, word, close);
   button.addEventListener('click', (event) => {
     event.stopPropagation();
     onClick(button);
@@ -81,11 +91,15 @@ function renderMessage(message) {
   actions.append(actionButton('copy', 'copy', async (button) => {
     try {
       await navigator.clipboard.writeText(plain);
-      button.textContent = '[copied]';
-      setTimeout(() => { button.textContent = '[copy]'; }, 1200);
+      const word = button.querySelector('.lbl');
+      const was = word.textContent;
+      word.textContent = 'copied';
+      setTimeout(() => { word.textContent = was; }, 1200);
     } catch {
-      button.textContent = '[failed]';
-      setTimeout(() => { button.textContent = '[copy]'; }, 1200);
+      const word = button.querySelector('.lbl');
+      const was = word.textContent;
+      word.textContent = 'failed';
+      setTimeout(() => { word.textContent = was; }, 1200);
     }
   }));
 

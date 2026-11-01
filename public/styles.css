@@ -729,12 +729,30 @@ footer{background:transparent}
 .chat-msg:hover .chat-actions,
 .chat-msg:focus-within .chat-actions,
 .chat-msg.is-target .chat-actions{opacity:1}
-.chat-msg.is-target .chat-body{border-left-color:var(--reply)}
+.chat-msg.is-target .chat-body{border-left-color:var(--cyan)}
 .chat-actions .fcp{float:none;margin:0;padding:1px 2px;background:transparent}
-.chat-actions .fcp.reply{color:var(--reply)}
+.chat-actions .fcp.reply{color:var(--cyan)}
 .chat-actions .fcp.copy{color:var(--cyan)}
 .chat-actions .fcp.del{color:var(--danger)}
-.chat-actions .fcp.reply:hover,.chat-actions .fcp.reply:focus-visible{background:var(--raised);color:var(--reply)}
+.chat-actions .fcp.reply:hover,.chat-actions .fcp.reply:focus-visible{background:var(--raised);color:var(--cyan)}
 .chat-actions .fcp.copy:hover,.chat-actions .fcp.copy:focus-visible{background:var(--raised);color:var(--cyan)}
 .chat-actions .fcp.del:hover,.chat-actions .fcp.del:focus-visible{background:var(--raised);color:var(--danger)}
 .chat-msg.is-gone{display:none}
+
+/* ============================================================================
+   Softer actions.
+
+   The brackets stay in the quiet text colour and only the word carries the accent,
+   so the row reads as punctuation rather than three coloured buttons. reply and copy
+   share cyan; delete stays red because it warns you that something is happening.
+   ============================================================================ */
+.chat-actions .fcp{color:var(--faint)}
+.chat-actions .fcp .br{color:var(--faint)}
+.chat-actions .fcp .lbl{color:inherit}
+.chat-actions .fcp.reply .lbl,
+.chat-actions .fcp.copy .lbl{color:var(--cyan)}
+.chat-actions .fcp.del .lbl{color:var(--danger)}
+.chat-actions .fcp:hover .lbl,
+.chat-actions .fcp:focus-visible .lbl{text-decoration:underline;text-underline-offset:2px}
+/* the targeted message marks itself in the same cyan now */
+.chat-msg.is-target .chat-body{border-left-color:var(--cyan)}
