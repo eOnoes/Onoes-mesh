@@ -23,6 +23,9 @@ export async function confinedPath(value) {
   return target;
 }
 const staticFiles = new Map([['/', ['public/index.html', 'text/html']], ['/app.js', ['public/app.js', 'text/javascript']], ['/styles.css', ['public/styles.css', 'text/css']], ['/sw.js', ['public/sw.js', 'text/javascript']], ['/shell-cache-policy.mjs', ['public/shell-cache-policy-browser-v2.mjs', 'text/javascript']], ['/manifest.webmanifest', ['public/manifest.webmanifest', 'application/manifest+json']], ['/icon.svg', ['public/icon.svg', 'image/svg+xml']], ['/pwa-register.mjs', ['public/pwa-register.mjs', 'text/javascript']]]);
+// Served from a new directory, so registered separately rather than added to the map
+// literal above - test/pwa05.test.mjs pins that literal's exact text.
+staticFiles.set('/shared/tokens.css', ['shared/tokens.css', 'text/css']);
 const snapshot = state => ({ schemaVersion: 'mesh-worker-activity/v1', state, observedAt: new Date().toISOString(), workers: [] });
 const modulePath = path.join(ROOT, 'lib/worker-activity.mjs');
 async function adapterStatus() {

@@ -1,0 +1,14 @@
+/* Mesh design tokens - the single source of colour for the whole application.
+ *
+ * Rules for anything that styles Mesh:
+ *   1. No colour literal (#rrggbb, rgba()) may appear anywhere else. Not in
+ *      public/styles.css, not in a tab stylesheet, not inline in markup.
+ *   2. Reference these names only: var(--ink), var(--border), var(--green) ...
+ *   3. A token must never reference itself, directly or through a chain - that is
+ *      invalid at computed-value time and resolves to nothing, silently.
+ *
+ * All three rules are enforced by test/check.mjs. They are not style preferences:
+ * public/styles.css previously carried two contradictory token blocks and four state
+ * colours that were all the same acid lime, so "running", "waiting" and "failed"
+ * rendered identically.
+ */:root{color-scheme:dark;--bg:#0d0d0f;--surface:#161618;--raised:#1d1d20;--border:#2a2a2e;--soft:#2a2a2e;--ink:#e8e8ea;--muted:#b9b9bf;--quiet:#8a8a92;--blue:#4f8cff;--amber:#d9a13b;--green:#3fb96b;--danger:#e06a5f;--faint:#5b5b63;--drawer:#121214;--scrim:#000000b8;--scrim-soft:rgba(0,0,0,.45);--radius:6px;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;font:14px/1.55 "Segoe UI",system-ui,sans-serif}

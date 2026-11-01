@@ -15,51 +15,60 @@ async function run(args) {
 }
 // Design guard.
 //
-// This replaces `assert styles.css includes '#39FF14'`, which pinned the RETIRED Mesh
-// lime. That assertion had two faults: it guarded a colour the app no longer uses, and it
-// sat in the branch that only runs without --test/--ui, so `npm test` never executed it.
-// Worse, that branch died on a missing APP03-CONTRACT.json before reaching the assertion,
-// so it could not fail and could not pass - it simply never ran.
+// Two files matter now that the tokens have their own home:
+//   shared/tokens.css     - the ONLY place a colour may be defined
+//   public/styles.css     - rules only; no literals, no token definitions
 //
-// The lime is gone on purpose: Mesh now uses Relay's terminal palette, where running/ok is
-// #3fb96b. The single-:root rule is the most important line here - public/styles.css used
-// to carry TWO token blocks with contradictory palettes, the second silently overriding the
-// first. That is precisely the drift a guard should catch, so this one runs in every lane.
+// The rules below each exist because the opposite was true at some point:
+//
+//   * public/styles.css carried TWO :root blocks with contradictory palettes, the second
+//     silently overriding the first, so the palette a reader saw at the top of the file was
+//     not the palette in use.
+//   * All four semantic colours were the same acid lime #39FF14, so "running", "waiting" and
+//     "failed" rendered identically. The lime is retired in favour of Relay's #3fb96b green.
+//   * 41 colour literals lived in the rules, including the four status colours written twice
+//     with different values - so the live colour depended on rule order.
+//   * A token referenced itself (--scrim-soft: var(--scrim-soft)), which is invalid at
+//     computed-value time and resolves to nothing, silently breaking a scrim while every
+//     test stayed green. A name being "defined" says nothing about its value meaning anything.
+//   * The previous assertion here pinned '#39FF14' and lived in a branch that --test never
+//     entered AND that crashed on a missing APP03-CONTRACT.json before reaching it. It could
+//     neither pass nor fail, so the design drifted with nothing watching.
 function assertDesign() {
-  const css = readFileSync('public/styles.css', 'utf8');
-  assert.equal(/#39ff14/i.test(css), false, 'the retired Mesh lime must not return');
-  assert.equal(css.includes('--green:#3fb96b'), true, 'Relay green token is missing');
-  assert.equal(css.includes('--blue:#4f8cff'), true, 'Relay blue token is missing');
-  assert.equal(css.includes('--radius:6px'), true, 'Relay radius token is missing');
-  assert.equal((css.match(/:root\{/g) || []).length, 1, 'stylesheet must define exactly one token block');
-  // Every colour must come from the token block. Before this rule the file carried 40
-  // hard-coded literals in its rules - including the same four status colours written
-  // twice with different values, so the live colour depended on rule order. Named tokens
-  // make the palette changeable in one place and the duplication harmless.
-  const rules = css.replace(/:root\{[^}]*\}/, '');
-  assert.equal(/#[0-9a-fA-F]{3,8}\b/.test(rules), false, 'colour literals must live in :root, not in rules');
-  assert.equal(/rgba?\(/.test(rules), false, 'rgba() literals must live in :root, not in rules');
-  const definedTokens = new Set([...css.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g)].map((m) => m[1]));
-  for (const [, token] of css.matchAll(/var\((--[a-zA-Z0-9-]+)/g)) {
-    assert.equal(definedTokens.has(token), true, `var(${token}) is used but never defined`);
+  const tokens = readFileSync('shared/tokens.css', 'utf8');
+  const rules = readFileSync('public/styles.css', 'utf8');
+  const both = tokens + rules;
+
+  assert.equal(/#39ff14/i.test(both), false, 'the retired Mesh lime must not return');
+  assert.equal((tokens.match(/:root\{/g) || []).length, 1, 'shared/tokens.css must define exactly one :root block');
+  assert.equal(/:root\{/.test(rules), false, 'tokens live in shared/tokens.css, not in public/styles.css');
+  assert.equal(/#[0-9a-fA-F]{3,8}\b/.test(rules), false, 'colour literals must not appear in public/styles.css');
+  assert.equal(/rgba?\(/.test(rules), false, 'rgba() literals must not appear in public/styles.css');
+
+  for (const token of ['--green:#3fb96b', '--blue:#4f8cff', '--radius:6px']) {
+    assert.equal(tokens.includes(token), true, `${token} is missing from shared/tokens.css`);
   }
-  // A token that references itself - directly or through a chain - is invalid at
-  // computed-value time and resolves to nothing, silently. --scrim-soft became
-  // `var(--scrim-soft)` while the literals were being tokenised and quietly broke the menu
-  // scrim while every test stayed green, because a name being "defined" says nothing about
-  // whether its value means anything.
-  const rootBody = css.match(/:root\{([^}]*)\}/)?.[1] ?? '';
-  const tokens = new Map([...rootBody.matchAll(/(--[a-zA-Z0-9-]+)\s*:\s*([^;}]+)/g)].map((m) => [m[1], m[2]]));
-  for (const start of tokens.keys()) {
+
+  const defined = new Set([...tokens.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g)].map((m) => m[1]));
+  for (const source of [tokens, rules]) {
+    for (const [, name] of source.matchAll(/var\((--[a-zA-Z0-9-]+)/g)) {
+      assert.equal(defined.has(name), true, `var(${name}) is used but never defined in shared/tokens.css`);
+    }
+  }
+
+  const rootBody = tokens.match(/:root\{([^}]*)\}/)?.[1] ?? '';
+  const cycleMap = new Map([...rootBody.matchAll(/(--[a-zA-Z0-9-]+)\s*:\s*([^;}]+)/g)].map((m) => [m[1], m[2]]));
+  for (const start of cycleMap.keys()) {
     let current = start;
     const seen = new Set();
     while (current && !seen.has(current)) {
       seen.add(current);
-      current = tokens.get(current)?.match(/var\((--[a-zA-Z0-9-]+)/)?.[1] ?? null;
+      current = cycleMap.get(current)?.match(/var\((--[a-zA-Z0-9-]+)/)?.[1] ?? null;
     }
     assert.notEqual(current, start, `${start} references itself, which is invalid and resolves to nothing`);
   }
-  console.log('design guard: one token block, Relay tokens present, every var() defined');
+
+  console.log('design guard: tokens isolated in shared/tokens.css, no literals in rules, every var() defined, no cycles');
 }
 try {
   assertDesign();

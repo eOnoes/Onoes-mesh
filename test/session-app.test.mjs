@@ -82,7 +82,7 @@ test('M1 actual server process: same URL/store survive restart and stale cookie 
 
 test('actual HTTP: public static shell and all private routes require admission', async t => {
   const app = await fixture(t);
-  for (const route of ['/', '/app.js', '/styles.css', '/pwa-register.mjs', '/sw.js', '/shell-cache-policy.mjs', '/manifest.webmanifest', '/icon.svg']) {
+  for (const route of ['/', '/app.js', '/styles.css', '/shared/tokens.css', '/pwa-register.mjs', '/sw.js', '/shell-cache-policy.mjs', '/manifest.webmanifest', '/icon.svg']) {
     const res = await request(app, route); assert.equal(res.status, 200);
     assert.equal(res.headers['cache-control'].startsWith('public'), true);
     assert.equal(res.headers['content-security-policy'].includes("img-src 'self'"), true);

@@ -34,7 +34,7 @@ function storage(keys = [], cached = response()) {
 }
 
 test('CACHE-BROWSER02: six actual traced request shapes now admitted; original reproduces denial', () => {
-  for (const path of ['/', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg', '/shell-cache-policy.mjs']) {
+  for (const path of ['/', '/app.js', '/styles.css', '/shared/tokens.css', '/manifest.webmanifest', '/icon.svg', '/shell-cache-policy.mjs']) {
     const req = request(path, path === '/' ? { ...traced, 'upgrade-insecure-requests': '1' } : traced, path === '/' ? 'navigate' : 'cors');
     assert.equal(original.getPublicEntry(req, origin), null);
     assert.equal(policy.getPublicEntry(req, origin)?.path, path);
