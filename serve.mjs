@@ -27,7 +27,9 @@ const run = promisify(execFile);
 const PREVIEW_PORT = Number(process.env.MESH_PREVIEW_PORT ?? 4317);
 const DATA_DIR = process.env.MESH_DATA_DIR ?? 'test/app03-mesh';
 const RELAY_ORIGIN = process.env.MESH_RELAY_ORIGIN ?? 'http://127.0.0.1:8787';
-const STRATA_PORTS = [60409, 8080, 1234, 8000];
+// Supervised ports first (18090 Flash-Next, 18091 Qwen3.6, 8098 the llama.cpp exception),
+// then the ad-hoc ports a hand-launched engine might use.
+const STRATA_PORTS = [18095, 18090, 18091, 8098, 60409, 8080, 1234, 8000];
 const KEY_FILE = process.env.MESH_GATE_KEY_FILE ?? 'D:/Dev/Onoes-Relay/.private/relay.key';
 const COOKIE_NAME = 'mesh_session';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 180;
@@ -133,6 +135,13 @@ async function strataHealth() {
       if (!res.ok) continue;
       const health = await res.json();
       if (!health || !health.status) continue;
+      // The supervisor answers /health on these ports while serving nothing:
+      // {"status":"idle","servable":false,"detail":"ENGINE_NOT_BUILT…"}. Treating that as
+      // an engine would report a model that is not loaded, so require a real answer.
+      const servable = health.servable === true
+        || health.loaded === true
+        || ['ok', 'loaded', 'ready', 'busy'].includes(String(health.status).toLowerCase());
+      if (!servable || health.servable === false) continue;
       const props = await fetch(`http://127.0.0.1:${port}/props`, { signal: AbortSignal.timeout(1500) })
         .then((r) => (r.ok ? r.json() : null)).catch(() => null);
       return { port, health, props };

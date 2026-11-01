@@ -1,8 +1,25 @@
 ﻿{
     "schema":  "mesh-inference/v1",
-    "generatedAt":  "2026-11-01T11:25:58.2576903-06:00",
+    "generatedAt":  "2026-11-01T11:49:32.8830832-06:00",
     "host":  "Echo\u0027s PC",
-    "engine":  null,
+    "engine":  {
+                   "name":  "node",
+                   "transport":  "stdio",
+                   "port":  null,
+                   "loaded":  true,
+                   "busy":  null,
+                   "modelAlias":  "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002",
+                   "modelShort":  "\\\"$root\\gguf\\Qwen3 Q3_S",
+                   "modelPath":  "\\\"$root\\gguf\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+                   "contextMax":  null,
+                   "contextLength":  null,
+                   "buildInfo":  null,
+                   "vocabSize":  null,
+                   "wrapper":  null,
+                   "wrapperPid":  41252,
+                   "wrapperRamGB":  0.07,
+                   "startedAt":  "2026-11-01T11:47:39.1937370-06:00"
+               },
     "ollama":  {
                    "running":  true,
                    "port":  11434,
@@ -10,26 +27,26 @@
                },
     "gpu":  {
                 "name":  "NVIDIA GeForce RTX 4080 SUPER",
-                "vramUsedMiB":  2218,
+                "vramUsedMiB":  31962,
                 "vramTotalMiB":  32760,
-                "vramPct":  6.8,
-                "utilPct":  5,
-                "powerW":  15.86,
+                "vramPct":  97.6,
+                "utilPct":  23,
+                "powerW":  18.85,
                 "powerLimitW":  320,
-                "tempC":  31
+                "tempC":  33
             },
     "ram":  {
                 "totalGB":  127.1,
-                "freeGB":  96.4,
-                "usedGB":  30.7,
-                "usedPct":  24.2
+                "freeGB":  45.3,
+                "usedGB":  81.8,
+                "usedPct":  64.4
             },
     "disks":  [
                   {
                       "name":  "C:",
-                      "usedGB":  1453.2,
+                      "usedGB":  1453.7,
                       "totalGB":  1862,
-                      "usedPct":  78
+                      "usedPct":  78.1
                   },
                   {
                       "name":  "D:",
@@ -43,7 +60,7 @@
                        "pps":  null,
                        "contextUsed":  null,
                        "contextPct":  null,
-                       "reason":  "no request observed since this snapshot started"
+                       "reason":  "engine has no HTTP endpoint, so there is no request stream to time"
                    },
     "cost":  {
                  "simulatedUsd":  null,
