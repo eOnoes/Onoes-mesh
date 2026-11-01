@@ -1242,3 +1242,19 @@ footer{background:transparent}
 .shell .nav-rail .tab::before{content:"";display:block;position:absolute;
   left:31px;top:0;width:1px;height:calc(50% - 6px);background:var(--border);
   overflow:hidden;padding:0;border:0;margin:0}
+
+/* The rail footer: Mesh's local session gate, the app refresh and the text size.
+   It sits BELOW whichever panel is showing, so it is reachable on every tab and does not
+   vanish when the rail switches to sessions on Relay. This replaces the old drawer. */
+.shell .nav-rail{display:flex;flex-direction:column}
+.rail-footer{margin-top:auto;padding-top:10px;border-top:1px solid var(--border);
+  display:flex;flex-direction:column;gap:6px;flex:none}
+.rail-footer .actions{display:flex;gap:6px;flex-wrap:wrap;padding:0;border:0}
+.rail-footer button{padding:4px 8px;border:1px solid var(--border);border-radius:6px;
+  background:transparent;color:var(--muted);font:11px var(--mono);min-height:0;
+  text-align:left;cursor:pointer}
+.rail-footer button:hover:enabled{color:var(--ink);border-color:var(--faint)}
+.rail-footer button:disabled{color:var(--faint);cursor:default}
+.rail-footer .rail-btn{width:100%}
+.rail-footer #demo-state{margin:0;font-size:10px;line-height:1.4;color:var(--faint);
+  white-space:normal;overflow:visible;text-overflow:clip}
