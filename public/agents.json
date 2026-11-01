@@ -1,0 +1,39 @@
+{
+  "schema": "mesh-relay-agents/v1",
+  "syncedAt": "2026-11-01T05:18:09.872Z",
+  "source": "http://127.0.0.1:8787",
+  "agents": [
+    {
+      "id": "echo",
+      "name": "Echo",
+      "status": "done",
+      "device": "pc",
+      "backend": "hermes",
+      "dot": "green"
+    },
+    {
+      "id": "cyony",
+      "name": "Cyony",
+      "status": "stopped",
+      "device": "cloud",
+      "backend": "a2a",
+      "dot": "grey"
+    },
+    {
+      "id": "tripp",
+      "name": "Tripp",
+      "status": "waiting",
+      "device": "laptop",
+      "backend": "openclaw",
+      "dot": "blue"
+    },
+    {
+      "id": "dsh",
+      "name": "Deep",
+      "status": "waiting",
+      "device": "pc",
+      "backend": "a2a",
+      "dot": "blue"
+    }
+  ]
+}

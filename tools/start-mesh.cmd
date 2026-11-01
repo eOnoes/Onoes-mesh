@@ -35,6 +35,8 @@ rem parameter only exists in PowerShell 7, and this script may run under Windows
 rem PowerShell 5.1, where it fails with "parameter cannot be found". That bug was latent
 rem for exactly as long as the app was already running, because the check above returned
 rem first every time.
+rem Refresh the Relay agent snapshot. Best effort: never blocks the boot.
+node "%DIR%\tools\sync-relay-agents.mjs" 2>nul
 set "MESH_DATA_DIR=test/app03-mesh"
 set "MESH_PREVIEW_PORT=4317"
 

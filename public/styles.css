@@ -369,7 +369,10 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
      a second line at the left edge. */
   .tbar{display:flex;flex-wrap:nowrap;gap:8px}
   .tbar .ttl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:auto}
-  .tbar .wd,.tbar .rail-toggle,.tbar .cpy,.tbar .agent-tabs{flex:none}
+  .tbar .wd,.tbar .rail-toggle,.tbar .cpy{flex:none}
+  /* the pills yield space so copy-all stays on screen; they scroll instead */
+  .tbar .agent-tabs{flex:1 1 auto;min-width:0;overflow-x:auto}
+  .tbar .agent-tabs .agent{padding:4px 8px}
   .content-layout{padding:12px}
 }
 
@@ -501,3 +504,18 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
 /* The menu must work at every width: on desktop it collapses the rail, on a phone it
    hides the horizontal strip. The class rule therefore lives outside the breakpoint. */
 .shell.rail-collapsed .nav-rail{display:none}
+
+/* ============================================================================
+   Agent pills - Relay's .tdot, 7px, ported. Shown only on the Relay tab, beside
+   the menu, exactly as the reference does.
+   ============================================================================ */
+.tdot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--faint)}
+.tdot[data-dot="green"]{background:var(--green)}
+.tdot[data-dot="blue"]{background:var(--blue)}
+.tdot[data-dot="grey"]{background:var(--faint)}
+.tdot[data-dot="red"]{background:var(--danger)}
+.agent-tabs .agent{display:flex;align-items:center;gap:6px;padding:4px 10px;font-size:12px;
+  border-radius:6px;border:1px solid transparent;background:transparent;color:var(--quiet);
+  font-family:var(--sans);white-space:nowrap;min-height:28px}
+.agent-tabs .agent:hover{color:var(--ink)}
+.agent-tabs .agent[aria-pressed="true"]{background:var(--raised);border-color:var(--border);color:var(--ink)}

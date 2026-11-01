@@ -78,3 +78,67 @@ if (copyButton) {
     }
   });
 }
+// ---------------------------------------------------------------------------------
+// Agent pills.
+//
+// Relay is the source of truth. public/agents.json is a snapshot written by
+// tools/sync-relay-agents.mjs, because Mesh's server refuses live connections on
+// purpose. They show only on the Relay tab, beside the menu, as the reference does.
+// ---------------------------------------------------------------------------------
+const agentSlot = document.getElementById('agent-tabs');
+const relayTab = document.getElementById('tab-relay');
+const AGENT_KEY = 'mesh-agent';
+
+function selectAgent(id) {
+  document.documentElement.dataset.agent = id;
+  try { localStorage.setItem(AGENT_KEY, id); } catch { /* storage may be blocked */ }
+  if (agentSlot) {
+    agentSlot.querySelectorAll('.agent').forEach((el) => {
+      el.setAttribute('aria-pressed', String(el.dataset.agent === id));
+    });
+  }
+}
+
+function syncAgentVisibility() {
+  if (!agentSlot) return;
+  const onRelay = relayTab ? relayTab.getAttribute('aria-selected') === 'true' : false;
+  agentSlot.hidden = !onRelay || agentSlot.children.length === 0;
+}
+
+async function loadAgents() {
+  if (!agentSlot) return;
+  try {
+    const response = await fetch('/agents.json', { cache: 'no-store' });
+    if (!response.ok) return;
+    const data = await response.json();
+    const agents = Array.isArray(data.agents) ? data.agents : [];
+    if (!agents.length) return;
+    let saved = '';
+    try { saved = localStorage.getItem(AGENT_KEY) || ''; } catch { /* storage may be blocked */ }
+    agentSlot.replaceChildren();
+    for (const agent of agents) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'tab agent';
+      button.dataset.agent = agent.id;
+      button.setAttribute('aria-pressed', String(agent.id === saved));
+      button.title = `${agent.name} · ${agent.status} · ${agent.device}`;
+      const dot = document.createElement('span');
+      dot.className = 'tdot';
+      dot.dataset.dot = agent.dot || 'grey';
+      const label = document.createElement('span');
+      label.textContent = agent.name;
+      button.append(dot, label);
+      button.addEventListener('click', () => selectAgent(agent.id));
+      agentSlot.append(button);
+    }
+    if (saved) document.documentElement.dataset.agent = saved;
+    syncAgentVisibility();
+  } catch { /* leave the slot hidden */ }
+}
+
+if (agentSlot && relayTab) {
+  new MutationObserver(syncAgentVisibility)
+    .observe(relayTab, { attributes: true, attributeFilter: ['aria-selected'] });
+  loadAgents();
+}
