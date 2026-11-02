@@ -374,11 +374,29 @@ function readBody(req, limit = 1_000_000) {
 
 // --- Server --------------------------------------------------------------------------
 const token = gateToken();
-const app = await startApp({ dataDir: DATA_DIR });
+// A working session, not a five-minute demo one: the operator was being logged out
+// mid-thought, which disabled the whole UI including the Relay prompt. The cookie's
+// Max-Age is derived from this TTL, so raising one raises both.
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const app = await startApp({ dataDir: DATA_DIR, sessionTtlMs: SESSION_TTL_MS });
 const backend = new URL(app.url);
 
 const server = http.createServer(async (req, res) => {
-  const deny = () => { req.resume(); send(res, 403, 'forbidden'); };
+  // A denial with no reason is undebuggable. The operator hit a bare "forbidden"
+  // twice; this records which check refused, and the headers that decided it, with
+  // no token or cookie value ever written.
+  const deny = (reason) => {
+    req.resume();
+    try {
+      console.log(JSON.stringify({
+        event: 'gate_denied', reason, method: req.method, url: String(req.url).slice(0, 200),
+        host: req.headers.host ?? null, xfh: req.headers['x-forwarded-host'] ?? null,
+        xfp: req.headers['x-forwarded-proto'] ?? null, origin: req.headers.origin ?? null,
+        sfs: req.headers['sec-fetch-site'] ?? null, at: new Date().toISOString(),
+      }));
+    } catch { /* logging must never break a response */ }
+    send(res, 403, 'forbidden');
+  };
   const scheme = req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   const externalOrigin = `${scheme}://${req.headers.host}`;
   // Same-origin check. `tailscale serve` terminates TLS and forwards with Host
@@ -400,12 +418,12 @@ const server = http.createServer(async (req, res) => {
       String(process.env.MESH_EXTERNAL_HOST || '').toLowerCase()].filter(Boolean),
   );
   const secFetchSite = req.headers['sec-fetch-site'];
-  if (secFetchSite && !['same-origin', 'none'].includes(secFetchSite)) return deny();
+  if (secFetchSite && !['same-origin', 'none'].includes(secFetchSite)) return deny('sec-fetch-site:' + secFetchSite);
   if (req.headers.origin && secFetchSite !== 'same-origin') {
     const originHost = hostOf(req.headers.origin);
-    if (!originHost || !allowedHosts.has(originHost)) return deny();
+    if (!originHost || !allowedHosts.has(originHost)) return deny('origin-host:' + (originHost || 'unparseable'));
   }
-  if (!req.url.startsWith('/') || req.url.startsWith('//')) return deny();
+  if (!req.url.startsWith('/') || req.url.startsWith('//')) return deny('url-shape');
 
   const url = new URL(req.url, externalOrigin);
   const path = url.pathname;

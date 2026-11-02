@@ -66,7 +66,11 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new Error('A valid loopback port is required.');
-  if (!Number.isSafeInteger(sessionTtlMs) || sessionTtlMs < 1 || sessionTtlMs > 300000) throw new Error('APP03 demo lifetime must be 1..300000 ms.');
+  // The demo cap used to be 5 minutes, which is unusable for an operator: every pause
+  // expired the session and the UI disabled itself. The manager underneath already
+  // caps at 24 h (integer(ttlMs, 1, 86_400_000) in trial-session.mjs), so this only
+  // lifts startApp's stricter demo bound. The default TTL is still 5 minutes.
+  if (!Number.isSafeInteger(sessionTtlMs) || sessionTtlMs < 1 || sessionTtlMs > 86_400_000) throw new Error('Session lifetime must be 1..86400000 ms (24 h).');
   if (typeof dataDir !== 'string' || !/^(?:test[\\/]app03-[a-zA-Z0-9_-]+|data[\\/][a-zA-Z0-9_-]+)$/.test(dataDir)) throw new Error('An owned data/ directory or disposable test/app03- directory is required.');
   if (Object.keys(serviceConfig).length || inferenceConfig !== undefined) throw new Error('Live connections are outside APP03.');
   if (!['local_registry', 'disposable_fixture', 'frozen_manager_projection'].includes(activitySource)) throw new Error('Invalid activity source label.');
@@ -169,7 +173,17 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if (!current()) return;
       } else {
         const hosts = req.rawHeaders.filter((v, i) => i % 2 === 0 && v.toLowerCase() === 'host');
-        if (hosts.length !== 1 || req.headers.host !== `127.0.0.1:${server.address().port}`) { deny(403); return; }
+        if (hosts.length !== 1 || req.headers.host !== `127.0.0.1:${server.address().port}`) {
+          // Diagnosable on purpose: a 403 from here is a rewritten or duplicated Host,
+          // and without the values the operator only sees an empty "Forbidden" page.
+          try {
+            console.log(JSON.stringify({ event: 'app_host_denied', url: String(route).slice(0, 120),
+              hostCount: hosts.length, host: req.headers.host ?? null,
+              expected: `127.0.0.1:${server.address().port}`, at: new Date().toISOString() }));
+          } catch { /* never break the response */ }
+          deny(403);
+          return;
+        }
         if (['GET', 'HEAD'].includes(req.method) && staticFiles.has(route)) {
           const [file, type] = staticFiles.get(route); return send(200, await readFile(path.join(ROOT, file)), type, true);
         }
