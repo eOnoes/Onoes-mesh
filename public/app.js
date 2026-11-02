@@ -180,8 +180,25 @@ async function api(route, options = {}) {
     checkRequest();
     // Bootstrap is only called by the explicit Start button. Its 401 expires
     // an invalid cookie; retry once so restart recovery takes one click.
-    if (bootstrap && response.status === 401) response = await fetch(route, requestOptions);
-    checkRequest();
+    //
+    // The retry has to wait a beat. The 401 carries a clearing Set-Cookie for the
+    // stale session; retrying in the same tick can beat the cookie jar, in which case
+    // the server sees the dead cookie again and answers 403 — which surfaces to the
+    // operator as "Invalid local task session admission response." That is the exact
+    // failure this delay removes.
+    if (bootstrap && response.status === 401) {
+      await new Promise(resolve => setTimeout(resolve, 120));
+      checkRequest();
+      response = await fetch(route, requestOptions);
+      checkRequest();
+      // Still refused with the dead cookie attached: ask the server to clear it,
+      // then try once more. Clearing is explicit, never assumed.
+      if (response.status === 403) {
+        await fetch('/api/trial-session/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store' }).catch(() => {});
+        response = await fetch(route, requestOptions);
+        checkRequest();
+      }
+    }
     // Only the deliberate Start operation can request recovery of a live
     // cookie whose old proof was cleared. Bootstrap's guard stays intact.
     if (bootstrap && response.status === 403) return { recoveryRequired: true };
