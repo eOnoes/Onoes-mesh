@@ -47,6 +47,27 @@ test('snapshot maps the real agents, including the ones Mesh has never seen', as
   } finally { await relay.close(); }
 });
 
+test('snapshot picks a primary conversation, and says so when there is none', async () => {
+  const withConv = await fakeRelay(jsonRoute(AGENTS));
+  try {
+    const link = await createRelayHttpLink({ baseUrl: withConv.url, token: 'gate-token' });
+    const snap = await link.snapshot();
+    assert.equal(snap.status, 'fresh');
+    assert.equal(snap.primaryAgentId, 'echo', 'first agent with a conversation is primary');
+    assert.equal(snap.conversationId, 'c-echo');
+    assert.deepEqual(snap.links, [], 'no fabricated links: the index lives in Workroom now');
+  } finally { await withConv.close(); }
+
+  const noConv = await fakeRelay(jsonRoute(AGENTS.map(a => ({ ...a, conversation_id: null }))));
+  try {
+    const link = await createRelayHttpLink({ baseUrl: noConv.url, token: 'gate-token' });
+    const snap = await link.snapshot();
+    assert.equal(snap.status, 'unavailable');
+    assert.match(snap.error, /no agent has an active conversation/i);
+    assert.equal(snap.conversationId, null, 'must not invent a conversation to send into');
+  } finally { await noConv.close(); }
+});
+
 test('the gate token is sent as a bearer on API calls and never on the shell', async () => {
   const seen = [];
   const relay = await fakeRelay((req, res) => {

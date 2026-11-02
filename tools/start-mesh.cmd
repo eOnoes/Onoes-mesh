@@ -41,6 +41,10 @@ node "%DIR%\tools\sync-relay-chat.mjs" 2>nul
 powershell -NoProfile -ExecutionPolicy Bypass -File "%DIR%\tools\sync-inference.ps1" >nul 2>&1
 set "MESH_DATA_DIR=test/app03-mesh"
 set "MESH_PREVIEW_PORT=4317"
+rem Gate G2 = A (2026-11-01): talk to the LIVE Relay over HTTP instead of driving a
+rem vendored copy of it over stdio. The default inside server.mjs is still 'child', so
+rem deleting this line returns to the old path without touching any code.
+set "MESH_RELAY_MODE=http"
 
 rem Start-Process rather than `start /B` with a redirect: the latter keeps a stdout handle
 rem open and the caller waits on a server that never exits.
