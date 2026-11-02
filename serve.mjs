@@ -381,7 +381,25 @@ const server = http.createServer(async (req, res) => {
   const deny = () => { req.resume(); send(res, 403, 'forbidden'); };
   const scheme = req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   const externalOrigin = `${scheme}://${req.headers.host}`;
-  if (req.headers.origin && req.headers.origin !== externalOrigin) return deny();
+  // Same-origin check, with one deliberate concession: `tailscale serve` terminates
+  // TLS and forwards the request with a REWRITTEN Host (127.0.0.1:4317) while the
+  // browser's Origin stays https://<name>.ts.net:8446. Comparing Origin to the raw
+  // Host therefore 403'd every POST from the tailnet while GETs worked — the operator
+  // saw a bare "Forbidden" page after the app had visibly loaded. The forwarded host
+  // is the honest source for that comparison; when a proxy supplies none, the raw
+  // Host is all we have and the old comparison still applies.
+  const hostOf = value => {
+    try { return new URL(value).host.toLowerCase(); } catch { return ''; }
+  };
+  const forwardedHost = String(req.headers['x-forwarded-host'] || '').split(',')[0].trim().toLowerCase();
+  const allowedHosts = new Set(
+    [String(req.headers.host || '').toLowerCase(), forwardedHost,
+      String(process.env.MESH_EXTERNAL_HOST || '').toLowerCase()].filter(Boolean),
+  );
+  if (req.headers.origin) {
+    const originHost = hostOf(req.headers.origin);
+    if (!originHost || !allowedHosts.has(originHost)) return deny();
+  }
   if (req.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(req.headers['sec-fetch-site'])) return deny();
   if (!req.url.startsWith('/') || req.url.startsWith('//')) return deny();
 
