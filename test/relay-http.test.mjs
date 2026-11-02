@@ -115,13 +115,130 @@ test('oversized responses are refused', async () => {
   } finally { await relay.close(); }
 });
 
-test('sending is explicitly not implemented in this stage — it does not pretend', async () => {
-  const relay = await fakeRelay(jsonRoute(AGENTS));
+// Relay's own validator requires a UUID conversation id; the snapshot fixture above
+// uses readable slugs, so the message fixture is separate rather than loosening the rule.
+const CONV = '11111111-1111-4111-8111-111111111111';
+const AGENTS_FOR_MESSAGE = AGENTS.map(a => (a.id === 'echo' ? { ...a, conversation_id: CONV } : a));
+
+function relayForMessage({ status = 200, body = { ok: true, queued: 1 } } = {}) {
+  const seen = [];
+  const handler = (req, res) => {
+    const url = req.url;
+    if (url === '/api/agents' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(AGENTS_FOR_MESSAGE));
+      return;
+    }
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      seen.push({ url, method: req.method, body: data ? JSON.parse(data) : null });
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(body));
+    });
+  };
+  return { seen, handler };
+}
+
+function fakeStore(result = { taskId: 'task-1', duplicate: false }) {
+  const calls = [];
+  return {
+    calls,
+    linkRelay(args) {
+      calls.push(args);
+      if (result instanceof Error) throw result;
+      return result;
+    },
+  };
+}
+
+const MESSAGE = { id: 'msg-1', text: 'ship it', conversationId: CONV, meshIntent: 'create_task' };
+
+test('a message goes to Relay first, then the link is written locally', async () => {
+  const fake = relayForMessage();
+  const store = fakeStore();
+  const relay = await fakeRelay(fake.handler);
   try {
-    const link = await createRelayHttpLink({ baseUrl: relay.url, token: 'gate-token' });
+    const link = await createRelayHttpLink({ baseUrl: relay.url, token: 'gate-token', store });
+    const result = await link.message(MESSAGE, () => true);
+    assert.equal(result.ok, true);
+    assert.equal(result.agentId, 'echo', 'the agent is resolved from the conversation, not assumed');
+    assert.equal(result.taskId, 'task-1');
+    assert.equal(result.duplicate, false);
+    const post = fake.seen.find(r => r.method === 'POST');
+    assert.equal(post.url, '/api/agents/echo/message');
+    assert.deepEqual(post.body, { id: 'msg-1', text: 'ship it', files: [] });
+    assert.equal(store.calls.length, 1);
+    assert.deepEqual(store.calls[0], {
+      scope: 'relay:mesh', conversationId: CONV, messageId: 'msg-1', text: 'ship it',
+    });
+  } finally { await relay.close(); }
+});
+
+test('an unknown conversation is refused before anything is sent', async () => {
+  const fake = relayForMessage();
+  const store = fakeStore();
+  const relay = await fakeRelay(fake.handler);
+  try {
+    const link = await createRelayHttpLink({ baseUrl: relay.url, token: 'gate-token', store });
     await assert.rejects(
-      link.message({ id: 'm1', text: 'hello', conversationId: 'c-echo', meshIntent: 'create_task' }),
-      error => error instanceof TaskError && error.status === 503 && /R8b/.test(error.message),
+      link.message({ ...MESSAGE, conversationId: '00000000-0000-4000-8000-000000000000' }, () => true),
+      error => error instanceof TaskError && error.status === 409,
+    );
+    assert.equal(fake.seen.filter(r => r.method === 'POST').length, 0, 'no message may leave');
+    assert.equal(store.calls.length, 0, 'no task may be created');
+  } finally { await relay.close(); }
+});
+
+test('a refusal from Relay writes no link', async () => {
+  const fake = relayForMessage({ status: 400, body: { ok: false, error: 'bad' } });
+  const store = fakeStore();
+  const relay = await fakeRelay(fake.handler);
+  try {
+    const link = await createRelayHttpLink({ baseUrl: relay.url, token: 'gate-token', store });
+    await assert.rejects(
+      link.message(MESSAGE, () => true),
+      error => error instanceof TaskError && error.status === 400,
+    );
+    assert.equal(store.calls.length, 0);
+  } finally { await relay.close(); }
+});
+
+test('a duplicate send still links, and says so', async () => {
+  const fake = relayForMessage({ body: { ok: true, duplicate: true } });
+  const store = fakeStore({ taskId: 'task-9', duplicate: true });
+  const relay = await fakeRelay(fake.handler);
+  try {
+    const link = await createRelayHttpLink({ baseUrl: relay.url, token: 'gate-token', store });
+    const result = await link.message(MESSAGE, () => true);
+    assert.equal(result.taskId, 'task-9');
+    assert.equal(result.duplicate, true);
+  } finally { await relay.close(); }
+});
+
+test('an expired admission sends nothing', async () => {
+  const fake = relayForMessage();
+  const store = fakeStore();
+  const relay = await fakeRelay(fake.handler);
+  try {
+    const link = await createRelayHttpLink({ baseUrl: relay.url, token: 'gate-token', store });
+    await assert.rejects(
+      link.message(MESSAGE, () => false),
+      error => error instanceof TaskError && error.status === 403,
+    );
+    assert.equal(fake.seen.filter(r => r.method === 'POST').length, 0);
+  } finally { await relay.close(); }
+});
+
+test('a failed link says the message was sent rather than pretending it was not', async () => {
+  const fake = relayForMessage();
+  const store = fakeStore(new Error('disk full'));
+  const relay = await fakeRelay(fake.handler);
+  try {
+    const link = await createRelayHttpLink({ baseUrl: relay.url, token: 'gate-token', store });
+    await assert.rejects(
+      link.message(MESSAGE, () => true),
+      error => error instanceof TaskError && error.status === 503 && /accepted the message/.test(error.message),
     );
   } finally { await relay.close(); }
 });
