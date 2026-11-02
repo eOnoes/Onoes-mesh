@@ -9,6 +9,7 @@ import { prepareExecution, executeOwned } from './lib/command-execution.mjs';
 import { createConnectionReader, readFixedInference, normalizeInference, emptyInference } from './lib/service-connections.mjs';
 import { createTrialSessionManager, createTrialHttpGuard, SESSION_COOKIE_NAME } from './lib/trial-session.mjs';
 import { createRelayLink } from './lib/relay-link.mjs';
+import { createRelayHttpLink } from './lib/relay-http.mjs';
 import { createNodeProbeReader } from './lib/node-probes.mjs';
 import { createLocalInference, createDisabledLocalAdapter } from './lib/local-inference.mjs';
 
@@ -100,7 +101,20 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const activeRuns = new Map();
   let executionPersistenceFailed = false;
   try { store = openTaskStore(filename); } catch { /* Preserve invalid data; serve a visible failure. */ }
-  const relay = await createRelayLink({ root: ROOT, directory, confine: confinedPath, store, enabled: relayEnabled });
+  // Gate G2 = A: the shell talks to the LIVE Relay over HTTP instead of driving a
+  // modified copy of it. Staged behind an explicit flag so the default path is
+  // byte-for-byte what it was; `child` stays until R8d deletes the fork.
+  //
+  // The token defaults to Relay's own gate key on this PC. Mesh holds it server-side
+  // and never returns it to a browser; if the file is missing the bridge reports 503
+  // rather than falling back to an unauthenticated call.
+  const relayMode = String(process.env.MESH_RELAY_MODE ?? 'child').toLowerCase();
+  const relay = relayMode === 'http'
+    ? await createRelayHttpLink({
+      baseUrl: process.env.MESH_RELAY_URL ?? 'http://127.0.0.1:8787',
+      tokenFile: process.env.MESH_RELAY_TOKEN_FILE ?? 'D:\\Dev\\Onoes-Relay\\.private\\relay.key',
+    })
+    : await createRelayLink({ root: ROOT, directory, confine: confinedPath, store, enabled: relayEnabled });
   // Only hashes of fixed source code/CSS authorize the existing native HTML.
   // srcdoc receives that HTML via an admitted API read, never a public route.
   let relayScriptHashes = '', relayStyleHashes = '';
