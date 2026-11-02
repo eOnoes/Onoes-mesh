@@ -1318,3 +1318,8 @@ footer{background:transparent}
   .ctl-grid{grid-template-columns:minmax(0,1fr);gap:8px}
   .ctl-svc{grid-template-columns:56px 36px minmax(0,1fr)}
 }
+
+/* Gate G2 follow-up: an admitted session is visibly green, so 'Start local session'
+   cannot look successful and do nothing. Colour comes from the token, never a literal. */
+#demo-start.ok{border-color:var(--green);color:var(--green);background:var(--raised)}
+#demo-start.ok:hover:enabled{border-color:var(--green);color:var(--green)}

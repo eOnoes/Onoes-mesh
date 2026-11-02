@@ -118,7 +118,7 @@ function controls() {
   localInferenceControls();
 }
 function clearPrivate(reason) {
-  generation++; admitted = false; demo = undefined; selected = undefined; staleSelection = false;
+  generation++; admitted = false; try { demo-start.classList.remove('ok'); } catch { } demo = undefined; selected = undefined; staleSelection = false;
   watchedRun = undefined; cancellingRun = undefined;
   localInferenceSnapshot = undefined; localInferenceProposal = undefined;
   $('local-inference-prompt').value = ''; $('local-inference-response').textContent = '';
@@ -719,7 +719,7 @@ function startSession() { return action(async () => {
   const admissionDemo = demo; const admissionGeneration = generation;
   await api('/api/health');
   if (!currentDemo(admissionDemo, admissionGeneration)) return;
-  admitted = true;
+  admitted = true; try { demo-start.classList.add('ok'); } catch { }
   sessionRecoveryError = '';
   $('demo-state').textContent = 'Local task access verified by server. No human identity or execution approval.';
   await refresh();
@@ -787,7 +787,7 @@ if (savedDemo && navigator.onLine) {
     const admissionDemo = demo; const admissionGeneration = generation;
     await api('/api/health');
     if (!currentDemo(admissionDemo, admissionGeneration)) return;
-    admitted = true;
+    admitted = true; try { demo-start.classList.add('ok'); } catch { }
     try { sessionStorage.setItem(nonceKey, JSON.stringify(demo)); } catch { /* RAM only. */ }
     $('demo-state').textContent = 'Local task access verified after refresh. No human identity or execution approval.';
     await refresh();
