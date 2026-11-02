@@ -381,13 +381,16 @@ const server = http.createServer(async (req, res) => {
   const deny = () => { req.resume(); send(res, 403, 'forbidden'); };
   const scheme = req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   const externalOrigin = `${scheme}://${req.headers.host}`;
-  // Same-origin check, with one deliberate concession: `tailscale serve` terminates
-  // TLS and forwards the request with a REWRITTEN Host (127.0.0.1:4317) while the
-  // browser's Origin stays https://<name>.ts.net:8446. Comparing Origin to the raw
-  // Host therefore 403'd every POST from the tailnet while GETs worked — the operator
-  // saw a bare "Forbidden" page after the app had visibly loaded. The forwarded host
-  // is the honest source for that comparison; when a proxy supplies none, the raw
-  // Host is all we have and the old comparison still applies.
+  // Same-origin check. `tailscale serve` terminates TLS and forwards with Host
+  // rewritten to 127.0.0.1:4317 while the browser's Origin stays
+  // https://<name>.ts.net:8446, so comparing Origin against the raw Host 403'd every
+  // POST from the tailnet — and every RELOAD, which re-sends Origin on a navigation.
+  // That is why the app loaded once and then said "forbidden".
+  //
+  // The browser's own `Sec-Fetch-Site` is the better signal: page script cannot set
+  // it, and a cross-site request is marked `cross-site`. When it is absent (curl, an
+  // older client), fall back to comparing by host against Host / X-Forwarded-Host /
+  // MESH_EXTERNAL_HOST — which still refuses a foreign origin.
   const hostOf = value => {
     try { return new URL(value).host.toLowerCase(); } catch { return ''; }
   };
@@ -396,11 +399,12 @@ const server = http.createServer(async (req, res) => {
     [String(req.headers.host || '').toLowerCase(), forwardedHost,
       String(process.env.MESH_EXTERNAL_HOST || '').toLowerCase()].filter(Boolean),
   );
-  if (req.headers.origin) {
+  const secFetchSite = req.headers['sec-fetch-site'];
+  if (secFetchSite && !['same-origin', 'none'].includes(secFetchSite)) return deny();
+  if (req.headers.origin && secFetchSite !== 'same-origin') {
     const originHost = hostOf(req.headers.origin);
     if (!originHost || !allowedHosts.has(originHost)) return deny();
   }
-  if (req.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(req.headers['sec-fetch-site'])) return deny();
   if (!req.url.startsWith('/') || req.url.startsWith('//')) return deny();
 
   const url = new URL(req.url, externalOrigin);
