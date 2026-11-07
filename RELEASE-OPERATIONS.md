@@ -285,3 +285,20 @@ the card to see tab B's saved value. Copy any draft you want to reapply before
 cancelling. No silent overwrite or automatic merge. Both actual live Tailscale
 board tabs also stayed connected after opening the second and refreshing the
 first; owner cards were not edited for this check.
+
+## Device-wide GPU metric validity (2026-11-07)
+
+The NVIDIA collector now parses exactly one10-field device sample. Explicit zero
+is valid; blank, unsupported, nonnumeric, negative and nonfinite counters remain
+unknown. Percent counters outside0–100 are unknown; zero/unknown total memory
+cannot produce a percentage, and used memory above its reported total is refused.
+Malformed, oversized and multi-device output is unavailable rather than silently
+blending cards or choosing a GPU. Supporting multiple devices requires a separate
+per-device view; three machines are not assumed to mean one summed GPU sample.
+
+The API marks these figures scope=device, attribution=unverified. Control notes
+state that the whole graphics card includes other apps and per-model usage is
+unavailable. High usage is not proof that a new model can load or must evict an
+existing one. Existing15s hardware freshness/clearing and separate5s supervisor
+observation rules remain unchanged. D2's strong model/runtime/GPU attribution and
+D3's real control lifecycle are still open; no model operation was qualified here.

@@ -1,3 +1,4 @@
+import {parseGpuMetrics} from './lib/gpu-metrics.mjs';
 import { tailscaleAccess } from './lib/tailscale-access.mjs';
 import {requestAudit,auditReason} from './lib/request-audit.mjs';
 // Mesh's serving layer: the app, a shared-token gate, and the two live connections.
@@ -250,19 +251,7 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
     readSupervisorModels(),
   ]);
 
-  let gpu = null;
-  if (gpuOut) {
-    const f = gpuOut.split(',').map((x) => x.trim());
-    const used = Number(f[1]); const total = Number(f[2]);
-    gpu = {
-      name: f[0], vramUsedMiB: used, vramTotalMiB: total,
-      vramPct: total > 0 ? Math.round((1000 * used) / total) / 10 : null,
-      utilPct: Number(f[3]), powerW: Number(f[4]), powerLimitW: Number(f[5]), tempC: Number(f[6]),
-      fanPct: Number.isFinite(Number(f[7])) ? Number(f[7]) : null,
-      clockMHz: Number.isFinite(Number(f[8])) ? Number(f[8]) : null,
-      memClockMHz: Number.isFinite(Number(f[9])) ? Number(f[9]) : null,
-    };
-  }
+  const gpu = parseGpuMetrics(gpuOut);
 
   const ram = { usedPct: null, usedGB: null, totalGB: null };
   if (psOut && psOut.ramTotalGB) {
@@ -295,15 +284,15 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
     { id: 'lmstudio', label: 'LM Studio', base: '127.0.0.1:1234', ...lmstudio },
     { id: 'comfyui', label: 'ComfyUI', base: '127.0.0.1:8188', ...comfyui }];
 
-  const hints = [];
+  const hints = [gpu ? "GPU and VRAM figures cover the whole graphics card, including other apps. Per-model usage is unavailable." : "GPU readings unavailable: no single valid graphics-card sample."];
   if(supervised)hints.push(...supervised.hints);
   else if (!strata) hints.push('No inference engine answered. Model status is unavailable.');
   if (ollama.reachable && ollama.loadedCount === 0) hints.push('Ollama is up with no resident models.');
   if (!ollama.reachable) hints.push('Ollama is not answering on 11434.');
   if (!lmstudio.reachable) hints.push('LM Studio is not answering on 1234.');
   if (!comfyui.reachable) hints.push('ComfyUI is not answering on 8188.');
-  if (gpu && gpu.vramPct >= 90) hints.push('VRAM is above 90% - a new load will have to evict.');
-  if (psOut && psOut.cpuLoad >= 85) hints.push('CPU is above 85%; prompt processing will be slow.');
+  if (gpu && gpu.vramPct >= 90) hints.push('GPU memory is above 90%. Check available memory before loading another model.');
+  if (psOut && psOut.cpuLoad >= 85) hints.push('CPU is above 85%; other work may compete for processing.');
 
   return {
     schema: 'mesh-inference/live-v2',
