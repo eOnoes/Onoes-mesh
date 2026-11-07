@@ -80,3 +80,44 @@ The current global /admin/unload has no expected-resident identity and cannot
 safely serve as Mesh's qualified stop adapter. The proxy holds its lock through
 generation, so disconnect/cancel behavior also requires explicit qualification.
 Preserve the active resident model while preparing this work.
+
+## Relay service recovery
+
+Use `powershell -NoProfile -File integrations/relay-service.ps1 -Action Status`
+to identify the existing loopback service and its launcher/listener PIDs. `-Action
+Start` starts the existing installed service hidden only when no matching process
+is running or starting and its port is free. It never kills a process or modifies
+Relay source/config/credentials. An unrecognized port owner is a refusal, not a
+cleanup target. This is an explicit recovery helper, not a new periodic task.
+Relay data remains in its original private store; take an online SQLite snapshot
+before recovery/maintenance. Restoring Relay does not restart its agent backends.
+
+## Prepared Nemotron control component - not live
+
+`lib/supervisor_mesh_control.py` now contains the fixed-Nemotron owner gate,
+retained-supervisor binding and versioned routing seam. Run `npm run
+test:supervisor-control` for its refusal, receipt, original-process and restart
+tests. The component accepts only a verified empty lane for load or the exact
+verified Nemotron resident for unload. It never adopts or terminates a discovered
+PID. Binary/path/arguments/working-directory/listener evidence must match; load
+requires child health/model readback. Expected-state tokens are consumed before
+work; duplicate commands return receipts, changed payloads conflict, stale owners
+and busy native work refuse. New boots invalidate old tokens; lost/unknown
+receipts must be inspected, never converted into a fresh automatic replay.
+
+`node integrations/prepare-nemotron-supervisor.mjs` writes a fresh candidate under
+private data/, pins its original supervisor/dependency/runtime hashes, and checks
+Python syntax. It changes no live source and starts no model/supervisor. Then
+`npm run test:supervisor-candidate` exercises the actual patched Handler on
+disposable HTTP ports with a fake owner. Those tests are not native lifecycle
+qualification. The candidate has bounded JSON routes only on the existing8099
+lane, code/boot identity and receipt reads that remain available while an owner
+operation holds its lock. Existing legacy endpoints are preserved.
+
+Still required before enabling Mesh controls: durable Mesh operation receipts and
+protocol adapter/UI integration, revalidate and review the live candidate source,
+coordinate the supervisor cutover, then prove real Nemotron load/unload, chat
+cancellation, lost response and restart recovery. The current resident model is
+untouched. Prepared code and passing fixtures do not enable native controls.
+Generated Python bytecode is excluded from source backups/release hashes; the
+Python source itself remains included and versioned.

@@ -10,6 +10,8 @@
     "start": "node test/m1-serve.mjs",
     "check": "node test/check.mjs",
     "test": "node test/check.mjs --test && node --test --test-timeout=20000 test/m1-serve.test.mjs",
-    "test:ui": "node test/check.mjs --ui"
+    "test:ui": "node test/check.mjs --ui",
+    "test:supervisor-control": "python -m unittest test.supervisor_mesh_control_test -v",
+    "test:supervisor-candidate": "python -m unittest test.supervisor_candidate_http_test -v"
   }
 }
