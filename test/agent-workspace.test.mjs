@@ -1,6 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {agentWorkspace,agentObservationLabel} from '../public/agent-workspace.mjs';
+import {agentWorkspace,agentObservationLabel,agentAssignmentLabel} from '../public/agent-workspace.mjs';
+import {automationPolicy} from '../lib/workroom-automation-store.mjs';
+
+test('Agent role labels use enforced policy and never infer connection or coding access',()=>{
+  const policy=automationPolicy('C:/Qualified Mesh');
+  assert.match(agentAssignmentLabel('echo',policy),/role: builder\./);
+  for(const id of ['dsh','nims']) assert.match(agentAssignmentLabel(id,policy),/role: reviewer\./);
+  assert.ok(agentAssignmentLabel('echo',policy).includes(`Workspace: ${policy.workspace}. Limit: 50 actions`));
+  assert.match(agentAssignmentLabel('echo',policy),/not proof of current coding access/);
+  assert.match(agentAssignmentLabel('tripp',policy),/No automatic build or review role/);
+  for(const invalid of [null,{}, {...policy,schema:'other'}, {...policy,actionLimit:500}, {...policy,workspace:''}, {...policy,builderIds:[{}]}]){
+    assert.match(agentAssignmentLabel('echo',invalid),/roles unavailable/);
+  }
+});
 
 test('agent workspace links exact peer receipts while preserving historical sessions and pending review', () => {
   const snapshot = {agents:[{id:'deep',name:'Deep',backend:'a2a',status:'done',conversation_id:'new',approval:null}]};

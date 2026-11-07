@@ -24,7 +24,20 @@ export function agentObservationLabel(snapshot) {
   return `${time ? 'Relay roster read at ' + time : 'Relay roster check time unavailable'}. Saved observation; refresh to check again. Agent status is separate from task completion.`;
 }
 
-export function renderAgentWorkspace(root, snapshot, tasks, openTask) {
+export function agentAssignmentLabel(agentId, policy) {
+  const valid = policy?.schema === 'mesh-team-policy/v1' &&
+    typeof policy.workspace === 'string' && policy.workspace.trim() && policy.actionLimit === 50 &&
+    [policy.builderIds, policy.reviewerIds].every(ids => Array.isArray(ids) && ids.every(id => typeof id === 'string' && id.trim()));
+  if (!valid) return 'Scoped team roles unavailable. Refresh to check the server policy.';
+  const roles = [];
+  if (policy.builderIds.includes(agentId)) roles.push('builder');
+  if (policy.reviewerIds.includes(agentId)) roles.push('reviewer');
+  return roles.length
+    ? `Configured team role: ${roles.join(' / ')}. Workspace: ${policy.workspace}. Limit: ${policy.actionLimit} actions. Connection, locked task scope and review checks still apply; this is not proof of current coding access.`
+    : 'No automatic build or review role configured for this peer. Chat availability is separate.';
+}
+
+export function renderAgentWorkspace(root, snapshot, tasks, openTask, teamPolicy) {
   root.replaceChildren();
   const add = (parent, tag, text) => { const node = document.createElement(tag); node.textContent = text; parent.append(node); return node; };
   const rows = agentWorkspace(snapshot, tasks);
@@ -36,6 +49,7 @@ export function renderAgentWorkspace(root, snapshot, tasks, openTask) {
     add(card, 'p', `${row.backend} · ${row.status}${row.approval ? ' · needs permission' : ''}`);
     add(card, 'p', row.session ? `Session: ${row.session}` : 'No active session reported.');
     add(card, 'p', 'Relay peer. Coding tools and repository access are not declared by this adapter; inspect a scoped task’s evidence.');
+    add(card, 'p', agentAssignmentLabel(row.id, teamPolicy));
     if (tasks === undefined) add(card, 'p', 'Task receipts unavailable. Refresh to try again.');
     else if (!row.tasks.length) add(card, 'p', 'No saved Workroom handoff for this peer.');
     for (const task of row.tasks) {

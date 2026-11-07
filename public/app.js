@@ -708,7 +708,7 @@ export async function refresh() {
       if (!admitted || !currentDemo(refreshDemo, refreshGeneration)) return;
       activate($('tab-workroom'));
       window.dispatchEvent(new CustomEvent('mesh-open-task', {detail:{id}}));
-    });
+    }, results[10].status === 'fulfilled' ? results[10].value.teamPolicy : undefined);
   if (probeRequest === nodeProbeRequest) renderNodeProbes(results[7].status === 'fulfilled' ? results[7].value : undefined);
   renderLocalInference(results[8].status === 'fulfilled' ? results[8].value : undefined);
   const linkedId = /^#task=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(window.location?.hash ?? '')?.[1];
