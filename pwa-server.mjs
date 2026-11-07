@@ -31,6 +31,7 @@ staticFiles.set('/agents.json', ['public/agents.json', 'application/json']);
 staticFiles.set('/chat.json', ['public/chat.json', 'application/json']);
 staticFiles.set('/inference.json', ['public/inference.json', 'application/json']);
 staticFiles.set('/control.mjs', ['public/control.mjs', 'text/javascript']);
+staticFiles.set('/control-models.mjs', ['public/control-models.mjs', 'text/javascript']);
 staticFiles.set('/chat.mjs', ['public/chat.mjs', 'text/javascript']);
 staticFiles.set('/theme.mjs', ['public/theme.mjs', 'text/javascript']);
 staticFiles.set('/rail.mjs', ['public/rail.mjs', 'text/javascript']);

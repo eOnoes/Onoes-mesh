@@ -23,6 +23,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { startApp } from './server.mjs';
+import {createSupervisorObservation} from './lib/supervisor-observation.mjs';
+import {supervisorControlView} from './public/control-models.mjs';
 
 const run = promisify(execFile);
 
@@ -32,6 +34,8 @@ const RELAY_ORIGIN = process.env.MESH_RELAY_ORIGIN ?? 'http://127.0.0.1:8787';
 // Supervised ports first (18090 Flash-Next, 18091 Qwen3.6, 8098 the llama.cpp exception),
 // then the ad-hoc ports a hand-launched engine might use.
 const STRATA_PORTS = [18095, 18090, 18091, 8098, 60409, 8080, 1234, 8000];
+const supervisorObservationEnabled=process.env.MESH_STANDALONE!=='1'&&process.env.MESH_MODEL_OBSERVATION==='1';
+const readSupervisorModels=createSupervisorObservation({enabled:supervisorObservationEnabled});
 const KEY_FILE = process.env.MESH_GATE_KEY_FILE ?? 'D:/Dev/Onoes-Relay/.private/relay.key';
 const COOKIE_NAME = 'mesh_session';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 180;
@@ -153,10 +157,11 @@ async function ollamaStatus() {
   return {
     reachable: true,
     detail: `v${version.version}`,
-    loadedCount: loaded.length,
+    loadedCount: Array.isArray(ps?.models)?loaded.length:null,
+    residencyKnown:Array.isArray(ps?.models),
     libraryCount: library.length,
     models: loaded.map((m) => ({
-      name: String(m.name ?? ''),
+      name: String(m.name ?? ''),residency:'reported_loaded',
       vramGB: m.size_vram ? Math.round((m.size_vram / 1e9) * 100) / 100 : null,
     })),
   };
@@ -170,7 +175,8 @@ async function lmStudioStatus() {
     detail: models ? `${list.length} listed` : null,
     loadedCount: list.length,
     libraryCount: list.length,
-    models: list.slice(0, 8).map((m) => ({ name: String(m.id ?? '') })),
+    residencyKnown:false,
+    models: list.slice(0, 8).map((m) => ({ name: String(m.id ?? ''),residency:'listed' })),
   };
 }
 
@@ -232,15 +238,16 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
   disks=$disks
 } | ConvertTo-Json -Depth 5 -Compress`;
 
-  const [psOut, gpuOut, strata, ollama, lmstudio, comfyui] = await Promise.all([
+  const [psOut, gpuOut, strata, ollama, lmstudio, comfyui,modelObservation] = await Promise.all([
     run('powershell', ['-NoProfile', '-NonInteractive', '-Command', psScript], { timeout: 8000, windowsHide: true })
       .then((r) => { try { return JSON.parse(r.stdout.trim()); } catch { return null; } }).catch(() => null),
     run('nvidia-smi', ['--query-gpu=name,memory.used,memory.total,utilization.gpu,power.draw,power.limit,temperature.gpu,fan.speed,clocks.current.graphics,clocks.current.memory',
       '--format=csv,noheader,nounits'], { timeout: 5000, windowsHide: true }).then((r) => r.stdout.trim()).catch(() => ''),
-    strataHealth(),
+    supervisorObservationEnabled?Promise.resolve(null):strataHealth(),
     ollamaStatus(),
     lmStudioStatus(),
     comfyStatus(),
+    readSupervisorModels(),
   ]);
 
   let gpu = null;
@@ -278,7 +285,8 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
   } : null;
 
   // Services the other control panel tracks, so Mesh can report reachability the same way.
-  const services = [strata ? {
+  const supervised=supervisorObservationEnabled?supervisorControlView(modelObservation):null;
+  const services = [supervised?supervised.service:strata ? {
     id: 'strata', label: 'UnbiasedStrata', base: `127.0.0.1:${strata.port}`,
     reachable: true, loaded: strata.health.loaded === true,
     detail: strata.health.model ?? null,
@@ -288,7 +296,8 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
     { id: 'comfyui', label: 'ComfyUI', base: '127.0.0.1:8188', ...comfyui }];
 
   const hints = [];
-  if (!strata) hints.push('No inference engine answered. Start one or none of the model controls will resolve.');
+  if(supervised)hints.push(...supervised.hints);
+  else if (!strata) hints.push('No inference engine answered. Model status is unavailable.');
   if (ollama.reachable && ollama.loadedCount === 0) hints.push('Ollama is up with no resident models.');
   if (!ollama.reachable) hints.push('Ollama is not answering on 11434.');
   if (!lmstudio.reachable) hints.push('LM Studio is not answering on 1234.');
@@ -301,7 +310,8 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
     generatedAt: new Date().toISOString(),
     host: process.env.MESH_HOST_LABEL ?? "Echo's PC",
     platform: `${process.platform} ${process.arch}`,
-    engine: strata ? {
+    ...(supervisorObservationEnabled?{modelObservation}:{}),
+    engine: supervised?supervised.engine:strata ? {
       name: strata.props?.engine ?? 'strata',
       port: strata.port,
       loaded: strata.health.loaded ?? null,
@@ -315,7 +325,7 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
     } : null,
     gpu, ram, disks, system, services, hints,
     throughput: { tps: null, pps: null, contextUsed: null, contextPct: null,
-      reason: strata ? (strata.health.busy ? 'generating - no counter exposed by this build' : 'engine is idle')
+      reason: supervised?'Throughput counters are not provided by the model supervisor.':strata ? (strata.health.busy ? 'generating - no counter exposed by this build' : 'engine is idle')
                     : 'no engine answered on the usual ports' },
     cost: { simulatedUsd: null, reason: 'needs a token stream; run the engine behind a proxy' },
   };

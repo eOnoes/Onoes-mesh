@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 
 test('shared host readings age, clear on failure and never invoke model controls', async () => {
   const originals = Object.fromEntries(['document','fetch','setInterval'].map(key => [key, globalThis[key]]));
-  const makeNode = () => ({ children: [], textContent: '', append(...nodes) { this.children.push(...nodes); }, replaceChildren(...nodes) { this.children = nodes; } });
-  const host = makeNode(), timers = [], requests = [];
+  const makeNode = () => ({ children: [], textContent: '',dataset:{},style:{},append(...nodes) { this.children.push(...nodes); }, replaceChildren(...nodes) { this.children = nodes; } });
+  const host = makeNode(),control=makeNode(), timers = [], requests = [];
   let fail = false;
   const sample = { generatedAt: new Date().toISOString(), host: 'Test PC', gpu: {name:'Test GPU',vramUsedMiB:100,vramTotalMiB:32000,utilPct:5} };
   const text = node => [node.textContent, ...node.children.map(text)].join(' ');
   try {
-    globalThis.document = { getElementById: id => id === 'inference-host-telemetry' ? host : null, querySelectorAll: () => [], createElement: makeNode };
+    globalThis.document = { getElementById: id => id === 'inference-host-telemetry' ? host : id==='ctl-root'?control:null, querySelectorAll: () => [], createElement: makeNode };
     globalThis.fetch = async url => { requests.push(url); if (fail) throw Error('offline'); return {ok:true,json:async()=>sample}; };
     globalThis.setInterval = (fn, interval) => { timers.push({fn,interval}); return timers.length; };
     const {hostTelemetryState} = await import('../public/control.mjs');
@@ -30,10 +30,14 @@ test('shared host readings age, clear on failure and never invoke model controls
     assert.match(text(host), /stale/);
     assert.doesNotMatch(text(host), /Test GPU/);
     sample.generatedAt = new Date().toISOString(); sample.gpu.vramUsedMiB = -1;
-    await timers.find(timer => timer.interval === 5000).fn();
+    await timers.find(timer => timer.interval === 4000).fn();
     assert.doesNotMatch(text(host), /-1 \/ 32000/);
+    sample.modelObservation={schemaVersion:'mesh-supervisor-observation/v1',source:'local_supervisor',expiresAt:Date.now()+5000,models:[{id:'nemotron-3.5-bolt-74b-a9b',state:'reported_loaded',loaded:true}]};
+    sample.engine={name:'strata',modelShort:'wrong earlier lane',loaded:false};sample.services=[];
+    await timers.find(timer=>timer.interval===4000).fn();assert.match(text(control),/Nemotron/);assert.match(text(control),/reported loaded/);assert.doesNotMatch(text(control),/wrong earlier lane/);
+    sample.modelObservation.expiresAt=Date.now()-1;timers.find(timer=>timer.interval===1000).fn();assert.doesNotMatch(text(control),/Nemotron/);assert.match(text(control),/unknown/);
     fail = true;
-    await timers.find(timer => timer.interval === 5000).fn();
+    await timers.find(timer => timer.interval === 4000).fn();
     assert.match(text(host), /unavailable/);
     assert.doesNotMatch(text(host), /Test GPU/);
     assert.ok(requests.length >= 2);

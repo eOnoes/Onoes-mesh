@@ -5,6 +5,7 @@
 //
 // Thresholds (chosen, not inherited): utilisation meters go amber at 70% and red at 90%;
 // temperature goes amber at 70 C and red at 85 C.
+import {supervisorControlView} from './control-models.mjs';
 const root = document.getElementById('ctl-root');
 const inferenceHost = document.getElementById('inference-host-telemetry');
 const loading = document.getElementById('ctl-loading');
@@ -17,6 +18,7 @@ const TEMP_LEVELS = { warn: 70, max: 85 };
 let view = 'overview';
 let data = null;
 let inferenceHostKey;
+let renderedModelState;
 
 export function hostTelemetryState(snapshot, now = Date.now()) {
   if (!snapshot) return 'unavailable';
@@ -98,6 +100,13 @@ function hours(seconds) {
 
 function engineSection(engine) {
   const s = section('engine');
+  if(engine?.source==='local_supervisor'){
+    s.append(row('server',engine.name));
+    s.append(row('model',engine.modelShort||(engine.loaded===false?'none reported loaded':'unknown')));
+    s.append(row('observation',engine.state));
+    s.append(el('p','fine ctl-muted',engine.note));
+    return s;
+  }
   // The section heading already says ENGINE, so the row is the server's name, not a second
   // ENGINE label. And the supervisor keeps /health answering with a model name after an
   // unload, so loaded:false means nothing is resident - say that instead of naming a ghost.
@@ -168,8 +177,8 @@ function servicesSection(services) {
   for (const service of services || []) {
     const line = el('div', 'ctl-svc');
     line.append(el('span', 'ctl-k', service.id));
-    const up = el('span', 'ctl-up', service.reachable ? 'up' : 'down');
-    up.dataset.state = service.reachable ? 'ok' : 'off';
+    const up = el('span', 'ctl-up', service.reachable===true?'up':service.reachable===false?'down':'unknown');
+    up.dataset.state = service.reachable===true?'ok':service.reachable===false?'off':'unknown';
     line.append(up);
     line.append(el('span', 'ctl-note', service.detail || service.base || ''));
     s.append(line);
@@ -182,15 +191,17 @@ function modelsSection(services) {
   const loaded = [];
   for (const service of services || []) {
     for (const model of service.models || []) {
-      loaded.push({ service: service.id, name: model.name, vramGB: model.vramGB });
+      loaded.push({ service: service.id, name: model.name, vramGB: model.vramGB, residency:model.residency });
     }
   }
   if (!loaded.length) {
-    s.append(row('resident', 'none'));
+    s.append(row('reported loaded', 'none observed'));
+    s.append(el('p','fine ctl-muted','Unavailable services may still have models loaded.'));
     return s;
   }
   for (const model of loaded) {
-    s.append(row(model.service, model.name, model.vramGB ? `${model.vramGB} GB VRAM` : null));
+    s.append(row(model.service, model.name, model.residency==='listed'?'listed; residency unverified':
+      'reported loaded'+(model.vramGB?` · ${model.vramGB} GB VRAM`:'')));
   }
   return s;
 }
@@ -220,7 +231,10 @@ function render() {
   root.append(head);
 
   const grid = el('div', 'ctl-grid');
-  const engine = data.engine;
+  const supervisor=data.modelObservation?supervisorControlView(data.modelObservation):null;
+  const engine = supervisor?supervisor.engine:data.engine;
+  renderedModelState=supervisor?.engine.state;
+  const services=supervisor?[supervisor.service,...(data.services||[]).filter(service=>service.id!=='local-models')]:data.services;
   const gpu = data.gpu;
   const ram = data.ram;
 
@@ -229,9 +243,9 @@ function render() {
     grid.append(gpuSection(gpu));
     grid.append(systemSection(data.system, ram));
     grid.append(diskSection(data.disks));
-    grid.append(servicesSection(data.services));
-    grid.append(modelsSection(data.services));
-    grid.append(hintsSection(data.hints));
+    grid.append(servicesSection(services));
+    grid.append(modelsSection(services));
+    grid.append(hintsSection([...new Set([...(supervisor?.hints||[]),...(data.hints||[])])]));
   }
 
   if (view === 'throughput') {
@@ -301,9 +315,9 @@ async function load() {
 }
 
 load();
-setInterval(load, 5000);
+setInterval(load, 4000);
 // Age the existing observation even when a later collector request stalls.
-setInterval(renderInferenceHost, 1000);
+setInterval(()=>{renderInferenceHost();if(data?.modelObservation&&supervisorControlView(data.modelObservation).engine.state!==renderedModelState)render();}, 1000);
 
 // The machine strip only belongs on the Control tab, like agent pills belong to Relay.
 const controlTab = document.getElementById('tab-control');

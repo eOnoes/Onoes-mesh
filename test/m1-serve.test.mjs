@@ -59,7 +59,7 @@ test('npm start serves actual PWA and phone-origin task requests from an isolate
   });
   assert.equal(ready.dataDir, dataDir);
   for (const url of [ready.url, ready.previewUrl]) {
-    for (const [route, file] of [['/', 'index.html'], ['/app.js', 'app.js'], ['/styles.css', 'styles.css']]) {
+    for (const [route, file] of [['/', 'index.html'], ['/app.js', 'app.js'], ['/styles.css', 'styles.css'], ['/control.mjs','control.mjs'], ['/control-models.mjs','control-models.mjs']]) {
       const response = await request(url, route);
       assert.equal(response.status, 200);
       assert.equal(response.text, await readFile(path.join(root, 'public', file), 'utf8'));
