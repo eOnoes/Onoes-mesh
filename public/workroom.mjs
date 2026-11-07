@@ -1,5 +1,6 @@
 import {bindCardDrag} from './workroom-drag.mjs';
 import {captureBoardView,restoreBoardView} from './workroom-view.mjs';
+import {saveCardBrief} from './workroom-edit.mjs';
 import {handoffStatus,taskTimeline} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
 import {createPlanEditor,scopedTeamStatus} from './workroom-plan.mjs';
@@ -262,8 +263,7 @@ if(root){
     progressForm.append(reviewStatus);
     async function saveBrief(){
       const body={project:project.value,criteria:criteria.value,owner:owner.value,stage:stage.value,team:'local_build',revision:selected.workroom.revision};
-      if(['project','criteria','owner','stage','team'].some(key=>body[key]!==selected.workroom[key]))
-        selected=(await request('/api/workroom/'+id,{method:'PATCH',body:JSON.stringify(body)})).task;
+      selected=await saveCardBrief(selected,body,request);
     }
     async function saveCard(){
       await saveBrief();
