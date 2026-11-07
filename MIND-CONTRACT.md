@@ -137,3 +137,62 @@ Before live activation, select and verify the actual memory store, reader caller
 read grants, connection/process ownership and concurrent-writer behavior; provision
 access only through the separate reviewed deployment. Full shared agent context,
 reviewed writes, skills/MCP and cross-channel ingestion remain unfinished.
+
+## Echo review reconciled: live binding remains blocked (2026-11-07)
+
+Eddie supplied Echo's review of Mind source
+`1ee82e5891f0fae54edb1bd8e874b9abbb3de97b`. Echo independently checked that
+source revision and boundary implementation, but did not rerun the 178 tests or
+verify Mesh revision d8445bf. The local test results above remain Nims's evidence.
+
+Decision: use Mind's canonical ledger as the intended authority. Do not create
+an independent Mesh memory store. No live canonical database path or ownership
+record has been established. A workspace path is not a database identity.
+Compatible SQLite tables are insufficient proof: a wrong, stale or synthetic
+store can have the same schema. The existing read-only opener therefore remains
+an offline-qualified component, not a qualified live binding.
+
+### Unapproved binding record template
+
+Every field below is UNASSIGNED until supported by evidence and reviewed. This
+is a planning template, not configuration, an authorization or a runtime record.
+Do not place credential values or private memory contents in this document.
+
+| Required field | Current state / evidence needed |
+| --- | --- |
+| Exact canonical database path | UNASSIGNED; owner-confirmed actual file |
+| Durable store identity and provenance | UNASSIGNED; canonical Mind-owned identity and verification method, independent of schema compatibility |
+| Owner and authority record | UNASSIGNED; who designates this ledger canonical and where that decision is recorded |
+| Environment | UNASSIGNED; explicit local production/test classification |
+| Permitted shared-project scope | UNASSIGNED; exactly one owner-approved scope ID |
+| Service principal | PROPOSED mesh-recall; not currently supported by principal creation, provisioned or approved |
+| Permission | PROPOSED read-only to the single scope; no private agent grants |
+| Credential custodian reference | UNASSIGNED; reference only, never token material |
+| Revocation procedure and custodian | UNASSIGNED; identity/credential revocation and next-read rejection evidence |
+| Reviewed source revisions | Mind review 1ee82e5; final binding must pin the then-reviewed Mind and Mesh revisions |
+| Runtime binding approval | NOT APPROVED |
+| Separate live activation approval | NOT APPROVED; Phase 10 Gate 10.9 remains open |
+
+### Offline acceptance still required before a live decision
+
+- [ ] Verify the selected store's Mind-owned identity/provenance; refuse a
+  compatible but wrong-identity store, as well as an incompatible store.
+- [ ] Qualify the dedicated service-identity contract without borrowing Echo's
+  or operator's credential; permit only the explicitly designated shared scope.
+- [ ] Preserve provenance on allowed shared recall; deny private/out-of-scope
+  reads and caller-selected identity/scope overrides.
+- [ ] Demonstrate corrected/superseded old content is absent on the next read.
+- [ ] Reconfirm purge and revoked-credential visibility on the next read.
+- [ ] Demonstrate no writes or external calls across that boundary.
+- [ ] Review actual-store concurrency separately; synthetic tests do not prove
+  production concurrency, source identity, or activation approval.
+
+Existing synthetic tests provide useful partial evidence for scope enforcement,
+provenance, purge, revocation and read-only behavior. They do not close the
+unchecked items above merely by being green. Shared facts must be deliberately
+admitted/promoted; private mirroring and raw chat ingestion remain disabled.
+
+Next implementation should investigate existing Mind store identity and correction
+semantics before adding validation. Do not invent a second memory authority or
+select a real file/scope/credential on Eddie's behalf. Ask for the concrete owner
+choices only once the binding and acceptance work is reviewable.

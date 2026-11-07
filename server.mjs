@@ -1,3 +1,4 @@
+import {withRelaySource} from './lib/connection-observations.mjs';
 import {createMindRecallClient,recallInput} from './lib/mind-recall.mjs';
 import {automationPolicy} from './lib/workroom-automation-store.mjs';
 import {readNemotronQualification} from './lib/nemotron-qualification.mjs';
@@ -187,7 +188,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       return normalizeInference(value,nowIso);
     } catch { return normalizeInference({schemaVersion:'mesh-inference-observation/v1',observedAt:nowIso,status:'unavailable',nodes:[],errors:[]},nowIso); }
   };
-  const connections = createConnectionReader({ config: serviceConfig, inferenceReader: inference, ...(relayEnabled ? { relayReader: () => relay.snapshot() } : {}) });
+  const connections = withRelaySource(createConnectionReader({ config: serviceConfig, inferenceReader: inference, ...(relayEnabled ? { relayReader: () => relay.snapshot() } : {}) }),relayMode==='http'?'live_relay_http':'isolated_relay');
   let guard;
   const server = http.createServer(async (req, res) => {
     let context;

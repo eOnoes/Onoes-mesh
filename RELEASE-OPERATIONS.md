@@ -228,3 +228,19 @@ For the prepared cross-repository Mind path, explicitly select the canonical
 checkout with `MESH_MIND_SOURCE` and run `npm run test:mind-integration`. That uses
 only temporary synthetic memory. Neither a passing fixture nor these commands
 authorize live memory activation or replace physical-phone acceptance.
+
+## Overview source and freshness meanings (2026-11-07)
+
+Overview reports adapter observations at the displayed check time. Those are
+snapshots, not proof of model readiness, coding access, task completion or recall.
+
+| Surface | Actual authority / meaning |
+| --- | --- |
+| Relay bridge | HTTP Relay snapshot when source is live_relay_http; isolated_relay identifies the isolated adapter. Reachability does not prove a send or completed task. |
+| Legacy inference adapter | Optional original service observation. Separate Inference/Control supervisor and PC readings own their own source times, expiry and unavailable states. not_configured here does not say no model is running. |
+| Standalone Agent adapter | Optional original service observation. Agent separately displays Relay peers and saved Workroom handoffs; roster presence does not prove coding capability. |
+| Legacy Mind adapter | Optional original service observation. Workroom owns selected task snapshots. Canonical Onoes-Mind recall has a separate explicit connection check in Mind and remains disconnected. |
+
+Overview clears prior connection rows on invalid/unavailable responses. Each row
+shows source, observation time, probe duration and errors. Consult the relevant
+workspace for its separate operation result and freshness status.

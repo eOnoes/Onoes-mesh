@@ -442,7 +442,17 @@ export function renderConnections(snapshot) {
   for (const box of document.querySelectorAll('.service-connections')) {
     box.replaceChildren();
     if (!valid) paragraph(box, 'Service observations unavailable. Previous success cleared.');
-    for (const s of services) paragraph(box, s.label + ': last observation ' + s.status + ' · source: ' + s.source + ' · checked ' + (s.observedAt || 'at an unknown time') + ' · probe ' + s.elapsedMs + 'ms · errors: ' + (s.errors.map(e=>e.code).join(', ') || 'none') + (s.source === 'disposable_fixture' ? ' · TEST ONLY; real service not connected' : ''));
+    const meanings={
+      relay:['Relay bridge','Conversation history and agent observations come through this bridge; reachability is not task completion.'],
+      inference:['Legacy inference adapter','Read-only PC and model-supervisor observations are separate in Inference and Control. This adapter status does not mean no model is running.'],
+      agent:['Standalone Agent adapter','The Agent tab separately shows Relay peers and saved Workroom handoffs. A listed peer is not proof of coding access.'],
+      mind:['Legacy Mind adapter','Saved task context comes from Workroom. The separate Onoes-Mind reader has its own connection check in Mind.']
+    };
+    for(const s of services){
+      const [label,meaning]=meanings[s.id];
+      paragraph(box,label+': last observation '+s.status+' · source: '+s.source+' · checked '+(s.observedAt||'at an unknown time')+' · probe '+s.elapsedMs+'ms · errors: '+(s.errors.map(e=>e.code).join(', ')||'none')+(s.source==='disposable_fixture'?' · TEST ONLY; real service not connected':''));
+      paragraph(box,meaning);
+    }
   }
   for (const el of document.querySelectorAll('.service-status')) {
     const s = services.find(s=>s.id === el.getAttribute('data-service'));
