@@ -495,7 +495,7 @@ function localInferenceControls() {
     Date.now() - Date.parse(s.observedAt) < s.freshForMs &&
     probeTick() - localInferenceReceivedAt < s.freshForMs;
   const reason = locked ? 'Start a local session; wait for the current request to finish.' :
-    (s?.controls?.reason === 'NATIVE_QUALIFICATION_REQUIRED'
+    (['NATIVE_QUALIFICATION_REQUIRED','NEMOTRON_QUALIFICATION_REQUIRED'].includes(s?.controls?.reason)
       ? 'Local model controls are not qualified yet. PC readings above remain available.'
       : s?.controls?.reason) || (!fresh ? 'Observation expired or unavailable. Refresh local status.' : '');
   $('local-inference-refresh').disabled = locked;
@@ -519,16 +519,17 @@ function localInferenceControls() {
 export function renderLocalInference(snapshot) {
   renderSupervisorModels(snapshot?.modelObservation);
   const valid = snapshot?.schemaVersion === 'mesh-local-inference/v1' && snapshot.nodeId === 'this-pc' &&
-    snapshot.profile?.id === 'qwen38-flash-next-q6' && snapshot.controls;
+    ['qwen38-flash-next-q6','nemotron-bolt-local'].includes(snapshot.profile?.id) && snapshot.controls;
   localInferenceSnapshot = valid ? snapshot : undefined;
   localInferenceReceivedAt = probeTick();
   $('local-inference-state').textContent = valid
     ? `[${snapshot.state}] · this-pc · ${snapshot.source} · observation ${snapshot.observedAt ?? 'UNAVAILABLE'} · ${snapshot.freshness}`
     : 'UNAVAILABLE · Start a local session and refresh local status.';
-  $('local-inference-profile').textContent = valid && snapshot.state === 'RUNNING' && snapshot.runtime?.status === 'VERIFIED'
-    ? `${snapshot.profile.model} · ${snapshot.runtimeId}`
+  $('local-inference-profile').textContent = valid && ['RUNNING','OWNED'].includes(snapshot.state) && ['VERIFIED','OWNED'].includes(snapshot.runtime?.status)
+    ? `${snapshot.profile.model} · ${snapshot.runtimeId}${snapshot.runtime.status==='OWNED'?' · owned process; health unverified':''}`
     : 'No verified model connection. PC readings above remain available.';
   $('local-inference-identity').textContent = valid ? 'Runtime identity: ' + details(snapshot.runtime) : 'Runtime identity UNKNOWN';
+  if(valid && snapshot.profile.id==='nemotron-bolt-local' && snapshot.operation)$('local-inference-receipt').textContent=details(snapshot.operation);
   $('local-inference-telemetry').textContent = valid ? 'Telemetry: ' + details(snapshot.telemetry)
     : 'CPU UNKNOWN · RAM UNKNOWN · GPU UNAVAILABLE · VRAM UNAVAILABLE';
   localInferenceControls();

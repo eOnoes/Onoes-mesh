@@ -305,8 +305,9 @@ class MeshSupervisorRoutes:
     """Prepared routing seam; owns no listener and leaves legacy routes alone."""
     SCHEMA = "mesh-supervisor-control/v1"
 
-    def __init__(self, gate):
+    def __init__(self, gate, supervisor_sha256=None):
         self.gate = gate
+        self.supervisor_sha256 = supervisor_sha256
 
     @staticmethod
     def _unique(pairs):
@@ -319,7 +320,7 @@ class MeshSupervisorRoutes:
 
     def envelope(self, value):
         return {"schemaVersion": self.SCHEMA, "moduleSha256": _MODULE_SHA256,
-                "bootId": self.gate.boot_id, "modelId": MODEL, **value}
+                "bootId": self.gate.boot_id, "supervisorSha256": self.supervisor_sha256, "modelId": MODEL, **value}
 
     def handle(self, port, method, path, body=b"", content_type=None):
         result = self._handle(port, method, path, body, content_type)

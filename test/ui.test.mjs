@@ -1,3 +1,4 @@
+import {supervisedModelFixture} from './supervised-model-fixture.mjs';
 import vm from 'node:vm';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -158,4 +159,32 @@ test('MOCK UI: visible model polling is GET-only, single-flight and cannot resto
   assert.equal(ui.ids.get('local-model-catalog').children.length,0);
   assert.ok(!ui.ids.get('local-model-catalog').textContent.includes('private loaded model'));
   for(const f of ui.intervals)f();await flush();assert.equal(ui.requests.length,before+1);
+});
+
+test('MOCK UI: supervised model confirmation, receipt progress, chat and privacy use the current app/controller',async()=>{
+  const f=supervisedModelFixture(),control=f.make();
+  const ui=mockUI({hash:'#inference',responder:async(route,options)=>{
+    const body=options.body?JSON.parse(options.body):null;let result;
+    if(route==='/api/trial-session/bootstrap')return response(201,{csrfToken:'q'.repeat(43),expiresAt:f.options.now()+60000});
+    if(route==='/api/inference/status')result=await control.status();
+    else if(route.startsWith('/api/inference/propose-'))result=await control.propose(route.split('propose-')[1],body,'ui',()=>true);
+    else if(route==='/api/inference/approve')result=await control.approve(body,'ui',()=>true);
+    else if(route.startsWith('/api/inference/receipt/'))result=control.receipt(route.split('/').at(-1));
+    else if(route==='/api/inference/chat')result=await control.chat(body,()=>true);
+    else result=bodyFor(route);
+    return response(200,result);
+  }});
+  const click=async id=>{ui.ids.get(id).events.click();await flush();};
+  try{
+    await click('demo-start');assert.equal(ui.ids.get('local-inference-load').disabled,false);
+    await click('local-inference-load');assert.equal(f.calls.length,0);assert.equal(ui.ids.get('local-inference-approve').disabled,false);
+    await click('local-inference-approve');assert.equal(f.calls.length,1);assert.match(ui.ids.get('local-inference-receipt').textContent,/ACCEPTED/);
+    f.finish(f.calls[0].command.id);await click('local-inference-refresh');
+    assert.match(ui.ids.get('local-inference-profile').textContent,/Nemotron/);assert.equal(ui.ids.get('local-inference-send').disabled,false);
+    assert.match(ui.ids.get('local-inference-receipt').textContent,/COMPLETED/);
+    ui.ids.get('local-inference-prompt').value='private model prompt';ui.ids.get('local-inference-chat-form').events.submit({preventDefault(){}});await flush();
+    assert.equal(ui.ids.get('local-inference-response').textContent,'Fixture answer');
+    assert.equal(JSON.stringify(f.operations.latest()).includes('private model prompt'),false);
+    ui.events.pagehide();assert.equal(ui.ids.get('local-inference-response').textContent,'');assert.equal(ui.ids.get('local-inference-receipt').textContent,'');
+  }finally{await control.close();f.db.close();}
 });

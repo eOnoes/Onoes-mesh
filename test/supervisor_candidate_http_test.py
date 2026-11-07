@@ -74,7 +74,7 @@ class CandidateHTTPTests(unittest.TestCase):
             self.calls.append((action, original))
             self.owner = {"state": "empty", "identity": None, "clear": True}
         self.gate = self.guard.MeshControlGate(self.owner_lock, lambda: self.owner, perform, self.queue.append)
-        self.module._MESH_ROUTES = self.guard.MeshSupervisorRoutes(self.gate)
+        self.module._MESH_ROUTES = self.guard.MeshSupervisorRoutes(self.gate,supervisor_sha256=next(x["sha256"] for x in self.manifest["files"] if x["path"]=="local_supervisor.py"))
         class Handler(self.module.Handler):
             @property
             def port(self):

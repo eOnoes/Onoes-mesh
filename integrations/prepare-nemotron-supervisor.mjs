@@ -15,8 +15,9 @@ replaceOnce('SUP = Supervisor()',`SUP = Supervisor()
 
 # Prepared Mesh protocol: fixed Nemotron lane, original supervisor-owned handles.
 from supervisor_mesh_control import MeshControlGate, NemotronSupervisorOwner, MeshSupervisorRoutes
+import hashlib as _mesh_hashlib
 _MESH_OWNER = NemotronSupervisorOwner(SUP, child_argv(8099, 8199), "${hash(executable)}")
-_MESH_ROUTES = MeshSupervisorRoutes(MeshControlGate(_LOCK, _MESH_OWNER.capture, _MESH_OWNER.perform))`);
+_MESH_ROUTES = MeshSupervisorRoutes(MeshControlGate(_LOCK, _MESH_OWNER.capture, _MESH_OWNER.perform), supervisor_sha256=_mesh_hashlib.sha256(Path(__file__).read_bytes()).hexdigest())`);
 const helper=`    def _mesh_control(self):
         if not self.path.startswith("/mesh/v1/"):
             return False

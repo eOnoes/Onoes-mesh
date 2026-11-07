@@ -24,7 +24,7 @@ function inspect(filename){
 const counts=inspect(snapshot);
 function durableDigest(filename){
   const db=new DatabaseSync(filename,{readOnly:true});
-  try{return Object.fromEntries(['tasks','workroom_tasks','workroom_progress','workroom_replies','workroom_update_applications','workroom_send_outcomes','workroom_plans','workroom_automation','nims_runs','nims_threads'].map(table=>{const exists=db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table);const rows=exists?db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all():[];return [table,createHash('sha256').update(JSON.stringify(rows)).digest('hex')];}));}finally{db.close();}
+  try{return Object.fromEntries(['tasks','workroom_tasks','workroom_progress','workroom_replies','workroom_update_applications','workroom_send_outcomes','workroom_plans','workroom_automation','nims_runs','nims_threads','model_operations','model_qualification'].map(table=>{const exists=db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table);const rows=exists?db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all():[];return [table,createHash('sha256').update(JSON.stringify(rows)).digest('hex')];}));}finally{db.close();}
 }
 const durable=durableDigest(snapshot);
 const restored=join(directory,'restore-rehearsal.sqlite');

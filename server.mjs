@@ -1,3 +1,9 @@
+import {readNemotronQualification} from './lib/nemotron-qualification.mjs';
+import {createNemotronClient} from './lib/nemotron-client.mjs';
+import {createNemotronRuntime} from './lib/nemotron-runtime.mjs';
+import {DatabaseSync} from 'node:sqlite';
+import {createModelOperationStore} from './lib/model-operation-store.mjs';
+import {createSupervisedInference} from './lib/supervised-inference.mjs';
 import {createSupervisorObservation} from './lib/supervisor-observation.mjs';
 import http from 'node:http';
 import {createTeamRunner} from './lib/workroom-automation.mjs';
@@ -83,7 +89,7 @@ async function activity(registryPath) {
     return await readWorkerActivity({ registryPath, nowIso: new Date().toISOString(), staleAfterMs: 600000 });
   } catch { return snapshot('unavailable'); }
 }
-export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, localInferenceTestOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
+export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, localInferenceTestOptions, supervisedInferenceTestOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
   // Process configuration only. Standalone wins over ambient Relay enablement
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
@@ -105,8 +111,9 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       Object.keys(localInferenceTestOptions).some(k => !['adapter', 'now'].includes(k)) ||
       localInferenceTestOptions.adapter?.source !== 'disposable_fixture')) throw new Error('Invalid inference fixture.');
   const observeSupervisor = createSupervisorObservation({enabled:!standalone && process.env.MESH_MODEL_OBSERVATION==='1'});
-  const localInference = createLocalInference(standalone
+  let localInference = createLocalInference(standalone
     ? { adapter: createDisabledLocalAdapter('STANDALONE_NOT_CONFIGURED') } : localInferenceTestOptions);
+  if(supervisedInferenceTestOptions && (supervisedInferenceTestOptions.qualification?.source!=='disposable_fixture'||Object.keys(supervisedInferenceTestOptions).some(k=>!['client','qualification','verifyResident','chatImpl','now'].includes(k))))throw Error('Invalid supervised model fixture');
   // Trusted in-process tests only; HTTP cannot supply any probe configuration.
   if (nodeProbeTestOptions !== undefined && (!nodeProbeTestOptions ||
       Object.keys(nodeProbeTestOptions).some(key => !['spawnImpl', 'clock', 'monotonic'].includes(key)) ||
@@ -129,6 +136,16 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const activeRuns = new Map();
   let executionPersistenceFailed = false;
   try { store = openTaskStore(filename); } catch { /* Preserve invalid data; serve a visible failure. */ }
+  let modelDatabase;
+  if(!standalone && supervisedInferenceTestOptions && store){modelDatabase=new DatabaseSync(filename);localInference=createSupervisedInference({...supervisedInferenceTestOptions,operations:createModelOperationStore(modelDatabase)});}
+  else if(!standalone && process.env.MESH_NEMOTRON_CONTROL==='1' && store){
+    try{
+      modelDatabase=new DatabaseSync(filename);const qualification=readNemotronQualification(modelDatabase,ROOT);
+      if(!qualification)throw Error('Qualification required');
+      const client=createNemotronClient(qualification),runtime=createNemotronRuntime({client});
+      localInference=createSupervisedInference({operations:createModelOperationStore(modelDatabase),client,qualification,...runtime});
+    }catch{modelDatabase?.close();modelDatabase=undefined;localInference=createLocalInference({adapter:createDisabledLocalAdapter('NEMOTRON_QUALIFICATION_REQUIRED')});}
+  }
   // Gate G2 = A: the shell talks to the LIVE Relay over HTTP instead of driving a
   // modified copy of it. Staged behind an explicit flag so the default path is
   // byte-for-byte what it was; `child` stays until R8d deletes the fork.
@@ -430,11 +447,11 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     else socket.destroy();
   });
   try { await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }); }
-  catch (e) { await relay.close(); store?.close(); throw e; }
+  catch (e) { await localInference.close?.();modelDatabase?.close();await relay.close(); store?.close(); throw e; }
   guard = createTrialHttpGuard({ manager, port: server.address().port });
   return { server, mode: standalone ? 'standalone' : 'mesh', url: `http://127.0.0.1:${server.address().port}`, close: async () => {
     const closed = new Promise((resolve, reject) => server.close(e => e ? reject(e) : resolve()));
-    server.closeAllConnections(); await closed; await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]); store?.close();
+    server.closeAllConnections(); await closed; await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]);await localInference.close?.();modelDatabase?.close(); store?.close();
   } };
 }
 
