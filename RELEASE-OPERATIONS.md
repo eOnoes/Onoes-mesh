@@ -43,8 +43,10 @@ coding tools, repository access or completion. Agent workspace opens those same
 saved Workroom cards; it introduces no scheduler or automatic dispatch.
 
 Physical-phone end-to-end acceptance remains required. Inference lifecycle
-qualification is separate: the approved UnbiasedStrata binaries now exist, but
-existence alone does not qualify ownership or lifecycle. Do not substitute a retired engine. The qualified
+qualification is separate: Eddie selected the currently running Nemotron 3.5 Bolt
+lane first. Its prepared identity-bound bridge is not installed; Eddie explicitly
+deferred shared-model maintenance. Keep the model service running. Other engines
+and binary availability do not qualify ownership or lifecycle. The qualified
 Mesh-only team lane uses locked scope, Echo building and DeepSeek/Nims review,
 then pauses for owner review. Mind deliberately retrieves selected saved Workroom
 records under [MIND-CONTRACT.md](MIND-CONTRACT.md); it adds no personal memory
@@ -164,3 +166,34 @@ fake child with Connection: close headers (no running model required). Candidate
 HTTP and cross-chain tests also exercise guarded chat. These are preparation;
 actual Nemotron cancellation/idle readback and the shared supervisor cutover still
 require real lifecycle qualification before MESH_NEMOTRON_CONTROL is enabled.
+
+## Stop, pause and interrupted work
+
+These controls have different effects. A closed page, disconnected stream or
+paused team is not evidence that native work stopped.
+
+| Surface | Actual effect | Completion evidence / current limit |
+| --- | --- | --- |
+| Local command Cancel | Requests cancellation of the exact current saved execution; verifies its owned process tree | Verified cleanup is required for “Cancelled.” Missing/false cleanup is “Cancellation unconfirmed”; work may remain running. No automatic retry. |
+| Team Pause next team steps | Prevents future handoffs | Already accepted agent work continues; pause does not claim cancellation. |
+| Close saved team attempt | Closes the paused/review attempt and preserves history | Does not cancel accepted agents. Unresolved accepted work still prevents a new attempt. |
+| Cancel unsent worker preview | Discards the preview before dispatch | Nothing is sent; no accepted worker is stopped. |
+| Echo / Deep conversation | Read or send to the explicitly selected conversation | No qualified per-task native cancellation adapter. Stop reading is not stop execution. |
+| Nims connection close | Closes the connection; unfinished local receipts become interrupted | No automatic replay; interrupted is not independently verified native cancellation. |
+| Model controls | Prepared Nemotron bridge only; disabled in live Mesh | Real load/unload/chat/cancellation acceptance awaits owner-authorized maintenance. |
+
+Real Windows local-command acceptance on 2026-11-07 used isolated HTTP servers,
+SQLite stores and disposable Node root/descendant processes. Explicit cancel
+verified original handles exited, persisted its result, rejected stale/wrong
+run IDs, admission/origin violations and repeat cancel, and reopened without
+replay. A separate crash check verified original caller/bridge/root/descendant
+handles exited; reopening retained UNKNOWN/server_restart with null cleanup,
+refused replay and did not turn a restart into a success/cancellation claim.
+Run locally with `node --test --test-timeout=30000 test/m3-crash-compose.test.mjs`.
+These checks do not qualify remote agent or model cancellation.
+
+Relay places long connection and privacy details under Conversation details.
+Refresh preserves a reader's earlier position; readers near the bottom follow
+new messages. Jump to latest returns to the latest saved exchange. The owner's
+phone loading/reloading is confirmed; background/resume and the latest chat
+layout still require physical-phone acceptance.
