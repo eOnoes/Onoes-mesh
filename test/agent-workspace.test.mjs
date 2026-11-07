@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {agentWorkspace} from '../public/agent-workspace.mjs';
+import {agentWorkspace,agentObservationLabel} from '../public/agent-workspace.mjs';
 
 test('agent workspace links exact peer receipts while preserving historical sessions and pending review', () => {
   const snapshot = {agents:[{id:'deep',name:'Deep',backend:'a2a',status:'done',conversation_id:'new',approval:null}]};
@@ -15,4 +15,17 @@ test('agent workspace links exact peer receipts while preserving historical sess
   assert.equal(tasks[0].progress.decision,'pending');
   assert.deepEqual(agentWorkspace(undefined,tasks),[]);
   assert.equal(agentWorkspace({agents:[{id:'no-session'}]},tasks)[0].session,null);
+});
+
+
+test('agent roster check time comes from its observation and never from repaint time',()=>{
+  const snapshot={observedAt:'2026-11-07T19:00:00.000Z'};
+  const label=agentObservationLabel(snapshot);
+  assert.match(label,/Relay roster read at 2026-11-07T19:00:00.000Z/);
+  assert.match(label,/Saved observation; refresh/);
+  assert.equal(agentObservationLabel(snapshot),label);
+  for(const observedAt of [undefined,null,'invalid',42]){
+    assert.match(agentObservationLabel({observedAt}),/check time unavailable/);
+    assert.doesNotMatch(agentObservationLabel({observedAt}),/read at/);
+  }
 });

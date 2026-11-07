@@ -38,7 +38,9 @@ test('snapshot maps the real agents, including the ones Mesh has never seen', as
   const relay = await fakeRelay(jsonRoute(AGENTS));
   try {
     const link = await createRelayHttpLink({ baseUrl: relay.url, token: 'gate-token' });
+    const before=Date.now();
     const snap = await link.snapshot();
+    assert.ok(Date.parse(snap.observedAt)>=before && Date.parse(snap.observedAt)<=Date.now());
     assert.equal(snap.status, 'fresh');
     assert.equal(snap.agents.length, 4, 'all four agents, not the single synthetic mesh agent');
     assert.deepEqual(snap.agents.map(a => a.id), ['echo', 'cyony', 'dsh', 'tripp']);
@@ -64,6 +66,7 @@ test('snapshot picks a primary conversation, and says so when there is none', as
     const snap = await link.snapshot();
     assert.equal(snap.status, 'unavailable');
     assert.match(snap.error, /no agent has an active conversation/i);
+    assert.ok(Number.isFinite(Date.parse(snap.observedAt)),'successful empty-session observation still has its read time');
     assert.equal(snap.conversationId, null, 'must not invent a conversation to send into');
   } finally { await noConv.close(); }
 });
@@ -92,6 +95,7 @@ test('a rejected token reads as unavailable, not as a leak', async () => {
     const snap = await link.snapshot();
     assert.equal(snap.status, 'unavailable');
     assert.equal(snap.error, 'Live Relay did not return an agent list.');
+    assert.equal(snap.observedAt,undefined,'a failed read must not fabricate a successful observation time');
     assert.ok(!JSON.stringify(snap).includes('SECRET-LEAK'), 'upstream body must not reach Mesh');
   } finally { await relay.close(); }
 });

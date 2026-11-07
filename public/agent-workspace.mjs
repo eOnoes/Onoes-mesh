@@ -15,12 +15,18 @@ export function agentWorkspace(snapshot, tasks) {
   }));
 }
 
+export function agentObservationLabel(snapshot) {
+  const recorded = snapshot?.observedAt;
+  const time = typeof recorded === 'string' && Number.isFinite(Date.parse(recorded)) ? recorded : null;
+  return `${time ? 'Relay roster read at ' + time : 'Relay roster check time unavailable'}. Saved observation; refresh to check again. Agent status is separate from task completion.`;
+}
+
 export function renderAgentWorkspace(root, snapshot, tasks, openTask) {
   root.replaceChildren();
   const add = (parent, tag, text) => { const node = document.createElement(tag); node.textContent = text; parent.append(node); return node; };
   const rows = agentWorkspace(snapshot, tasks);
   if (!rows.length) add(root, 'p', snapshot?.error || 'No current agent observation. Refresh app status to reconnect. Saved tasks remain in Workroom.');
-  else add(root, 'p', 'Relay observation checked ' + new Date().toLocaleTimeString() + '. Agent status is separate from task completion. Refresh to check again.');
+  else add(root, 'p', agentObservationLabel(snapshot));
   for (const row of rows) {
     const card = add(root, 'article', ''); card.className = 'box section-gap';
     add(card, 'h2', row.name);
@@ -32,7 +38,7 @@ export function renderAgentWorkspace(root, snapshot, tasks, openTask) {
     for (const task of row.tasks) {
       const button = add(card, 'button', task.title); button.type = 'button';
       button.addEventListener('click', () => openTask(task.id));
-      add(card, 'p', `${task.phase || 'message'} · delivery ${task.delivery} · review ${task.decision} · ${task.sameSession ? 'current session' : 'historical session'}`);
+      add(card, 'p', `${task.phase || 'message'} · delivery ${task.delivery} · review ${task.decision} · ${task.sameSession ? 'matches observed session' : 'historical session'}`);
     }
   }
 }
