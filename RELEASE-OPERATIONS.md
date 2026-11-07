@@ -30,8 +30,11 @@ Run `node integrations/backup-mesh-to-library.mjs`. Open
 snapshot and RESTORE.txt. Restore into an isolated location first. Preserve the
 current database with WAL/SHM before any deliberate replacement. Do not merge the
 original 8446 data or overwrite another checkout. The root is shared by app-specific
-backups; this command only backs up Mesh. Scheduling and off-device protection
-remain deferred. Credentials, external Relay configuration and models are excluded.
+backups; this command only backs up Mesh. Eddie selected manual and milestone
+backups on 2026-11-07. No automatic backup schedule is enabled. Keep labelled
+milestone copies; no automatic pruning or deletion is configured. E: is the chosen
+local destination; off-device protection remains deferred. Credentials, external
+Relay configuration and models are excluded.
 
 ## Qualification and remaining gates
 
@@ -320,3 +323,24 @@ failure observed during two-tab work. Import-stripping VM tests alone do not
 qualify browser startup. This delivery/syntax check does not claim DOM behavior,
 CSS layout/assets imported by CSS, service-worker lifecycle, arbitrary JavaScript
 parsing, physical-phone acceptance, runtime/model controls or live memory access.
+
+
+## Current local qualification - 2026-11-07
+
+Runtime build ad3fe3cfb807 includes Agent changes committed as d1143fb.
+The complete local npm test passed 207 checks (40 baseline, 1 HTTP, 29 model,
+45 workspace and 92 Workroom), zero failures. Separate npm run test:ui passed
+13 mock UI checks. These do not qualify the uninstalled native model bridge.
+
+Eddie confirmed actual-phone create/edit/save, touch move with Nims/Echo owner,
+reload/reopen and theme switching. Remaining phone acceptance includes long
+checklists, handoff, permission/results, recorded review and deliberate Done,
+plus network/background/session recovery.
+
+Agent distinguishes configured roles, adapter-declared capabilities and saved
+task evidence. Nims declares read-only planning/review, with building unavailable.
+Echo has verified bounded Mesh artifacts and source-linked reports; this grants
+no other repository access. The existing real automatic Echo-to-Nims qualification
+ended at needs_review with pending/unapplied review, not automatic Done. Its seven
+artifact tests pass. This proves the review gate, not whole-app owner acceptance.
+Exact receipts and remaining requirements are in the running private checkpoint.
