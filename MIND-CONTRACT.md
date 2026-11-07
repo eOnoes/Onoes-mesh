@@ -264,3 +264,20 @@ identities and revocation. Use private local/Tailscale routing where supported;
 no public gateway or expanded access is authorized by this architecture note.
 This is a future requirement for shared skills/MCP, not an implemented catalog,
 connector, permission store or gateway. Finish the current store/recall work first.
+
+## Recovery-key bundle preparation accepted (2026-11-07)
+
+Eddie approved proceeding with the proposed recovery-file workflow. Canonical
+Mind source188b6f20ab7d7748fa70d351af051cd4295efb10 now contains an inactive
+Node24 key-bundle API and MIND-RECOVERY-GUIDE.md. Existing Node crypto is used;
+no shared Python crypto package was installed/upgraded. No real Mind store,
+Google entry or live key was created.
+
+The temporary encrypted-file journey recovers explicit integrity keys, restores
+a populated Mind snapshot and preserves newer deletion history. Full canonical
+pytest199 PASS, with a driver running5 Node cases; focused recovery11 PASS.
+Wrong password, ciphertext/tag modification, wrong store/environment and invalid
+format/KDF fail without releasing keys. Returned buffers are local runtime
+material, never agent/MCP/browser/log output. The envelope protects integrity
+keys, not SQLite database contents. Runtime vault protection, private folder
+permissions, secure user password entry and real setup/activation remain open.
