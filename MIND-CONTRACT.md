@@ -80,3 +80,30 @@ consumption as separate slices. Cross-channel source IDs and receipts must
 prevent duplicate ingestion; automatic summaries, personality/profile changes,
 shared skills/MCP and conflict resolution remain unfinished parts of the broader
 objective. No raw chat import or automatic memory write is enabled by this audit.
+
+
+## Prepared canonical recall component (2026-11-07)
+
+Onoes-Mind source milestone `ae5ab267829ffeb90c9e5caca7232afaac13afc8`
+adds `onoes_mind/recall_http.py`, its actual HTTP tests and
+`MESH_RECALL_INTERFACE.md`. The component wraps canonical `Ledger.search`;
+it is not activated or wired into the current Mesh UI.
+
+The versioned local read contract is `POST /v1/recall` with exactly
+`{schema: "onoes-mind-recall/v1", query, limit}`. The owner-supplied bearer token
+is authenticated by the ledger; no identity/scope override is accepted.
+Success returns schema, requestId, source `canonical_ledger`, observedAt and
+records with existing project/scope/hash/source/provenance. Limits: query512
+characters, results1–20, request4096 bytes, response65536 bytes. Browser Origins,
+wrong hosts, mutations, unknown fields, malformed framing and duplicate keys
+are refused. No token/query logs, CORS or response caching.
+
+All175 canonical tests passed locally, including8 new HTTP tests with temporary
+synthetic ledgers. Private/shared isolation, token revocation, immediate deletion
+visibility, no-write reads and bounded/error responses are verified. No real
+memory service, principal, grant, credential, runtime binding or startup task
+was created. Phase10/live activation gates remain open.
+
+Next implementation is the bounded Mesh server-side client, followed by the
+actual adapter -> canonical ledger -> Mesh view journey with synthetic data.
+Real data access and deployment remain separately reviewed decisions.
