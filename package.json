@@ -9,13 +9,15 @@
   "scripts": {
     "start": "node test/m1-serve.mjs",
     "check": "node test/check.mjs",
-    "test": "node test/check.mjs --test && node --test --test-timeout=20000 test/m1-serve.test.mjs && npm run test:models && npm run test:workspaces",
+    "test": "node test/check.mjs --test && node --test --test-timeout=20000 test/m1-serve.test.mjs && npm run test:models && npm run test:workspaces && npm run test:workroom",
     "test:workspaces": "node --test --test-timeout=20000 test/agent-workspace.test.mjs test/team-policy.test.mjs test/mind-workspace.test.mjs test/mind-recall.test.mjs test/host-telemetry.test.mjs test/control-models.test.mjs test/workroom-progress-timeline.test.mjs test/relay-chat-scroll.test.mjs test/m3-crash-compose-ui.test.mjs",
     "test:models": "node --test --test-timeout=20000 test/model-operation-store.test.mjs test/nemotron-client.test.mjs test/nemotron-runtime.test.mjs test/nemotron-qualification.test.mjs test/supervised-inference.test.mjs test/supervised-inference-http.test.mjs test/model-backup.test.mjs",
     "test:mind-integration": "node --test --test-timeout=20000 test/mind-canonical-http.test.mjs",
     "test:ui": "node test/check.mjs --ui",
     "test:supervisor-control": "python -m unittest test.supervisor_mesh_control_test test.supervisor_recovery_test test.supervisor_chat_test -v",
     "test:supervisor-candidate": "python -m unittest test.supervisor_candidate_http_test -v",
-    "test:supervisor-integration": "node --test --test-timeout=20000 test/supervised-native-http.test.mjs"
+    "test:supervisor-integration": "node --test --test-timeout=20000 test/supervised-native-http.test.mjs",
+    "test:workroom": "node --test --test-timeout=30000 test/workroom.test.mjs test/workroom-team.test.mjs test/workroom-plan.test.mjs test/workroom-automation.test.mjs test/workroom-status.test.mjs test/workroom-drag.test.mjs test/workroom-lead.test.mjs test/workroom-approval-route.test.mjs test/workroom-reconcile-route.test.mjs test/relay-http.test.mjs test/request-audit.test.mjs test/tailscale-access.test.mjs",
+    "test:release-evidence": "node --test --test-timeout=30000 test/workroom-release.test.mjs test/workroom-timeline.test.mjs"
   }
 }

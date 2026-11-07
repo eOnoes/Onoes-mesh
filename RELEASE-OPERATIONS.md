@@ -208,3 +208,23 @@ cannot replace the new reading. Existing host/model expiry rules remain active.
 These are read-only HTTP observation controls, not cancellation or shutdown of
 model generation/services. Deterministic lifecycle tests and a real stalled-read
 browser fixture pass; physical-phone acceptance remains separate.
+
+
+## Local verification commands
+
+`npm test` includes baseline/static checks, actual npm-start HTTP assets, model
+protocol tests, workspace/privacy checks and portable Workroom handoff/review/
+permission/reconciliation/session regressions. `npm run test:workroom` runs the
+portable workflow group alone. These checks use isolated local fixtures; no live
+agent/model sends or GitHub Actions are required.
+
+`npm run test:release-evidence` separately verifies the historical live rework
+record and an actual owner snapshot restore. It requires the existing private
+`../workroom-rework-final.json` and `../workroom-backup-latest.json` plus its
+snapshot. Keep these checks separate from portable default tests; do not publish
+private evidence or silently replace missing live evidence with a synthetic pass.
+
+For the prepared cross-repository Mind path, explicitly select the canonical
+checkout with `MESH_MIND_SOURCE` and run `npm run test:mind-integration`. That uses
+only temporary synthetic memory. Neither a passing fixture nor these commands
+authorize live memory activation or replace physical-phone acceptance.
