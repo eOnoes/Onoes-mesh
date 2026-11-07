@@ -129,7 +129,7 @@ export function createRelayChat({request}) {
   const status=document.getElementById('relay-chat-status');
   const send=document.getElementById('relay-send');
   const attach=document.getElementById('relay-add-files');
-  let busy=false,lastPaint='',lastAgents='',core;
+  let busy=false,lastPaint='',lastAgents='',lastDestination='',core;
   function draw(state) {
     agentName=state.destination?.name || 'Relay';
     const signature=JSON.stringify(state.agents);
@@ -151,7 +151,13 @@ export function createRelayChat({request}) {
     attach.disabled=true;
     const legacyId=document.getElementById('relay-message-id');if(legacyId)legacyId.disabled=true;
     const painted=JSON.stringify([state.destination,state.messages]);
-    if(painted!==lastPaint){lastPaint=painted;paint(state.messages);toBottom();}
+    if(painted!==lastPaint){
+      const target=JSON.stringify(state.destination && [state.destination.agentId,state.destination.sessionId]);
+      const follow=target!==lastDestination || chat.scrollHeight-chat.clientHeight-chat.scrollTop<=32;
+      const position=chat.scrollTop;
+      lastPaint=painted;lastDestination=target;paint(state.messages);
+      if(follow)toBottom();else chat.scrollTop=position;
+    }
   }
   let storage;try{storage=sessionStorage;}catch{storage={getItem(){return null;},setItem(){throw Error('Browser retry storage unavailable. Nothing was sent.');},removeItem(){}};}
   core=createRelayConversation({request,storage,onChange:draw});

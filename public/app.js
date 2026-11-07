@@ -283,7 +283,8 @@ function selectTask(task, preserveDrafts = false) {
   const run = task.execution;
   const cleanup = run?.result?.cleanupVerified === true ? 'true' : run?.result?.cleanupVerified === false ? 'false' : 'unknown';
   const cancellation = run?.result?.cancelled === true && ['completed', 'failed'].includes(run.state) ?
-    `Cancelled — cleanup ${cleanup === 'true' ? 'verified' : cleanup === 'false' ? 'not verified' : 'unknown'}` : undefined;
+    cleanup === 'true' ? 'Cancelled · owned cleanup verified.' :
+      `Cancellation unconfirmed · cleanup ${cleanup === 'false' ? 'not verified' : 'unknown'}; work may still be running. No automatic retry.` : undefined;
   const interrupted = run?.state === 'failed' && run.result?.status === 'UNKNOWN';
   $('proposal-state').textContent = interrupted ?
     'Interrupted by server restart · outcome unknown. No automatic retry. Save a new proposal, then deliberately Approve to run again.' :
@@ -294,7 +295,7 @@ function selectTask(task, preserveDrafts = false) {
   $('proposal-value').textContent = task.proposal ? JSON.stringify(task.proposal) : '';
   $('execution-result').textContent = run ? `Run ${run.id}\nState: ${run.state}\n` + (interrupted ?
     `Outcome: unknown\nInterrupted by server restart. Process result was not recorded.\nPID: unknown\nExit code: unknown\nCleanup verified: unknown\nTimeout: unknown\nstdout: unknown\nstderr: unknown\nRecovery recorded at: ${run.finishedAt}\nNo automatic retry. Save a new proposal to request another execution.` : run.result ?
-    `Cancelled: ${run.result.cancelled === true}\nExit code: ${run.result.rootExitCode ?? 'unknown'}\nCleanup verified: ${cleanup}\nError: ${run.result.error ?? 'none'}\nstdout:\n${run.result.stdout}\nstderr:\n${run.result.stderr}` : 'Process result not yet known.') :
+    `Cancel request observed: ${run.result.cancelled === true ? 'true' : run.result.cancelled === false ? 'false' : 'unknown'}\nExit code: ${run.result.rootExitCode ?? 'unknown'}\nCleanup verified: ${cleanup}\nError: ${run.result.error ?? 'none'}\nstdout:\n${run.result.stdout}\nstderr:\n${run.result.stderr}` : 'Process result not yet known.') :
     task.proposalStatus === 'pending' ? 'Pending · not run. No process result exists for this proposal.' : task.proposalStatus === 'denied' ?
       'Not run. This proposal was denied before execution. No process result exists for this proposal. Cancellation and process cleanup: not applicable.' : 'Not run. No process result exists for this proposal.';
   const choice = commands.find(entry => entry.command === task.proposal?.command && entry.cwd === task.proposal?.cwd);
