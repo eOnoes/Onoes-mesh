@@ -47,8 +47,8 @@ export function taskTimeline(task){
     add('review-'+report.sendId+'-'+(report.hash||report.messageId),report.at,'Review received · '+(report.review.verdict==='approved'?'approved':'changes requested'),`${report.agentId} · ${report.applied?'recorded':'not recorded'}. ${report.review.summary}`,report.review.evidence);
   }
   for(const h of task.history||[]){
-    const label={team_attempt_closed:'Team attempt closed',team_started:'Scoped team started',team_paused:'Team paused / needs review',plan_proposed:'Plan proposed',scope_locked:'Scope and team locked',lead_selected:'Project lead selected',review_changes_requested:'Changes requested',review_approved:'Review approved',agent_update_applied:'Report applied',agent_review_applied:'Review recorded'}[h.kind]||(h.kind==='updated'?(/Stage: done[.;]/.test(h.detail)?'Moved to Done':'Card updated'):null);
+    const label={progress_saved:'Progress saved',team_attempt_closed:'Team attempt closed',team_started:'Scoped team started',team_paused:'Team paused / needs review',plan_proposed:'Plan proposed',scope_locked:'Scope and team locked',lead_selected:'Project lead selected',review_changes_requested:'Changes requested',review_approved:'Review approved',agent_update_applied:'Report applied',agent_review_applied:'Review recorded'}[h.kind]||(h.kind==='updated'?(/Stage: done[.;]/.test(h.detail)?'Moved to Done':'Card updated'):null);
     if(label)add('history-'+h.seq,h.at,label,h.detail);
   }
-  return events.sort((a,b)=>(Date.parse(a.at)||0)-(Date.parse(b.at)||0)||a.id.localeCompare(b.id));
+  return events.sort((a,b)=>(Date.parse(a.at)||0)-(Date.parse(b.at)||0)||a.id.localeCompare(b.id,undefined,{numeric:true}));
 }
