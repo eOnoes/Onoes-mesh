@@ -10,6 +10,9 @@ export function agentWorkspace(snapshot, tasks) {
       const latest = attempts.at(-1);
       return latest ? [{id:task.id, title:task.title, phase:latest.phase,
         delivery:latest.state, sameSession:Boolean(agent.conversation_id && latest.conversationId === agent.conversation_id),
+        sessionRelation:agent.conversation_id && latest.conversationId
+          ? (latest.conversationId === agent.conversation_id ? 'matches observed session' : 'historical session')
+          : 'session comparison unavailable',
         decision:task.progress?.decision || 'pending'}] : [];
     })
   }));
@@ -38,7 +41,7 @@ export function renderAgentWorkspace(root, snapshot, tasks, openTask) {
     for (const task of row.tasks) {
       const button = add(card, 'button', task.title); button.type = 'button';
       button.addEventListener('click', () => openTask(task.id));
-      add(card, 'p', `${task.phase || 'message'} · delivery ${task.delivery} · review ${task.decision} · ${task.sameSession ? 'matches observed session' : 'historical session'}`);
+      add(card, 'p', `${task.phase || 'message'} · delivery ${task.delivery} · review ${task.decision} · ${task.sessionRelation}`);
     }
   }
 }

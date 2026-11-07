@@ -13,8 +13,20 @@ test('agent workspace links exact peer receipts while preserving historical sess
   assert.equal(row.status,'done');
   assert.deepEqual(row.tasks.map(t=>[t.id,t.sameSession,t.decision]),[['one',true,'pending'],['two',false,'pending']]);
   assert.equal(tasks[0].progress.decision,'pending');
+  assert.deepEqual(row.tasks.map(t=>t.sessionRelation),['matches observed session','historical session']);
   assert.deepEqual(agentWorkspace(undefined,tasks),[]);
   assert.equal(agentWorkspace({agents:[{id:'no-session'}]},tasks)[0].session,null);
+});
+
+test('missing observed or saved session never implies a historical handoff',()=>{
+  for(const [observed,saved] of [[null,'old'],['new',null],[null,null]]){
+    const [row]=agentWorkspace({agents:[{id:'echo',conversation_id:observed}]},[
+      {id:'task',messages:[{agentId:'echo',conversationId:saved,state:'accepted'}]}
+    ]);
+    assert.equal(row.tasks[0].sessionRelation,'session comparison unavailable');
+    assert.equal(row.tasks[0].sameSession,false);
+    assert.equal(row.tasks[0].decision,'pending');
+  }
 });
 
 
