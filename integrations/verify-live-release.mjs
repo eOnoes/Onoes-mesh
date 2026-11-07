@@ -11,7 +11,7 @@ headers.Cookie=bootstrap.headers.get('set-cookie').split(';')[0];headers['X-Tria
 try{
  const response=await fetch(origin+'/api/workroom',{headers});if(response.status!==200)throw Error('Board read failed');
  const board=await response.json();
- const digest=createHash('sha256').update(JSON.stringify(board)).digest('hex');
+ const digest=createHash('sha256').update(JSON.stringify({tasks:board.tasks})).digest('hex');
  const evidence={at:new Date().toISOString(),taskCount:board.tasks.length,boardSha256:digest};
  if(action==='capture')writeFileSync('../mesh-release-before.json',JSON.stringify(evidence,null,2));
  else{

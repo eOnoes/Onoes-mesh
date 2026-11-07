@@ -1,3 +1,4 @@
+import {automationPolicy} from './lib/workroom-automation-store.mjs';
 import {readNemotronQualification} from './lib/nemotron-qualification.mjs';
 import {createNemotronClient} from './lib/nemotron-client.mjs';
 import {createNemotronRuntime} from './lib/nemotron-runtime.mjs';
@@ -297,7 +298,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       if (workroomRoute) {
         if (!store || executionPersistenceFailed) throw new TaskError(503, 'Workroom unavailable.');
         const id=workroomRoute[1];
-        if(req.method==='GET' && !workroomRoute[2]) return send(200,id?{task:store.workroom.get(id)}:{tasks:store.workroom.list()});
+        if(req.method==='GET' && !workroomRoute[2]) return send(200,id?{task:store.workroom.get(id),teamPolicy:automationPolicy(ROOT)}:{tasks:store.workroom.list(),teamPolicy:automationPolicy(ROOT)});
         if(!id) throw new TaskError(405,'Method not allowed.');
         if(workroomRoute[2]==='apply-assignment'&&req.method==='POST')return send(200,store.workroom.applyAssignment(id,context.body));
         if(workroomRoute[2]==='automation'&&req.method==='POST'){if(!teamRunner)throw new TaskError(503,'Connected team runner unavailable.');const agents=['pause','close'].includes(context.body?.action)?[]:await relay.agents();if(!current())return;return send(200,teamRunner.action(id,context.body,agents));}

@@ -1,12 +1,12 @@
 import {bindCardDrag} from './workroom-drag.mjs';
 import {handoffStatus,taskTimeline} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
-import {createPlanEditor} from './workroom-plan.mjs';
+import {createPlanEditor,scopedTeamStatus} from './workroom-plan.mjs';
 const root=document.getElementById('workroom-board');
 const request=(...args)=>window.meshWorkroom.request(...args);
 const stages=[['backlog','Backlog'],['ready','Ready'],['working','Working'],['needs_you','Needs you'],['done','Done']];
 const lanes=[{key:'ready',label:'To do',stages:['backlog','ready']},{key:'working',label:'In progress',stages:['working','needs_you']},{key:'done',label:'Done',stages:['done']}];
-let tasks=[], selected=null, agents=[], pending=null, busy=false;
+let tasks=[], selected=null, agents=[], pending=null, busy=false,teamPolicy=null;
 let followTimer=null,viewEpoch=0;
 const el=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
 if(root){
@@ -112,7 +112,7 @@ if(root){
   }
   window.meshWorkroom.onClear(()=>{
     viewEpoch++;clearTimeout(followTimer);
-    tasks=[];selected=null;agents=[];pending=null;
+    tasks=[];selected=null;agents=[];pending=null;teamPolicy=null;
     details.close();details.replaceChildren();board.replaceChildren();
     createDialog.close();createForm.reset();createStatus.textContent='';
     pendingMove=null;moveDialog.close();moveNote.textContent='';moveNotice.textContent='';moveOwner.replaceChildren();
@@ -147,7 +147,7 @@ if(root){
     }
   }
   async function load(){
-    const result=await request('/api/workroom');tasks=result.tasks;
+    const result=await request('/api/workroom');tasks=result.tasks;teamPolicy=result.teamPolicy||null;
     try{agents=await request('/api/relay/native/api/agents');}catch{agents=[];}
     draw();
     status.textContent=`${tasks.length} saved tasks · Plan / build / review handoffs`;
@@ -157,7 +157,7 @@ if(root){
   }
   async function open(id){
     const epoch=++viewEpoch;clearTimeout(followTimer);
-    selected=(await request('/api/workroom/'+id)).task;
+    const opened=await request('/api/workroom/'+id);selected=opened.task;teamPolicy=opened.teamPolicy||null;
     if(epoch!==viewEpoch)return;
     // Never carry an uncertain message into another task.
     pending=null;details.replaceChildren();
@@ -381,7 +381,7 @@ if(root){
     let paintAuto=()=>{};
     if(selected.plan){
       const auto=el('section');auto.append(el('h3','Automatic scoped team'),el('p','Starts the assigned Echo builder, applies its completed report, then asks the independent reviewer. Stops for you to inspect/record the review. Never auto-approves or marks Done. Pause stops next steps; already accepted work continues. Qualified for this Mesh checkout only.'));
-      const teamState=el('p');auto.append(teamState);let visible=selected;const buttons=new Map(),originalPlanRevision=selected.plan.revision;
+      const teamState=el('p'),qualification=el('p');auto.append(qualification,teamState);let visible=selected;const buttons=new Map(),originalPlanRevision=selected.plan.revision;
       for(const [action,label] of [['start','Start scoped team'],['resume','Resume saved team'],['pause','Pause next team steps'],['close','Close saved team attempt']]){
         const b=el('button',label);b.type='button';buttons.set(action,b);b.addEventListener('click',()=>act(async()=>{
           if(!editor.hidden||planEditor?.isDirty())throw new Error('Save or cancel edits before team actions.');
@@ -390,10 +390,11 @@ if(root){
         }));auto.append(b);
       }
       paintAuto=task=>{visible=task;const state=task.automation?.state,changed=task.plan?.revision!==originalPlanRevision;
+        const qualified=scopedTeamStatus(task.plan,teamPolicy);qualification.textContent=qualified.message;
         teamState.textContent='Team: '+(state||'not started')+' · '+(task.automation?.reason||'One build → one review, no automatic rework loop.')+(changed?' Scope changed; reopen this card before starting/resuming.':'');
         buttons.get('pause').disabled=state!=='active';buttons.get('close').disabled=!['paused','needs_review'].includes(state);
-        buttons.get('resume').disabled=changed||task.plan?.state!=='locked'||state!=='paused';
-        buttons.get('start').disabled=changed||task.plan?.state!=='locked'||['active','paused','needs_review'].includes(state)||task.status==='done'||task.progress.decision==='approved';
+        buttons.get('resume').disabled=!qualified.matches||changed||task.plan?.state!=='locked'||state!=='paused';
+        buttons.get('start').disabled=!qualified.matches||changed||task.plan?.state!=='locked'||['active','paused','needs_review'].includes(state)||task.status==='done'||task.progress.decision==='approved';
       };paintAuto(selected);team.append(auto);
     }
     details.insertBefore(team,conversation);
