@@ -2,15 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 test('shared host readings age, clear on failure and never invoke model controls', async () => {
-  const originals = Object.fromEntries(['document','fetch','setInterval'].map(key => [key, globalThis[key]]));
+  const originals = Object.fromEntries(['document','fetch','setInterval','setTimeout','clearTimeout'].map(key => [key, globalThis[key]]));
   const makeNode = () => ({ children: [], textContent: '',dataset:{},style:{},append(...nodes) { this.children.push(...nodes); }, replaceChildren(...nodes) { this.children = nodes; } });
   const host = makeNode(),control=makeNode(), timers = [], requests = [];
-  let fail = false;
+  let fail = false,hold=false,honorAbort=false;const held=[],events={},timeouts=[];
   const sample = { generatedAt: new Date().toISOString(), host: 'Test PC', gpu: {name:'Test GPU',vramUsedMiB:100,vramTotalMiB:32000,utilPct:5} };
   const text = node => [node.textContent, ...node.children.map(text)].join(' ');
   try {
-    globalThis.document = { getElementById: id => id === 'inference-host-telemetry' ? host : id==='ctl-root'?control:null, querySelectorAll: () => [], createElement: makeNode };
-    globalThis.fetch = async url => { requests.push(url); if (fail) throw Error('offline'); return {ok:true,json:async()=>sample}; };
+    globalThis.document = {hidden:false,addEventListener:(name,fn)=>{events[name]=fn;}, getElementById: id => id === 'inference-host-telemetry' ? host : id==='ctl-root'?control:null, querySelectorAll: () => [], createElement: makeNode };
+    globalThis.fetch = async (url,options) => { requests.push(url);if(hold)return new Promise((resolve,reject)=>{held.push({resolve,signal:options?.signal});if(honorAbort)options.signal.addEventListener('abort',()=>reject(Error('aborted')),{once:true});});if (fail) throw Error('offline'); return {ok:true,json:async()=>sample}; };
+    globalThis.setTimeout=(fn,ms)=>{const t={fn,ms};timeouts.push(t);return t;};globalThis.clearTimeout=t=>{if(t)t.cleared=true;};
     globalThis.setInterval = (fn, interval) => { timers.push({fn,interval}); return timers.length; };
     const {hostTelemetryState} = await import('../public/control.mjs');
     await new Promise(resolve => setImmediate(resolve));
@@ -49,6 +50,15 @@ test('shared host readings age, clear on failure and never invoke model controls
     assert.doesNotMatch(text(host), /Test GPU/);
     assert.ok(requests.length >= 2);
     assert.ok(requests.every(url => url === '/inference/summary'));
+    fail=false;hold=true;const poll=timers.find(t=>t.interval===4000).fn;
+    const first=poll();await new Promise(resolve=>setImmediate(resolve));const second=poll();await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(held.length,1,'a stalled request must not accumulate overlapping telemetry polls');await second;
+    document.hidden=true;events.visibilitychange();assert.equal(held[0].signal.aborted,true);assert.doesNotMatch(text(control),/Test GPU/);
+    const count=requests.length;await poll();assert.equal(requests.length,count,'hidden pages must not collect');
+    document.hidden=false;hold=false;sample.generatedAt=new Date().toISOString();sample.gpu.name='Fresh GPU';events.visibilitychange();await new Promise(resolve=>setImmediate(resolve));assert.match(text(control),/Fresh GPU/);
+    held[0].resolve({ok:true,json:async()=>({...sample,gpu:{...sample.gpu,name:'OLD HELD GPU'}})});await first;assert.match(text(control),/Fresh GPU/);assert.doesNotMatch(text(control),/OLD HELD GPU/);
+    hold=true;honorAbort=true;const stalled=poll();await new Promise(resolve=>setImmediate(resolve));const timeout=timeouts.filter(t=>t.ms===8000&&!t.cleared).at(-1);assert.ok(timeout);timeout.fn();await stalled;assert.match(text(host),/unavailable/);assert.doesNotMatch(text(control),/Fresh GPU/);
+
   } finally {
     Object.assign(globalThis, originals);
   }

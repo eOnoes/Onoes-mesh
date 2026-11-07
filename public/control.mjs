@@ -20,6 +20,8 @@ let data = null;
 let inferenceHostKey;
 let renderedModelState;
 let renderedHostState;
+let activeRead=null;
+let telemetryNote='No telemetry yet. Collector has not answered.';
 
 export function hostTelemetryState(snapshot, now = Date.now()) {
   if (!snapshot) return 'unavailable';
@@ -223,7 +225,7 @@ function render() {
   const freshness=hostTelemetryState(data);
   renderedHostState=freshness;
   if (!data) {
-    root.append(el('p', 'fine', 'No telemetry yet. /inference/summary did not answer.'));
+    root.append(el('p', null, telemetryNote));
     return;
   }
 
@@ -303,25 +305,35 @@ if (loading) loading.remove();
 // Live telemetry, polled. The server memoises briefly, so several tabs cost one collection.
 const MACHINE_SLOT = document.getElementById('machine-tabs');
 
-async function load() {
-  try {
-    const response = await fetch('/inference/summary', { cache: 'no-store' });
-    data = response.ok ? await response.json() : null;
-  } catch {
-    data = null;
-  }
+function paintReadings(){
   if(MACHINE_SLOT&&!data)MACHINE_SLOT.replaceChildren();
-  if (MACHINE_SLOT && data) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'tab';
-    button.setAttribute('aria-pressed', 'true');
-    button.textContent = data.host || 'this PC';
-    MACHINE_SLOT.replaceChildren(button);
+  if(MACHINE_SLOT&&data){
+    const button=document.createElement('button');button.type='button';button.className='tab';
+    button.setAttribute('aria-pressed','true');button.textContent=data.host||'this PC';MACHINE_SLOT.replaceChildren(button);
   }
-  render();
-  renderInferenceHost();
+  render();renderInferenceHost();
 }
+async function load(){
+  if(document.hidden===true||activeRead)return;
+  const read={controller:new AbortController(),timer:null};activeRead=read;
+  read.timer=setTimeout(()=>{
+    read.controller.abort();
+    if(activeRead===read){activeRead=null;data=null;telemetryNote='PC readings unavailable: collector timed out. Waiting for the next refresh.';paintReadings();}
+  },8000);
+  let observation=null;
+  try{
+    const response=await fetch('/inference/summary',{cache:'no-store',signal:read.controller.signal});
+    observation=response.ok?await response.json():null;
+  }catch{}finally{clearTimeout(read.timer);}
+  if(activeRead!==read||document.hidden===true)return;
+  activeRead=null;data=observation;telemetryNote='PC readings unavailable. Waiting for the next refresh.';paintReadings();
+}
+document.addEventListener?.('visibilitychange',()=>{
+  if(document.hidden){
+    const read=activeRead;activeRead=null;if(read){clearTimeout(read.timer);read.controller.abort();}
+    data=null;telemetryNote='PC readings paused while this page is in the background. Return to refresh.';paintReadings();
+  }else void load();
+});
 
 load();
 setInterval(load, 4000);

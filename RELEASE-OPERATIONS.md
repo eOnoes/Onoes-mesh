@@ -197,3 +197,14 @@ Refresh preserves a reader's earlier position; readers near the bottom follow
 new messages. Jump to latest returns to the latest saved exchange. The owner's
 phone loading/reloading is confirmed; background/resume and the latest chat
 layout still require physical-phone acceptance.
+
+
+## Telemetry polling while mobile/backgrounded
+
+Control and the shared Inference host readings allow one active collector read,
+with an8s browser timeout. Hidden pages abort their read, clear displayed metrics
+and stop polling; returning starts a fresh read. A late pre-hide/timed-out result
+cannot replace the new reading. Existing host/model expiry rules remain active.
+These are read-only HTTP observation controls, not cancellation or shutdown of
+model generation/services. Deterministic lifecycle tests and a real stalled-read
+browser fixture pass; physical-phone acceptance remains separate.
