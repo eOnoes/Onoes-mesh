@@ -325,7 +325,7 @@ CSS layout/assets imported by CSS, service-worker lifecycle, arbitrary JavaScrip
 parsing, physical-phone acceptance, runtime/model controls or live memory access.
 
 
-## Current local qualification - 2026-11-07
+## Historical local qualification snapshot - 2026-11-07
 
 Runtime build ad3fe3cfb807 includes Agent changes committed as d1143fb.
 The complete local npm test passed 207 checks (40 baseline, 1 HTTP, 29 model,
@@ -344,3 +344,28 @@ no other repository access. The existing real automatic Echo-to-Nims qualificati
 ended at needs_review with pending/unapplied review, not automatic Done. Its seven
 artifact tests pass. This proves the review gate, not whole-app owner acceptance.
 Exact receipts and remaining requirements are in the running private checkpoint.
+
+
+## Latest verified candidate - 2026-11-07
+
+Live build6147b15367ea (runtime source bb9a029) is a private candidate, not final
+acceptance. Consolidated current-code checks: npm test210/210, test:ui13/13 and
+test:release-evidence7/7 PASS. Complete counts are40baseline+1HTTP+29model+
+45workspace+95Workroom. The latter two commands are separate checks, not added
+to the default-suite count. The saved guide workflow exercised a useful Echo
+build, actual Nims changes-requested finding, Echo correction and fresh approved
+Nims review. Its owner-recorded approval and deliberate Done remain pending.
+
+The selected E-drive backup contains current exact guide/adapter/timeline/health
+source bytes and13cards; hashes, isolated data restore and restored-source HTTP
+passed. Manual/milestone backup policy is implemented; no automatic schedule or
+pruning is enabled. Off-device protection is explicitly deferred, not verified.
+
+Remaining acceptance: full physical-phone task/review/Done and network/device
+recovery, owner release custody, and broader team qualification. Model control
+maintenance remains deferred; load/stop/unload/chat controls are disabled while
+read-only PC/model observations remain available. Mind folder is still empty;
+canonical store enrollment, approved recovery policy, access and live activation
+are not complete. Shared memory/writes/skills/MCP, external apps and the laptop/
+future AI-box fleet remain in the active overall objective. The running private
+checkpoint is authoritative for later evidence and changes to these gates.
