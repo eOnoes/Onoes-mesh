@@ -78,3 +78,29 @@ available. No control is auto-submitted or rebound. At390x500 both themes showed
 the composer within the viewport and no outer main overflow;390x844 retained an
 unsent RAM draft after resizing. These are browser-width checks, not a physical
 keyboard/background/rotation acceptance. No real message was sent.
+
+
+## Saved task progress and ordinary-chat acceptance (2026-11-07)
+
+Relay now has a Task progress action. Choose a saved Workroom card to view its
+goal, checklist counts/statuses and recorded review. The selected record follows
+saved updates on the existing visible Relay poll; no task is selected automatically.
+This view does not bind a card to a conversation, assign work or send context.
+Completed checklist steps never imply approved review. Selection/body remain in
+RAM and clear with the existing session/privacy lifecycle. The sheet's Done
+control stays visible while scrolling, including reduced-height phone layouts.
+
+Actual admitted browser acceptance reselected the same Echo conversation after
+privacy lock/reconnect and reload. The prior explicitly authorized coordination
+question and its real reply each appeared exactly once. Attachments remained
+honestly disabled. This pass sent no new message and created/edited no user task
+through ordinary chat. Stable retry/draft/session-change guards remain covered by
+the existing contract tests. Browser reconnection is not full physical-phone,
+network-loss or keyboard/rotation acceptance; those remain open.
+
+Current compatibility decision remains one native Relay conversation/outbox
+authority and Workroom task/review authority. Historical sandbox features remain
+preserved. A future notification delivery path is still unselected/unqualified;
+F2 remains open and no push/Telegram synchronization is implied by this release.
+Full canonical Mind context, writes, shared skills and MCP access are separate
+outstanding work. See the private running checkpoint for evidence and live status.
