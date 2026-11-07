@@ -1,3 +1,4 @@
+import {verifyBrowserAssets} from './browser-assets.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -59,6 +60,10 @@ test('npm start serves actual PWA and phone-origin task requests from an isolate
   });
   assert.equal(ready.dataDir, dataDir);
   for (const url of [ready.url, ready.previewUrl]) {
+    const assets=await verifyBrowserAssets(url);
+    assert.ok(assets.includes('/session-entry.mjs'),'Dynamic admission module must actually be served');
+    assert.ok(assets.includes('/workroom-plan.mjs'),'Nested task imports must actually be served');
+    t.diagnostic('Verified '+assets.length+' linked browser assets/imports over actual HTTP at '+url);
     for (const [route, file] of [['/', 'index.html'], ['/app.js', 'app.js'], ['/styles.css', 'styles.css'], ['/control.mjs','control.mjs'], ['/control-models.mjs','control-models.mjs']]) {
       const response = await request(url, route);
       assert.equal(response.status, 200);

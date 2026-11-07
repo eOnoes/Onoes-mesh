@@ -302,3 +302,21 @@ unavailable. High usage is not proof that a new model can load or must evict an
 existing one. Existing15s hardware freshness/clearing and separate5s supervisor
 observation rules remain unchanged. D2's strong model/runtime/GPU attribution and
 D3's real control lifecycle are still open; no model operation was qualified here.
+
+## Served-browser dependency release check (2026-11-07)
+
+The mandatory npm-start HTTP test now fetches every linked shell script and
+stylesheet, follows static and literal dynamic module imports recursively, and
+checks status, JavaScript/CSS MIME and JavaScript syntax on the actual served
+body. It verifies both the backend and phone-origin preview adapter. Current
+coverage is23 linked resources per entry point, including session-entry and
+nested Workroom modules. No imports are evaluated and no third-party URL is
+contacted. Computed dynamic imports require explicit coverage rather than being
+silently skipped. The traversal is bounded to128 resources,1MiB bodies and3s reads.
+
+Negative HTTP fixtures prove missing modules, HTML served as JavaScript, and
+external dependencies fail the gate. This catches the missing-static-allowlist
+failure observed during two-tab work. Import-stripping VM tests alone do not
+qualify browser startup. This delivery/syntax check does not claim DOM behavior,
+CSS layout/assets imported by CSS, service-worker lifecycle, arbitrary JavaScript
+parsing, physical-phone acceptance, runtime/model controls or live memory access.
