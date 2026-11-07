@@ -220,3 +220,26 @@ recall token is rejected by ordinary writer authentication and remember; ordinar
 writer credentials are refused by bound recall. This preparation does not activate
 memory or qualify all legacy write policies. Exact live database/owner remain a
 pending owner question; no actual scope/custodian/credential chosen.
+
+## Operator source clarification and D-drive proposal (2026-11-07)
+
+Eddie confirmed there is no verified live Mind database instance with an
+established path and owner to reuse. He asked to identify the canonical database
+and owner first and prefers D: if a new Mind-owned instance is needed. This is
+source/planning guidance, not permission to create or activate a live store.
+
+Local disk inspection identifies D: as NVMe and E: as a separate USB disk.
+D: is a reasonable active SQLite location; this is not a measured latency claim.
+The existing E:/App-Backups/ONOes-Mind root remains the backup proposal.
+A filename-only inventory inside D:/Dev/Onoes-Mind found only the historical
+bad.sqlite audit fixture, which must not be promoted into a live ledger. No
+memory database was opened. This limited inventory does not prove no other
+instance exists elsewhere on the machine.
+
+Proposed future data location: D:/App-Data/ONOes-Mind/ledger.sqlite, owned by
+Mind's authority, with runtime/filesystem custodian still UNASSIGNED. Canonical
+source stays D:/Dev/Onoes-Mind. The proposed directory/file has not been created.
+Exact data path, authority/custodian, reviewed initialization and restore/deletion
+history must be resolved in the binding record before provisioning. Mesh must
+not create a separate memory store. Single-scope service credentials, grants,
+service startup and live activation remain separately unapproved.
