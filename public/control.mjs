@@ -19,6 +19,7 @@ let view = 'overview';
 let data = null;
 let inferenceHostKey;
 let renderedModelState;
+let renderedHostState;
 
 export function hostTelemetryState(snapshot, now = Date.now()) {
   if (!snapshot) return 'unavailable';
@@ -219,6 +220,8 @@ function hintsSection(hints) {
 function render() {
   if (!root) return;
   root.replaceChildren();
+  const freshness=hostTelemetryState(data);
+  renderedHostState=freshness;
   if (!data) {
     root.append(el('p', 'fine', 'No telemetry yet. /inference/summary did not answer.'));
     return;
@@ -226,9 +229,14 @@ function render() {
 
   const head = el('div', 'ctl-head');
   head.append(el('span', 'eyebrow', data.host || 'this PC'));
-  const when = data.generatedAt ? new Date(data.generatedAt) : null;
-  head.append(el('span', 'ctl-updated', when ? `updated ${when.toLocaleTimeString()}` : 'unknown age'));
+  const when = typeof data.generatedAt==='string' && Number.isFinite(Date.parse(data.generatedAt)) ? new Date(data.generatedAt) : null;
+  head.append(el('span', 'ctl-updated', when ? freshness==='fresh' ? `updated ${when.toLocaleTimeString()}` : `last reading ${data.generatedAt}` : 'unknown age'));
   root.append(head);
+
+  if(freshness!=='fresh'){
+    root.append(el('p',null,`PC readings ${freshness}. Previous meters and service/model readings are cleared. Waiting for a fresh observation; model controls are unchanged.`));
+    return;
+  }
 
   const grid = el('div', 'ctl-grid');
   const supervisor=data.modelObservation?supervisorControlView(data.modelObservation):null;
@@ -302,6 +310,7 @@ async function load() {
   } catch {
     data = null;
   }
+  if(MACHINE_SLOT&&!data)MACHINE_SLOT.replaceChildren();
   if (MACHINE_SLOT && data) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -317,7 +326,7 @@ async function load() {
 load();
 setInterval(load, 4000);
 // Age the existing observation even when a later collector request stalls.
-setInterval(()=>{renderInferenceHost();if(data?.modelObservation&&supervisorControlView(data.modelObservation).engine.state!==renderedModelState)render();}, 1000);
+setInterval(()=>{renderInferenceHost();if(hostTelemetryState(data)!==renderedHostState || (hostTelemetryState(data)==='fresh'&&data?.modelObservation&&supervisorControlView(data.modelObservation).engine.state!==renderedModelState))render();}, 1000);
 
 // The machine strip only belongs on the Control tab, like agent pills belong to Relay.
 const controlTab = document.getElementById('tab-control');
