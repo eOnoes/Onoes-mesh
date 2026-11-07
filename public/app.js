@@ -1,3 +1,4 @@
+import {createAdmissionPeers} from './session-entry.mjs';
 import { renderAgentWorkspace } from './agent-workspace.mjs';
 import { createMindWorkspace } from './mind-workspace.mjs';
 import { createRelayChat } from './chat.mjs';
@@ -87,6 +88,7 @@ try { workspaceLocked=sessionStorage.getItem('mesh.workspace.locked.v1')==='1'; 
 let savedDemo;
 // Privacy clearance runs in lifecycle handlers; it does not depend on a timer.
 let lifecycleSuspended = document.visibilityState === 'hidden';
+const admissionPeers = typeof BroadcastChannel==='function' ? createAdmissionPeers({readProof:()=>admitted&&!workspaceLocked&&!lifecycleSuspended&&proofAvailable()?demo:null}) : null;
 let navigationProof; let normalNavigation = false;
 const relayChat = createRelayChat({request:api});
 const mindWorkspace = createMindWorkspace({root:$('mind-workspace'),request:api,openTask:id=>{
@@ -803,7 +805,9 @@ $('relay-reconnect').addEventListener('click', () => action(async () => {
 }));
 function startSession() { return action(async () => {
   const startGeneration = generation;
-  let session = await api('/api/trial-session/bootstrap', { method: 'POST', body: '{}' });
+  let session = await admissionPeers?.request();
+  if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
+  if (!session) session = await api('/api/trial-session/bootstrap', { method: 'POST', body: '{}' });
   if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
   if (session?.recoveryRequired === true) {
     const fresh = await api('/api/trial-session/recovery-challenge', { method: 'POST', body: '{}' });

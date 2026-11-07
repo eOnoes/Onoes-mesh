@@ -261,3 +261,27 @@ private app. The observation-meaning map closes B1's explanation requirement;
 it does not close D2's stronger runtime-to-GPU attribution or C's physical/live
 release acceptance. Each unavailable/stale state retains its own source/time
 meaning rather than being converted into a healthy completion claim.
+
+## Same-origin active-tab admission reuse (2026-11-07)
+
+A new explicit/authorized connection asks an already admitted, unlocked, visible
+same-origin Mesh tab for a current proof over BroadcastChannel. The handoff is
+RAM-only and contains only the CSRF proof and expiry, never cookie IDs, actors,
+grants, cards, messages or drafts. The receiver still verifies `/api/health` with
+the current HttpOnly cookie and candidate proof before admission. Rejected proof
+clears access; receipt of a channel message alone never grants it. There is no
+cross-origin channel, network service, storage expansion or session TTL extension.
+
+The frozen session manager/HTTP guard and recovery nonce rotation are unchanged.
+Without a responding active tab or supported channel, normal bootstrap/recovery
+continues. This does not guarantee simultaneous cold-tab startup or background/
+partitioned-browser continuity. Existing lock, expiry, logout and privacy clearing
+remain authoritative. A tab does not replay tasks/messages when it connects.
+
+Actual two-tab browser acceptance on a disposable store: save in tab B; stale
+Save card in tab A is rejected with Task changed. Reload before saving, while
+its unsaved field stays visible. Cancel edits closes that stale editor; reopen
+the card to see tab B's saved value. Copy any draft you want to reapply before
+cancelling. No silent overwrite or automatic merge. Both actual live Tailscale
+board tabs also stayed connected after opening the second and refreshing the
+first; owner cards were not edited for this check.
