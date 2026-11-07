@@ -249,7 +249,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         const receiptId = /^\/api\/inference\/receipt\/([0-9a-f-]{36})$/.exec(route)?.[1];
         if (receiptId && ['GET', 'HEAD'].includes(req.method)) return send(200, localInference.receipt(receiptId, sessionId));
         if (req.method !== 'POST') throw new TaskError(405, 'Method not allowed.');
-        const action = /^\/api\/inference\/propose-(load|stop|unload)$/.exec(route)?.[1];
+        const action = /^\/api\/inference\/propose-(load|stop|unload|recover)$/.exec(route)?.[1];
         if (action) return send(201, await localInference.propose(action, context.body, sessionId, admitted));
         if (route === '/api/inference/approve') return send(200, await localInference.approve(context.body, sessionId, admitted));
         if (route === '/api/inference/chat') {

@@ -497,14 +497,15 @@ function localInferenceControls() {
   const reason = locked ? 'Start a local session; wait for the current request to finish.' :
     (['NATIVE_QUALIFICATION_REQUIRED','NEMOTRON_QUALIFICATION_REQUIRED'].includes(s?.controls?.reason)
       ? 'Local model controls are not qualified yet. PC readings above remain available.'
-      : s?.controls?.reason) || (!fresh ? 'Observation expired or unavailable. Refresh local status.' : '');
+      : s?.controls?.reason === 'ORIGINAL_OPERATION_PENDING' ? 'An earlier model command needs verification. Refresh status, or resolve it when available. The original command will not be repeated.' : s?.controls?.reason) || (!fresh ? 'Observation expired or unavailable. Refresh local status.' : '');
   $('local-inference-refresh').disabled = locked;
   $('local-inference-refresh').title = locked ? reason : 'Read this PC status without executing a control.';
-  for (const name of ['load', 'stop', 'unload', 'chat']) {
+  for (const name of ['load', 'stop', 'unload', 'recover', 'chat']) {
     const enabled = !locked && fresh && s?.controls?.[name] === true;
     const ids = name === 'chat' ? ['local-inference-send', 'local-inference-prompt'] : ['local-inference-' + name];
     for (const id of ids) { $(id).disabled = !enabled; $(id).title = enabled ? '' : reason || name + ' is unavailable in state ' + s?.state; }
   }
+  $('local-inference-recover').hidden = !s || s.profile?.id !== 'nemotron-bolt-local' || s.operation?.state !== 'UNKNOWN' || s.operation?.reason === 'OUTCOME_FENCED';
   const proposalValid = localInferenceProposal && localInferenceProposal.expiresAt > Date.now() &&
     localInferenceProposal.revision === s?.revision;
   $('local-inference-approve').disabled = locked || !fresh || !proposalValid;
@@ -539,12 +540,12 @@ async function refreshLocalInference() {
   catch (error) { renderLocalInference(undefined); throw error; }
 }
 $('local-inference-refresh').addEventListener('click', () => action(refreshLocalInference));
-for (const name of ['load', 'stop', 'unload']) $('local-inference-' + name).addEventListener('click', () => action(async () => {
+for (const name of ['load', 'stop', 'unload', 'recover']) $('local-inference-' + name).addEventListener('click', () => action(async () => {
   localInferenceProposal = undefined;
   try {
     const { proposal } = await api('/api/inference/propose-' + name, { method: 'POST', body: '{}' });
     localInferenceProposal = proposal;
-    $('local-inference-proposal').textContent = `Confirm ${proposal.action} · ${proposal.profile.model} · ${proposal.profile.runtimeId} · ${proposal.profile.nodeId} · expires ${new Date(proposal.expiresAt).toISOString()}. No action has executed.`;
+    $('local-inference-proposal').textContent = proposal.action === 'recover' ? 'Resolve the earlier unknown command without repeating it. Its outcome stays unknown; the supervisor must confirm no active command and prevent delayed execution.' : `Confirm ${proposal.action} · ${proposal.profile.model} · ${proposal.profile.runtimeId} · ${proposal.profile.nodeId} · expires ${new Date(proposal.expiresAt).toISOString()}. No action has executed.`;
   } catch (error) { renderLocalInference(undefined); throw error; }
 }));
 $('local-inference-dismiss').addEventListener('click', () => { localInferenceProposal = undefined; localInferenceControls(); });

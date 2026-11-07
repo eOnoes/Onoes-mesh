@@ -114,10 +114,26 @@ qualification. The candidate has bounded JSON routes only on the existing8099
 lane, code/boot identity and receipt reads that remain available while an owner
 operation holds its lock. Existing legacy endpoints are preserved.
 
-Still required before enabling Mesh controls: durable Mesh operation receipts and
-protocol adapter/UI integration, revalidate and review the live candidate source,
-coordinate the supervisor cutover, then prove real Nemotron load/unload, chat
-cancellation, lost response and restart recovery. The current resident model is
+The durable SQLite journal, fixed client, controller and admitted confirmation UI
+are implemented. `npm test` now includes the Node model-control and nonempty
+model-table backup/restore tests. After preparing the exact current candidate,
+`npm run test:supervisor-integration` also exercises actual Mesh admission, the
+real client and actual candidate HTTP/gate on disposable ports with a fake owner.
+This proves protocol integration, not a live model lifecycle.
+
+If an original receipt is unavailable, status remains UNKNOWN and new model work
+stays blocked. Resolve unknown command creates a session-bound proposal; explicit
+confirmation asks the source-bound native gate to inspect/fence that original
+request under its owner lock. Existing receipts are returned instead of replaced;
+active work or uncertain ownership refuses recovery. A verified fence consumes
+the current precondition, prevents delayed original execution and durably retains
+the old UNKNOWN outcome and audit evidence. It does not unload, load, or claim
+that the original action failed. Lost recovery replies leave Mesh blocked until
+readback or another explicit recovery confirmation. No automatic command replay.
+
+Still required before enabling Mesh controls: revalidate/review live source and
+process ownership, coordinate the shared-supervisor cutover, then prove real
+Nemotron load/unload, chat cancellation, lost-response/restart and fencing recovery. The current resident model is
 untouched. Prepared code and passing fixtures do not enable native controls.
 Generated Python bytecode is excluded from source backups/release hashes; the
 Python source itself remains included and versioned.

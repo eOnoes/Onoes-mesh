@@ -13,6 +13,17 @@ function envelope(b,state='ACCEPTED'){
       readBackVerified:state==='COMPLETED',ownerCallStarted:['RUNNING','COMPLETED'].includes(state)}};
 }
 function fixture(){const filename=join(mkdtempSync(join(tmpdir(),'mesh-model-ops-')),'tasks.sqlite');const db=new DatabaseSync(filename);return {filename,db,store:createModelOperationStore(db)};}
+
+test('source-bound fence clears only the unresolved handle, preserving unknown outcome and all prior evidence',()=>{
+  const f=fixture(),b=binding(),boot=randomUUID();f.store.reserve(b);f.store.record(b.command.id,envelope(b));f.store.unknown(b.command.id);
+  const proof={schemaVersion:'mesh-supervisor-control/v1',moduleSha256:b.moduleSha256,supervisorSha256:b.supervisorSha256,modelId:b.modelId,bootId:boot,
+    recovery:{id:b.command.id,fingerprint:nativeCommandFingerprint(b.command),originalBootId:b.bootId,checkedExpected:'c'.repeat(64),state:'FENCED',outcome:'UNKNOWN',active:null}};
+  assert.throws(()=>f.store.fence(b.command.id,{...proof,moduleSha256:'0'.repeat(64)},boot));
+  assert.throws(()=>f.store.fence(b.command.id,proof,randomUUID()));assert.equal(f.store.unresolved().length,1);
+  const row=f.store.fence(b.command.id,proof,boot);assert.equal(row.state,'UNKNOWN');assert.equal(row.envelope.receipt.state,'ACCEPTED');assert.equal(row.reason,'OUTCOME_FENCED');assert.equal(f.store.unresolved().length,0);
+  assert.deepEqual(f.store.fence(b.command.id,proof,boot),row);assert.throws(()=>f.store.record(b.command.id,envelope(b,'COMPLETED')));
+  assert.equal(f.store.reserve(b).created,false);assert.equal(f.store.reserve(binding()).created,true);f.db.close();
+});
 test('a persisted reservation is never a second dispatch permission after replay or app restart',()=>{
   const f=fixture(),b=binding();assert.equal(f.store.reserve(b).created,true);assert.equal(f.store.reserve(b).created,false);
   f.db.close();const db=new DatabaseSync(f.filename),s=createModelOperationStore(db);

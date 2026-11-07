@@ -37,6 +37,7 @@ class MeshControlGate:
         self._signature = None
         self._active = None
         self._receipts = {}
+        self._fences = {}
 
     @property
     def boot_id(self):
@@ -103,7 +104,8 @@ class MeshControlGate:
                 raise ControlRefused("RECEIPT_UNKNOWN")
             return copy.deepcopy(self._receipts[operation_id])
 
-    def submit(self, body):
+    @staticmethod
+    def _validate_command(body):
         if not isinstance(body, dict) or set(body) != {"id", "action", "expected"}:
             raise ControlRefused("INVALID_COMMAND")
         try:
@@ -115,6 +117,65 @@ class MeshControlGate:
         action = body["action"]
         if action not in ("load", "unload") or not isinstance(body["expected"], str) or not re.fullmatch(r"[0-9a-f]{64}", body["expected"]):
             raise ControlRefused("INVALID_COMMAND")
+
+    def recover(self, body):
+        """Fence a missing original request without invoking the model owner.
+
+        The current owner lock serializes this with both acceptance and execution.
+        Consuming the current revision invalidates every delayed old precondition;
+        a different boot already invalidates the original boot's precondition.
+        UNKNOWN is retained: fencing proves no outstanding gate handle, not what
+        the missing command did before its receipt disappeared.
+        """
+        if not isinstance(body, dict) or set(body) != {"command", "originalBootId", "currentExpected"}:
+            raise ControlRefused("INVALID_COMMAND")
+        self._validate_command(body["command"])
+        try:
+            parsed = uuid.UUID(body["originalBootId"])
+            if str(parsed) != body["originalBootId"] or parsed.version != 4:
+                raise ValueError()
+        except (ValueError, TypeError, AttributeError):
+            raise ControlRefused("INVALID_COMMAND") from None
+        if not isinstance(body["currentExpected"], str) or not re.fullmatch(r"[0-9a-f]{64}", body["currentExpected"]):
+            raise ControlRefused("INVALID_COMMAND")
+        command = body["command"]
+        operation_id, fingerprint = command["id"], self._hash(command)
+        if not self._owner.acquire(timeout=0.2):
+            raise ControlRefused("OWNER_BUSY")
+        try:
+            with self._meta:
+                previous = self._fences.get(operation_id)
+                if previous:
+                    if previous["fingerprint"] != fingerprint or previous["originalBootId"] != body["originalBootId"]:
+                        raise ControlRefused("COMMAND_ID_CONFLICT")
+                    return {"recovery": copy.deepcopy(previous)}
+                old = self._receipts.get(operation_id)
+                if old:
+                    if old["fingerprint"] != fingerprint or body["originalBootId"] != self._boot:
+                        raise ControlRefused("COMMAND_ID_CONFLICT")
+                    return {"receipt": copy.deepcopy(old)}
+                if self._active is not None:
+                    raise ControlRefused("OPERATION_IN_PROGRESS")
+            owner, _, token = self._observe()
+            if token != body["currentExpected"]:
+                raise ControlRefused("OWNER_CHANGED")
+            if not (self._eligible("load", owner) or self._eligible("unload", owner)):
+                raise ControlRefused("ACTION_UNAVAILABLE")
+            with self._meta:
+                self._revision += 1
+                proof = {"id": operation_id, "fingerprint": fingerprint,
+                         "originalBootId": body["originalBootId"], "checkedExpected": token,
+                         "state": "FENCED", "outcome": "UNKNOWN", "active": None}
+                self._fences[operation_id] = proof
+                while len(self._fences) > 64:
+                    del self._fences[next(iter(self._fences))]
+                return {"recovery": copy.deepcopy(proof)}
+        finally:
+            self._owner.release()
+
+    def submit(self, body):
+        self._validate_command(body)
+        action = body["action"]
         fingerprint = self._hash(body)
         operation_id = body["id"]
         with self._meta:
@@ -137,6 +198,8 @@ class MeshControlGate:
                     return copy.deepcopy(old)
                 if self._active is not None:
                     raise ControlRefused("OPERATION_IN_PROGRESS")
+                if operation_id in self._fences:
+                    raise ControlRefused("COMMAND_FENCED")
                 if body["expected"] != token:
                     raise ControlRefused("OWNER_CHANGED")
                 if not self._eligible(action, original):
@@ -341,7 +404,7 @@ class MeshSupervisorRoutes:
                 if method != "GET":
                     return 405, {"error": "METHOD_NOT_ALLOWED"}
                 return 200, {"schemaVersion": self.SCHEMA, "moduleSha256": _MODULE_SHA256, "bootId": self.gate.boot_id, "receipt": self.gate.receipt(receipt[1])}
-            if path != "/mesh/v1/commands":
+            if path not in ("/mesh/v1/commands", "/mesh/v1/recover"):
                 return 404, {"error": "ROUTE_UNAVAILABLE"}
             if method != "POST":
                 return 405, {"error": "METHOD_NOT_ALLOWED"}
@@ -353,6 +416,8 @@ class MeshSupervisorRoutes:
                 command = json.loads(body, object_pairs_hook=self._unique)
             except (ValueError, UnicodeDecodeError):
                 return 400, {"error": "INVALID_COMMAND"}
+            if path == "/mesh/v1/recover":
+                return 200, self.gate.recover(command)
             value = self.gate.submit(command)
             return (202 if value["state"] in ("ACCEPTED", "RUNNING") else 200), {"schemaVersion": self.SCHEMA, "moduleSha256": _MODULE_SHA256, "bootId": self.gate.boot_id, "receipt": value}
         except ControlRefused as error:

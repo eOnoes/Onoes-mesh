@@ -23,6 +23,14 @@ test('actual admitted model proposal/confirm/receipt flow survives Mesh restart 
     f.finish(id);const done=await request('/api/inference/status');assert.equal(done.body.state,'RUNNING');assert.equal(done.body.operation.readBackVerified,true);
     const result=await request('/api/inference/chat',{prompt:'fixture prompt'});assert.equal(result.body.response,'Fixture answer');assert.equal(f.calls.length,1);
     assert.equal(JSON.stringify(done.body.operation).includes('fixture prompt'),false);
+    const stop=await request('/api/inference/propose-stop',{});await request('/api/inference/approve',{proposalId:stop.body.proposal.id,confirm:true});assert.equal(f.calls.length,2);
+    f.receipts.clear();f.setNative({...f.getNative(),bootId:randomUUID(),active:null});
+    let unknown=await request('/api/inference/status');assert.equal(unknown.body.controls.recover,true);assert.equal(unknown.body.controls.stop,false);
+    assert.equal((await fetch(app.url+'/api/inference/propose-recover',{method:'POST',headers:{...headers,'X-Trial-CSRF':'wrong'},body:'{}'})).status,403);
+    const recover=await request('/api/inference/propose-recover',{});assert.equal(recover.status,201);assert.equal(f.recoveries.length,0);
+    const fenced=await request('/api/inference/approve',{proposalId:recover.body.proposal.id,confirm:true});assert.equal(fenced.status,200);assert.equal(fenced.body.receipt.state,'UNKNOWN');assert.equal(fenced.body.receipt.reason,'OUTCOME_FENCED');
+    await app.close();app=await startApp({dataDir,relayEnabled:false,supervisedInferenceTestOptions:f.options});headers=await admit(app);
+    unknown=await request('/api/inference/status');assert.equal(unknown.body.state,'RUNNING');assert.equal(unknown.body.controls.stop,true);assert.equal(unknown.body.operation.reason,'OUTCOME_FENCED');assert.equal(f.calls.length,2);assert.equal(f.recoveries.length,1);
   }finally{await app.close();f.db.close();}
 });
 test('standalone wins over supplied native fixture and never constructs its operation store or probes',async()=>{

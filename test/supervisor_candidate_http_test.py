@@ -128,6 +128,20 @@ class CandidateHTTPTests(unittest.TestCase):
         self.assertEqual(self.queue, [])
         self.assertEqual(self.request("/unrecognized-fixture-path")[0],404)
 
+    def test_actual_handler_recovery_fences_missing_command_without_model_operation(self):
+        status = self.request("/mesh/v1/status")[1]
+        command = {"id":str(uuid.uuid4()),"action":"unload","expected":status["expected"]}
+        body = json.dumps({"command":command,"originalBootId":status["bootId"],"currentExpected":status["expected"]}).encode()
+        code, proof = self.request("/mesh/v1/recover",body)
+        self.assertEqual(code,200)
+        self.assertEqual(proof["recovery"]["outcome"],"UNKNOWN")
+        self.assertEqual(proof["moduleSha256"],status["moduleSha256"])
+        self.assertEqual(self.request("/mesh/v1/recover",body),(200,proof))
+        self.assertEqual(self.request("/mesh/v1/commands",json.dumps(command).encode())[0],409)
+        self.assertTrue(self.request("/mesh/v1/status")[1]["unload"])
+        self.assertEqual(self.calls,[])
+        self.assertEqual(self.queue,[])
+
     def test_receipt_reads_remain_available_when_native_owner_lock_is_busy(self):
         status = self.request("/mesh/v1/status")[1]
         operation = {"id":str(uuid.uuid4()),"action":"unload","expected":status["expected"]}

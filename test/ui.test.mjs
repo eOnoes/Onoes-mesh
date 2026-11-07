@@ -2,6 +2,7 @@ import {supervisedModelFixture} from './supervised-model-fixture.mjs';
 import vm from 'node:vm';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
 
 import {source,html,mockUI,response,flush,bodyFor} from './app-ui-fixture.mjs';
 
@@ -185,6 +186,13 @@ test('MOCK UI: supervised model confirmation, receipt progress, chat and privacy
     ui.ids.get('local-inference-prompt').value='private model prompt';ui.ids.get('local-inference-chat-form').events.submit({preventDefault(){}});await flush();
     assert.equal(ui.ids.get('local-inference-response').textContent,'Fixture answer');
     assert.equal(JSON.stringify(f.operations.latest()).includes('private model prompt'),false);
+    await click('local-inference-stop');await click('local-inference-approve');assert.equal(f.calls.length,2);
+    f.receipts.clear();f.setNative({...f.getNative(),bootId:randomUUID(),active:null});await click('local-inference-refresh');
+    assert.equal(ui.ids.get('local-inference-recover').hidden,false);assert.equal(ui.ids.get('local-inference-recover').disabled,false);
+    await click('local-inference-recover');assert.equal(f.recoveries.length,0);assert.match(ui.ids.get('local-inference-proposal').textContent,/without repeating/);
+    await click('local-inference-approve');assert.equal(f.recoveries.length,1);assert.equal(f.calls.length,2);
+    assert.match(ui.ids.get('local-inference-receipt').textContent,/OUTCOME_FENCED/);assert.equal(ui.ids.get('local-inference-recover').hidden,true);
+    assert.equal(ui.ids.get('local-inference-stop').disabled,false);
     ui.events.pagehide();assert.equal(ui.ids.get('local-inference-response').textContent,'');assert.equal(ui.ids.get('local-inference-receipt').textContent,'');
   }finally{await control.close();f.db.close();}
 });

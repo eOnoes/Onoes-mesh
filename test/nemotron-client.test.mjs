@@ -19,6 +19,13 @@ test('fixed client uses status preflight and exactly one source-bound POST; rece
   assert.ok(f.calls.every(x=>new URL(x.url).origin==='http://127.0.0.1:8099'));
   assert.deepEqual(JSON.parse(f.calls[1].options.body),f.binding.command);assert.equal(f.calls.filter(x=>x.options.method==='POST').length,1);
 });
+test('recovery preflights the current boot but sends only the original binding to the distinct fencing route',async()=>{
+  const f=fixture();await f.client.recover(f.binding,{bootId:f.binding.bootId,expected:f.binding.command.expected});
+  assert.deepEqual(f.calls.map(x=>new URL(x.url).pathname),['/mesh/v1/status','/mesh/v1/recover']);
+  assert.deepEqual(JSON.parse(f.calls[1].options.body),{command:f.binding.command,originalBootId:f.binding.bootId,currentExpected:f.binding.command.expected});
+  await assert.rejects(f.client.recover(f.binding,{bootId:f.binding.bootId,expected:f.binding.command.expected,admitted:()=>false}));
+  assert.equal(f.calls.filter(x=>x.options.method==='POST').length,1);
+});
 test('owner/code/boot changes prevent command delivery; a lost POST response never retries',async()=>{
   for(const key of ['moduleSha256','supervisorSha256','bootId','expected']){
     const f=fixture((url,options,m)=>url.endsWith('/status')?Response.json({...m,expected:f.binding.command.expected,owner:{state:'empty'},active:null,load:true,unload:false,[key]:key==='bootId'?randomUUID():'d'.repeat(64)}):null);
