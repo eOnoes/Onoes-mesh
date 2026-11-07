@@ -33,7 +33,7 @@ export function hostTelemetryState(snapshot, now = Date.now()) {
 function renderInferenceHost() {
   if (!inferenceHost) return;
   const freshness = hostTelemetryState(data);
-  const renderKey = JSON.stringify([freshness, data?.generatedAt, data?.host, data?.gpu?.name, data?.gpu?.vramUsedMiB, data?.gpu?.vramTotalMiB, data?.gpu?.utilPct]);
+  const renderKey = JSON.stringify([freshness, data?.generatedAt, data?.host, data?.gpu?.name, data?.gpu?.vramUsedMiB, data?.gpu?.vramTotalMiB, data?.gpu?.utilPct, data?.system?.cpuLoadPct, data?.ram?.usedGB, data?.ram?.totalGB, data?.ram?.usedPct]);
   if (renderKey === inferenceHostKey) return;
   inferenceHostKey = renderKey;
   inferenceHost.replaceChildren();
@@ -42,6 +42,11 @@ function renderInferenceHost() {
     return;
   }
   inferenceHost.append(el('p', 'fine', `Checked ${data.generatedAt} · ${typeof data.host === 'string' ? data.host.slice(0, 120) : 'this PC'}`));
+  const cpu = data.system?.cpuLoadPct, ram = data.ram;
+  inferenceHost.append(row('CPU use', Number.isFinite(cpu) && cpu >= 0 && cpu <= 100 ? `${cpu}%` : null));
+  const validRam = Number.isFinite(ram?.usedGB) && Number.isFinite(ram?.totalGB) && ram.usedGB >= 0 && ram.totalGB > 0 && ram.usedGB <= ram.totalGB;
+  inferenceHost.append(row('RAM', validRam ? `${ram.usedGB} / ${ram.totalGB} GB` : null));
+  inferenceHost.append(row('RAM use', Number.isFinite(ram?.usedPct) && ram.usedPct >= 0 && ram.usedPct <= 100 ? `${ram.usedPct}%` : null));
   const gpu = data.gpu;
   inferenceHost.append(row('GPU', typeof gpu?.name === 'string' ? gpu.name.slice(0, 160) : null));
   const validVram = Number.isFinite(gpu?.vramUsedMiB) && Number.isFinite(gpu?.vramTotalMiB) && gpu.vramUsedMiB >= 0 && gpu.vramTotalMiB > 0 && gpu.vramUsedMiB <= gpu.vramTotalMiB;

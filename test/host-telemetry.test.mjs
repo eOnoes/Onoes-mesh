@@ -6,7 +6,7 @@ test('shared host readings age, clear on failure and never invoke model controls
   const makeNode = () => ({ children: [], textContent: '',dataset:{},style:{},append(...nodes) { this.children.push(...nodes); }, replaceChildren(...nodes) { this.children = nodes; } });
   const host = makeNode(),control=makeNode(), timers = [], requests = [];
   let fail = false,hold=false,honorAbort=false;const held=[],events={},timeouts=[];
-  const sample = { generatedAt: new Date().toISOString(), host: 'Test PC', gpu: {name:'Test GPU',vramUsedMiB:100,vramTotalMiB:32000,utilPct:5} };
+  const sample = { generatedAt: new Date().toISOString(), host: 'Test PC', system:{cpuLoadPct:12},ram:{usedGB:16,totalGB:64,usedPct:25},gpu: {name:'Test GPU',vramUsedMiB:100,vramTotalMiB:32000,utilPct:5} };
   const text = node => [node.textContent, ...node.children.map(text)].join(' ');
   try {
     globalThis.document = {hidden:false,addEventListener:(name,fn)=>{events[name]=fn;}, getElementById: id => id === 'inference-host-telemetry' ? host : id==='ctl-root'?control:null, querySelectorAll: () => [], createElement: makeNode };
@@ -23,15 +23,25 @@ test('shared host readings age, clear on failure and never invoke model controls
     assert.equal(hostTelemetryState(null, now), 'unavailable');
     assert.match(text(host), /Test GPU/);
     assert.match(text(host), /100 \/ 32000 MiB/);
+    assert.match(text(host), /CPU use 12%/);assert.match(text(host), /RAM 16 \/ 64 GB/);assert.match(text(host), /RAM use 25%/);
     const unchanged = host.children[0];
     timers.find(timer => timer.interval === 1000).fn();
     assert.equal(host.children[0], unchanged, 'unchanged readings must not repeatedly rebuild the live region');
+    sample.system.cpuLoadPct=0;sample.ram.usedGB=0;sample.ram.usedPct=0;
+    timers.find(timer=>timer.interval===1000).fn();
+    assert.match(text(host),/CPU use 0%/);assert.match(text(host),/RAM 0 \/ 64 GB/);assert.match(text(host),/RAM use 0%/);
+    for(const invalid of [-1,101,'50',null]){
+      sample.system.cpuLoadPct=invalid;sample.ram.usedPct=invalid;sample.ram.usedGB=65;
+      timers.find(timer=>timer.interval===1000).fn();
+      assert.doesNotMatch(text(host),/CPU use (?:-1|101|50|null)%|RAM use (?:-1|101|50|null)%|65 \/ 64 GB/);
+    }
     sample.generatedAt = new Date(now-20000).toISOString();
     timers.find(timer => timer.interval === 1000).fn();
     assert.match(text(host), /stale/);
     assert.match(text(control),/PC readings stale/);
     assert.doesNotMatch(text(control),/Test GPU/,'Control must clear expired GPU readings even without another response');
     assert.doesNotMatch(text(host), /Test GPU/);
+    assert.doesNotMatch(text(host),/CPU use|RAM use|64 GB/);
     sample.generatedAt = new Date().toISOString(); sample.gpu.vramUsedMiB = -1;
     await timers.find(timer => timer.interval === 4000).fn();
     assert.doesNotMatch(text(host), /-1 \/ 32000/);
