@@ -1,4 +1,5 @@
 import {bindCardDrag} from './workroom-drag.mjs';
+import {captureBoardView,restoreBoardView} from './workroom-view.mjs';
 import {handoffStatus,taskTimeline} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
 import {createPlanEditor,scopedTeamStatus} from './workroom-plan.mjs';
@@ -120,6 +121,7 @@ if(root){
   });
   const act=async operation=>{if(busy)return;busy=true;refresh.disabled=true;try{await operation();}catch(error){status.textContent=error.message;if(moveDialog.open)moveNotice.textContent=error.message;const planNotice=details.querySelector('.workroom-plan [role=status]');if(planNotice)planNotice.textContent=error.message;const notice=details.querySelector('[role="status"]');if(notice)notice.textContent=error.message;}finally{busy=false;refresh.disabled=false;}};
   function draw(){
+    const view=captureBoardView(board,document);
     board.replaceChildren();
     for(const {key,label,stages:members} of lanes){
       const column=el('article');column.className='workroom-lane';column.dataset.workroomStage=key;
@@ -145,6 +147,7 @@ if(root){
       }
       board.append(column);
     }
+    restoreBoardView(board,view);
   }
   async function load(){
     const result=await request('/api/workroom');tasks=result.tasks;teamPolicy=result.teamPolicy||null;
