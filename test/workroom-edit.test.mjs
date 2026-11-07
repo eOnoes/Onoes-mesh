@@ -34,5 +34,20 @@ test('metadata save cannot promote stale goal inputs to a newer progress revisio
     });
     const {task:ordinary}=await query('/api/workroom/'+created.id+'/progress',{method:'PATCH',body:JSON.stringify({...progressBody(normal),goal:'Ordinary combined edit'})});
     assert.equal(ordinary.workroom.project,'Another project');assert.equal(ordinary.progress.goal,'Ordinary combined edit');
+    const {task:approved}=await query('/api/workroom/'+created.id+'/progress',{method:'PATCH',body:JSON.stringify({
+      ...progressBody(ordinary),checklist:[{id:'checked',text:'Synthetic acceptance check',status:'done'}],
+      result:'Synthetic test result',evidence:'Synthetic test evidence',reviewer:'test-reviewer',decision:'approved'
+    })});
+    assert.equal(approved.progress.decision,'approved');
+    const {project,criteria,owner,stage,team,revision}=approved.workroom;
+    const reviewedEdit=await saveCardBrief(approved,{project,criteria:criteria+' revised',owner,stage,team,revision},query);
+    const {task:revised}=await query('/api/workroom/'+created.id+'/progress',{method:'PATCH',body:JSON.stringify({
+      ...progressBody(reviewedEdit),goal:'Revised goal after review',checklist:approved.progress.checklist,
+      result:approved.progress.result,evidence:approved.progress.evidence,reviewer:approved.progress.reviewer,decision:'pending'
+    })});
+    assert.equal(revised.progress.goal,'Revised goal after review');assert.equal(revised.progress.decision,'pending');
+    await assert.rejects(query('/api/workroom/'+created.id,{method:'PATCH',body:JSON.stringify({
+      project:revised.workroom.project,criteria:revised.workroom.criteria,owner:'echo',stage:'done',team:revised.workroom.team,revision:revised.workroom.revision
+    })}),error=>error.status===409);
   }finally{await app.close();if(previous===undefined)delete process.env.MESH_STANDALONE;else process.env.MESH_STANDALONE=previous;}
 });
