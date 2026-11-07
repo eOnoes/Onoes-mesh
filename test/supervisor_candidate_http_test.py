@@ -66,6 +66,7 @@ class CandidateHTTPTests(unittest.TestCase):
     def setUp(self):
         self.calls = []
         self.queue = []
+        self.chat_calls = []
         self.owner_lock = threading.Lock()
         self.owner = {"state": "resident", "modelId": self.guard.MODEL, "ownerVerified": True,
             "identity": {"pid": 123, "createdAt": "2026-11-07T12:00:00Z", "executable": "D:/fixture/server.exe",
@@ -73,7 +74,12 @@ class CandidateHTTPTests(unittest.TestCase):
         def perform(action, original):
             self.calls.append((action, original))
             self.owner = {"state": "empty", "identity": None, "clear": True}
-        self.gate = self.guard.MeshControlGate(self.owner_lock, lambda: self.owner, perform, self.queue.append)
+        def chat(prompt, original, peer):
+            self.assertTrue(self.owner_lock.locked())
+            self.chat_calls.append(len(prompt))
+            return "Candidate fixture answer"
+        self.gate = self.guard.MeshControlGate(self.owner_lock, lambda: self.owner, perform, self.queue.append,
+                                               chat=chat, chat_settled=lambda: True)
         self.module._MESH_ROUTES = self.guard.MeshSupervisorRoutes(self.gate,supervisor_sha256=next(x["sha256"] for x in self.manifest["files"] if x["path"]=="local_supervisor.py"))
         class Handler(self.module.Handler):
             @property
@@ -141,6 +147,20 @@ class CandidateHTTPTests(unittest.TestCase):
         self.assertTrue(self.request("/mesh/v1/status")[1]["unload"])
         self.assertEqual(self.calls,[])
         self.assertEqual(self.queue,[])
+
+    def test_actual_handler_chat_checks_original_owner_consumes_token_and_keeps_command_bounds(self):
+        status = self.request("/mesh/v1/status")[1]
+        request = {"id":str(uuid.uuid4()),"expected":status["expected"],"prompt":"\x01"*2500}
+        encoded = json.dumps(request).encode()
+        self.assertGreater(len(encoded),4096)
+        code, reply = self.request("/mesh/v1/chat",encoded)
+        self.assertEqual(code,200)
+        self.assertEqual(reply["chat"]["response"],"Candidate fixture answer")
+        self.assertNotEqual(reply["chat"]["expected"],status["expected"])
+        self.assertEqual(self.request("/mesh/v1/chat",encoded)[0],409)
+        self.assertEqual(self.chat_calls,[2500])
+        self.assertEqual(self.request("/mesh/v1/commands",encoded)[0],413)
+        self.assertEqual(self.calls,[])
 
     def test_receipt_reads_remain_available_when_native_owner_lock_is_busy(self):
         status = self.request("/mesh/v1/status")[1]

@@ -69,3 +69,13 @@ test('lost fencing response stays blocked through reads/restart until a separate
   assert.equal(recoveryPosts,2);assert.equal(f.recoveries.length,1);assert.equal(f.operations.unresolved().length,0);assert.equal(f.operations.latest().reason,'OUTCOME_FENCED');assert.equal(f.calls.length,0);
   await c.close();f.db.close();
 });
+
+
+test('guarded chat accepts its own consumed token only with unchanged original owner and post-response proof',async()=>{
+  const f=fixture();f.options.chatImpl=async()=>{f.setNative({...f.getNative(),expected:'7'.repeat(64)});return {response:'guarded answer',expected:'7'.repeat(64)};};
+  const c=f.make();const ack=await approve(c,await propose(c));f.finish(ack.receipt.id);
+  assert.equal((await c.chat({prompt:'private'},()=>true)).response,'guarded answer');
+  f.options.chatImpl=async()=>({response:'unbound',expected:'8'.repeat(64)});await c.close();const second=f.make();
+  await assert.rejects(second.chat({prompt:'private'},()=>true),/unknown/);assert.equal(JSON.stringify(f.operations.latest()).includes('private'),false);
+  await second.close();f.db.close();
+});

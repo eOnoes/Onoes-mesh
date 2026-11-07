@@ -14,6 +14,10 @@ import json
 import threading
 import uuid
 import urllib.request
+import http.client
+import select
+import socket
+import time
 
 MODEL = "nemotron-3.5-bolt-74b-a9b"
 _MODULE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -26,7 +30,7 @@ class ControlRefused(Exception):
 
 
 class MeshControlGate:
-    def __init__(self, owner_lock, capture, perform, launch=None):
+    def __init__(self, owner_lock, capture, perform, launch=None, chat=None, chat_settled=None):
         self._owner = owner_lock
         self._capture = capture
         self._perform = perform
@@ -38,6 +42,9 @@ class MeshControlGate:
         self._active = None
         self._receipts = {}
         self._fences = {}
+        self._chat = chat
+        self._chat_settled = chat_settled
+        self._chat_pending = False
 
     @property
     def boot_id(self):
@@ -90,6 +97,10 @@ class MeshControlGate:
         if not self._owner.acquire(timeout=0.2):
             raise ControlRefused("OWNER_BUSY")
         try:
+            if self._chat_pending and self._chat_settled and self._chat_settled():
+                with self._meta:
+                    self._chat_pending = False
+                    self._active = None
             value, _, token = self._observe()
             with self._meta:
                 return {"bootId": self._boot, "expected": token, "owner": value,
@@ -103,6 +114,46 @@ class MeshControlGate:
             if operation_id not in self._receipts:
                 raise ControlRefused("RECEIPT_UNKNOWN")
             return copy.deepcopy(self._receipts[operation_id])
+
+    def chat(self, body, client_socket=None):
+        if (not isinstance(body, dict) or set(body) != {"id", "expected", "prompt"}
+                or not isinstance(body["prompt"], str) or not body["prompt"].strip()
+                or len(body["prompt"].encode("utf-8")) > 3000):
+            raise ControlRefused("INVALID_CHAT")
+        self._validate_command({"id": body["id"], "action": "unload", "expected": body["expected"]})
+        if not self._chat or not self._chat_settled:
+            raise ControlRefused("CHAT_UNAVAILABLE")
+        if not self._owner.acquire(timeout=0.2):
+            raise ControlRefused("OWNER_BUSY")
+        started = False
+        try:
+            original, signature, expected = self._observe()
+            if self._active is not None:
+                raise ControlRefused("OPERATION_IN_PROGRESS")
+            if expected != body["expected"]:
+                raise ControlRefused("OWNER_CHANGED")
+            if not self._eligible("unload", original):
+                raise ControlRefused("ACTION_UNAVAILABLE")
+            with self._meta:
+                self._revision += 1  # A delayed/replayed chat cannot run twice.
+                self._active = body["id"]
+                self._chat_pending = True
+                started = True
+            response = self._chat(body["prompt"], copy.deepcopy(original), client_socket)
+            _, after_signature, next_expected = self._observe()
+            if after_signature != signature or not self._chat_settled():
+                raise ControlRefused("CHAT_OUTCOME_UNKNOWN")
+            if not isinstance(response, str) or not response.strip() or len(response.encode("utf-8")) > 16384:
+                raise ControlRefused("CHAT_REPLY_INVALID")
+            return {"id": body["id"], "response": response, "expected": next_expected}
+        finally:
+            try:
+                if started and self._chat_settled():
+                    with self._meta:
+                        self._chat_pending = False
+                        self._active = None
+            finally:
+                self._owner.release()
 
     @staticmethod
     def _validate_command(body):
@@ -364,6 +415,112 @@ class NemotronSupervisorOwner:
             raise ControlRefused("INVALID_COMMAND")
 
 
+class NemotronSupervisorChat:
+    """Ephemeral chat through the original owner; never loads or adopts a model."""
+    def __init__(self, owner, connection_factory=None, slots_reader=None):
+        self.owner = owner
+        self.connection_factory = connection_factory or (lambda: http.client.HTTPConnection("127.0.0.1", 8199, timeout=40))
+        self.slots_reader = slots_reader or self._slots_idle
+        self.pending = None
+
+    @staticmethod
+    def _slots_idle():
+        connection = http.client.HTTPConnection("127.0.0.1", 8199, timeout=2)
+        try:
+            connection.request("GET", "/slots")
+            response = connection.getresponse()
+            raw = response.read(16385)
+            if response.status != 200 or len(raw) > 16384:
+                return False
+            rows = json.loads(raw)
+            return (isinstance(rows, list) and 0 < len(rows) <= 16
+                    and all(isinstance(row, dict) and row.get("is_processing") is False for row in rows))
+        finally:
+            connection.close()
+
+    def settled(self):
+        if self.pending is None:
+            return True
+        original, handle = self.pending
+        try:
+            # This is the retained original handle, never a discovered/reused PID.
+            if handle.poll() is not None or self.owner.capture() == original and self.slots_reader():
+                self.pending = None
+                return True
+        except Exception:
+            pass
+        return False
+
+    @staticmethod
+    def disconnected(peer):
+        if peer is None:
+            return False
+        try:
+            ready, _, _ = select.select([peer], [], [], 0)
+            return bool(ready) and peer.recv(1, socket.MSG_PEEK) == b""
+        except OSError:
+            return True
+
+    def send(self, prompt, original, peer=None):
+        if self.pending is not None or self.owner.capture() != original or not self.slots_reader():
+            raise ControlRefused("CHAT_SLOT_UNVERIFIED")
+        if self.disconnected(peer):
+            raise ControlRefused("CHAT_OUTCOME_UNKNOWN")
+        connection = self.connection_factory()
+        request_socket, response = None, None
+        done, cancelled = threading.Event(), threading.Event()
+        self.owner.supervisor.last_used = time.monotonic()
+        self.pending = (copy.deepcopy(original), self.owner.supervisor.proc)
+        deadline = time.monotonic() + 40
+
+        def watch():
+            while not done.wait(0.05):
+                if time.monotonic() >= deadline or self.disconnected(peer):
+                    cancelled.set()
+                    try:
+                        if request_socket is not None:
+                            request_socket.shutdown(socket.SHUT_RDWR)
+                    except OSError:
+                        pass
+                    connection.close()
+                    return
+
+        monitor = threading.Thread(target=watch, daemon=True)
+        try:
+            connection.connect()
+            request_socket = connection.sock
+            monitor.start()
+            if cancelled.is_set():
+                raise ControlRefused("CHAT_OUTCOME_UNKNOWN")
+            body = json.dumps({"model": MODEL, "messages": [{"role": "user", "content": prompt}],
+                               "max_tokens": 512, "stream": False}).encode()
+            connection.request("POST", "/v1/chat/completions", body=body, headers={"Content-Type": "application/json"})
+            response = connection.getresponse()
+            raw = response.read(16385)
+            if cancelled.is_set() or response.status != 200 or len(raw) > 16384:
+                raise ControlRefused("CHAT_OUTCOME_UNKNOWN")
+            value = json.loads(raw)
+            content = value["choices"][0]["message"]["content"]
+            if not isinstance(content, str) or not content.strip():
+                raise ControlRefused("CHAT_REPLY_INVALID")
+            return content
+        except ControlRefused:
+            raise
+        except Exception:
+            raise ControlRefused("CHAT_OUTCOME_UNKNOWN") from None
+        finally:
+            done.set()
+            if response is not None:
+                response.close()
+            connection.close()
+            if monitor.ident is not None:
+                monitor.join(timeout=0.2)
+            self.owner.supervisor.last_used = time.monotonic()
+            # Closing a socket is not proof that generation stopped. If readback
+            # is unavailable/busy, the gate remains active until later readback.
+            self.settled()
+
+
 class MeshSupervisorRoutes:
     """Prepared routing seam; owns no listener and leaves legacy routes alone."""
     SCHEMA = "mesh-supervisor-control/v1"
@@ -385,11 +542,11 @@ class MeshSupervisorRoutes:
         return {"schemaVersion": self.SCHEMA, "moduleSha256": _MODULE_SHA256,
                 "bootId": self.gate.boot_id, "supervisorSha256": self.supervisor_sha256, "modelId": MODEL, **value}
 
-    def handle(self, port, method, path, body=b"", content_type=None):
-        result = self._handle(port, method, path, body, content_type)
+    def handle(self, port, method, path, body=b"", content_type=None, client_socket=None):
+        result = self._handle(port, method, path, body, content_type, client_socket)
         return None if result is None else (result[0], self.envelope(result[1]))
 
-    def _handle(self, port, method, path, body=b"", content_type=None):
+    def _handle(self, port, method, path, body=b"", content_type=None, client_socket=None):
         if not isinstance(path, str) or not path.startswith("/mesh/v1/"):
             return None
         if port != NemotronSupervisorOwner.PORT:
@@ -404,24 +561,26 @@ class MeshSupervisorRoutes:
                 if method != "GET":
                     return 405, {"error": "METHOD_NOT_ALLOWED"}
                 return 200, {"schemaVersion": self.SCHEMA, "moduleSha256": _MODULE_SHA256, "bootId": self.gate.boot_id, "receipt": self.gate.receipt(receipt[1])}
-            if path not in ("/mesh/v1/commands", "/mesh/v1/recover"):
+            if path not in ("/mesh/v1/commands", "/mesh/v1/recover", "/mesh/v1/chat"):
                 return 404, {"error": "ROUTE_UNAVAILABLE"}
             if method != "POST":
                 return 405, {"error": "METHOD_NOT_ALLOWED"}
             if not isinstance(content_type, str) or content_type.split(";", 1)[0].strip().lower() != "application/json":
                 return 415, {"error": "JSON_REQUIRED"}
-            if not isinstance(body, bytes) or len(body) > 4096:
+            if not isinstance(body, bytes) or len(body) > (20480 if path == "/mesh/v1/chat" else 4096):
                 return 413, {"error": "COMMAND_TOO_LARGE"}
             try:
                 command = json.loads(body, object_pairs_hook=self._unique)
             except (ValueError, UnicodeDecodeError):
                 return 400, {"error": "INVALID_COMMAND"}
+            if path == "/mesh/v1/chat":
+                return 200, {"chat": self.gate.chat(command, client_socket)}
             if path == "/mesh/v1/recover":
                 return 200, self.gate.recover(command)
             value = self.gate.submit(command)
             return (202 if value["state"] in ("ACCEPTED", "RUNNING") else 200), {"schemaVersion": self.SCHEMA, "moduleSha256": _MODULE_SHA256, "bootId": self.gate.boot_id, "receipt": value}
         except ControlRefused as error:
-            code = 400 if error.code == "INVALID_COMMAND" else 404 if error.code == "RECEIPT_UNKNOWN" else 503 if error.code == "OWNER_EVIDENCE_INVALID" else 409
+            code = 400 if error.code in ("INVALID_COMMAND", "INVALID_CHAT") else 404 if error.code == "RECEIPT_UNKNOWN" else 503 if error.code == "OWNER_EVIDENCE_INVALID" else 409
             return code, {"error": error.code}
         except Exception:
             return 503, {"error": "CONTROL_UNAVAILABLE"}

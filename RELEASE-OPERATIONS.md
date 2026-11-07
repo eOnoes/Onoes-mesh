@@ -137,3 +137,30 @@ Nemotron load/unload, chat cancellation, lost-response/restart and fencing recov
 untouched. Prepared code and passing fixtures do not enable native controls.
 Generated Python bytecode is excluded from source backups/release hashes; the
 Python source itself remains included and versioned.
+
+## Guarded Nemotron chat
+
+Mesh chat uses the source/boot-bound /mesh/v1/chat route on the supervisor, never a
+POST directly to the model child. The native gate checks the original resident
+under its existing owner lock, consumes the observed precondition before sending
+one request, and keeps that lock throughout generation. The supervisor idle timer
+is refreshed before and after work. A returned answer is usable only after model
+health/GPU verification and unchanged original process identity; the new token
+must match the token returned for that chat. No prompt/reply is stored in the
+operation journal or native gate receipts.
+
+Cancellation shuts down only that chat's original child connection. Closing the
+connection does not establish cancellation: the native gate remains busy until
+readback shows every child slot idle, or the retained original process handle has
+exited. Busy/unavailable readback remains UNKNOWN and blocks subsequent controls;
+status may reconcile it later, without replaying chat. Disconnect/timeout can
+therefore return UNKNOWN rather than inventing a completed cancellation. Control
+JSON remains4KiB; chat JSON has a separate20KiB bound for escaped3000-byte prompts.
+The original model API endpoint,512-token output bound,40-second native deadline
+and50-second client deadline are fixed. Responses are bounded independently.
+
+`npm run test:supervisor-control` includes actual socket cancellation against a
+fake child with Connection: close headers (no running model required). Candidate
+HTTP and cross-chain tests also exercise guarded chat. These are preparation;
+actual Nemotron cancellation/idle readback and the shared supervisor cutover still
+require real lifecycle qualification before MESH_NEMOTRON_CONTROL is enabled.

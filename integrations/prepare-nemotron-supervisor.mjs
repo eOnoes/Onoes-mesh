@@ -14,10 +14,11 @@ function replaceOnce(before,after){if(source.split(before).length!==2)throw Erro
 replaceOnce('SUP = Supervisor()',`SUP = Supervisor()
 
 # Prepared Mesh protocol: fixed Nemotron lane, original supervisor-owned handles.
-from supervisor_mesh_control import MeshControlGate, NemotronSupervisorOwner, MeshSupervisorRoutes
+from supervisor_mesh_control import MeshControlGate, NemotronSupervisorOwner, NemotronSupervisorChat, MeshSupervisorRoutes
 import hashlib as _mesh_hashlib
 _MESH_OWNER = NemotronSupervisorOwner(SUP, child_argv(8099, 8199), "${hash(executable)}")
-_MESH_ROUTES = MeshSupervisorRoutes(MeshControlGate(_LOCK, _MESH_OWNER.capture, _MESH_OWNER.perform), supervisor_sha256=_mesh_hashlib.sha256(Path(__file__).read_bytes()).hexdigest())`);
+_MESH_CHAT = NemotronSupervisorChat(_MESH_OWNER)
+_MESH_ROUTES = MeshSupervisorRoutes(MeshControlGate(_LOCK, _MESH_OWNER.capture, _MESH_OWNER.perform, chat=_MESH_CHAT.send, chat_settled=_MESH_CHAT.settled), supervisor_sha256=_mesh_hashlib.sha256(Path(__file__).read_bytes()).hexdigest())`);
 const helper=`    def _mesh_control(self):
         if not self.path.startswith("/mesh/v1/"):
             return False
@@ -35,8 +36,9 @@ const helper=`    def _mesh_control(self):
             except ValueError:
                 self._json(400, _MESH_ROUTES.envelope({"error": "INVALID_COMMAND"}))
                 return True
-            if length <= 0 or length > 4096:
-                self._json(413 if length > 4096 else 400, _MESH_ROUTES.envelope({"error": "COMMAND_TOO_LARGE" if length > 4096 else "INVALID_COMMAND"}))
+            limit = 20480 if self.path == "/mesh/v1/chat" else 4096
+            if length <= 0 or length > limit:
+                self._json(413 if length > limit else 400, _MESH_ROUTES.envelope({"error": "COMMAND_TOO_LARGE" if length > limit else "INVALID_COMMAND"}))
                 return True
             old_timeout = self.connection.gettimeout()
             try:
@@ -50,8 +52,11 @@ const helper=`    def _mesh_control(self):
                 return True
             finally:
                 self.connection.settimeout(old_timeout)
-        code, value = _MESH_ROUTES.handle(self.port, self.command, self.path, body, self.headers.get("Content-Type"))
-        self._json(code, value)
+        code, value = _MESH_ROUTES.handle(self.port, self.command, self.path, body, self.headers.get("Content-Type"), self.connection)
+        try:
+            self._json(code, value)
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
         return True
 
 `;

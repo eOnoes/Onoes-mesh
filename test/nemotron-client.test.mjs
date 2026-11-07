@@ -49,3 +49,24 @@ test('native refusal is attested to the original boot/code; stale boot receipt s
   const g=fixture((url,options,m)=>Response.json({...m,bootId:randomUUID(),error:'RECEIPT_UNKNOWN'},{status:404}));
   await assert.rejects(g.client.receipt(g.binding),error=>error.code==='NATIVE_BOOT_CHANGED'&&!error.nativeIdentityVerified);
 });
+
+
+test('guarded chat is source/boot/owner-bound, consumes its precondition and propagates cancellation',async()=>{
+  const f=fixture((url,options,m)=>url.endsWith('/status')?Response.json({...m,expected:f.binding.command.expected,owner:{state:'resident'},active:null,load:false,unload:true}):
+    Response.json({...m,chat:{id:JSON.parse(options.body).id,expected:'d'.repeat(64),response:'answer'}}));
+  const abort=new AbortController(),native={...f.metadata,expected:f.binding.command.expected};
+  assert.deepEqual(await f.client.chat('private',native,{signal:abort.signal}),{response:'answer',expected:'d'.repeat(64)});
+  assert.deepEqual(f.calls.map(x=>new URL(x.url).pathname),['/mesh/v1/status','/mesh/v1/chat']);
+  abort.abort();assert.equal(f.calls[1].options.signal.aborted,true);
+  await assert.rejects(f.client.chat('private',native,{admitted:()=>false}));assert.equal(f.calls.filter(x=>x.options.method==='POST').length,1);
+});
+test('chat refuses stale owner or malformed reply; lost response cannot cause another POST',async()=>{
+  const f=fixture((url,options,m)=>url.endsWith('/status')?Response.json({...m,expected:f.binding.command.expected,owner:{state:'resident'},active:null,load:false,unload:true}):
+    Response.json({...m,chat:{id:JSON.parse(options.body).id,expected:f.binding.command.expected,response:'unbound'}}));
+  const native={...f.metadata,expected:f.binding.command.expected};
+  await assert.rejects(f.client.chat('private',{...native,expected:'0'.repeat(64)}),e=>e.code==='OWNER_CHANGED');
+  assert.equal(f.calls.filter(x=>x.options.method==='POST').length,0);
+  await assert.rejects(f.client.chat('private',native),e=>e.code==='BRIDGE_REPLY_INVALID');assert.equal(f.calls.filter(x=>x.options.method==='POST').length,1);
+  const lost=fixture((url,options,m)=>{if(options.method==='POST')throw Error('lost');return Response.json({...m,expected:lost.binding.command.expected,owner:{state:'resident'},active:null,load:false,unload:true});});
+  await assert.rejects(lost.client.chat('private',{...lost.metadata,expected:lost.binding.command.expected}));assert.equal(lost.calls.filter(x=>x.options.method==='POST').length,1);
+});

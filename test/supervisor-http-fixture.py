@@ -23,7 +23,7 @@ try:
             fixture.gate._receipts.clear()
         elif request != {"action": "inspect"}:
             raise ValueError("Unknown fixture action")
-        print(json.dumps({"calls": len(fixture.calls), "queued": len(fixture.queue)}), flush=True)
+        print(json.dumps({"calls": len(fixture.calls), "queued": len(fixture.queue), "chats": len(fixture.chat_calls)}), flush=True)
 finally:
     if hasattr(fixture, "server"):
         fixture.tearDown()
