@@ -48,7 +48,7 @@ if ($owned) {
 if ($Action -eq 'Stop') { Set-Content -LiteralPath $pausePath -Value 'Intentional named Stop; Start or Restart resumes recovery.'; Write-Output "$appName stopped; automatic recovery paused; other apps untouched."; return }
 if (Get-NetTCPConnection -State Listen -LocalPort 4320 -ErrorAction SilentlyContinue) { throw 'Port 4320 is occupied; refusing to stop an unowned listener.' }
 $settings = @{
-  MESH_PREVIEW_PORT='4320'; MESH_DATA_DIR='data/workroom-preview'; MESH_RELAY='1'; MESH_RELAY_MODE='http'; MESH_NIMS='1';
+  MESH_PREVIEW_PORT='4320'; MESH_DATA_DIR='data/workroom-preview'; MESH_RELAY='1'; MESH_RELAY_MODE='http'; MESH_NIMS='1'; MESH_MODEL_OBSERVATION='1';
   MESH_TAILSCALE_LOGIN='emitchell109@gmail.com'; MESH_TAILSCALE_HOST='emitchell.tail8c4a75.ts.net:8453'
 }
 $previous = @{}

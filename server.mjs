@@ -1,3 +1,4 @@
+import {createSupervisorObservation} from './lib/supervisor-observation.mjs';
 import http from 'node:http';
 import {createTeamRunner} from './lib/workroom-automation.mjs';
 import {withNims} from './lib/nims-link.mjs';
@@ -103,6 +104,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   if (localInferenceTestOptions !== undefined && (!localInferenceTestOptions ||
       Object.keys(localInferenceTestOptions).some(k => !['adapter', 'now'].includes(k)) ||
       localInferenceTestOptions.adapter?.source !== 'disposable_fixture')) throw new Error('Invalid inference fixture.');
+  const observeSupervisor = createSupervisorObservation({enabled:!standalone && process.env.MESH_MODEL_OBSERVATION==='1'});
   const localInference = createLocalInference(standalone
     ? { adapter: createDisabledLocalAdapter('STANDALONE_NOT_CONFIGURED') } : localInferenceTestOptions);
   // Trusted in-process tests only; HTTP cannot supply any probe configuration.
@@ -226,7 +228,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       if (route.startsWith('/api/inference/')) {
         const sessionId = (req.headers.cookie ?? '').split(';').map(s => s.trim()).find(s => s.startsWith(SESSION_COOKIE_NAME + '='))?.slice(SESSION_COOKIE_NAME.length + 1);
         const admitted = () => Boolean(manager.authorize(sessionId, { mutation: true, csrfToken: req.headers['x-trial-csrf'] }));
-        if (route === '/api/inference/status' && ['GET', 'HEAD'].includes(req.method)) return send(200, await localInference.status());
+        if (route === '/api/inference/status' && ['GET', 'HEAD'].includes(req.method)) return send(200, {...await localInference.status(), modelObservation:await observeSupervisor()});
         const receiptId = /^\/api\/inference\/receipt\/([0-9a-f-]{36})$/.exec(route)?.[1];
         if (receiptId && ['GET', 'HEAD'].includes(req.method)) return send(200, localInference.receipt(receiptId, sessionId));
         if (req.method !== 'POST') throw new TaskError(405, 'Method not allowed.');

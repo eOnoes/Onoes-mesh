@@ -43,8 +43,8 @@ coding tools, repository access or completion. Agent workspace opens those same
 saved Workroom cards; it introduces no scheduler or automatic dispatch.
 
 Physical-phone end-to-end acceptance remains required. Inference lifecycle
-qualification is separate: the authoritative UnbiasedStrata lock currently says
-its Windows binary is not built. Do not substitute a retired engine. The qualified
+qualification is separate: the approved UnbiasedStrata binaries now exist, but
+existence alone does not qualify ownership or lifecycle. Do not substitute a retired engine. The qualified
 Mesh-only team lane uses locked scope, Echo building and DeepSeek/Nims review,
 then pauses for owner review. Mind deliberately retrieves selected saved Workroom
 records under [MIND-CONTRACT.md](MIND-CONTRACT.md); it adds no personal memory
@@ -53,3 +53,30 @@ push/Telegram synchronization remain unqualified/deferred. Review this record
 when the runtime lock or owner acceptance changes.
 
 Ordinary Relay acceptance and compatibility decisions are recorded in RELAY-INTEGRATION.md. The new conversation surface exposes one explicit selector and one ordinary submit path; legacy snapshot-era header/session choices are bypassed. Actual private history/lock/reconnect acceptance sent no real message. Phone hold/drag and typing/focus are owner-confirmed; physical background/resume recovery is a distinct remaining check.
+
+## Local model supervisor observations
+
+The named Mesh launcher enables MESH_MODEL_OBSERVATION=1. Non-standalone Mesh
+then adds a read-only supervisor catalog to the admitted inference status. Only
+fixed loopback GET /health and GET /v1/models on the existing registered lanes
+are allowed. No generation/admin endpoint, model switch, remote URL or proxy
+configuration comes from the browser. Standalone/default instances make no probes.
+
+The Inference panel refreshes this observation every4 seconds only while visible,
+connected and admitted. Concurrent reads share one probe set. Observations expire
+after5 seconds and clear on privacy lock; late responses cannot restore them.
+Reported loaded is a supervisor claim, distinct from retained process custody,
+GPU attribution and qualification to control a model. Missing model files, failed
+identity checks, loading races and unavailable services remain explicit.
+
+Eddie selected Nemotron 3.5 Bolt as the first model for control qualification. Its
+current runtime is the bundled b11669 on the supervisor's existing8099/child8199
+lane. Do not use the legacy b11446 Flash-Next profile for Nemotron. Read-only
+health/model identity is proven; load/unload/chat/cancellation are not yet qualified.
+Before enabling controls, add and verify an identity-bound supervised control path:
+exact runtime/model and original-process custody, atomic residency preconditions,
+receipt/idempotency, restart/unknown-outcome handling and cancellation readback.
+The current global /admin/unload has no expected-resident identity and cannot
+safely serve as Mesh's qualified stop adapter. The proxy holds its lock through
+generation, so disconnect/cancel behavior also requires explicit qualification.
+Preserve the active resident model while preparing this work.

@@ -1,45 +1,9 @@
+import vm from 'node:vm';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
-import { readFile } from 'node:fs/promises';
 
-const source = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
-const agentSource = await readFile(new URL('../public/agent-workspace.mjs', import.meta.url), 'utf8');
-const mindSource = await readFile(new URL('../public/mind-workspace.mjs', import.meta.url), 'utf8');
-const relayCoreSource = await readFile(new URL('../public/relay-conversation.mjs', import.meta.url), 'utf8');
-const relayChatSource = await readFile(new URL('../public/chat.mjs', import.meta.url), 'utf8');
-const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
-class Element {
-  constructor() { this.children = []; this.attrs = {}; this.events = {}; this.textContent = ''; this.value = ''; this.disabled = false; this.style = {}; this.dataset={};this.scrollHeight=0;this.clientHeight=0;this.scrollTop=0;this.classList={add(){},remove(){},contains(){return false;}}; }
-  get firstChild() { return this.children[0]; }
-  setAttribute(k, v) { this.attrs[k] = v; } getAttribute(k) { return this.attrs[k]; }
-  addEventListener(k, f) { this.events[k] = f; } append(...els) { this.children.push(...els); }
-  replaceChildren(...els) { this.children = els; } reset() {} focus() {}
-  querySelectorAll() { return []; }
-  getBoundingClientRect() {return {height:0,width:0,top:0,right:0,left:0,bottom:0};}
-}
-function mockUI({ stored, responder, locked=false, hash='' } = {}) {
-  const ids = new Map([...html.matchAll(/\bid="([^"]+)"/g)].map(m => [m[1], new Element()]));
-  const forms = ['create-title','create-description','create-label','edit-title','edit-description','edit-label','toggle-status','reload-task','refresh'].map(id => ids.get(id));
-  const tabs = [...html.matchAll(/<button role="tab" id="([^"]+)" aria-controls="([^"]+)"/g)].map(m => { const el = ids.get(m[1]); el.attrs['aria-controls'] = m[2]; return el; });
-  const groups = new Map(['.activity-workers','.activity-state, .activity-source','.service-connections','.service-status','.inference-state','.inference-errors','.activity-source','.activity-state'].map(s => [s, [new Element()]]));
-  const storage = new Map(stored ? [['mesh.synthetic-demo.proof.v1', JSON.stringify(stored)]] : []);
-  if(locked)storage.set('mesh.workspace.locked.v1','1');
-  const requests = []; const events = {}; const intervals = [];
-  const context = vm.createContext({requestAnimationFrame:()=>{},MutationObserver:class{observe(){}},crypto:globalThis.crypto,TextEncoder,document: { getElementById: id => ['chat-grip','chat-seek','chat-jump'].includes(id)?null:ids.get(id), createElement: () => new Element(),createDocumentFragment:()=>new Element(), querySelectorAll: s => s === '[role=tab]' ? tabs : s.startsWith('form ') ? forms : groups.get(s) ?? [] }, navigator: { onLine: true }, window: { location:{hash}, addEventListener: (e, f) => { events[e] = f; } }, sessionStorage: { getItem: k => storage.get(k)??null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) }, AbortController, setTimeout, clearTimeout, setInterval: f => { intervals.push(f); }, Date, fetch: async (route, options) => { requests.push({ route, options }); return responder ? responder(route, options) : response(200, {}); } });
-  const modules=[agentSource,mindSource,relayCoreSource,relayChatSource,source].map(s=>s.replace(/^import .*;\r?$/gm,'').replace(/^export /gm,''));
-  vm.runInContext(modules.join('\n'), context);
-  return { ids, forms, tabs, storage, requests, events, intervals, context };
-}
-const response = (status, body) => ({ status, ok: status >= 200 && status < 300, text: async () => JSON.stringify(body) });
-const flush = async () => { for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r)); };
-function bodyFor(route) {
-  if (route === '/api/tasks') return { tasks: [] };
-  if (route === '/api/health') return { state: 'ok', persistence: 'sqlite', activity: { source: 'none' } };
-  if (route === '/api/worker-activity') return {state:'not_configured',workers:[]};
-  if (route === '/api/commands') return {commands:[]};
-  return {};
-}
+import {source,html,mockUI,response,flush,bodyFor} from './app-ui-fixture.mjs';
+
 test('MOCK UI: seven panels, keyboard tabs, local task labels and initially disabled board', () => {
   const ui = mockUI(); assert.equal(ui.tabs.length, 7); assert.equal((html.match(/role="tabpanel"/g) ?? []).length, 7);
   assert.equal(html.includes('Local task board'), true); assert.equal(ui.requests.length, 0);
@@ -158,4 +122,40 @@ test('MOCK UI: workspace deep links select the named panel without admission or 
     assert.equal(ui.ids.get('tab-workroom').attrs['aria-selected'],'true');
     assert.equal(ui.requests.length,0);
   }
+});
+
+test('MOCK UI: supervisor-reported models never enable controls and clear on expiry or privacy lock',()=>{
+  const ui=mockUI();
+  const modelObservation={schemaVersion:'mesh-supervisor-observation/v1',source:'local_supervisor',expiresAt:Date.now()+4900,
+    models:[{label:'Nemotron test label',state:'reported_loaded',reason:null}]};
+  const status={schemaVersion:'mesh-local-inference/v1',nodeId:'this-pc',profile:{id:'qwen38-flash-next-q6'},state:'UNAVAILABLE',
+    controls:{load:false,stop:false,unload:false,chat:false,reason:'NATIVE_QUALIFICATION_REQUIRED'},runtime:{status:'UNKNOWN'},modelObservation};
+  ui.context.renderLocalInference(status);
+  const root=ui.ids.get('local-model-catalog');assert.match(root.children[0].textContent,/Nemotron test label.*Reported loaded/);
+  for(const id of ['load','stop','unload','send'])assert.equal(ui.ids.get('local-inference-'+id).disabled,true);
+  modelObservation.expiresAt=Date.now()-1;ui.context.renderLocalInference(status);
+  assert.equal(root.children.length,0);assert.match(root.textContent,/expired/);
+  modelObservation.expiresAt=Date.now()+4900;ui.context.renderLocalInference(status);ui.events.pagehide();
+  assert.equal(root.children.length,0);assert.ok(!root.textContent.includes('Nemotron'));
+  assert.ok(!JSON.stringify([...ui.storage.entries()]).includes('Nemotron'));
+});
+
+test('MOCK UI: visible model polling is GET-only, single-flight and cannot restore private data after lock',async()=>{
+  let release,hold=false;
+  const stored={csrfToken:'m'.repeat(43),expiresAt:Date.now()+60000};
+  const status={schemaVersion:'mesh-local-inference/v1',nodeId:'this-pc',profile:{id:'qwen38-flash-next-q6'},state:'UNAVAILABLE',controls:{},
+    modelObservation:{schemaVersion:'mesh-supervisor-observation/v1',source:'local_supervisor',expiresAt:Date.now()+4900,models:[{label:'private loaded model',state:'reported_loaded'}]}};
+  const ui=mockUI({stored,hash:'#inference',responder:async route=>{
+    if(route==='/api/inference/status'){if(hold)await new Promise(r=>{release=r;});return response(200,status);}
+    return response(200,bodyFor(route));
+  }});
+  await flush();hold=true;const before=ui.requests.length;
+  for(const f of ui.intervals)f();await flush();
+  const reads=ui.requests.slice(before);assert.equal(reads.length,1);assert.equal(reads[0].route,'/api/inference/status');
+  assert.equal(reads[0].options.method,'GET');
+  for(const f of ui.intervals)f();await flush();assert.equal(ui.requests.length,before+1);
+  ui.events.pagehide();release();await flush();
+  assert.equal(ui.ids.get('local-model-catalog').children.length,0);
+  assert.ok(!ui.ids.get('local-model-catalog').textContent.includes('private loaded model'));
+  for(const f of ui.intervals)f();await flush();assert.equal(ui.requests.length,before+1);
 });

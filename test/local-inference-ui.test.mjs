@@ -1,26 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
-import { readFile } from 'node:fs/promises';
 import { createLocalInference } from '../lib/local-inference.mjs';
 import { localFixture } from './local-inference-fixture.mjs';
 
-const source = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
-const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
-const flush = async () => { for (let i = 0; i < 12; i++) await new Promise(r => setImmediate(r)); };
-class Element {
-  constructor() { this.children = []; this.attrs = {}; this.events = {}; this.textContent = ''; this.value = ''; this.disabled = false; }
-  setAttribute(k, v) { this.attrs[k] = v; } getAttribute(k) { return this.attrs[k]; }
-  addEventListener(k, f) { this.events[k] = f; } append(...els) { this.children.push(...els); }
-  replaceChildren(...els) { this.children = els; } reset() {} focus() {}
-}
+import {mockUI,response,html,flush,bodyFor} from './app-ui-fixture.mjs';
 function uiSetup() {
   const fixture = localFixture(), control = createLocalInference({ adapter: fixture.adapter, now: fixture.now });
-  const ids = new Map([...html.matchAll(/\bid="([^"]+)"/g)].map(m => [m[1], new Element()]));
-  const tabs = [...html.matchAll(/<button role="tab" id="([^"]+)" aria-controls="([^"]+)"/g)].map(m => {
-    const el = ids.get(m[1]); el.attrs['aria-controls'] = m[2]; return el;
-  });
-  const storage = new Map(), events = {}, intervals = [], requests = [];
   let chatDelay;
   async function respond(route, options) {
     const body = options.body ? JSON.parse(options.body) : null;
@@ -36,26 +21,15 @@ function uiSetup() {
       if (chatDelay) await chatDelay;
       return result;
     }
-    return {};
+    return bodyFor(route);
   }
   class FixtureDate extends Date { static now() { return fixture.now(); } }
-  const context = vm.createContext({
-    document: { getElementById: id => ids.get(id), createElement: () => new Element(),
-      querySelectorAll: s => s === '[role=tab]' ? tabs : [], addEventListener() {} },
-    navigator: { onLine: true }, window: { addEventListener: (e, f) => { events[e] = f; } },
-    sessionStorage: { getItem: k => storage.get(k), setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) },
-    AbortController, setTimeout, clearTimeout, setInterval: f => intervals.push(f), Date: FixtureDate,
-    fetch: async (route, options) => {
-      requests.push({ route, body: options.body });
-      // JSON round-trip matches the HTTP realm boundary.
-      let status = 200, body;
-      try { body = await respond(route, { ...options, body: options.body }); }
-      catch (e) { status = e.status ?? 503; body = { error: e.message }; }
-      return { status, ok: status < 400, text: async () => JSON.stringify(body) };
-    },
-  });
-  // The controller's strict schema checks use the server realm after JSON parse.
-  vm.runInContext(source.replace(/export /g, ''), context);
+  const ui=mockUI({DateImpl:FixtureDate,responder:async(route,options)=>{
+    let status=200,body;
+    try{body=await respond(route,options);}catch(error){status=error.status??503;body={error:error.message};}
+    return response(status,body);
+  }});
+  const {ids,storage,events,intervals,requests,context}=ui;
   const click = async id => { ids.get(id).events.click(); await flush(); };
   return { ids, fixture, control, storage, events, intervals, requests, context, click,
     holdChat: promise => { chatDelay = promise; } };
@@ -69,7 +43,7 @@ test('UI fixture: every local control has a handler and reason; Load/Stop/Unload
   }
   assert.equal(typeof el('chat-form').events.submit, 'function');
   await ui.click('demo-start');
-  assert.equal(el('load').disabled, false); assert.equal(el('send').disabled, true);
+  assert.equal(el('load').disabled, false,JSON.stringify({reason:el('reason').textContent,state:el('state').textContent,message:ui.ids.get('message').textContent})); assert.equal(el('send').disabled, true);
   await ui.click('local-inference-load');
   assert.equal(ui.fixture.calls.start.length, 0); assert.equal(el('approve').disabled, false);
   assert.match(el('proposal').textContent, /No action has executed/);
@@ -103,7 +77,9 @@ test('UI fixture: ownership uncertainty and expired confirmation disable control
   ui.fixture.override(v => ({ ...v, identity: { ...v.identity, pid: 99 } }));
   await ui.click('local-inference-refresh'); assert.match(el('state').textContent, /UNCERTAIN/);
   for (const id of ['load', 'stop', 'unload', 'send']) { assert.equal(el(id).disabled, true); assert.ok(el(id).title); }
-  const before = ui.requests.length; ui.intervals.forEach(f => f()); assert.equal(ui.requests.length, before);
+  const before = ui.requests.length,starts=ui.fixture.calls.start.length,stops=ui.fixture.calls.stop.length; ui.intervals.forEach(f => f()); await flush();
+  assert.ok(ui.requests.slice(before).every(r=>(r.options.method||'GET')==='GET'&&['/api/inference/status','/relay/api/agents'].includes(r.route)),JSON.stringify(ui.requests.slice(before).map(r=>({route:r.route,method:r.options.method}))));
+  assert.equal(ui.fixture.calls.start.length,starts);assert.equal(ui.fixture.calls.stop.length,stops);
 });
 
 test('UI fixture: privacy clearance drops delayed chat response and confirmation; new admission has empty chat', async () => {

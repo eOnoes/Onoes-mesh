@@ -75,6 +75,7 @@ let selected; let busy = false; let commands = []; let staleSelection = false;
 let watchedRun; let cancellingRun;
 let relaySnapshot;
 let relayTerminalInstance;
+let localModelObservation;
 let localInferenceSnapshot; let localInferenceProposal; let localInferenceReceivedAt = 0;
 // Only task-session nonce + expiry and the intentional-lock preference survive refresh. Cookie IDs,
 // actors, grants, tasks and API bodies never enter browser storage.
@@ -467,7 +468,27 @@ export function renderInference(snapshot) {
   }
 }
 
+function renderSupervisorModels(value) {
+  const root=$('local-model-catalog');
+  localModelObservation=undefined;root.replaceChildren();
+  if(value?.schemaVersion!=='mesh-supervisor-observation/v1' || value.source!=='local_supervisor' || !Array.isArray(value.models)) {
+    root.textContent='Model observations unavailable. Connect and refresh local status.';return;
+  }
+  if(!Number.isSafeInteger(value.expiresAt) || value.expiresAt<=Date.now() || value.expiresAt>Date.now()+5000) {
+    root.textContent='Model observations expired. Refresh local status.';return;
+  }
+  localModelObservation=value;root.textContent='';
+  const labels={reported_loaded:'Reported loaded',ready:'Available to load',loading_unconfirmed:'Supervisor loading · target not confirmed',unavailable:'Not available',unknown:'Status unknown'};
+  const reasons={engine_not_built:'engine files missing',model_files_missing:'model files missing',preflight_failed:'readiness check failed',observation_unavailable:'status could not be verified'};
+  for(const row of value.models.slice(0,4)) {
+    const line=document.createElement('p');line.className='fine';
+    line.textContent=String(row.label).slice(0,100)+' · '+(labels[row.state]||'Status unknown')+(row.reason?' · '+(reasons[row.reason]||'status unavailable'):'');root.append(line);
+  }
+}
 function localInferenceControls() {
+  if(localModelObservation && localModelObservation.expiresAt<=Date.now()) {
+    localModelObservation=undefined;$('local-model-catalog').replaceChildren();$('local-model-catalog').textContent='Model observations expired. Refresh local status.';
+  }
   const s = localInferenceSnapshot;
   const locked = busy || lifecycleSuspended || !admitted || !navigator.onLine;
   const fresh = s?.observedAt && Date.now() - Date.parse(s.observedAt) >= 0 &&
@@ -496,6 +517,7 @@ function localInferenceControls() {
     ? 'Chat unavailable. ' + (reason || 'Requires a verified RUNNING runtime.') : 'Chat ready · session only.';
 }
 export function renderLocalInference(snapshot) {
+  renderSupervisorModels(snapshot?.modelObservation);
   const valid = snapshot?.schemaVersion === 'mesh-local-inference/v1' && snapshot.nodeId === 'this-pc' &&
     snapshot.profile?.id === 'qwen38-flash-next-q6' && snapshot.controls;
   localInferenceSnapshot = valid ? snapshot : undefined;
@@ -682,6 +704,18 @@ export async function refresh() {
   }
   message(failed ? results.find(r => r.status === 'rejected').reason.message : 'Local app status and saved tasks refreshed.', failed);
 }
+// Visible inference status is a read-only observation, never a model action.
+let inferencePollPending=false;
+setInterval(async()=>{
+  if(inferencePollPending || busy || lifecycleSuspended || !navigator.onLine || !admitted ||
+     !proofAvailable() || $('tab-inference').getAttribute('aria-selected')!=='true')return;
+  const admissionDemo=demo,admissionGeneration=generation;inferencePollPending=true;
+  try {
+    const value=await api('/api/inference/status',{method:'GET'});
+    if(currentDemo(admissionDemo,admissionGeneration))renderLocalInference(value);
+  } catch {if(currentDemo(admissionDemo,admissionGeneration))renderLocalInference(undefined);}
+  finally {inferencePollPending=false;}
+},4000);
 // Age display advances locally; this timer performs no requests or effects.
 setInterval(() => {
   if (demo && !proofAvailable()) return;
