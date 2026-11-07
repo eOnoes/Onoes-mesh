@@ -1,7 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {agentWorkspace,agentObservationLabel,agentAssignmentLabel} from '../public/agent-workspace.mjs';
+import {agentWorkspace,agentObservationLabel,agentAssignmentLabel,agentCapabilityLabel} from '../public/agent-workspace.mjs';
 import {automationPolicy} from '../lib/workroom-automation-store.mjs';
+
+test('adapter capability observations distinguish read-only review from coding and unknown peers',()=>{
+  const capabilities={plan:true,review:true,work:false,mode:'read-only'};
+  const label=agentCapabilityLabel(capabilities);
+  assert.match(label,/Adapter reports: planning, review\./);
+  assert.match(label,/Unavailable: building\./);
+  assert.match(label,/Read-only connection/);
+  assert.match(label,/Saved observation/);
+  for(const value of [undefined,{}, {...capabilities,work:'true'}, {...capabilities,plan:null}]){
+    assert.match(agentCapabilityLabel(value),/not declared/);
+  }
+  assert.match(agentCapabilityLabel({plan:false,review:false,work:false}),/no task roles/);
+  assert.equal(agentWorkspace({agents:[{id:'nims',capabilities}]},[])[0].capabilities,capabilities);
+});
 
 test('Agent role labels use enforced policy and never infer connection or coding access',()=>{
   const policy=automationPolicy('C:/Qualified Mesh');

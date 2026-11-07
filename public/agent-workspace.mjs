@@ -5,6 +5,7 @@ export function agentWorkspace(snapshot, tasks) {
     backend: agent.backend || 'Backend not declared',
     status: agent.status || 'Unknown', session: agent.conversation_id || null,
     approval: Boolean(agent.approval),
+    capabilities: agent.capabilities,
     tasks: (tasks || []).flatMap(task => {
       const attempts = (task.messages || []).filter(send => send.agentId === agent.id);
       const latest = attempts.at(-1);
@@ -37,6 +38,17 @@ export function agentAssignmentLabel(agentId, policy) {
     : 'No automatic build or review role configured for this peer. Chat availability is separate.';
 }
 
+export function agentCapabilityLabel(capabilities) {
+  if (!capabilities || ['plan','review','work'].some(key => typeof capabilities[key] !== 'boolean')) {
+    return 'Relay peer. Coding tools and repository access are not declared by this adapter; inspect a scoped task’s evidence.';
+  }
+  const allowed = [['plan','planning'],['review','review'],['work','building']]
+    .filter(([key]) => capabilities[key]).map(([,label]) => label);
+  const denied = [['plan','planning'],['review','review'],['work','building']]
+    .filter(([key]) => !capabilities[key]).map(([,label]) => label);
+  return `Adapter reports: ${allowed.join(', ') || 'no task roles'}.${denied.length ? ' Unavailable: ' + denied.join(', ') + '.' : ''}${capabilities.mode === 'read-only' ? ' Read-only connection.' : ''} Saved observation; task scope and dispatch checks still apply.`;
+}
+
 export function renderAgentWorkspace(root, snapshot, tasks, openTask, teamPolicy) {
   root.replaceChildren();
   const add = (parent, tag, text) => { const node = document.createElement(tag); node.textContent = text; parent.append(node); return node; };
@@ -48,7 +60,7 @@ export function renderAgentWorkspace(root, snapshot, tasks, openTask, teamPolicy
     add(card, 'h2', row.name);
     add(card, 'p', `${row.backend} · ${row.status}${row.approval ? ' · needs permission' : ''}`);
     add(card, 'p', row.session ? `Session: ${row.session}` : 'No active session reported.');
-    add(card, 'p', 'Relay peer. Coding tools and repository access are not declared by this adapter; inspect a scoped task’s evidence.');
+    add(card, 'p', agentCapabilityLabel(row.capabilities));
     add(card, 'p', agentAssignmentLabel(row.id, teamPolicy));
     if (tasks === undefined) add(card, 'p', 'Task receipts unavailable. Refresh to try again.');
     else if (!row.tasks.length) add(card, 'p', 'No saved Workroom handoff for this peer.');
