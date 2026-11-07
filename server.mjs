@@ -1,3 +1,4 @@
+import {createMindRecallClient,recallInput} from './lib/mind-recall.mjs';
 import {automationPolicy} from './lib/workroom-automation-store.mjs';
 import {readNemotronQualification} from './lib/nemotron-qualification.mjs';
 import {createNemotronClient} from './lib/nemotron-client.mjs';
@@ -91,10 +92,12 @@ async function activity(registryPath) {
     return await readWorkerActivity({ registryPath, nowIso: new Date().toISOString(), staleAfterMs: 600000 });
   } catch { return snapshot('unavailable'); }
 }
-export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, localInferenceTestOptions, supervisedInferenceTestOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
+export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, localInferenceTestOptions, supervisedInferenceTestOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
   // Process configuration only. Standalone wins over ambient Relay enablement
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
+  if(mindRecallTestOptions!==undefined&&(!standalone||mindRecallTestOptions?.source!=='disposable_fixture'||Object.keys(mindRecallTestOptions).sort().join(',')!=='baseUrl,source,token'))throw Error('Mind recall seam is synthetic standalone testing only.');
+  const mindRecall=mindRecallTestOptions?createMindRecallClient(mindRecallTestOptions):null;
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new Error('A valid loopback port is required.');
   // The demo cap used to be 5 minutes, which is unusable for an operator: every pause
   // expired the session and the UI disabled itself. The manager underneath already
@@ -270,6 +273,13 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if (!current()) return;
         // One reader per server; concurrent callers share the fixed native read.
         return send(200, await nodeProbes.refresh());
+      }
+      if(route==='/api/mind/status'&&req.method==='GET')return send(200,{configured:Boolean(mindRecall),source:mindRecall?'disposable_fixture':'not_configured'});
+      if(route==='/api/mind/recall'&&req.method==='POST'){
+        const body=recallInput(context.body);
+        if(!mindRecall)throw new TaskError(503,'Onoes-Mind reader is not connected. Saved Workroom context remains available.');
+        const result=await mindRecall.recall(body);if(!current())return;
+        return send(200,result);
       }
       if (route === '/api/commands' && ['GET', 'HEAD'].includes(req.method)) return send(200, { commands: commandChoices });
       if (route === '/api/relay' && ['GET', 'HEAD'].includes(req.method)) return send(200, await relay.snapshot());

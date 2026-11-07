@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {taskContext,createMindWorkspace} from '../public/mind-workspace.mjs';
+import {taskContext,createMindWorkspace,createMindRecallView} from '../public/mind-workspace.mjs';
 import {startApp} from '../server.mjs';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
@@ -64,4 +64,20 @@ test('Mind module is served byte-for-byte by the actual isolated HTTP app',async
     assert.match(response.headers.get('content-type'),/javascript/);
     assert.equal(await response.text(),await readFile(new URL('../public/mind-workspace.mjs',import.meta.url),'utf8'));
   } finally {await app.close();}
+});
+
+
+test('canonical memory view requires explicit reads, preserves provenance and clears private or late results',async()=>{
+ const record={record_id:'memory-1',project_id:'project-1',scope_id:'echo/private',claim:'<script>plain source text</script>',source_class:'fixture',observed_at:null,payload_hash:'hash',provenance:[{type:'fixture',ref:'source.md',content_hash:'evidence-hash'}]};
+ const snapshot={schema:'onoes-mind-recall/v1',source:'canonical_ledger',requestId:'request-1',observedAt:new Date().toISOString(),records:[record]};
+ let deferred;const calls=[];const root=new Element();
+ const view=createMindRecallView({root,doc:{createElement:()=>new Element()},request:async(route,options)=>{calls.push([route,options]);return route.endsWith('/status')?{configured:true}:deferred?deferred:snapshot;}});
+ const [,check,,query,read,clear,state,results]=root.children[0].children;
+ view.setAvailable(true);assert.equal(calls.length,0);assert.equal(read.disabled,true);
+ await check.events.click();query.value='sentinel';query.events.input();await read.events.click();
+ assert.match(text(results),/memory-1/);assert.match(text(results),/source.md/);assert.match(text(results),/<script>plain source text<\/script>/);
+ assert.equal(calls.length,2);assert.equal(calls[1][0],'/api/mind/recall');assert.deepEqual(JSON.parse(calls[1][1].body),{query:'sentinel',limit:8});
+ clear.events.click();assert.equal(text(results),'');assert.equal(query.value,'');
+ let release;deferred=new Promise(resolve=>release=resolve);query.value='sentinel';const pending=read.events.click();view.setAvailable(false);release(snapshot);await pending;
+ assert.equal(text(results),'');assert.equal(query.value,'');assert.equal(read.disabled,true);assert.match(state.textContent,/cleared/);
 });

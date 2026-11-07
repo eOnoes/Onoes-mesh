@@ -107,3 +107,33 @@ was created. Phase10/live activation gates remain open.
 Next implementation is the bounded Mesh server-side client, followed by the
 actual adapter -> canonical ledger -> Mesh view journey with synthetic data.
 Real data access and deployment remain separately reviewed decisions.
+
+
+## Mesh adapter and deliberate recall view (2026-11-07)
+
+`lib/mind-recall.mjs` now enforces fixed IPv4-loopback routing, no URL credentials
+or redirects, server-held bearer token,4s timeout,64KiB streaming response bound,
+version/source/record/provenance validation and fixed errors. Query/results are
+not persisted. The admitted `/api/mind/status` and `/api/mind/recall` routes do not
+accept endpoint/credential/identity/scope configuration from the browser.
+
+Live Mesh has no configured reader. The only current injection seam explicitly
+requires standalone mode and disposable_fixture process options. No environment,
+CLI or browser switch enables private memory access. Connection checking and
+recall are separate deliberate clicks; no page-load search, transcript ingestion,
+automatic write or skill/MCP execution occurs. UI renders plain text, shows source
+and provenance, clears results/query on loss of access and ignores late responses.
+
+The explicit local integration command is `npm run test:mind-integration` after
+setting `MESH_MIND_SOURCE` to the canonical Onoes-Mind checkout. It starts only
+owned disposable Mesh/Python processes and an in-memory synthetic ledger, checks
+real HTTP -> ledger -> scoped records and offline refusal, then closes them.
+The real browser also verified permitted records, literal script-like text and
+lock clearing. This proves synthetic integration, not live-memory or physical
+phone acceptance. A responsive attempt with the mobile navigation/admission
+controls was inconclusive; do not label that acceptance complete.
+
+Before live activation, select and verify the actual memory store, reader caller,
+read grants, connection/process ownership and concurrent-writer behavior; provision
+access only through the separate reviewed deployment. Full shared agent context,
+reviewed writes, skills/MCP and cross-channel ingestion remain unfinished.
