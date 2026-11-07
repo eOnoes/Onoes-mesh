@@ -9,7 +9,7 @@
     "lib/inference-config.schema.json": "4f8a2dd46d514ceac43e3d680b80381ebbadda429955e7e682c24531ad45508e",
     "lib/inference-observation.mjs": "66d149bf6d87bb2593b2b53183917d80f5c94c810f729aaf159d93d34288c796",
     "lib/service-connections.mjs": "95003988e09dc4c06e1f6db7583fd06974860044bfbb1e48a4a61a0e58b7ce95",
-    "lib/task-store.mjs": "cb975a128e34805ccc13217a727d06f8d74326d91477690f957fff7d73edfece",
+    "lib/task-store.mjs": "67fb476645f2d2ba973e22031a38d278a03aee6b3b12146cff9e1c4aafd7bfa6",
     "lib/worker-activity.mjs": "5941de592fd5d40ca77bd1eb77e75ed9da541cd71fca2606f1351d7306f894b9"
   },
   "context": {

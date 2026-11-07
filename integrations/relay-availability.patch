@@ -1,0 +1,250 @@
+--- a/relay_server.py
++++ b/relay_server.py
+@@ -35,6 +35,7 @@
+ from fastapi.staticfiles import StaticFiles
+ 
+ import relay_a2a
++import relay_a2a_reconcile
+ import relay_auth
+ import relay_channels
+ import relay_budget
+@@ -106,6 +107,8 @@
+         # A2A transport state (see relay_a2a.py) for peers with no native API.
+         self.a2a: A2AClient | None = None
+         self.a2a_task_id: str | None = None
++        self.a2a_last_task_id: str | None = None
++        self.native_outcome = None
+         self.capabilities: dict = {}             # last probed gateway capability report
+         self.active_run_ids = []                # live native run ids, oldest first
+         self.run_events = []                    # native events retained for forensics
+@@ -150,6 +153,7 @@
+                 "approval": self.approval, "url": self.url,
+                 "conversation_id": self.conversation_id,
+                 "activeRunIds": list(self.active_run_ids),
++                "nativeOutcome": self.native_outcome,
+                 "usage": self.run_usage,
+                 # None means "no budget configured"; a dict is the last evaluation.
+                 "budget": self.budget_state}
+@@ -187,6 +191,8 @@
+         agent.conversation_id = session["id"]
+         if agent.backend != "openclaw":
+             agent.msgs = SESSIONS.messages(aid, session["id"])
++            if agent.is_a2a and relay_a2a_reconcile.waiting_source(SESSIONS, aid, session["id"]):
++                agent.status = "waiting"  # Verify durable native state before new-work admission.
+ 
+ 
+ bootstrap_conversations()
+@@ -240,6 +246,8 @@
+     a.status = "idle"
+     a.active_run_ids = []
+     a.a2a_task_id = None
++    a.a2a_last_task_id = None
++    a.native_outcome = None
+     a.run_usage = {}
+     a.take_answer()
+     a._answer_persisted = False
+@@ -1357,6 +1365,7 @@
+     a._answer_parts = []
+     a._answer_persisted = False
+     a.a2a_task_id = None
++    a.a2a_last_task_id = None
+     context_id = a.conversation_id or str(uuid.uuid4())
+     a.conversation_id = context_id
+     set_status(a, "working")
+@@ -1365,8 +1374,10 @@
+     async for event in client.stream(body, context_id=context_id, request_id=message_id):
+         if event.get("kind") == "status" and event.get("task_id"):
+             a.a2a_task_id = str(event["task_id"])
++            a.a2a_last_task_id = a.a2a_task_id
+         if event.get("kind") == "terminal" and event.get("task_id"):
+             a.a2a_task_id = str(event["task_id"])
++            a.a2a_last_task_id = a.a2a_task_id
+         _record_run_event(a, {"transport": "a2a", **event})
+         if _apply_a2a_event(a, event):
+             terminal = True
+@@ -1423,7 +1434,8 @@
+         raise                    # the caller keeps its existing error handling
+     if claim:
+         try:
+-            SESSIONS.outbox_settle(claim["id"], "accepted")
++            SESSIONS.outbox_settle(claim["id"], "accepted",
++                                   transport_ref=("a2a:" + a.a2a_last_task_id) if a.is_a2a and a.a2a_last_task_id else None)
+         except Exception:
+             pass
+ 
+@@ -1537,11 +1549,25 @@
+             return
+ 
+ 
++def _apply_native_a2a_outcome(a, task, proof, status):
++    # The recovery verifier has matched task/context/latest accepted payload.
++    text = "\n".join(p.get("text", "") for artifact in task.get("artifacts") or []
++                     for p in artifact.get("parts") or [] if isinstance(p.get("text"), str))
++    if text and len(text) <= 64000 and (not a.msgs or a.msgs[-1].get("k") != "ag" or a.msgs[-1].get("t") != text):
++        say(a, "ag", text)
++    a.native_outcome = proof
++    set_status(a, status)
++    publish(a, {"type": "native_outcome", **proof})
++
++
+ async def watchdog_loop():
+     """Flag agents that go quiet with an unfinished goal."""
+     while True:
+         await asyncio.sleep(5)
+         for a in AGENTS.values():
++            if a.is_a2a and a.status == "waiting":
++                with contextlib.suppress(Exception):
++                    await relay_a2a_reconcile.reconcile_waiting(a, SESSIONS, _a2a_client(a).get_task, _apply_native_a2a_outcome)
+             if _native_openclaw(a):
+                 continue
+             threshold = float(a.cfg.get("watchdog_seconds") or WATCHDOG_SECONDS)
+--- a/relay_a2a.py
++++ b/relay_a2a.py
+@@ -324,46 +324,33 @@
+ 
+     # ----------------------------------------------------------------- task --
+     async def get_task(self, task_id: str) -> dict:
+-        """``tasks/get`` — the reliable way to retrieve a finished task's result.
+-
+-        This peer does not always emit an ``artifactUpdate`` on the stream, so the
+-        stream alone can end with no text at all. The task record carries the reply
+-        in both ``status.message`` and ``artifacts``.
+-        """
+-        if not task_id:
+-            return {}
+-        client = await self.client()
+-        bare = task_id[5:] if task_id.startswith("task-") else task_id
+-        last: Any = None
+-        for candidate in (task_id, bare):
+-            body = {
+-                "jsonrpc": "2.0", "id": f"get-{uuid.uuid4().hex[:12]}", "method": "tasks/get",
+-                "params": {"id": candidate, "taskId": candidate},
+-            }
+-            try:
+-                response = await client.post(
+-                    self.base_url,
+-                    headers=self._headers({"Content-Type": "application/json"}),
+-                    json=body,
+-                )
+-            except Exception as exc:
+-                last = exc
+-                continue
+-            if response.status_code != 200:
+-                last = A2AError(f"tasks/get returned HTTP {response.status_code}",
+-                                status=response.status_code)
+-                continue
+-            payload = response.json()
+-            if "error" in payload:
+-                last = A2AError(
+-                    f"tasks/get rejected: {(payload['error'] or {}).get('message')}",
+-                    code=(payload["error"] or {}).get("code"),
+-                )
+-                continue
+-            result = payload.get("result", {})
+-            return result if isinstance(result, dict) else {}
+-        if isinstance(last, A2AError):
+-            raise last
++        """Read a durable task; fall back only for an unsupported RPC spelling."""
++        if not task_id:return {}
++        client=await self.client()
++        last=None
++        bare=task_id[5:] if task_id.startswith("task-") else task_id
++        for candidate in dict.fromkeys((task_id,bare)):
++            for method in ("tasks/get","GetTask"):
++                body={"jsonrpc":"2.0","id":f"get-{uuid.uuid4().hex[:12]}","method":method,
++                      "params":{"id":candidate,**({"taskId":candidate} if method=="tasks/get" else {})}}
++                try:
++                    response=await client.post(self.base_url,headers=self._headers({"Content-Type":"application/json"}),json=body)
++                    if response.status_code!=200:
++                        raise A2AError(f"Task read returned HTTP {response.status_code}",status=response.status_code)
++                    if len(response.content)>1048576:raise A2AError("Task read exceeded its size bound")
++                    payload=response.json()
++                    if "error" in payload:
++                        error=payload["error"] or {}
++                        last=A2AError("Task read refused",code=error.get("code"))
++                        if error.get("code")==-32601:continue
++                        break
++                    result=payload.get("result",{})
++                    return result if isinstance(result,dict) else {}
++                except A2AError as exc:
++                    last=exc;break
++                except Exception:
++                    last=A2AError("Task read unavailable");break
++        if isinstance(last,A2AError):raise last
+         return {}
+ 
+     @staticmethod
+--- /dev/null
++++ b/relay_a2a_reconcile.py
+@@ -0,0 +1,71 @@
++"""Read-only exact-task recovery of A2A availability; never dispatch or settle sends."""
++import asyncio
++import hashlib
++import json
++import re
++from datetime import datetime, timezone
++
++TERMINAL = {"TASK_STATE_COMPLETED": "done", "TASK_STATE_FAILED": "stopped",
++            "TASK_STATE_CANCELED": "stopped", "TASK_STATE_REJECTED": "stopped"}
++
++def waiting_source(store, agent_id, conversation_id):
++    # The newest row in this conversation wins even if unresolved: do not skip
++    # newer work to make an older completed task appear current.
++    row = next((r for r in store.outbox_recent(agent_id, limit=500)
++                if r.get("session_id") == conversation_id), None)
++    if not row or row.get("agent_id") != agent_id or row.get("state") != "accepted":
++        return None
++    ref = row.get("transport_ref") or ""
++    if not ref.startswith("a2a:") or not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", ref[4:]):
++        return None
++    if row.get("attachments") not in (None, "", "[]") or not isinstance(row.get("content"), str):
++        return None
++    return row
++
++def native_proof(task, row):
++    if not isinstance(task, dict) or task.get("id") != row["transport_ref"][4:] or task.get("contextId") != row["session_id"]:
++        return None
++    state = (task.get("status") or {}).get("state")
++    if state not in TERMINAL:
++        return None
++    users=[]
++    for msg in task.get("history") or []:
++        if msg.get("role") != 1 and str(msg.get("role", "")).lower() not in ("user", "role_user"):
++            continue
++        parts=[]
++        for p in msg.get("parts") or []:
++            text=p.get("text")
++            if not isinstance(text,str):
++                c=p.get("content") or {}
++                text=c.get("value") if c.get("$case")=="text" else None
++            if isinstance(text,str):parts.append(text)
++        users.append("".join(parts))
++    if users.count(row["content"]) != 1:
++        return None
++    payload_hash=hashlib.sha256(row["content"].encode()).hexdigest()
++    proof={"taskId":task["id"],"contextId":task["contextId"],"sendId":row["idem_key"],
++           "state":state,"payloadHash":payload_hash,"nativeAt":(task.get("status") or {}).get("timestamp")}
++    proof["proofHash"]=hashlib.sha256(json.dumps(proof,sort_keys=True,separators=(",",":")).encode()).hexdigest()
++    proof["verifiedAt"]=datetime.now(timezone.utc).isoformat()
++    return proof
++
++async def reconcile_waiting(agent, store, read_task, apply):
++    def idle_waiting():
++        return agent.is_a2a and agent.status=="waiting" and not agent.running() and not agent.message_queue and not agent.approval
++    if not idle_waiting():return False
++    context=agent.conversation_id
++    row=waiting_source(store,agent.id,context)
++    if not row:return False
++    try:
++        task=await asyncio.wait_for(read_task(row["transport_ref"][4:]),timeout=3)
++    except Exception:
++        return False
++    try:proof=native_proof(task,row)
++    except (TypeError,ValueError,AttributeError,KeyError):return False
++    if not proof or not idle_waiting() or agent.conversation_id!=context:
++        return False
++    # No await after the second admission check: a new local run cannot sneak
++    # between verification and applying the exact old outcome.
++    if waiting_source(store,agent.id,context)!=row:return False
++    apply(agent,task,proof,TERMINAL[proof["state"]])
++    return True

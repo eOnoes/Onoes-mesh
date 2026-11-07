@@ -1,3 +1,5 @@
+import { tailscaleAccess } from './lib/tailscale-access.mjs';
+import {requestAudit,auditReason} from './lib/request-audit.mjs';
 // Mesh's serving layer: the app, a shared-token gate, and the two live connections.
 //
 // Why this file exists separately from test/m1-serve.mjs:
@@ -64,6 +66,7 @@ function bearerFrom(header) {
 }
 
 function authed(req, token) {
+  if(tailscaleAccess(req,{login:process.env.MESH_TAILSCALE_LOGIN,host:process.env.MESH_TAILSCALE_HOST}))return true;
   if (!token) return false;
   return safeEqual(bearerFrom(req.headers.authorization), token)
       || safeEqual(cookieFrom(req.headers.cookie), cookieValue(token));
@@ -230,10 +233,10 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
 } | ConvertTo-Json -Depth 5 -Compress`;
 
   const [psOut, gpuOut, strata, ollama, lmstudio, comfyui] = await Promise.all([
-    run('powershell', ['-NoProfile', '-NonInteractive', '-Command', psScript], { timeout: 8000 })
+    run('powershell', ['-NoProfile', '-NonInteractive', '-Command', psScript], { timeout: 8000, windowsHide: true })
       .then((r) => { try { return JSON.parse(r.stdout.trim()); } catch { return null; } }).catch(() => null),
     run('nvidia-smi', ['--query-gpu=name,memory.used,memory.total,utilization.gpu,power.draw,power.limit,temperature.gpu,fan.speed,clocks.current.graphics,clocks.current.memory',
-      '--format=csv,noheader,nounits'], { timeout: 5000 }).then((r) => r.stdout.trim()).catch(() => ''),
+      '--format=csv,noheader,nounits'], { timeout: 5000, windowsHide: true }).then((r) => r.stdout.trim()).catch(() => ''),
     strataHealth(),
     ollamaStatus(),
     lmStudioStatus(),
@@ -389,10 +392,7 @@ const server = http.createServer(async (req, res) => {
     req.resume();
     try {
       console.log(JSON.stringify({
-        event: 'gate_denied', reason, method: req.method, url: String(req.url).slice(0, 200),
-        host: req.headers.host ?? null, xfh: req.headers['x-forwarded-host'] ?? null,
-        xfp: req.headers['x-forwarded-proto'] ?? null, origin: req.headers.origin ?? null,
-        sfs: req.headers['sec-fetch-site'] ?? null, at: new Date().toISOString(),
+        event: 'gate_denied', reason:auditReason(reason), ...requestAudit(req), at: new Date().toISOString(),
       }));
     } catch { /* logging must never break a response */ }
     send(res, 403, 'forbidden');
@@ -418,7 +418,12 @@ const server = http.createServer(async (req, res) => {
       String(process.env.MESH_EXTERNAL_HOST || '').toLowerCase()].filter(Boolean),
   );
   const secFetchSite = req.headers['sec-fetch-site'];
-  if (secFetchSite && !['same-origin', 'none'].includes(secFetchSite)) return deny('sec-fetch-site:' + secFetchSite);
+  // A link from another app may navigate to the shell. It cannot perform a
+  // mutation or read an API response. Authentication is still checked below.
+  const entryNavigation = req.method === 'GET' && req.url === '/' &&
+    req.headers['sec-fetch-mode'] === 'navigate' && req.headers['sec-fetch-dest'] === 'document' &&
+    !req.headers.origin;
+  if (secFetchSite && !['same-origin', 'none'].includes(secFetchSite) && !entryNavigation) return deny('sec-fetch-site:' + secFetchSite);
   if (req.headers.origin && secFetchSite !== 'same-origin') {
     const originHost = hostOf(req.headers.origin);
     if (!originHost || !allowedHosts.has(originHost)) return deny('origin-host:' + (originHost || 'unparseable'));
@@ -478,7 +483,8 @@ const server = http.createServer(async (req, res) => {
   // The client asks this to learn whether it is behind the gate adapter at all; a plain
   // m1-serve fixture has no such route, so browser tests keep their locked-board behaviour.
   if (path === '/gate/status') {
-    return sendJson(res, 200, { local: localHost, gated: authed(req, token) });
+    if(req.method!=='GET')return sendJson(res,405,{error:'Method not allowed'});
+    return sendJson(res, 200, { local: localHost, gated: authed(req, token), automaticSession: tailscaleAccess(req,{login:process.env.MESH_TAILSCALE_LOGIN,host:process.env.MESH_TAILSCALE_HOST}) });
   }
 
   if (path.startsWith('/relay/')) return relayProxy(req, res, token, path.slice('/relay'.length) + url.search);

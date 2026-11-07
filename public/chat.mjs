@@ -1,21 +1,11 @@
-// Render the Relay conversation.
-//
-// Live first, snapshot second: /relay/api/agents is Mesh's gate proxy onto Relay, so the
-// gate token stays server-side. If Relay is unreachable the snapshot written by
-// tools/sync-relay-chat.mjs is used instead, so the pane still tells the truth about what
-// was last seen rather than going blank.
-//
-// Message actions are revealed on hover, on keyboard focus, or by tapping the message.
+import {createRelayConversation} from './relay-conversation.mjs';
+
 const chat = document.getElementById('relay-chat');
 const composer = document.getElementById('relay-text');
 const form = document.getElementById('relay-form');
 const errorLine = document.getElementById('relay-error');
 
 let agentName = 'Relay';
-let agentId = null;
-let sessionId = null;
-let newestId = null;
-let live = false;
 
 function note(message) {
   if (!errorLine) return;
@@ -97,7 +87,7 @@ function renderMessage(message) {
     }
   }));
 
-  actions.append(actionButton('delete', 'del', () => {
+  actions.append(actionButton('hide', 'del', () => {
     // Local only until a real delete is wired through Relay.
     wrap.classList.add('is-gone');
     note('Hidden locally - Relay still has this message.');
@@ -129,106 +119,54 @@ function paint(messages) {
 
 const toBottom = () => { if (chat) chat.scrollTop = chat.scrollHeight; };
 
-// --- live -------------------------------------------------------------------------
-async function liveAgents() {
-  const res = await fetch('/relay/api/agents', { cache: 'no-store' });
-  if (!res.ok) throw new Error(`agents ${res.status}`);
-  const list = await res.json();
-  if (!Array.isArray(list) || !list.length) throw new Error('no agents');
-  const wanted = document.documentElement.dataset.agent || '';
-  return list.find((a) => a.id === wanted) || list[0];
-}
-
-async function liveMessages() {
-  const res = await fetch(`/relay/api/agents/${encodeURIComponent(agentId)}/sessions/${encodeURIComponent(sessionId)}/messages`,
-    { cache: 'no-store' });
-  if (!res.ok) throw new Error(`messages ${res.status}`);
-  const payload = await res.json();
-  const raw = Array.isArray(payload.messages) ? payload.messages : [];
-  return raw.map((m) => ({
-    id: String(m.id ?? ''),
-    k: m.k === 'you' ? 'you' : 'ag',
-    t: String(m.t ?? ''),
-    at: String(m.created_at ?? ''),
-    files: (Array.isArray(m.attachments) ? m.attachments : [])
-      .map((f) => ({ name: String(f.name ?? ''), size: Number(f.size ?? 0) }))
-      .filter((f) => f.name),
-  })).filter((m) => m.t || m.files.length);
-}
-
-async function snapshot() {
-  const res = await fetch('/chat.json', { cache: 'no-store' });
-  if (!res.ok) throw new Error('no snapshot');
-  const data = await res.json();
-  agentName = data.agent?.name || 'Relay';
-  return Array.isArray(data.messages) ? data.messages : [];
-}
-
-async function refresh() {
-  if (!chat) return;
-  let messages = [];
-  try {
-    if (!agentId) {
-      const agent = await liveAgents();
-      agentId = agent.id;
-      agentName = agent.name || agent.id;
-      sessionId = agent.conversation_id || null;
-      live = Boolean(sessionId);
+// Ordinary chat has one submit handler and uses the application's admitted request path.
+export function createRelayChat({request}) {
+  if(!chat || !form) return {setAvailable(){},clear(){},refresh:async()=>{}};
+  const select=document.getElementById('relay-chat-agent');
+  const current=document.getElementById('relay-chat-current');
+  const refreshButton=document.getElementById('relay-chat-refresh');
+  const destination=document.getElementById('relay-chat-destination');
+  const status=document.getElementById('relay-chat-status');
+  const send=document.getElementById('relay-send');
+  const attach=document.getElementById('relay-add-files');
+  let busy=false,lastPaint='',lastAgents='',core;
+  function draw(state) {
+    agentName=state.destination?.name || 'Relay';
+    const signature=JSON.stringify(state.agents);
+    if(signature!==lastAgents){
+      lastAgents=signature;select.replaceChildren();
+      const empty=document.createElement('option');empty.value='';empty.textContent='Choose an agent…';select.append(empty);
+      for(const peer of state.agents){const option=document.createElement('option');option.value=peer.id;option.textContent=`${peer.name} · ${peer.status}${peer.sessionId?'':' · no conversation'}`;option.disabled=!peer.sessionId;select.append(option);}
     }
-    if (!live) throw new Error('no conversation');
-    messages = await liveMessages();
-  } catch {
-    live = false;
-    try { messages = await snapshot(); } catch { return; }
+    select.value=state.destination?.agentId || '';
+    destination.textContent=state.destination ? `Destination: ${state.destination.name} (${state.destination.agentId}) · conversation ${state.destination.sessionId} · ${state.live?'current observation':'not confirmed current'}${state.observedAt?' · checked '+state.observedAt:''}` : 'Choose a destination. No agent is selected automatically.';
+    status.textContent=state.note;
+    if(composer.value!==state.draft)composer.value=state.draft;
+    composer.placeholder=state.destination?`${agentName} · type a message…`:'Choose an agent before writing a message';
+    composer.disabled=busy||!state.available||state.initializing||state.sending||!state.destination;
+    send.disabled=busy||!state.canSend||!state.draft.trim();
+    select.disabled=busy||!state.available||state.initializing||state.sending;
+    current.disabled=select.disabled||!state.destination;
+    refreshButton.disabled=busy||!state.available||state.initializing||state.sending;
+    attach.disabled=true;
+    const legacyId=document.getElementById('relay-message-id');if(legacyId)legacyId.disabled=true;
+    const painted=JSON.stringify([state.destination,state.messages]);
+    if(painted!==lastPaint){lastPaint=painted;paint(state.messages);toBottom();}
   }
-
-  if (!messages.length) return;
-  const last = messages[messages.length - 1].id;
-  if (last === newestId) return;          // nothing new: leave the DOM and scroll alone
-  newestId = last;
-  if (composer) composer.placeholder = `${agentName} · type a message…`;
-  paint(messages);
-  toBottom();
+  let storage;try{storage=sessionStorage;}catch{storage={getItem(){return null;},setItem(){throw Error('Browser retry storage unavailable. Nothing was sent.');},removeItem(){}};}
+  core=createRelayConversation({request,storage,onChange:draw});
+  composer.addEventListener('input',()=>core.setDraft(composer.value));
+  select.addEventListener('change',()=>{if(!busy)core.select(select.value);});
+  current.addEventListener('click',()=>{if(!busy&&core.state().destination)core.select(core.state().destination.agentId);});
+  refreshButton.addEventListener('click',()=>{if(!busy)core.refresh();});
+  form.addEventListener('submit',async event=>{event.preventDefault();if(busy)return;await core.send();});
+  const panel=document.getElementById('panel-relay');
+  const refresh=()=>{if(!panel?.hidden&&!busy)return core.refresh();};
+  setInterval(refresh,5000);
+  if(panel)new MutationObserver(()=>{if(!panel.hidden){toBottom();refresh();}}).observe(panel,{attributes:true,attributeFilter:['hidden']});
+  draw(core.state());
+  return {refresh,setAvailable(value,isBusy=false){busy=isBusy;core.setAvailable(value);draw(core.state());},clear(){core.setAvailable(false);draw(core.state());}};
 }
-
-// --- sending ----------------------------------------------------------------------
-if (form) {
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const text = (composer?.value || '').trim();
-    if (!text) return;
-    if (!live || !agentId) { note('Relay is not connected right now.'); return; }
-    const id = (crypto.randomUUID?.() ?? String(Date.now()));
-    if (composer) composer.disabled = true;
-    try {
-      const res = await fetch(`/relay/api/agents/${encodeURIComponent(agentId)}/message`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ text, id }),
-      });
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(payload.error || `send ${res.status}`);
-      if (composer) composer.value = '';
-      note('sent');
-      await refresh();
-    } catch (error) {
-      note(`send failed: ${error?.message ?? error}`);
-    } finally {
-      if (composer) composer.disabled = false;
-    }
-  });
-}
-
-refresh();
-setInterval(refresh, 5000);
-
-// The panel is hidden when this runs, so scrollHeight is 0 - re-apply when it appears.
-const panel = document.getElementById('panel-relay');
-if (panel) {
-  new MutationObserver(() => { if (!panel.hidden) toBottom(); })
-    .observe(panel, { attributes: true, attributeFilter: ['hidden'] });
-}
-
 // --- chat chrome ------------------------------------------------------------------
 // Two things the conversation needs to be usable: a width you can drag, and a scroll
 // rail that is not the operating system's scrollbar. Both are re-attached here because

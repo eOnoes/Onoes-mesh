@@ -14,10 +14,11 @@ const sessionsLink = document.getElementById('rail-sessions-toggle');
 const relayTab = document.getElementById('tab-relay');
 const controlTab = document.getElementById('tab-control');
 const sessionsPanel = document.getElementById('rail-sessions');
+const scopedConversation = Boolean(document.getElementById('relay-chat-agent'));
 
 const isRelay = () => relayTab?.getAttribute('aria-selected') === 'true';
 const isControl = () => controlTab?.getAttribute('aria-selected') === 'true';
-const defaultView = () => (isRelay() ? 'sessions' : isControl() ? 'control' : 'menu');
+const defaultView = () => (isRelay() && !scopedConversation ? 'sessions' : isControl() ? 'control' : 'menu');
 
 function setRail(view) {
   if (!shell) return;
@@ -29,8 +30,8 @@ function setRail(view) {
 // Sessions only exists on the Relay tab - hide the link everywhere else.
 function syncSessionsLink() {
   if (!sessionsLink) return;
-  sessionsLink.hidden = !isRelay();
-  if (sessionsPanel) sessionsPanel.hidden = !isRelay() || shell?.dataset.rail !== 'sessions';
+  sessionsLink.hidden = !isRelay() || scopedConversation;
+  if (sessionsPanel) sessionsPanel.hidden = scopedConversation || !isRelay() || shell?.dataset.rail !== 'sessions';
 }
 
 function applyTabDefault() {
@@ -64,7 +65,7 @@ for (const tab of [relayTab, controlTab]) {
 applyTabDefault();
 
 // The sessions list: the conversation the snapshot actually holds.
-fetch('/chat.json', { cache: 'no-store' })
+if (!scopedConversation) fetch('/chat.json', { cache: 'no-store' })
   .then((r) => (r.ok ? r.json() : null))
   .then((data) => {
     const list = document.getElementById('sessions-list');
@@ -94,7 +95,7 @@ const pickerLabel = document.getElementById('picker-label');
 const pickerPanel = document.getElementById('picker-panel');
 
 function pickerSource() {
-  if (isRelay()) return document.getElementById('agent-tabs');
+  if (isRelay() && !scopedConversation) return document.getElementById('agent-tabs');
   if (isControl()) return document.getElementById('machine-tabs');
   return null;
 }
@@ -169,6 +170,7 @@ for (const tab of [relayTab, controlTab]) {
   if (tab) new MutationObserver(buildPicker).observe(tab, { attributes: true, attributeFilter: ['aria-selected'] });
 }
 const agentStrip = document.getElementById('agent-tabs');
+if (scopedConversation && agentStrip) agentStrip.style.setProperty('display','none','important');
 if (agentStrip) new MutationObserver(buildPicker).observe(agentStrip, { childList: true });
 const machineStrip = document.getElementById('machine-tabs');
 if (machineStrip) new MutationObserver(buildPicker).observe(machineStrip, { childList: true });

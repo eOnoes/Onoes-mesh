@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { releaseInfo } from '../lib/release-info.mjs';
+import { startApp } from '../server.mjs';
+
+test('build identity includes local edits but excludes data and private credentials', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mesh-release-'));
+  for (const folder of ['lib', 'public', 'shared', 'config', 'data', '.private']) mkdirSync(join(root, folder));
+  for (const file of ['server.mjs', 'serve.mjs', 'public/app.js']) writeFileSync(join(root, file), '// original');
+  writeFileSync(join(root, 'package.json'), JSON.stringify({version:'0.1.0'}));
+  const before = releaseInfo(root, 'data/board');
+  writeFileSync(join(root, '.private/key'), 'secret');
+  writeFileSync(join(root, 'data/tasks.sqlite'), 'changed data');
+  assert.equal(releaseInfo(root, 'data/board').sourceSha256, before.sourceSha256);
+  writeFileSync(join(root, 'public/app.js'), '// local change');
+  assert.notEqual(releaseInfo(root, 'data/board').sourceSha256, before.sourceSha256);
+});
+
+test('actual release route is admitted, read-only and identifies the selected store', async () => {
+  const dataDir = 'data/release-identity-' + randomUUID();
+  const app = await startApp({dataDir, relayEnabled:false});
+  try {
+    const get = (headers={}) => fetch(app.url + '/api/release', {headers});
+    assert.equal((await get()).status, 401);
+    const response = await fetch(app.url + '/api/trial-session/bootstrap', {
+      method:'POST', headers:{Origin:app.url, 'Content-Type':'application/json'}, body:'{}'
+    });
+    assert.equal(response.status, 201);
+    const session = await response.json();
+    const headers = {Origin:app.url, Cookie:response.headers.get('set-cookie').split(';')[0], 'X-Trial-CSRF':session.csrfToken};
+    const first = await get(headers);
+    assert.equal(first.status, 200); assert.equal(first.headers.get('cache-control'), 'no-store');
+    const release = await first.json();
+    assert.equal(release.database, dataDir + '/tasks.sqlite');
+    assert.match(release.sourceSha256, /^[a-f0-9]{64}$/);
+    assert.equal(release.qualification, 'candidate');
+    assert.deepEqual(await (await get(headers)).json(), release);
+    assert.equal((await fetch(app.url + '/api/release', {method:'POST', headers:{...headers,'Content-Type':'application/json'},body:'{}'})).status, 404);
+    assert.equal((await get({...headers,'X-Trial-CSRF':'wrong'})).status, 403);
+  } finally { await app.close(); }
+});

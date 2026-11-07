@@ -1,16 +1,51 @@
 # Mesh repo index — which tree is which
 
-Authoritative as of 2026-10-31. If you are an agent or a human picking this up, read this
-first. A previous Mesh main repo (`D:\Dev\Onoes-Mesh`) was deleted without ever being
+Historical baseline as of 2026-10-31. The current deployment note below supersedes the
+older hosting, authentication and working-tree descriptions. A previous Mesh main repo (`D:\Dev\Onoes-Mesh`) was deleted without ever being
 committed anywhere, and its entire history went with it. That is why this file exists.
 
-## Hosting — how to open Mesh
+## Current working deployment - updated 2026-11-04
+
+Use the private Workroom preview for the current goal:
+
+    https://emitchell.tail8c4a75.ts.net:8453/#workroom
+
+- Working copy: C:/Users/eMitchell109/Documents/ChatGPT/Nims Chat/mesh-workroom-ab, branch workroom/identity-and-relay. Local implementation changes are not a published release.
+- Preview listener: loopback port 4320; backend port is assigned by the app. Database: data/workroom-preview/tasks.sqlite. Preserve this store and its history.
+- Current preview has Tailscale owner-identity admission at its configured private host, local task-session admission, and existing origin/CSRF guards. The historical "No authentication" statement below does not describe this preview.
+- Original deployment remains on 8446 -> loopback 4317, associated with D:/Mesh. It was not replaced, merged or deleted. Never assume these two deployments share the same data store.
+- Exact current preview process receipt: ../workroom-ab-preview-process.json. Rehearsed restart helper: integrations/restart-workroom-preview.ps1. Online backup/isolated restore receipt: ../workroom-backup-latest.json. Revalidate process identity; never stop by name or port.
+- DeepSeek A2A approval update was explicitly authorized and installed on 2026-11-04. Its new process/backup receipt is under data/dsh-approval-rollout; the original seven interrupted requests require explicit reconciliation. The DSH web app and Relay are separate services.
+- Current goal, acceptance evidence, open backlog and runtime qualification limits: WORKROOM-AB-CHECKPOINT.md. A connected service or passing fixture does not prove a model is resident, a worker is executing, or a task is approved.
+
+## Authoritative inference qualification pointer - corrected 2026-11-07
+
+For Qwen3.6-35B-A3B and Qwen3.8-Flash-Next, the authority is
+`E:/Echo-DB/runtimes/UNBIASED-STRATA-LOCK.md`, followed by `RUNTIMES.md`
+and Echo's `ustrata_call.md`. Only `E:/Echo-DB/tools/UnbiasedStrata` is approved
+for those families. Qwen3.8-27B (`qwen35`) is the documented llama.cpp exception.
+
+All three expected Windows binaries now exist under that tree's `build/bin`:
+`unbiased-strata.exe`, `strata.exe`, `strata-poly.exe`. Their presence supersedes
+the old missing-binary observation, but does not prove transport, ownership,
+cancellation, model identity or GPU attribution. The supervisor owns the ports;
+do not start a competing listener or use retired8094/8096.
+
+The previously listed `Documents/Codex/2026-11-03/task/unbiased-coder-source`
+Maya/DeepSeek build is a different project. Its lock is not authority for these
+Qwen families. Preserve that evidence as historical, not as a replacement engine.
+The Mesh fixed legacy llama.cpp Flash-Next profile remains unqualified/disabled.
+Do not repoint it at an existing executable merely to enable controls.
+
+An eventual promotion requires an explicit code/data release record and verified backups. Do not copy over either live database or blindly merge the preview into the original tree. GitHub publication remains separately authorized.
+
+## Historical original deployment - retained for reference
 
 Mesh is hosted on the tailnet so the same URL works from this PC or from a phone. That is the
 operator's standard: host via Tailscale so an agent can hand over one clickable link and it
 works wherever they are.
 
-    https://emitchell.tail8c4a75.ts.net:8446          <- give this to the operator
+    https://emitchell.tail8c4a75.ts.net:8446          <- original deployment, not the current preview
 
 Published by:
 
@@ -30,8 +65,9 @@ it re-asserts the serve mapping after a successful boot.
   changes every boot**. Only the preview port (4317) is stable, which is why that is what the
   tailnet publishes. Never hardcode the backend port.
 
-**No authentication.** Unlike Onoes-Relay, Mesh has no unlock gate — anything on the tailnet
-can reach it. Tailnet-only is the only boundary.
+**Historical authentication description (superseded for the 8453 preview).** This baseline
+described tailnet-only access without an unlock gate. Consult the current deployment note
+above before making any statement about today's access boundaries.
 
 ## Repo layout
 

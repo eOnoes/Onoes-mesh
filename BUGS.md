@@ -1,4 +1,14 @@
 # Practical stabilization list — functional assembly first
+
+## Current disposition - 2026-11-04
+
+- Current integration backlog: WORKROOM-AB-CHECKPOINT.md, especially the latest resumed-recovery entry. Earlier rows below retain their history and later resolution notes; do not reopen resolved CSP, saved-task refresh or Deny/Cancel wording issues from their first appearance alone.
+- Original review0fe0009d-17c4-4093-8483-b711260a7fd3 is now durably CANCELED with history preserved. It is not approved or completed. Relay still reports Deep waiting; safe per-attempt reconciliation remains open. An older Deep retry receipt42222e57-65e3-4155-a9f3-4b167d91a9ea from2026-09-25 is protected. Outbox aggregate counts must not be assumed to be scoped exactly like the returned agent receipt list.
+- Fixed status seam: Overview uses real adapter observations; Inference now shows the same bounded read-only GPU/VRAM collector as Control while model controls remain gated. Freshness/failure checks and existing approval/store guards pass. Actual visual browser and physical-phone acceptance of this latest panel remain open.
+- Historical native incomplete-process-list cleanup qualification is still unrepaired/unreproduced; investigate only a new concrete occurrence. No broad cleanup or new race campaign is scheduled.
+
+## Historical observations and resolutions
+
 - Observed intermittent native command result: actual node --version stdout/exit0 was stored failed with cleanupVerified=false and `QueryInformationJobObject: incomplete process list; cleanup not verified` in D:/Dev/Onoes-Mesh-wt/m4-runtime-fix/test/app03-m3-idempotent-4cc76a0d-30e1-4724-aba2-5e794f521abc/tasks.sqlite. Fail-closed retained; no false completed or cleanup. Isolated idempotent suite passed3/3 before this later failure. Root cause not yet resolved; narrow runtime stabilization item, not an M0 reopening or current Relay blocker.
 - Disposable M3 preparation-gate fixture intermittently returned503 instead of expected409 during combined suite; isolated unchanged suite passed3/3. Gate JSON is written while a child reads it; exact cause not proved. Preserve failure, no relaxed assertions or product fix based on this unproven fixture cause.
 - First newly integrated Relay native startup missed fixed5s deadline; actual imports later succeeded and identical named M4 suite passed6/6 twice. Cold-start cause unproven; preserve one failed proof at test/app03-m4-link-actual-6d0b559f-6fb1-4803-89de-89b14b4a5c25/startup-evidence.json; no hypothetical timeout campaign.

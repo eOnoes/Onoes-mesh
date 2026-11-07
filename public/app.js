@@ -1,3 +1,7 @@
+import { renderAgentWorkspace } from './agent-workspace.mjs';
+import { createMindWorkspace } from './mind-workspace.mjs';
+import { createRelayChat } from './chat.mjs';
+let clearWorkroom = () => {};
 const $ = id => document.getElementById(id);
 const tabs = [...document.querySelectorAll('[role=tab]')];
 function activate(tab, focus = false) {
@@ -65,23 +69,32 @@ let watchedRun; let cancellingRun;
 let relaySnapshot;
 let relayTerminalInstance;
 let localInferenceSnapshot; let localInferenceProposal; let localInferenceReceivedAt = 0;
-// Only task-session nonce + expiry may survive a same-tab refresh. Cookie IDs,
+// Only task-session nonce + expiry and the intentional-lock preference survive refresh. Cookie IDs,
 // actors, grants, tasks and API bodies never enter browser storage.
 const nonceKey = 'mesh.synthetic-demo.proof.v1';
 let demo; let admitted = false; let generation = 0;
 let sessionRecoveryError = '';
+let automaticEntry, automaticAccess=false, workspaceLocked=false;
+try { workspaceLocked=sessionStorage.getItem('mesh.workspace.locked.v1')==='1'; } catch {}
 let savedDemo;
 // Privacy clearance runs in lifecycle handlers; it does not depend on a timer.
 let lifecycleSuspended = document.visibilityState === 'hidden';
 let navigationProof; let normalNavigation = false;
+const relayChat = createRelayChat({request:api});
+const mindWorkspace = createMindWorkspace({root:$('mind-workspace'),request:api,openTask:id=>{
+  if (!admitted || !proofAvailable()) return;
+  activate($('tab-workroom'));
+  window.dispatchEvent(new CustomEvent('mesh-open-task',{detail:{id}}));
+}});
 try {
   const raw = sessionStorage.getItem(nonceKey);
   if (raw && raw.length <= 128) {
     const value = JSON.parse(raw);
-    if (value && Object.keys(value).sort().join(',') === 'csrfToken,expiresAt' && typeof value.csrfToken === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value.csrfToken) && Number.isSafeInteger(value.expiresAt) && value.expiresAt > Date.now() && value.expiresAt <= Date.now() + 300000) savedDemo = value;
+    if (value && Object.keys(value).sort().join(',') === 'csrfToken,expiresAt' && typeof value.csrfToken === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value.csrfToken) && Number.isSafeInteger(value.expiresAt) && value.expiresAt > Date.now() && value.expiresAt <= Date.now() + 86400000) savedDemo = value;
   }
 } catch { /* An invalid or inaccessible stored demo is never admission. */ }
 function applyLocalStubs() {
+  if (admitted) return;
   const relayState = document.getElementById('relay-state');
   if (relayState) relayState.textContent = 'SYNTHETIC. No Relay conversation. A real message is not sent.';
   // When the gate has admitted this browser the composer talks to Relay for real, so it
@@ -98,7 +111,8 @@ function applyLocalStubs() {
   for (const el of document.querySelectorAll('.service-status')) el.textContent = 'SYNTHETIC. Not connected on this PC.';
 }
 function controls() {
-  document.querySelectorAll('form button, form input, form textarea, form select, #refresh, #node-probes-refresh').forEach(el => { el.disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine; });
+  mindWorkspace.setAvailable(!busy && !lifecycleSuspended && admitted && navigator.onLine);
+  document.querySelectorAll('form button, form input, form textarea, form select, #refresh, #agent-refresh, #node-probes-refresh').forEach(el => { el.disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine; });
   if (nodeProbeSnapshot?.status === 'not_configured') $('node-probes-refresh').disabled = true;
   const executing = ['approved','running'].includes(selected?.proposalStatus);
   $('propose-command').disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine || !selected || !commands.length || executing || staleSelection;
@@ -106,19 +120,27 @@ function controls() {
   for (const id of ['approve-command','deny-command']) $(id).disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine || staleSelection || selected?.proposalStatus !== 'pending';
   $('cancel-command').disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine || staleSelection || selected?.proposalStatus !== 'running';
   $('demo-start').disabled = busy || lifecycleSuspended || admitted || !navigator.onLine;
+  $('demo-start').hidden=automaticAccess&&admitted;
+  $('demo-start').textContent=(automaticAccess||workspaceLocked)?'Reconnect workspace':'Start local session';
+  $('demo-end').textContent=automaticAccess?'Lock workspace':'End local session';
   for (const workspace of ['workroom', 'relay']) {
     $(workspace + '-session-recovery').hidden = admitted;
     $(workspace + '-session-start').disabled = $('demo-start').disabled;
-    $(workspace + '-session-state').textContent = $('demo-state').textContent + (sessionRecoveryError ? ' ' + sessionRecoveryError : '') + ' Choose Start fresh local session to verify access with the server. Saved tasks have not been deleted.';
+    $(workspace + '-session-state').textContent = $('demo-state').textContent + (sessionRecoveryError ? ' ' + sessionRecoveryError : '') + (automaticAccess?' Use Reconnect workspace if needed. Saved tasks are safe.':' Choose Start fresh local session to verify access with the server. Saved tasks have not been deleted.');
   }
   $('demo-end').disabled = busy || lifecycleSuspended || !demo || !navigator.onLine;
   for (const id of ['relay-open','relay-close','relay-reconnect']) $(id).disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine;
   for (const id of ['relay-send','relay-text','relay-message-id','relay-new']) $(id).disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine || relaySnapshot?.status !== 'fresh';
+  $('relay-new').disabled = true;
   applyLocalStubs();
   localInferenceControls();
+  relayChat.setAvailable(!lifecycleSuspended && admitted && navigator.onLine,busy);
 }
 function clearPrivate(reason) {
-  generation++; admitted = false; try { demo-start.classList.remove('ok'); } catch { } demo = undefined; selected = undefined; staleSelection = false;
+  relayChat.clear();
+  mindWorkspace.clear();
+  clearWorkroom();
+  generation++; admitted = false; try { $('demo-start').classList.remove('ok'); } catch { } demo = undefined; selected = undefined; staleSelection = false;
   watchedRun = undefined; cancellingRun = undefined;
   localInferenceSnapshot = undefined; localInferenceProposal = undefined;
   $('local-inference-prompt').value = ''; $('local-inference-response').textContent = '';
@@ -134,6 +156,8 @@ function clearPrivate(reason) {
   for (const id of ['total-count','open-count','done-count']) $(id).textContent = 'Locked';
   $('tasks').replaceChildren(); $('empty-board').textContent = 'Start a local task session to view saved tasks.';
   $('app-state').textContent = 'Private app status unavailable.';
+  $('release-state').textContent = 'Release details available after connecting.';
+  $('agent-workspace').replaceChildren();
   document.querySelectorAll('.activity-workers').forEach(el => el.replaceChildren());
   document.querySelectorAll('.activity-state, .activity-source').forEach(el => { el.textContent = 'Private observations unavailable; no live connections.'; });
   renderConnections(undefined); renderInference(undefined); renderNodeProbes(undefined);
@@ -145,7 +169,10 @@ function clearPrivate(reason) {
 function proofAvailable() {
   if (lifecycleSuspended) { clearPrivate('Page inactive. Start a fresh local task session when visible.'); return false; }
   if (!navigator.onLine) { clearPrivate('Offline. Private data cleared; reconnect and start a local task session.'); return false; }
-  if (!demo || Date.now() >= demo.expiresAt) { clearPrivate('Session unadmitted or expired. Start a local task session.'); return false; }
+  // A locked read during admission must not invalidate the in-flight bootstrap.
+  // Missing proof still refuses the request; private state was already cleared.
+  if (!demo) return false;
+  if (Date.now() >= demo.expiresAt) { clearPrivate(workspaceLocked?'Workspace locked. Choose Reconnect workspace to open saved tasks.':'Session expired. Reconnecting will reopen saved tasks.'); return false; }
   return true;
 }
 function currentDemo(expectedDemo, expectedGeneration) {
@@ -154,6 +181,8 @@ function currentDemo(expectedDemo, expectedGeneration) {
 }
 function message(text, error = false) {
   $('message').textContent = text; $('message').className = error ? 'error' : 'success';
+  const createNotice = $('workroom-create-status');
+  if (createNotice?.closest('dialog')?.open) createNotice.textContent = text;
   if (!admitted) sessionRecoveryError = error ? text : '';
   if (error) {
     const workspace = ['workroom', 'relay'].find(name => $('tab-' + name).getAttribute('aria-selected') === 'true');
@@ -172,13 +201,13 @@ async function api(route, options = {}) {
     if (!sameRequest() || lifecycleSuspended || !navigator.onLine || (!admission && !currentDemo(requestDemo, requestGeneration))) throw new Error('Demo changed or expired while request was pending.');
   };
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), route === '/api/inference/chat' ? 18000 : route === '/api/inference/approve' ? 8000 : 2500);
+  const timer = setTimeout(() => controller.abort(), route === '/api/inference/chat' ? 18000 : /^\/api\/workroom\/.+\/(message|sync|handoff|approval)$/.test(route) ? 15000 : route === '/api/inference/approve' ? 8000 : 2500);
   try {
     checkRequest();
     const requestOptions = { ...options, signal: controller.signal, cache: 'no-store', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', ...options.headers, ...(!admission ? { 'X-Trial-CSRF': requestDemo.csrfToken } : {}) } };
     let response = await fetch(route, requestOptions);
     checkRequest();
-    // Bootstrap is only called by the explicit Start button. Its 401 expires
+    // Bootstrap is called by manual Start or authorized automatic entry. Its 401 expires
     // an invalid cookie; retry once so restart recovery takes one click.
     //
     // The retry has to wait a beat. The 401 carries a clearing Set-Cookie for the
@@ -199,7 +228,7 @@ async function api(route, options = {}) {
         checkRequest();
       }
     }
-    // Only the deliberate Start operation can request recovery of a live
+    // The guarded admission flow can request recovery of a live
     // cookie whose old proof was cleared. Bootstrap's guard stays intact.
     if (bootstrap && response.status === 403) return { recoveryRequired: true };
     if (response.status === 401 || response.status === 403) {
@@ -337,12 +366,13 @@ async function action(operation) {
   if (busy) return; busy = true;
   controls();
   try { await operation(); } catch (e) { message(e.message, true); }
-  finally { busy = false; controls(); }
+  finally { busy = false; controls(); automaticEntry?.recover(); }
 }
 $('create-form').addEventListener('submit', e => { e.preventDefault(); action(async () => {
-  const { task } = await api('/api/tasks', { method: 'POST', body: JSON.stringify(taskFields('create', 'open')) });
+  const { task } = await api('/api/tasks', { method: 'POST', body: JSON.stringify({...taskFields('create', 'open'),owner:$('create-owner').value}) });
   $('create-form').reset(); selectTask(task); await loadTasks(); message('Task created and saved to SQLite.');
-  $('inspection-heading').focus();
+  if ($('workroom-create-status')?.closest('dialog')?.open) window.dispatchEvent(new CustomEvent('mesh-task-created', { detail: { id: task.id } }));
+  else $('inspection-heading').focus();
 }); });
 $('view-result').addEventListener('click', () => $('result-heading').focus());
 $('back-to-details').addEventListener('click', () => $('inspection-heading').focus());
@@ -403,7 +433,7 @@ export function renderConnections(snapshot) {
   for (const box of document.querySelectorAll('.service-connections')) {
     box.replaceChildren();
     if (!valid) paragraph(box, 'Service observations unavailable. Previous success cleared.');
-    for (const s of services) paragraph(box, s.label + ': ' + s.status + ' · source: ' + s.source + ' · probe ' + s.elapsedMs + 'ms · ' + age(s.observedAt) + ' · errors: ' + (s.errors.map(e=>e.code).join(', ') || 'none') + (s.source === 'disposable_fixture' ? ' · TEST ONLY; real service not connected' : ''));
+    for (const s of services) paragraph(box, s.label + ': last observation ' + s.status + ' · source: ' + s.source + ' · checked ' + (s.observedAt || 'at an unknown time') + ' · probe ' + s.elapsedMs + 'ms · errors: ' + (s.errors.map(e=>e.code).join(', ') || 'none') + (s.source === 'disposable_fixture' ? ' · TEST ONLY; real service not connected' : ''));
   }
   for (const el of document.querySelectorAll('.service-status')) {
     const s = services.find(s=>s.id === el.getAttribute('data-service'));
@@ -574,12 +604,16 @@ export async function refresh() {
     api('/api/commands'),
     api('/api/relay'),
     api('/api/node-probes'),
-    api('/api/inference/status')
+    api('/api/inference/status'),
+    api('/api/release'),
+    api('/api/workroom')
   ]);
   if (!admitted || !currentDemo(refreshDemo, refreshGeneration)) return;
   const failed = results.some(r => r.status === 'rejected');
   const health = results[0].status === 'fulfilled' ? results[0].value : undefined;
   $('app-state').textContent = health ? `App: ${health.state} · persistence: ${health.persistence} · ${health.url}` : 'App / persistence unavailable. Existing data has been preserved.';
+  const release = results[9].status === 'fulfilled' ? results[9].value : undefined;
+  $('release-state').textContent = release ? `Mesh ${release.version} · build ${release.build} · ${release.qualification}\nSaved board: ${release.database}\nStarted: ${release.startedAt}\n${release.note}` : 'Release details unavailable. Existing data has been preserved.';
   const sources = {
     none: 'No registry configured.',
     local_registry: 'Configured local registry observation; source not independently qualified.',
@@ -619,6 +653,13 @@ export async function refresh() {
   try { renderInference(results[4].status === 'fulfilled' ? results[4].value : undefined); } catch { renderInference(undefined); }
   renderCommands(results[5].status === 'fulfilled' ? results[5].value : undefined);
   renderRelay(results[6].status === 'fulfilled' ? results[6].value : undefined);
+  mindWorkspace.setTasks(results[10].status === 'fulfilled' ? results[10].value.tasks : undefined);
+  renderAgentWorkspace($('agent-workspace'), results[6].status === 'fulfilled' ? results[6].value : undefined,
+    results[10].status === 'fulfilled' ? results[10].value.tasks : undefined, id => {
+      if (!admitted || !currentDemo(refreshDemo, refreshGeneration)) return;
+      activate($('tab-workroom'));
+      window.dispatchEvent(new CustomEvent('mesh-open-task', {detail:{id}}));
+    });
   if (probeRequest === nodeProbeRequest) renderNodeProbes(results[7].status === 'fulfilled' ? results[7].value : undefined);
   renderLocalInference(results[8].status === 'fulfilled' ? results[8].value : undefined);
   const linkedId = /^#task=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(window.location?.hash ?? '')?.[1];
@@ -639,6 +680,7 @@ setInterval(() => {
   applyLocalStubs();
 }, 1000);
 $('refresh').addEventListener('click', () => action(refresh));
+$('agent-refresh').addEventListener('click', () => action(refresh));
 $('node-probes-refresh').addEventListener('click', () => action(refreshNodeProbes));
 function renderRelay(snapshot) {
   relaySnapshot = snapshot;
@@ -661,27 +703,8 @@ function renderRelay(snapshot) {
   }
   controls();
 }
-$('relay-form').addEventListener('submit', e => {
-  e.preventDefault(); action(async () => {
-    const messageDemo = demo; const messageGeneration = generation;
-    if (relaySnapshot?.status !== 'fresh') throw new Error('Actual Relay unavailable. Reconnect first.');
-    // Keep this id after failure/success. New message is the explicit new identity.
-    if (!$('relay-message-id').value) $('relay-message-id').value = crypto.randomUUID();
-    const result = await api('/api/relay/message', { method: 'POST', body: JSON.stringify({
-      id: $('relay-message-id').value, text: $('relay-text').value,
-      conversationId: relaySnapshot.conversationId, meshIntent: 'create_task'
-    }) });
-    if (!currentDemo(messageDemo, messageGeneration)) return;
-    await loadTasks();
-    if (!currentDemo(messageDemo, messageGeneration)) return;
-    const snapshot = await api('/api/relay');
-    if (!currentDemo(messageDemo, messageGeneration)) return;
-    renderRelay(snapshot);
-    const task = (await api(`/api/tasks/${result.taskId}`)).task;
-    if (!currentDemo(messageDemo, messageGeneration)) return;
-    selectTask(task); message(`Relay message linked to Workroom task ${task.id}.`);
-  });
-});
+// Ordinary Relay submission belongs only to chat.mjs. Workroom handoffs keep their
+// explicit task-bound API and must never share this form's submit event.
 $('relay-new').addEventListener('click', () => {
   if (!admitted || !proofAvailable() || busy) return;
   $('relay-message-id').value = ''; $('relay-text').value = ''; message('New Relay message. Sending creates a new task identity.');
@@ -730,19 +753,20 @@ function startSession() { return action(async () => {
     session = await api('/api/trial-session/recovery-complete', { method: 'POST', body: '{}', headers: { 'X-Trial-CSRF': fresh.challenge } });
     if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
   }
-  if (typeof session?.csrfToken !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(session.csrfToken) || !Number.isSafeInteger(session.expiresAt) || session.expiresAt <= Date.now() || session.expiresAt > Date.now() + 300000) throw new Error('Invalid local task session admission response.');
+  if (typeof session?.csrfToken !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(session.csrfToken) || !Number.isSafeInteger(session.expiresAt) || session.expiresAt <= Date.now() || session.expiresAt > Date.now() + 86400000) throw new Error('Invalid local task session admission response.');
   demo = { csrfToken: session.csrfToken, expiresAt: session.expiresAt };
   try { sessionStorage.setItem(nonceKey, JSON.stringify(demo)); } catch { /* RAM only if storage is unavailable. */ }
   const admissionDemo = demo; const admissionGeneration = generation;
   await api('/api/health');
   if (!currentDemo(admissionDemo, admissionGeneration)) return;
-  admitted = true; try { demo-start.classList.add('ok'); } catch { }
+  admitted = true; try { $('demo-start').classList.add('ok'); } catch { }
   sessionRecoveryError = '';
-  $('demo-state').textContent = 'Local task access verified by server. No human identity or execution approval.';
+  $('demo-state').textContent = automaticAccess?'Workspace connected through authorized Tailscale access. Agent actions still require an explicit send.':'Local task access verified by server. No human identity or execution approval.';
+  automaticEntry?.verified(demo.expiresAt);
   await refresh();
 }); }
-for (const id of ['demo-start', 'workroom-session-start', 'relay-session-start']) $(id).addEventListener('click', startSession);
-$('demo-end').addEventListener('click', () => action(async () => {
+for (const id of ['demo-start', 'workroom-session-start', 'relay-session-start']) $(id).addEventListener('click', () => { workspaceLocked=false;try{sessionStorage.removeItem('mesh.workspace.locked.v1');}catch{} automaticEntry?.retry(); return startSession(); });
+$('demo-end').addEventListener('click', () => { workspaceLocked=true;try{sessionStorage.setItem('mesh.workspace.locked.v1','1');}catch{} automaticEntry?.pause(); return action(async () => {
   const endDemo = demo; const endGeneration = generation;
   let ended = false;
   try { await api('/api/trial-session/logout', { method: 'POST', body: '{}' }); ended = true; }
@@ -752,15 +776,17 @@ $('demo-end').addEventListener('click', () => action(async () => {
       if (ended) controls();
     }
   }
-}));
-window.addEventListener('offline', () => { clearPrivate('Offline. Private data cleared; reconnect and start a local task session.'); message('Private board unavailable offline.', true); });
-window.addEventListener('online', () => { controls(); });
+}); });
+window.addEventListener('offline', () => { automaticEntry?.suspend(); clearPrivate('Offline. Private data cleared; reconnect and start a local task session.'); message('Private board unavailable offline.', true); });
+window.addEventListener('online', () => { controls(); automaticEntry?.resume(); });
 function lifecyclePrivacy(suspended) {
   lifecycleSuspended = suspended;
+  if(suspended)automaticEntry?.suspend();
   savedDemo = undefined;
   clearPrivate(suspended
     ? 'Page inactive. Private data and session proof cleared.'
     : 'Page resumed. Start a fresh local task session; the previous proof was cleared.');
+  if(!suspended)automaticEntry?.resume();
   if (suspended && normalNavigation && navigationProof && navigationProof.expiresAt > Date.now()) {
     try { sessionStorage.setItem(nonceKey, JSON.stringify(navigationProof)); } catch { /* RAM only. */ }
   }
@@ -797,16 +823,30 @@ window.addEventListener('pageshow', event => {
 });
 clearPrivate('Start a local task session. A new tab or resumed page verifies fresh admission with the server; saved tasks remain stored.');
 if (lifecycleSuspended) lifecyclePrivacy(true);
-if (savedDemo && navigator.onLine) {
+if (savedDemo && navigator.onLine && !workspaceLocked) {
   demo = savedDemo; savedDemo = undefined;
   $('demo-state').textContent = 'Stored session proof is unverified. Checking the current local server session…';
   action(async () => {
     const admissionDemo = demo; const admissionGeneration = generation;
     await api('/api/health');
     if (!currentDemo(admissionDemo, admissionGeneration)) return;
-    admitted = true; try { demo-start.classList.add('ok'); } catch { }
+    admitted = true; try { $('demo-start').classList.add('ok'); } catch { }
     try { sessionStorage.setItem(nonceKey, JSON.stringify(demo)); } catch { /* RAM only. */ }
     $('demo-state').textContent = 'Local task access verified after refresh. No human identity or execution approval.';
     await refresh();
   });
 } else { savedDemo = undefined; }
+
+// Reuse the same admitted request path for Workroom; no second credential store.
+window.meshWorkroom = Object.freeze({ request: api, onClear: listener => { clearWorkroom = listener; } });
+
+// Only the serving adapter can declare this an authorized automatic-entry surface.
+import('/session-entry.mjs').then(({createSessionEntry})=>{
+  automaticEntry=createSessionEntry({
+    readPolicy:async()=>{const response=await fetch('/gate/status',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(3000)});if(response.status===404)return {automaticSession:false};if(!response.ok)throw Error('Workspace access unavailable. Reconnect when the private server is ready.');return response.json();},
+    start:()=>{if(admitted&&demo?.expiresAt<=Date.now())clearPrivate('Refreshing workspace access. Saved tasks are safe.');return startSession();},ready:()=>admitted&&demo?.expiresAt>Date.now(),available:()=>!busy&&!lifecycleSuspended&&navigator.onLine,
+    onMode:enabled=>{automaticAccess=enabled;controls();if(enabled&&admitted){$('demo-state').textContent='Workspace connected through authorized Tailscale access.';automaticEntry.verified(demo.expiresAt);}},
+    onError:error=>{sessionRecoveryError=error.message;controls();},
+  });
+  if(workspaceLocked)automaticEntry.pause();else automaticEntry.recover();
+}).catch(()=>{sessionRecoveryError='Automatic connection unavailable. Use Start local session to reconnect.';controls();});

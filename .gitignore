@@ -5,6 +5,13 @@ node_modules/
 *.sqlite-*
 *.db
 
+# Private recovery snapshots and generated approval-bridge candidates, never source.
+data/dsh-approval-rollout/
+data/dsh-approval-candidate/
+data/workroom-backups/
+integrations/dsh-inspection-source/
+integrations/relay-inspection-source/
+
 # Test output, not source. These were tracked at 53.7 MB across nine files - browser
 # and process dumps regenerated on every run. Removed from tracking 2026-10-31; the
 # files stay on disk so existing runs are unaffected, and .gitignore keeps them out.
@@ -15,3 +22,12 @@ native-processes.json
 # belong in a repository: untracked here, kept on disk. A fresh clone must bootstrap
 # them - see README. lib/relay-link.mjs expects this path to exist at runtime.
 test/app03-m4-link-runtime/Lib/site-packages/
+
+# Disposable sanitized Relay source/testing copy; reviewable diff retained separately.
+integrations/relay-availability-candidate/
+
+# Private app state, qualification artifacts and owner checkpoint stay local.
+data/
+WORKROOM-AB-CHECKPOINT.md
+design-qa.md
+test/app03-*-????????-????-????-????-????????????/

@@ -6,6 +6,7 @@
 // Thresholds (chosen, not inherited): utilisation meters go amber at 70% and red at 90%;
 // temperature goes amber at 70 C and red at 85 C.
 const root = document.getElementById('ctl-root');
+const inferenceHost = document.getElementById('inference-host-telemetry');
 const loading = document.getElementById('ctl-loading');
 const machineSlot = document.getElementById('machine-tabs');
 const CONTROL_TAB = 'tab-control';
@@ -15,6 +16,35 @@ const TEMP_LEVELS = { warn: 70, max: 85 };
 
 let view = 'overview';
 let data = null;
+let inferenceHostKey;
+
+export function hostTelemetryState(snapshot, now = Date.now()) {
+  if (!snapshot) return 'unavailable';
+  const sampled = typeof snapshot.generatedAt === 'string' ? Date.parse(snapshot.generatedAt) : NaN;
+  if (!Number.isFinite(sampled) || !Number.isFinite(now) || sampled > now + 5000) return 'unknown';
+  return now - sampled > 15000 ? 'stale' : 'fresh';
+}
+
+function renderInferenceHost() {
+  if (!inferenceHost) return;
+  const freshness = hostTelemetryState(data);
+  const renderKey = JSON.stringify([freshness, data?.generatedAt, data?.host, data?.gpu?.name, data?.gpu?.vramUsedMiB, data?.gpu?.vramTotalMiB, data?.gpu?.utilPct]);
+  if (renderKey === inferenceHostKey) return;
+  inferenceHostKey = renderKey;
+  inferenceHost.replaceChildren();
+  if (freshness !== 'fresh') {
+    inferenceHost.append(el('p', 'fine', `PC readings ${freshness}. Previous readings are cleared; model controls are unchanged.`));
+    return;
+  }
+  inferenceHost.append(el('p', 'fine', `Checked ${data.generatedAt} · ${typeof data.host === 'string' ? data.host.slice(0, 120) : 'this PC'}`));
+  const gpu = data.gpu;
+  inferenceHost.append(row('GPU', typeof gpu?.name === 'string' ? gpu.name.slice(0, 160) : null));
+  const validVram = Number.isFinite(gpu?.vramUsedMiB) && Number.isFinite(gpu?.vramTotalMiB) && gpu.vramUsedMiB >= 0 && gpu.vramTotalMiB > 0 && gpu.vramUsedMiB <= gpu.vramTotalMiB;
+  inferenceHost.append(row('VRAM', validVram ? `${gpu.vramUsedMiB} / ${gpu.vramTotalMiB} MiB` : null));
+  const util = gpu?.utilPct;
+  inferenceHost.append(row('GPU use', Number.isFinite(util) && util >= 0 && util <= 100 ? `${util}%` : null));
+  inferenceHost.append(el('p', 'fine', 'Read-only PC readings shared with Control. They do not identify a model\'s GPU or enable its controls.'));
+}
 
 function level(pct, table = LEVELS) {
   if (pct === null || pct === undefined) return null;
@@ -72,9 +102,10 @@ function engineSection(engine) {
   // ENGINE label. And the supervisor keeps /health answering with a model name after an
   // unload, so loaded:false means nothing is resident - say that instead of naming a ghost.
   if (!engine || !engine.name || engine.loaded === false) {
-    s.append(row('server', 'none running'));
+    s.append(row('server', engine?.name || 'not observed'));
+    if (engine?.loaded === false) s.append(row('model', 'none resident'));
     s.append(el('p', 'fine ctl-muted', engine?.modelAlias
-      ? `Unloaded. ${engine.modelAlias} returns on the next request.`
+      ? `${engine.modelAlias} is configured, but model readiness is not verified.`
       : 'No inference server answered on 18090-18095, 8098 or 60409.'));
     return s;
   }
@@ -266,10 +297,13 @@ async function load() {
     MACHINE_SLOT.replaceChildren(button);
   }
   render();
+  renderInferenceHost();
 }
 
 load();
 setInterval(load, 5000);
+// Age the existing observation even when a later collector request stalls.
+setInterval(renderInferenceHost, 1000);
 
 // The machine strip only belongs on the Control tab, like agent pills belong to Relay.
 const controlTab = document.getElementById('tab-control');

@@ -1,0 +1,26 @@
+[
+  {
+    "file": "lib/task-store.mjs",
+    "before": "cb975a128e34805ccc13217a727d06f8d74326d91477690f957fff7d73edfece",
+    "after": "cc05de20241f132080f8b14609d109545edf4e61b0620ffc4a61c16f00cbadea",
+    "reason": "Authorized Workroom additive persistence integration; existing and new behavior tests retained."
+  },
+  {
+    "file": "lib/task-store.mjs",
+    "before": "cc05de20241f132080f8b14609d109545edf4e61b0620ffc4a61c16f00cbadea",
+    "after": "6faf06c7ae225a7f8c0b2fcd439f805187be11702a125c3268aac4ce981db0e6",
+    "reason": "Workroom completion now requires review of the current enrolled task; legacy task compatibility retained."
+  },
+  {
+    "file": "lib/task-store.mjs",
+    "before": "6faf06c7ae225a7f8c0b2fcd439f805187be11702a125c3268aac4ce981db0e6",
+    "after": "fe94141dcea1f53b077d4f1662694aea41c0ade177c0b475907b85281c10a651",
+    "reason": "User-requested Nims/Echo lead saved atomically with new tasks; rollback, strict validation, legacy and HTTP/restart checks retained."
+  },
+  {
+    "file": "lib/task-store.mjs",
+    "before": "fe94141dcea1f53b077d4f1662694aea41c0ade177c0b475907b85281c10a651",
+    "after": "67fb476645f2d2ba973e22031a38d278a03aee6b3b12146cff9e1c4aafd7bfa6",
+    "reason": "Enroll new lead-managed tasks in additive scope lock atomically; legacy records unchanged and review/runtime safeguards retained."
+  }
+]

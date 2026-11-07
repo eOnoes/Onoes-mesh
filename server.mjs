@@ -1,4 +1,10 @@
 import http from 'node:http';
+import {createTeamRunner} from './lib/workroom-automation.mjs';
+import {withNims} from './lib/nims-link.mjs';
+import { releaseInfo } from './lib/release-info.mjs';
+import {requestAudit} from './lib/request-audit.mjs';
+import {createDshApprovalClient,captureDshResult} from './lib/dsh-approval.mjs';
+import { sendTaskMessage, syncTaskReplies, sendTaskHandoff } from './lib/workroom.mjs';
 import { access, mkdir, realpath, lstat, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -30,6 +36,21 @@ export async function confinedPath(value) {
   return target;
 }
 const staticFiles = new Map([['/', ['public/index.html', 'text/html']], ['/app.js', ['public/app.js', 'text/javascript']], ['/styles.css', ['public/styles.css', 'text/css']]]);
+staticFiles.set('/workroom.mjs', ['public/workroom.mjs', 'text/javascript']);
+staticFiles.set('/agent-workspace.mjs', ['public/agent-workspace.mjs', 'text/javascript']);
+staticFiles.set('/mind-workspace.mjs', ['public/mind-workspace.mjs', 'text/javascript']);
+staticFiles.set('/relay-conversation.mjs', ['public/relay-conversation.mjs', 'text/javascript']);
+staticFiles.set('/lead-policy.mjs', ['public/lead-policy.mjs', 'text/javascript']);
+staticFiles.set('/workroom-plan.mjs', ['public/workroom-plan.mjs', 'text/javascript']);
+staticFiles.set('/workroom-status.mjs', ['public/workroom-status.mjs', 'text/javascript']);
+staticFiles.set('/workroom-drag.mjs', ['public/workroom-drag.mjs', 'text/javascript']);
+staticFiles.set('/session-entry.mjs', ['public/session-entry.mjs', 'text/javascript']);
+staticFiles.set('/workroom-columns-v2.mjs', ['public/workroom.mjs', 'text/javascript']);
+staticFiles.set('/workroom-columns-v2.css', ['public/styles.css', 'text/css']);
+staticFiles.set('/mesh-design-v3.css', ['public/styles.css', 'text/css']);
+staticFiles.set('/mesh-tokens-v3.css', ['shared/tokens.css', 'text/css']);
+staticFiles.set('/mesh-theme-v3.mjs', ['public/theme.mjs', 'text/javascript']);
+staticFiles.set('/mesh-workroom-v3.mjs', ['public/workroom.mjs', 'text/javascript']);
 const relayAssets = new Set(['slash-commands.json','slash-commands-openclaw.json']);
 for (const [file, type] of [
   ['manifest.webmanifest', 'application/manifest+json'], ['icon.svg', 'image/svg+xml'],
@@ -95,6 +116,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     : createNodeProbeReader(nodeProbeTestOptions);
   const fixedInferenceConfig = inferenceConfig === undefined ? undefined : structuredClone(inferenceConfig);
   const directory = await confinedPath(dataDir);
+  const release = releaseInfo(ROOT, dataDir);
   const filename = await confinedPath(path.join(directory, 'tasks.sqlite'));
   const configuredRegistry = registryPath ? await confinedPath(registryPath) : undefined;
   if (configuredRegistry && !configuredRegistry.startsWith(directory + path.sep)) throw new Error('Registry must be in the owned synthetic subtree.');
@@ -113,12 +135,15 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   // and never returns it to a browser; if the file is missing the bridge reports 503
   // rather than falling back to an unauthenticated call.
   const relayMode = String(process.env.MESH_RELAY_MODE ?? 'child').toLowerCase();
-  const relay = relayMode === 'http'
+  const dshApprovals=relayEnabled && relayMode==='http'?createDshApprovalClient({origin:process.env.MESH_DSH_APPROVAL_ORIGIN||'http://127.0.0.1:4123',tokenFile:process.env.MESH_DSH_TOKEN_FILE||'D:/Dev/Onoes-Relay/.private/dsh.key'}):null;
+  const baseRelay = relayMode === 'http'
     ? await createRelayHttpLink({
       baseUrl: process.env.MESH_RELAY_URL ?? 'http://127.0.0.1:8787',
       tokenFile: process.env.MESH_RELAY_TOKEN_FILE ?? 'D:\\Dev\\Onoes-Relay\\.private\\relay.key',
     })
     : await createRelayLink({ root: ROOT, directory, confine: confinedPath, store, enabled: relayEnabled });
+  const relay=relayEnabled&&!standalone&&process.env.MESH_NIMS==='1'?withNims(baseRelay,{root:ROOT,workroom:store.workroom}):baseRelay;
+  const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:ROOT}):null;
   // Only hashes of fixed source code/CSS authorize the existing native HTML.
   // srcdoc receives that HTML via an admitted API read, never a public route.
   let relayScriptHashes = '', relayStyleHashes = '';
@@ -177,8 +202,8 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
           // Diagnosable on purpose: a 403 from here is a rewritten or duplicated Host,
           // and without the values the operator only sees an empty "Forbidden" page.
           try {
-            console.log(JSON.stringify({ event: 'app_host_denied', url: String(route).slice(0, 120),
-              hostCount: hosts.length, host: req.headers.host ?? null,
+            console.log(JSON.stringify({ event: 'app_host_denied', ...requestAudit(req),
+              hostCount: hosts.length,
               expected: `127.0.0.1:${server.address().port}`, at: new Date().toISOString() }));
           } catch { /* never break the response */ }
           deny(403);
@@ -194,6 +219,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         url: origin, integrations: 'not_connected', mode: standalone ? 'standalone' : 'mesh',
         activity: { adapter: await adapterStatus(), registry: configuredRegistry ? 'configured' : 'not_configured', source: configuredRegistry ? activitySource : 'none' }
       });
+      if (route === '/api/release' && ['GET', 'HEAD'].includes(req.method)) return send(200, release);
       if (route === '/api/worker-activity' && ['GET', 'HEAD'].includes(req.method)) return send(200, await activity(configuredRegistry));
       if (route === '/api/service-connections' && ['GET', 'HEAD'].includes(req.method)) return send(200, await connections());
       if (route === '/api/inference-observation' && ['GET', 'HEAD'].includes(req.method)) return send(200, await inference());
@@ -246,6 +272,78 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if (!context.body || Object.keys(context.body).length) throw new TaskError(400, 'Reconnect accepts no configuration.');
         if (!current()) return;
         return send(200, await relay.reconnect());
+      }
+      const workroomRoute = /^\/api\/workroom(?:\/([0-9a-f-]{36})(?:\/(message|progress|sync|apply-update|handoff|apply-review|approval|reconcile|plan|automation|apply-assignment))?)?$/.exec(route);
+      if (workroomRoute) {
+        if (!store || executionPersistenceFailed) throw new TaskError(503, 'Workroom unavailable.');
+        const id=workroomRoute[1];
+        if(req.method==='GET' && !workroomRoute[2]) return send(200,id?{task:store.workroom.get(id)}:{tasks:store.workroom.list()});
+        if(!id) throw new TaskError(405,'Method not allowed.');
+        if(workroomRoute[2]==='apply-assignment'&&req.method==='POST')return send(200,store.workroom.applyAssignment(id,context.body));
+        if(workroomRoute[2]==='automation'&&req.method==='POST'){if(!teamRunner)throw new TaskError(503,'Connected team runner unavailable.');const agents=['pause','close'].includes(context.body?.action)?[]:await relay.agents();if(!current())return;return send(200,teamRunner.action(id,context.body,agents));}
+        if(workroomRoute[2]==='plan' && req.method==='PATCH'){
+          if(context.body?.state==='locked'){
+            const agents=await relay.agents();
+            if(!current())return;
+            if(agents.find(a=>a.id===context.body.workerId)?.backend==='codex')throw new TaskError(409,'Nims is read-only; choose a coding builder.');
+            if([context.body.workerId,context.body.reviewerId].some(id=>!agents.some(a=>a.id===id&&a.conversation_id&&['hermes','a2a','codex'].includes(a.backend))))throw new TaskError(409,'Choose currently connected builder/reviewer peers. Tool/repository qualification still needs inspection.');
+          }
+          return send(200,store.workroom.savePlan(id,context.body));
+        }
+        if(workroomRoute[2]==='reconcile' && req.method==='POST'){
+          if(!dshApprovals)throw new TaskError(503,'Native task reconciliation requires the live DeepSeek connection.');
+          const body=context.body;
+          if(!body || Object.keys(body).sort().join(',')!=='peerTaskId,sendId' || typeof body.sendId!=='string' || body.sendId.length>100)throw new TaskError(400,'Select the saved send and its exact native task.');
+          const source=store.workroom.sendBinding(id,body.sendId);
+          const outcome=await dshApprovals.readTaskOutcome(source,body.peerTaskId);
+          if(!current())throw new TaskError(403,'Session expired. No reconciliation was recorded.');
+          return send(200,store.workroom.recordSendOutcome(id,source.id,outcome));
+        }
+        if(workroomRoute[2]==='approval' && ['GET','POST'].includes(req.method)){
+          const task=store.workroom.get(id);const source=task.messages.filter(m=>m.agentId==='dsh' && m.state==='accepted').at(-1);
+          if(!source || !dshApprovals)return send(200,{supported:false,pending:null,reason:'No accepted DeepSeek handoff is available for approval.'});
+          const scope={...source,taskId:id};
+          if(req.method==='GET'){
+            const state=await dshApprovals.inspect(scope);if(!current())throw new TaskError(403,'Session expired.');
+            captureDshResult(store.workroom,id,source,state.task);
+            return send(200,{supported:state.supported,pending:state.pending?{...state.pending,canApprove:state.pending.canApprove && store.workroom.canApproveHandoff(id,source.id)}:null,sendId:source.id,reason:state.reason||'',task:store.workroom.get(id)});
+          }
+          const body=context.body;
+          if(!body || Object.keys(body).sort().join(',')!=='decision,requestId,sendId' || body.sendId!==source.id || typeof body.requestId!=='string' || body.requestId.length>100 || !['allow_once','reject'].includes(body.decision))throw new TaskError(400,'Select the exact displayed approval request.');
+          if(body.decision==='allow_once' && !store.workroom.canApproveHandoff(id,source.id))throw new TaskError(409,'Task changed; this handoff cannot be approved. You can still deny it.');
+          if(!current())throw new TaskError(403,'Session expired.');
+          let result;
+          try{result=await dshApprovals.decide(scope,body,()=>{
+            if(!current())throw new TaskError(403,'Session expired.');
+            const latest=store.workroom.get(id).messages.filter(m=>m.agentId==='dsh' && m.state==='accepted').at(-1);
+            if(body.decision==='allow_once' && (latest?.id!==source.id || !store.workroom.canApproveHandoff(id,source.id)))throw new TaskError(409,'Task changed before the decision; approval refused.');
+          });}catch(error){
+            if(error.code!=='DSH_DECISION_UNCONFIRMED')throw error;
+            if(!current())throw new TaskError(403,'Session expired. Refresh the existing request before another decision.');
+            return send(202,{decisionStatus:'unconfirmed',task:store.workroom.get(id)});
+          }
+          if(!current())throw new TaskError(403,'Session expired after the decision. Refresh; do not approve a different request.');
+          captureDshResult(store.workroom,id,source,result.result?.task);
+          return send(200,{decision:result.decision,duplicate:result.duplicate,task:store.workroom.get(id)});
+        }
+        if(req.method==='PATCH' && !workroomRoute[2]) return send(200,{task:store.workroom.save(id,context.body)});
+        if(req.method==='PATCH' && workroomRoute[2]==='progress')return send(200,{task:store.workroom.saveProgress(id,context.body)});
+        if(req.method==='POST' && workroomRoute[2]==='apply-update')return send(200,store.workroom.applyAgentUpdate(id,context.body));
+        if(req.method==='POST' && workroomRoute[2]==='apply-review')return send(200,store.workroom.applyAgentReview(id,context.body));
+        if(req.method==='POST' && workroomRoute[2]==='handoff'){
+          if(typeof relay.taskMessage!=='function')throw new TaskError(503,'Team handoffs require live Relay.');
+          return send(200,await sendTaskHandoff({workroom:store.workroom,taskId:id,body:context.body,relay,admitted:current}));
+        }
+        if(req.method==='POST' && workroomRoute[2]==='sync'){
+          if(!context.body || Object.keys(context.body).length)throw new TaskError(400,'Reply refresh accepts no configuration.');
+          if(typeof relay.nativeRead!=='function')throw new TaskError(503,'Live Relay is unavailable.');
+          return send(200,await syncTaskReplies({workroom:store.workroom,taskId:id,relay,admitted:current}));
+        }
+        if(req.method==='POST' && workroomRoute[2]==='message') {
+          if(typeof relay.taskMessage!=='function') throw new TaskError(503,'Task messaging requires live Relay.');
+          return send(200,await sendTaskMessage({workroom:store.workroom,taskId:id,body:context.body,relay,admitted:current}));
+        }
+        throw new TaskError(405,'Method not allowed.');
       }
       const cancelRoute = /^\/api\/tasks\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/cancel$/.exec(route);
       if (cancelRoute) {
@@ -334,7 +432,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   guard = createTrialHttpGuard({ manager, port: server.address().port });
   return { server, mode: standalone ? 'standalone' : 'mesh', url: `http://127.0.0.1:${server.address().port}`, close: async () => {
     const closed = new Promise((resolve, reject) => server.close(e => e ? reject(e) : resolve()));
-    server.closeAllConnections(); await closed; await relay.close(); await Promise.allSettled([...executions]); store?.close();
+    server.closeAllConnections(); await closed; await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]); store?.close();
   } };
 }
 
