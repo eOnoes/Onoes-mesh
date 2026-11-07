@@ -31,6 +31,13 @@ export function handoffStatus(task,agents){
 export function taskTimeline(task){
   const events=[];const sends=new Map((task.messages||[]).map(s=>[s.id,s]));
   const add=(id,at,label,detail,evidence='')=>{if(!events.some(e=>e.id===id))events.push({id,at,label,detail,evidence});};
+  const replyAt=(send,report)=>{
+    const finished=send.agentId==='nims'&&report.agentId==='nims'&&send.nims?.state==='completed'?send.nims.finishedAt:null;
+    // Older adapter replies inherited the request time. Prefer the exact native
+    // completion only when it supplies a valid later bound, never the wall clock.
+    return typeof finished==='string'&&Number.isFinite(Date.parse(finished))&&
+      (!Number.isFinite(Date.parse(report.at))||Date.parse(report.at)<Date.parse(finished)) ? finished : report.at;
+  };
   for(const send of sends.values()){
     const label={plan:'Planning requested',work:'Worker assigned',review:'Independent review requested',message:'Message sent'}[send.phase]||'Message sent';
     add('send-'+send.id,send.at,label,`${send.agentId} · delivery ${send.state}. Delivery is not completion.`);
@@ -40,11 +47,11 @@ export function taskTimeline(task){
   for(const report of task.agentUpdates||[]){
     const send=sends.get(report.sendId);if(!send||send.state!=='accepted'||report.update?.taskId!==task.id||report.update?.sendId!==send.id)continue;
     const correction=send.phase==='work'&&(task.agentReviews||[]).some(r=>r.applied&&r.review?.taskId===task.id&&r.review?.sendId===r.sendId&&sends.get(r.sendId)?.phase==='review'&&r.review?.verdict==='changes_requested'&&Date.parse(r.at)<Date.parse(report.at));
-    add('report-'+report.sendId+'-'+(report.hash||report.messageId),report.at,send.phase==='plan'?'Plan received':correction?'Correction reported':'Worker report received',`${report.agentId} · ${report.applied?'applied to saved progress':'not applied'}. ${report.update.result||report.update.goal}`,report.update.evidence);
+    add('report-'+report.sendId+'-'+(report.hash||report.messageId),replyAt(send,report),send.phase==='plan'?'Plan received':correction?'Correction reported':'Worker report received',`${report.agentId} · ${report.applied?'applied to saved progress':'not applied'}. ${report.update.result||report.update.goal}`,report.update.evidence);
   }
   for(const report of task.agentReviews||[]){
     const send=sends.get(report.sendId);if(!send||send.phase!=='review'||send.state!=='accepted'||report.review?.taskId!==task.id||report.review?.sendId!==send.id)continue;
-    add('review-'+report.sendId+'-'+(report.hash||report.messageId),report.at,'Review received · '+(report.review.verdict==='approved'?'approved':'changes requested'),`${report.agentId} · ${report.applied?'recorded':'not recorded'}. ${report.review.summary}`,report.review.evidence);
+    add('review-'+report.sendId+'-'+(report.hash||report.messageId),replyAt(send,report),'Review received · '+(report.review.verdict==='approved'?'approved':'changes requested'),`${report.agentId} · ${report.applied?'recorded':'not recorded'}. ${report.review.summary}`,report.review.evidence);
   }
   for(const h of task.history||[]){
     const label={progress_saved:'Progress saved',team_attempt_closed:'Team attempt closed',team_started:'Scoped team started',team_paused:'Team paused / needs review',plan_proposed:'Plan proposed',scope_locked:'Scope and team locked',lead_selected:'Project lead selected',review_changes_requested:'Changes requested',review_approved:'Review approved',agent_update_applied:'Report applied',agent_review_applied:'Review recorded'}[h.kind]||(h.kind==='updated'?(/Stage: done[.;]/.test(h.detail)?'Moved to Done':'Card updated'):null);
