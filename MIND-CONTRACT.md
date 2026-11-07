@@ -196,3 +196,27 @@ Next implementation should investigate existing Mind store identity and correcti
 semantics before adding validation. Do not invent a second memory authority or
 select a real file/scope/credential on Eddie's behalf. Ask for the concrete owner
 choices only once the binding and acceptance work is reviewable.
+
+## 2026-11-07 prepared binding milestone
+
+Canonical Mind now contains an inactive bound-reader preparation module. A
+reviewed record must include the existing unapproved fields above plus its exact
+store UUID and filesystem device/file ID. Scope is one project shared scope;
+mesh-recall is a dedicated service identity. Its purpose-specific credential is
+not accepted by the ordinary writer. This was necessary because a synthetic
+probe found ordinary writer authentication does not itself enforce can_write.
+No live metadata, identity, scope or credential was provisioned.
+
+Bound-reader acceptance now includes wrong compatible store/file, copied UUID,
+private/extra/writable/disabled grants, non-service tokens, revocation, no-write
+HTTP/SQLite behavior and real Mesh -> bound Mind -> shared-only records. This
+is synthetic qualification, not owner approval, real-store provenance or physical
+release acceptance. See canonical Mind MESH_RECALL_INTERFACE.md for the exact
+contract and anti-rollback/legacy-writer limits. Normal Mesh remains disconnected.
+
+Canonical prepared binding source milestone: c5c90017f374a4d83b4178c623352771c274d148.
+Local full suite188 PASS; actual Mesh HTTP integration2 PASS. Purpose-specific
+recall token is rejected by ordinary writer authentication and remember; ordinary
+writer credentials are refused by bound recall. This preparation does not activate
+memory or qualify all legacy write policies. Exact live database/owner remain a
+pending owner question; no actual scope/custodian/credential chosen.
