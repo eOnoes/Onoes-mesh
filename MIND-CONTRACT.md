@@ -243,3 +243,24 @@ Exact data path, authority/custodian, reviewed initialization and restore/deleti
 history must be resolved in the binding record before provisioning. Mesh must
 not create a separate memory store. Single-scope service credentials, grants,
 service startup and live activation remain separately unapproved.
+
+## Operator ownership and future team-tool contract (2026-11-07)
+
+Eddie owns Mind's data and recovery keys. Echo and Nims (Codex) operate it.
+This establishes responsibility; exact OS/runtime identity and real initialization,
+credential/grant provisioning and activation remain separate reviewed decisions.
+
+For future MCP tools, build reusable tools once and make them discoverable through
+a shared team catalog. Mind can retain approved tool/skill descriptions, versions,
+usage guidance and provenance. Actual tools execute through MCP servers with
+server-enforced agent/project permissions; a recalled memory or instruction is
+never an authorization grant. Each harness needs its supported MCP connection or
+an explicitly configured adapter. Joining Mind alone does not configure a client.
+
+Approved common read-only tools may be available to the team by default; writes
+remain bound to the chosen workspace and existing approval policy. Credentials
+stay with the executing service, not general shared memory. Agents keep separate
+identities and revocation. Use private local/Tailscale routing where supported;
+no public gateway or expanded access is authorized by this architecture note.
+This is a future requirement for shared skills/MCP, not an implemented catalog,
+connector, permission store or gateway. Finish the current store/recall work first.
