@@ -23,7 +23,7 @@ for(const name of ['package.json','package-lock.json','VERSION','server.mjs','se
 for(const item of readdirSync(join(root,'test'),{withFileTypes:true}))if(item.isFile()&&/\.(mjs|js|py)$/.test(item.name))entries.push('test/'+item.name);
 entries.sort();
 // Keep the operational contracts with the UI/code they describe.
-for(const name of ['MIND-CONTRACT.md','RELAY-INTEGRATION.md'])if(existsSync(join(root,name)))entries.push(name);
+for(const name of ['MIND-CONTRACT.md','RELAY-INTEGRATION.md','MESH-QUICK-START.md'])if(existsSync(join(root,name)))entries.push(name);
 entries.sort();
 const hash=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const files=entries.map(path=>({path,sha256:hash(join(root,path))}));
