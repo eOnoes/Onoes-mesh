@@ -1465,3 +1465,14 @@ html[data-theme=light] .workroom-sheet h2{font-family:var(--display);text-transf
 .relay-conversation-details{margin-top:10px}
 .relay-conversation-details summary{cursor:pointer;color:var(--quiet)}
 #panel-relay .chat{min-height:180px;overscroll-behavior-y:auto}
+
+/* Short phone viewports need room for the composer as well as the transcript. */
+@media(max-width:759px) and (max-height:600px){
+  #panel-relay>.box{padding:6px 0;margin:0;flex:0 0 auto}
+  #panel-relay>.box>label{margin:0 0 4px;font-size:11px}
+  #panel-relay>.box>.actions{margin:6px 0;gap:6px}
+  #panel-relay .relay-conversation-details{margin-top:4px}
+  #panel-relay #relay-chat-status{margin:6px 0;font-size:11px;line-height:1.35}
+  #panel-relay .chat{min-height:0}
+  #panel-relay .cmp{margin-top:4px;padding:4px 0 calc(4px + env(safe-area-inset-bottom))}
+}

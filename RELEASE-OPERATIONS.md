@@ -244,3 +244,20 @@ snapshots, not proof of model readiness, coding access, task completion or recal
 Overview clears prior connection rows on invalid/unavailable responses. Each row
 shows source, observation time, probe duration and errors. Consult the relevant
 workspace for its separate operation result and freshness status.
+
+## Readiness words describe different evidence
+
+| Label | What it proves and where it comes from |
+| --- | --- |
+| Service reachable | A timestamped adapter/health observation succeeded. It does not prove an agent can code, a model is resident or a task ran. |
+| Agent available | A Relay roster/status observation names the peer. Capabilities and the selected current conversation must still match before a send; roster status is not repository/tool access. |
+| Model reported loaded | A recent supervisor observation reports that model on that lane. The5s observation lifetime is separate from Control's15s hardware lifetime. It is not retained process custody or proven GPU attribution. |
+| Runtime qualified | Exact runtime/model/owner and actual load/chat/cancel/unload evidence have been accepted for that profile. Native Nemotron lifecycle is still unqualified; its prepared bridge is inactive and controls stay gated. |
+| Task accepted | A retained send/receipt identifies the exact task revision, destination and attempt. It does not prove a reply, successful implementation or approval. Unknown sends require same-identity deliberate recovery. |
+| Task complete | The saved workflow has current evidence, a valid independent review and a deliberate owner Done transition. A service status, worker report or all-done checklist alone cannot substitute. |
+
+Overview source labels and workspace observations were reconciled in the actual
+private app. The observation-meaning map closes B1's explanation requirement;
+it does not close D2's stronger runtime-to-GPU attribution or C's physical/live
+release acceptance. Each unavailable/stale state retains its own source/time
+meaning rather than being converted into a healthy completion claim.

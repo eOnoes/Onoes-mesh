@@ -68,3 +68,13 @@ historical file was audited or merged. Import only a separately qualified featur
 when requested; preserve the current gate, session boundaries and authoritative
 stores. Local contract tests and live read-only acceptance are distinct from a new
 live agent send; the current pass does not dispatch a real conversation message.
+
+## Short phone Relay layout (2026-11-07)
+
+The reduced-height phone layout compacts destination controls and lets the
+transcript shrink below its normal minimum so the composer remains visible.
+Existing destination selection, connection status and Conversation details stay
+available. No control is auto-submitted or rebound. At390x500 both themes showed
+the composer within the viewport and no outer main overflow;390x844 retained an
+unsent RAM draft after resizing. These are browser-width checks, not a physical
+keyboard/background/rotation acceptance. No real message was sent.
