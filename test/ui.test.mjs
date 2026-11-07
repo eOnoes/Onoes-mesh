@@ -18,7 +18,7 @@ class Element {
   querySelectorAll() { return []; }
   getBoundingClientRect() {return {height:0,width:0,top:0,right:0,left:0,bottom:0};}
 }
-function mockUI({ stored, responder, locked=false } = {}) {
+function mockUI({ stored, responder, locked=false, hash='' } = {}) {
   const ids = new Map([...html.matchAll(/\bid="([^"]+)"/g)].map(m => [m[1], new Element()]));
   const forms = ['create-title','create-description','create-label','edit-title','edit-description','edit-label','toggle-status','reload-task','refresh'].map(id => ids.get(id));
   const tabs = [...html.matchAll(/<button role="tab" id="([^"]+)" aria-controls="([^"]+)"/g)].map(m => { const el = ids.get(m[1]); el.attrs['aria-controls'] = m[2]; return el; });
@@ -26,7 +26,7 @@ function mockUI({ stored, responder, locked=false } = {}) {
   const storage = new Map(stored ? [['mesh.synthetic-demo.proof.v1', JSON.stringify(stored)]] : []);
   if(locked)storage.set('mesh.workspace.locked.v1','1');
   const requests = []; const events = {}; const intervals = [];
-  const context = vm.createContext({requestAnimationFrame:()=>{},MutationObserver:class{observe(){}},crypto:globalThis.crypto,TextEncoder,document: { getElementById: id => ['chat-grip','chat-seek','chat-jump'].includes(id)?null:ids.get(id), createElement: () => new Element(),createDocumentFragment:()=>new Element(), querySelectorAll: s => s === '[role=tab]' ? tabs : s.startsWith('form ') ? forms : groups.get(s) ?? [] }, navigator: { onLine: true }, window: { addEventListener: (e, f) => { events[e] = f; } }, sessionStorage: { getItem: k => storage.get(k)??null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) }, AbortController, setTimeout, clearTimeout, setInterval: f => { intervals.push(f); }, Date, fetch: async (route, options) => { requests.push({ route, options }); return responder ? responder(route, options) : response(200, {}); } });
+  const context = vm.createContext({requestAnimationFrame:()=>{},MutationObserver:class{observe(){}},crypto:globalThis.crypto,TextEncoder,document: { getElementById: id => ['chat-grip','chat-seek','chat-jump'].includes(id)?null:ids.get(id), createElement: () => new Element(),createDocumentFragment:()=>new Element(), querySelectorAll: s => s === '[role=tab]' ? tabs : s.startsWith('form ') ? forms : groups.get(s) ?? [] }, navigator: { onLine: true }, window: { location:{hash}, addEventListener: (e, f) => { events[e] = f; } }, sessionStorage: { getItem: k => storage.get(k)??null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) }, AbortController, setTimeout, clearTimeout, setInterval: f => { intervals.push(f); }, Date, fetch: async (route, options) => { requests.push({ route, options }); return responder ? responder(route, options) : response(200, {}); } });
   const modules=[agentSource,mindSource,relayCoreSource,relayChatSource,source].map(s=>s.replace(/^import .*;\r?$/gm,'').replace(/^export /gm,''));
   vm.runInContext(modules.join('\n'), context);
   return { ids, forms, tabs, storage, requests, events, intervals, context };
@@ -143,4 +143,19 @@ test('MOCK UI: actual ordinary chat sends once through admission, never creates 
  composer.value='private draft';composer.events.input();ui.events.pagehide();
  assert.equal(composer.value,'');assert.equal(ui.ids.get('relay-chat-agent').value,'');
  assert.ok(!JSON.stringify([...ui.storage.entries()]).includes('private draft'));
+});
+
+test('MOCK UI: workspace deep links select the named panel without admission or requests', () => {
+  for (const name of ['overview','relay','inference','workroom','agent','mind','control']) {
+    const ui=mockUI({hash:'#'+name});
+    assert.equal(ui.ids.get('tab-'+name).attrs['aria-selected'],'true');
+    assert.equal(ui.ids.get('panel-'+name).hidden,false);
+    assert.equal(ui.requests.length,0);
+    assert.equal(ui.forms.every(el=>el.disabled),true);
+    ui.context.window.location.hash='#workroom';ui.events.hashchange();
+    assert.equal(ui.ids.get('tab-workroom').attrs['aria-selected'],'true');
+    ui.context.window.location.hash='#unknown';ui.events.hashchange();
+    assert.equal(ui.ids.get('tab-workroom').attrs['aria-selected'],'true');
+    assert.equal(ui.requests.length,0);
+  }
 });

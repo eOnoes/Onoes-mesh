@@ -24,6 +24,13 @@ for (const tab of tabs) {
     e.preventDefault(); activate(tabs[index], true);
   });
 }
+// Workspace links select a panel only; they never admit a session or dispatch work.
+function activateLinkedWorkspace() {
+  const name = /^#(overview|relay|inference|workroom|agent|mind|control)$/.exec(window.location?.hash ?? '')?.[1];
+  if (name) activate($('tab-' + name));
+}
+activateLinkedWorkspace();
+window.addEventListener('hashchange', activateLinkedWorkspace);
 const menuMedia = typeof window.matchMedia === 'function'
   ? window.matchMedia('(max-width: 760px)')
   : { matches: false, addEventListener() {} };
@@ -467,7 +474,9 @@ function localInferenceControls() {
     Date.now() - Date.parse(s.observedAt) < s.freshForMs &&
     probeTick() - localInferenceReceivedAt < s.freshForMs;
   const reason = locked ? 'Start a local session; wait for the current request to finish.' :
-    s?.controls?.reason || (!fresh ? 'Observation expired or unavailable. Refresh local status.' : '');
+    (s?.controls?.reason === 'NATIVE_QUALIFICATION_REQUIRED'
+      ? 'Local model controls are not qualified yet. PC readings above remain available.'
+      : s?.controls?.reason) || (!fresh ? 'Observation expired or unavailable. Refresh local status.' : '');
   $('local-inference-refresh').disabled = locked;
   $('local-inference-refresh').title = locked ? reason : 'Read this PC status without executing a control.';
   for (const name of ['load', 'stop', 'unload', 'chat']) {
@@ -494,6 +503,9 @@ export function renderLocalInference(snapshot) {
   $('local-inference-state').textContent = valid
     ? `[${snapshot.state}] · this-pc · ${snapshot.source} · observation ${snapshot.observedAt ?? 'UNAVAILABLE'} · ${snapshot.freshness}`
     : 'UNAVAILABLE · Start a local session and refresh local status.';
+  $('local-inference-profile').textContent = valid && snapshot.state === 'RUNNING' && snapshot.runtime?.status === 'VERIFIED'
+    ? `${snapshot.profile.model} · ${snapshot.runtimeId}`
+    : 'No verified model connection. PC readings above remain available.';
   $('local-inference-identity').textContent = valid ? 'Runtime identity: ' + details(snapshot.runtime) : 'Runtime identity UNKNOWN';
   $('local-inference-telemetry').textContent = valid ? 'Telemetry: ' + details(snapshot.telemetry)
     : 'CPU UNKNOWN · RAM UNKNOWN · GPU UNAVAILABLE · VRAM UNAVAILABLE';
