@@ -1,4 +1,5 @@
 import {createRelayConversation} from './relay-conversation.mjs';
+import {createRelayTaskProgress} from './relay-task-progress.mjs';
 
 const chat = document.getElementById('relay-chat');
 const composer = document.getElementById('relay-text');
@@ -122,6 +123,7 @@ const toBottom = () => { if (chat) chat.scrollTop = chat.scrollHeight; };
 // Ordinary chat has one submit handler and uses the application's admitted request path.
 export function createRelayChat({request}) {
   if(!chat || !form) return {setAvailable(){},clear(){},refresh:async()=>{}};
+  const taskProgress=createRelayTaskProgress({root:document.getElementById('relay-task-progress'),button:document.getElementById('relay-task-progress-open'),request,document});
   const select=document.getElementById('relay-chat-agent');
   const current=document.getElementById('relay-chat-current');
   const refreshButton=document.getElementById('relay-chat-refresh');
@@ -167,11 +169,11 @@ export function createRelayChat({request}) {
   refreshButton.addEventListener('click',()=>{if(!busy)core.refresh();});
   form.addEventListener('submit',async event=>{event.preventDefault();if(busy)return;await core.send();});
   const panel=document.getElementById('panel-relay');
-  const refresh=()=>{if(!panel?.hidden&&!busy)return core.refresh();};
+  const refresh=()=>{if(!panel?.hidden&&!document.hidden&&!busy){taskProgress.refresh();return core.refresh();}};
   setInterval(refresh,5000);
   if(panel)new MutationObserver(()=>{if(!panel.hidden){toBottom();refresh();}}).observe(panel,{attributes:true,attributeFilter:['hidden']});
   draw(core.state());
-  return {refresh,setAvailable(value,isBusy=false){busy=isBusy;core.setAvailable(value);draw(core.state());},clear(){core.setAvailable(false);draw(core.state());}};
+  return {refresh,setAvailable(value,isBusy=false){busy=isBusy;taskProgress.setAvailable(value,isBusy);core.setAvailable(value);draw(core.state());},clear(){taskProgress.clear();core.setAvailable(false);draw(core.state());}};
 }
 // --- chat chrome ------------------------------------------------------------------
 // Two things the conversation needs to be usable: a width you can drag, and a scroll

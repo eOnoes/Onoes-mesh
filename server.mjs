@@ -50,6 +50,7 @@ staticFiles.set('/workroom.mjs', ['public/workroom.mjs', 'text/javascript']);
 staticFiles.set('/agent-workspace.mjs', ['public/agent-workspace.mjs', 'text/javascript']);
 staticFiles.set('/mind-workspace.mjs', ['public/mind-workspace.mjs', 'text/javascript']);
 staticFiles.set('/relay-conversation.mjs', ['public/relay-conversation.mjs', 'text/javascript']);
+staticFiles.set('/relay-task-progress.mjs', ['public/relay-task-progress.mjs', 'text/javascript']);
 staticFiles.set('/lead-policy.mjs', ['public/lead-policy.mjs', 'text/javascript']);
 staticFiles.set('/workroom-plan.mjs', ['public/workroom-plan.mjs', 'text/javascript']);
 staticFiles.set('/workroom-status.mjs', ['public/workroom-status.mjs', 'text/javascript']);

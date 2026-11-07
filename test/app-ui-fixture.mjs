@@ -6,6 +6,7 @@ const mindSource = await readFile(new URL('../public/mind-workspace.mjs', import
 const relayCoreSource = await readFile(new URL('../public/relay-conversation.mjs', import.meta.url), 'utf8');
 const sessionEntrySource = await readFile(new URL('../public/session-entry.mjs', import.meta.url), 'utf8');
 const relayChatSource = await readFile(new URL('../public/chat.mjs', import.meta.url), 'utf8');
+const relayProgressSource = await readFile(new URL('../public/relay-task-progress.mjs', import.meta.url), 'utf8');
 const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 class Element {
   constructor() { this.children = []; this.attrs = {}; this.events = {}; this.textContent = ''; this.value = ''; this.disabled = false; this.style = {}; this.dataset={};this.scrollHeight=0;this.clientHeight=0;this.scrollTop=0;this.classList={add(){},remove(){},contains(){return false;}}; }
@@ -13,6 +14,7 @@ class Element {
   setAttribute(k, v) { this.attrs[k] = v; } getAttribute(k) { return this.attrs[k]; }
   addEventListener(k, f) { this.events[k] = f; } append(...els) { this.children.push(...els); }
   replaceChildren(...els) { this.children = els; } reset() {} focus() {}
+  showModal(){this.open=true;} close(){this.open=false;this.events.close?.();}
   querySelectorAll() { return []; }
   getBoundingClientRect() {return {height:0,width:0,top:0,right:0,left:0,bottom:0};}
 }
@@ -25,7 +27,7 @@ function mockUI({ stored, responder, locked=false, hash='', DateImpl=Date, Broad
   if(locked)storage.set('mesh.workspace.locked.v1','1');
   const requests = []; const events = {}; const intervals = [];
   const context = vm.createContext({requestAnimationFrame:()=>{},MutationObserver:class{observe(){}},crypto:globalThis.crypto,TextEncoder,document: { getElementById: id => ['chat-grip','chat-seek','chat-jump'].includes(id)?null:ids.get(id), createElement: () => new Element(),createDocumentFragment:()=>new Element(), querySelectorAll: s => s === '[role=tab]' ? tabs : s.startsWith('form ') ? forms : groups.get(s) ?? [] }, navigator: { onLine: true }, window: { location:{hash}, addEventListener: (e, f) => { events[e] = f; } }, sessionStorage: { getItem: k => storage.get(k)??null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) }, AbortController, crypto, BroadcastChannel:BroadcastChannelImpl, setTimeout, clearTimeout, setInterval: f => { intervals.push(f); }, Date:DateImpl, fetch: async (route, options) => { requests.push({ route, options }); return responder ? responder(route, options) : response(200, {}); } });
-  const modules=[sessionEntrySource,agentSource,mindSource,relayCoreSource,relayChatSource,source].map(s=>s.replace(/^import .*;\r?$/gm,'').replace(/^export /gm,''));
+  const modules=[sessionEntrySource,agentSource,mindSource,relayCoreSource,relayProgressSource,relayChatSource,source].map(s=>s.replace(/^import .*;\r?$/gm,'').replace(/^export /gm,''));
   vm.runInContext(modules.join('\n'), context);
   return { ids, forms, tabs, storage, requests, events, intervals, context };
 }

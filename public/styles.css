@@ -1476,3 +1476,10 @@ html[data-theme=light] .workroom-sheet h2{font-family:var(--display);text-transf
   #panel-relay .chat{min-height:0}
   #panel-relay .cmp{margin-top:4px;padding:4px 0 calc(4px + env(safe-area-inset-bottom))}
 }
+
+/* Saved progress is a native sheet so the phone composer keeps its space. */
+#relay-task-progress{overflow-wrap:anywhere}
+#relay-task-progress select{width:100%;max-width:100%}
+#relay-task-progress li{margin:8px 0}
+
+#relay-task-progress .workroom-sheet-toolbar{position:sticky;top:0;z-index:1}
