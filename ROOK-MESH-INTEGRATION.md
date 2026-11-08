@@ -1259,3 +1259,49 @@ Syntax checks PASS for qualifier and backup script. App core unchanged from full
 callback lifetime before further completion/release qualification. No live native
 or Relay installation, automatic dispatch activation or existing-hold release.
 Full original Mesh/Mind/inference/fleet objective active/incomplete.
+
+
+## 2026-11-08 - Native title callback lifetime candidate
+
+Previous turn PROGRESS:2c26750 actual isolated runtime qualification/push/backup.
+Revalidated clean tracked baseline. Expanded partial native agent index; exact
+source identifies extra request as deferred session-title generation.
+agent/turn_context.start_deferred_title_upgrade calls title_generator.start_title_upgrade;
+auto_title_session writes title/aux accounting and may notify a title callback.
+spawn_context_thread returns an UNSTARTED standard Thread whose target is ctx_bound,
+so profile context must not be replaced. Pin agent/title_generator.py SHA256
+e5beaa6185f91e887d27a35a5acdde613c0144c156e63ed053566127ff25ce0f.
+
+Candidate replaces only native upgrade.start() with an observed start. Original
+Thread object, target/args/context, daemon/name, weak-set registration, None/already-
+started guard and native title behavior preserved. A background ticket is reserved
+before start; a daemon observer joins actual native Thread before settling its
+private Future. Join includes target cleanup/exception handling. Start/observer
+uncertainty stays held as unknown; no blind retry. Dedicated callback gains no
+new managed-tool authority and join does not settle any external side effects.
+Unenrolled threads keep original start behavior. Installed native source untouched.
+
+Full npm suite PASS338 (299Node+39Python), ../native-title-thread-full.log. Focused39
+PASS, including preserved captured profile after parent resets it, root return while
+callback active, uncertain start-after-start and observer failure remaining held.
+Native pinned function qualification PASS46; actual title-start function retains
+weak-set/duplicate guard and holds background work until actual join.
+
+Actual isolated direct native runtime PASS6 on Python3.14.7, with local fake model
+and synthetic profile/dependency fixture (no paid/live model). Deliberately held
+non-tool title response after chat completed: rootEnded=true, background ticket
+pending, managedWorkEnded=false. Released response, observed actual title Thread
+exit/empty pending set before local settlement. Native Windows Job/API auth and
+real SQLite restart/idempotency checks still PASS; no extra provider request,
+worker, process fence or active run after replay. Whole-worker release stays false.
+Retained data/hermes-runtime-521f715c-a4b5-483c-804a-41a9b87d35c4 with
+title-pending-status.json/final-status.json/runtime-qualification.json. Independent
+evidence recheck PASS5, all11candidate source hashes verified. Native git apply
+--check PASS and all9installed target sources clean. Report refreshed at
+integrations/hermes-runtime-qualification.json; source baseline now9files/patch11.
+
+No live native/Relay/model installation/restart, no automatic activation/hold
+release. Live Mesh receipt persistence remains deployed from78cfee6. Next: tool
+external-effect completion contract plus canonical/session-authority/live-owner
+coverage and installed provider/profile qualification. A title callback finishing
+does not qualify whole-worker release. Full original goal active/incomplete.

@@ -1,5 +1,5 @@
 import concurrent.futures
-from contextvars import copy_context
+from contextvars import copy_context, ContextVar
 from pathlib import Path
 import shutil
 import sys
@@ -65,6 +65,12 @@ class HermesWriterScopeTests(unittest.TestCase):
                                                None, 'legacy', suffix=' arguments')
             self.assertEqual(future.result(timeout=3), 'legacy arguments')
 
+    def test_unbound_thread_keeps_original_target_and_identity(self):
+        result=[]
+        thread=threading.Thread(target=lambda:result.append('legacy'),name='legacy-title',daemon=True)
+        scope.start_writer_observed_thread(thread);thread.join(timeout=3)
+        self.assertEqual(result,['legacy']);self.assertEqual(thread.name,'legacy-title')
+
 
 @unittest.skipUnless(sys.platform == 'win32', 'Real Windows job accounting required')
 class ManagedWriterLifetimeTests(unittest.TestCase):
@@ -75,6 +81,59 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
     def tearDown(self):
         self.fence.terminate()
         self.fence.close()
+
+    def test_native_title_thread_holds_after_root_and_preserves_captured_profile(self):
+        entered,release=threading.Event(),threading.Event();seen=[]
+        profile=ContextVar('fixture_title_profile',default='wrong')
+        def title():
+            seen.append(profile.get());entered.set();release.wait(timeout=5)
+        thread=None
+        try:
+            with scope.writer_foreground_scope(self.life):
+                token=profile.set('original-profile');context=copy_context();profile.reset(token)
+                thread=threading.Thread(target=lambda:context.run(title),name='native-title',daemon=True)
+                scope.start_writer_observed_thread(thread)
+                self.assertTrue(entered.wait(timeout=3))
+            snapshot=self.life.wait(20)
+            self.assertFalse(snapshot['managedWorkEnded']);self.assertFalse(self.fence.snapshot()['sealed'])
+            self.assertEqual(snapshot['pendingWorkers'][0]['kind'],'background')
+            release.set();thread.join(timeout=3)
+            self.assertTrue(self.life.wait()['managedWorkEnded']);self.assertEqual(seen,['original-profile'])
+            self.assertFalse(self.life.snapshot()['writerQuiescence'])
+        finally:
+            release.set()
+            if thread is not None:thread.join(timeout=3)
+
+    def test_uncertain_native_thread_start_stays_held_even_after_target_finishes(self):
+        release=threading.Event();thread=threading.Thread(target=lambda:release.wait(timeout=5),daemon=True)
+        original=thread.start
+        def uncertain():
+            original();raise RuntimeError('start failed after thread began')
+        try:
+            with scope.writer_foreground_scope(self.life),patch.object(thread,'start',side_effect=uncertain):
+                with self.assertRaises(RuntimeError):scope.start_writer_observed_thread(thread)
+            release.set();thread.join(timeout=3)
+            snapshot=self.life.wait(20)
+            self.assertFalse(snapshot['managedWorkEnded']);self.assertEqual(snapshot['pendingWorkers'][0]['state'],'unknown')
+        finally:
+            release.set()
+            if thread.ident is not None:thread.join(timeout=3)
+
+    def test_failed_thread_observer_cannot_release_a_running_native_callback(self):
+        release=threading.Event();thread=threading.Thread(target=lambda:release.wait(timeout=5),name='native-title',daemon=True)
+        original=threading.Thread.start
+        def start(value):
+            if value.name=='mesh-background-observer':raise RuntimeError('observer unavailable')
+            return original(value)
+        try:
+            with scope.writer_foreground_scope(self.life),patch.object(threading.Thread,'start',start):
+                with self.assertRaises(RuntimeError):scope.start_writer_observed_thread(thread)
+            self.assertFalse(self.life.wait(20)['managedWorkEnded'])
+            release.set();thread.join(timeout=3)
+            self.assertEqual(self.life.snapshot()['pendingWorkers'][0]['state'],'unknown')
+        finally:
+            release.set()
+            if thread.ident is not None:thread.join(timeout=3)
 
     def test_managed_submission_preserves_positional_and_keyword_arguments(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:

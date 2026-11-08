@@ -2,6 +2,8 @@
   "qualification": "PASS",
   "checks": [
     "actual_native_HTTP_agent_tool_roundtrip",
+    "actual_native_title_callback_keeps_completed_reply_worker_held",
+    "actual_native_title_thread_exit_observed_before_local_settlement",
     "actual_native_tool_thread_and_Windows_job_observed_without_release",
     "actual_native_HTTP_authentication_enforced",
     "actual_native_SQLite_restart_replay_without_new_worker_or_old_owner"
@@ -14,10 +16,10 @@
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual native HTTP authentication/admission, AIAgent, terminal tool, Windows Job and SQLite idempotency; isolated profile; fake local provider/config factory; copied pure-Python snowballstemmer dependency.",
+  "scope": "Actual native direct-run HTTP/auth, AIAgent, terminal, held native title callback, Windows Job, and SQLite replay; fresh synthetic profile; local fake provider/config factory; pure-Python dependency fixture.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "0bff78a997581bb5f588acc72e01d0c9bda57ace5f616a57511f0cad4db220c2",
+    "tools/mesh_writer_scope.py": "2bcdec74a5396a0b390972c8b9d8e9b368c2723463db5ca664d0af94fdd92da7",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
     "gateway/platforms/api_server_runs.py": "6daad3369059781305e05d26b3fe516a991246ecac526c8ebc342f034b5cf941",
@@ -25,19 +27,21 @@
     "agent/tool_executor.py": "49cd5ed69966a6513bf4990ae957e7c0f400f1709e03cb178bada5dc0c34f80b",
     "agent/terminal_approval_batch.py": "5eb4c30429777b217720a67b301f445f8fb171cf3f6171113a4ce669da1512d6",
     "tools/file_tools.py": "af4fcea5046db65657ede46e280dc5f2725d360dd3529e0a1af38ea401e1ea9e",
-    "tools/terminal_tool.py": "382f70e0d1af91aabf55059531bfe798b31d570603254fe4db48161aeef754b1"
+    "tools/terminal_tool.py": "382f70e0d1af91aabf55059531bfe798b31d570603254fe4db48161aeef754b1",
+    "agent/title_generator.py": "6c51388525a8ccf5fceb2b828c7be4c70869cd144091572f1e423539269064f8"
   },
   "evidenceChecks": [
     "exact_exit_zero_tool_output_without_error",
     "all_candidate_source_hashes",
     "restart_without_new_agent_or_fence",
-    "no_writer_release"
+    "no_writer_release",
+    "native_title_pending_then_actual_thread_exit"
   ],
-  "evidenceDirectory": "hermes-runtime-2a9da8d5-b474-4d43-a47d-c93687f2384e",
+  "evidenceDirectory": "hermes-runtime-521f715c-a4b5-483c-804a-41a9b87d35c4",
   "remaining": [
-    "Non-tool provider callback lifetime is not covered.",
     "Tool external effects and whole-worker release remain unqualified.",
-    "Installed native/Relay deployment and production user-path verification are not complete."
+    "Other background workers and canonical/session-authority/live-owner routes are not qualified.",
+    "Installed native/Relay deployment and production provider/profile selection remain unverified."
   ],
   "liveServicesChanged": false
 }

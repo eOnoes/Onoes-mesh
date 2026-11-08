@@ -44,6 +44,16 @@ def verify_evidence(root):
     result = {'qualification': 'PASS', 'checks': ['exact_exit_zero_tool_output_without_error',
               'all_candidate_source_hashes', 'restart_without_new_agent_or_fence', 'no_writer_release'],
               'wholeWorkerReleaseQualified': False}
+    if 'actual_native_title_callback_keeps_completed_reply_worker_held' in report['checks']:
+        pending = json.loads((root / 'title-pending-status.json').read_text(encoding='utf-8'))
+        finished = json.loads((root / 'final-status.json').read_text(encoding='utf-8'))
+        before = pending['writer_lifecycle']['enrollment']['lifetime']
+        after = finished['writer_lifecycle']['enrollment']['lifetime']
+        if (not before['rootEnded'] or before['managedWorkEnded']
+                or not any(item['kind'] == 'background' for item in before['pendingWorkers'])
+                or not after['managedWorkEnded'] or after['pendingWorkers']):
+            raise RuntimeError('Native title callback lifetime evidence is incomplete')
+        result['checks'].append('native_title_pending_then_actual_thread_exit')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -102,6 +112,7 @@ async def child(root):
     if Path(get_hermes_home()).resolve() != (root / 'fixture-home').resolve():
         raise RuntimeError('Native home is not isolated')
     requests, tools_seen, fences, agents_created = [], [], [], []
+    title_started, title_release = asyncio.Event(), asyncio.Event()
     async def provider(request):
         body = await request.json()
         requests.append({'path': request.path, 'tools': [item.get('function', {}).get('name') or item.get('name')
@@ -110,10 +121,14 @@ async def child(root):
             if message.get('role') == 'tool':
                 tools_seen.append(str(message.get('content', '')))
         terminal_allowed = any(item.get('function', {}).get('name') == 'terminal' for item in body.get('tools', []))
+        if not terminal_allowed:
+            title_started.set()
+            await asyncio.wait_for(title_release.wait(), timeout=30)
         tool = terminal_allowed and not any(message.get('role') == 'tool' for message in body.get('messages', []))
         message = ({'role': 'assistant', 'content': None, 'tool_calls': [{'id': 'call_mesh_fixture', 'type': 'function',
                     'function': {'name': 'terminal', 'arguments': json.dumps({'command': "printf 'mesh-runtime-proof'", 'timeout': 5})}}]}
-                   if tool else {'role': 'assistant', 'content': 'mesh fixture completed'})
+                   if tool else {'role': 'assistant', 'content': 'mesh fixture completed' if terminal_allowed
+                                 else json.dumps({'title': 'Mesh runtime fixture'})})
         finish = 'tool_calls' if tool else 'stop'
         if body.get('stream'):
             delta = dict(message); delta.pop('role', None)
@@ -184,6 +199,28 @@ async def child(root):
             if status['status'] != 'completed' or not terminal_proof_seen(tools_seen):
                 raise RuntimeError('Real agent/tool proof did not complete')
             checks.append('actual_native_HTTP_agent_tool_roundtrip')
+            await asyncio.wait_for(title_started.wait(), timeout=10)
+            async with client.get(origin + '/v1/runs/' + run_id, headers={'Authorization': 'Bearer ' + key}) as response:
+                pending_title = await response.json()
+            (root / 'title-pending-status.json').write_text(json.dumps(pending_title, indent=2), encoding='utf-8')
+            pending_life = pending_title['writer_lifecycle']['enrollment']['lifetime']
+            if (not pending_life['rootEnded'] or pending_life['managedWorkEnded']
+                    or not any(item['kind'] == 'background' for item in pending_life['pendingWorkers'])):
+                raise RuntimeError('Native reply completion lost its running title callback')
+            checks.append('actual_native_title_callback_keeps_completed_reply_worker_held')
+            title_release.set()
+            deadline = time.monotonic() + 10
+            while True:
+                async with client.get(origin + '/v1/runs/' + run_id, headers={'Authorization': 'Bearer ' + key}) as response:
+                    status = await response.json()
+                if status['writer_lifecycle']['enrollment']['lifetime']['managedWorkEnded']:
+                    break
+                if time.monotonic() >= deadline:
+                    raise RuntimeError('Native title callback did not settle after actual completion')
+                await asyncio.sleep(.02)
+            (root / 'final-status.json').write_text(json.dumps(status, indent=2), encoding='utf-8')
+            (root / 'provider-evidence.json').write_text(json.dumps({'requests': requests, 'toolResults': tools_seen}, indent=2), encoding='utf-8')
+            checks.append('actual_native_title_thread_exit_observed_before_local_settlement')
             observation = status['writer_lifecycle']
             life = observation['enrollment']['lifetime']
             if not life['managedWorkEnded'] or not life['processTree']['processTreeEnded']:
@@ -215,7 +252,7 @@ async def child(root):
                         'providerRequests': requests, 'agentsBeforeRestart': creations, 'agentsAfterRestart': len(agents_created),
                         'fencesBeforeRestart': fence_count, 'fencesAfterRestart': len(fences)}
             (root / 'restart-evidence.json').write_text(json.dumps(evidence, indent=2), encoding='utf-8')
-            if (len(agents_created) != creations or len(fences) != fence_count
+            if (len(requests) != count or len(agents_created) != creations or len(fences) != fence_count
                     or sum('terminal' in item['tools'] for item in requests) != worker_calls
                     or adapter._active_run_tasks or adapter._active_run_agents):
                 raise RuntimeError('Durable replay resubmitted a worker')
@@ -231,6 +268,7 @@ async def child(root):
                 'agentsCreated': len(agents_created), 'pythonVersion': sys.version.split()[0],
                 'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
     finally:
+        title_release.set()
         if adapter is not None:
             await adapter.disconnect()
         await provider_runner.cleanup()

@@ -28,6 +28,7 @@ BASELINE = '6491641456b51eb78c36a50a8508f145da328f7c70a432bced84b3b329e0046e'
 FOREGROUND_BASELINE = '723e8f0bc27c58c310f9530732c889e5f8480d74e12402656ed0033e08afc27c'
 FILE_TOOLS_BASELINE = '1a23773abe410feb5dd99276d08b6c0837624309ea489c508d683c6965408f94'
 TERMINAL_TOOL_BASELINE = 'a09910c7c61a93d89e8b9e83efd3abcb5eff4b58a3cb53e3bd0162d2ee59e909'
+TITLE_BASELINE = 'e5beaa6185f91e887d27a35a5acdde613c0144c156e63ed053566127ff25ce0f'
 TOOL_WORKER_BASELINES = {
     'agent/tool_executor.py': '3fb81cd7ec8946df1f6e50b0879b4be4499223b4236450da0581ac7c0a1727e6',
     'agent/terminal_approval_batch.py': '3ac8420c2cdbbaf8d6f8241be5154a75aff4da54fd090492e9ce9ce9396e71dc'}
@@ -221,6 +222,26 @@ def terminal_route_candidate(native_root):
     return {path: original}, {path: candidate}
 
 
+def title_candidate(native_root):
+    path = 'agent/title_generator.py'
+    raw = (native_root / path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != TITLE_BASELINE:
+        raise RuntimeError('Native title source changed')
+    original = raw.decode('utf-8').replace('\r\n', '\n')
+    fn = next(n for n in ast.parse(original).body if isinstance(n, ast.FunctionDef) and n.name == 'start_title_upgrade')
+    lines = original.splitlines(True)
+    body = ''.join(lines[fn.lineno - 1:fn.end_lineno])
+    if body.count('    upgrade.start()') != 1:
+        raise RuntimeError('Unexpected native title-thread launch shape')
+    body = body.replace('    upgrade.start()',
+        '    from tools.mesh_writer_scope import start_writer_observed_thread\n'
+        '    start_writer_observed_thread(upgrade)')
+    lines[fn.lineno - 1:fn.end_lineno] = [body]
+    candidate = ''.join(lines)
+    ast.parse(candidate)
+    return {path: original}, {path: candidate}
+
+
 def prepare(source_path):
     raw = source_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != BASELINE:
@@ -267,6 +288,9 @@ def prepare(source_path):
     terminal_originals, terminal_modules = terminal_route_candidate(source_path.parent.parent)
     lifetime_originals.update(terminal_originals)
     modules.update(terminal_modules)
+    title_originals, title_modules = title_candidate(source_path.parent.parent)
+    lifetime_originals.update(title_originals)
+    modules.update(title_modules)
     patch_text = ''.join(difflib.unified_diff(original.splitlines(True), candidate.splitlines(True),
                                            fromfile='a/tools/process_registry.py', tofile='b/tools/process_registry.py'))
     for path, text in modules.items():
@@ -968,13 +992,50 @@ def qualify_status_observation(modules):
     return checks
 
 
+def qualify_title_thread(modules):
+    """Actual native title start function, real native Thread and weak tracking set."""
+    import weakref
+    fn = next(n for n in ast.parse(modules['agent/title_generator.py']).body
+              if isinstance(n, ast.FunctionDef) and n.name == 'start_title_upgrade')
+    tracked = weakref.WeakSet()
+    namespace = {'Optional': typing.Optional, 'threading': threading, '_UPGRADE_THREADS': tracked}
+    exec(compile(ast.Module(body=[fn], type_ignores=[]), '<native-title-start-fixture>', 'exec'), namespace)
+    entered, release = threading.Event(), threading.Event()
+    thread = threading.Thread(target=lambda: (entered.set(), release.wait(timeout=5)), daemon=True)
+    fence = WindowsWriterFence('native-title-start-fixture', 'one')
+    lifetime = scope.WriterLifetime(fence)
+    tools = types.ModuleType('tools'); tools.__path__ = []
+    try:
+        with patch.dict(sys.modules, {'tools': tools, 'tools.mesh_writer_scope': scope}):
+            with scope.writer_foreground_scope(lifetime):
+                namespace[fn.name](None)
+                namespace[fn.name](thread)
+                if not entered.wait(timeout=3) or thread not in tracked:
+                    raise AssertionError('Native title tracking/start changed')
+                namespace[fn.name](thread)  # Native duplicate-start guard must remain intact.
+            snapshot = lifetime.wait(20)
+            if snapshot['managedWorkEnded'] or len(snapshot['pendingWorkers']) != 1:
+                raise AssertionError('Native title thread was not retained after foreground return')
+            release.set(); thread.join(timeout=3)
+            if not lifetime.wait()['managedWorkEnded'] or lifetime.snapshot()['writerQuiescence']:
+                raise AssertionError('Native title join did not settle locally without release')
+        return ['native_title_thread_held_after_foreground_return',
+                'native_title_weakset_duplicate_guard_and_actual_join_preserved']
+    finally:
+        release.set()
+        if thread.ident is not None:
+            thread.join(timeout=3)
+        fence.terminate(); fence.close()
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
               'nativeSourceBaselines': {'tools/process_registry.py': BASELINE, **LIFETIME_BASELINES,
                                         'tools/environments/local.py': FOREGROUND_BASELINE, **TOOL_WORKER_BASELINES,
                                         'tools/file_tools.py': FILE_TOOLS_BASELINE,
-                                        'tools/terminal_tool.py': TERMINAL_TOOL_BASELINE},
+                                        'tools/terminal_tool.py': TERMINAL_TOOL_BASELINE,
+                                        'agent/title_generator.py': TITLE_BASELINE},
               'qualificationScope': 'patched native functions with fixture profiles/ledgers and real threads/processes',
               'files': {name: hashlib.sha256(text.encode()).hexdigest() for name, text in modules.items()},
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
@@ -982,7 +1043,8 @@ if __name__ == '__main__':
         report['checks'] = (qualify(candidate) + qualify_lifetimes(modules) + qualify_foreground(modules)
                             + qualify_enrollment(modules) + qualify_tool_worker_submissions(modules)
                             + qualify_tool_effect_boundary(modules) + qualify_file_tool_routes(modules)
-                            + qualify_terminal_routes(modules) + qualify_status_observation(modules))
+                            + qualify_terminal_routes(modules) + qualify_status_observation(modules)
+                            + qualify_title_thread(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

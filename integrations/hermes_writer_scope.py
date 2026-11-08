@@ -150,11 +150,11 @@ class WriterLifetime:
             if _lifetime.get() is not self or not record or record['state'] != 'running':
                 raise RuntimeError('This worker context is no longer active')
 
-    def _reserve(self):
+    def _reserve(self, kind='delegate'):
         with self._lock:
             self.assert_current_worker()
             ticket = str(uuid4())
-            self._pending[ticket] = {'kind': 'delegate', 'state': 'reserved', 'started': False, 'mode': 'submitting'}
+            self._pending[ticket] = {'kind': kind, 'state': 'reserved', 'started': False, 'mode': 'submitting'}
             return ticket
 
     def _start(self, ticket):
@@ -307,6 +307,44 @@ def submit_writer_work(executor, fn, propagate=None, *args, **kwargs):
         raise
     lifetime._attach(ticket, future)
     return future
+
+
+def start_writer_observed_thread(thread):
+    """Observe a native title thread through join; preserve its target/profile context.
+
+    This observes an existing dedicated callback, not a new managed tool context.
+    External side effects are not settled by a successful thread join.
+    """
+    lifetime = _lifetime.get()
+    if lifetime is None:
+        thread.start()
+        return
+    if type(thread) is not threading.Thread or thread.ident is not None:
+        raise RuntimeError('An unstarted native thread is required')
+    ticket = lifetime._reserve('background')
+    future = Future()
+    lifetime._attach(ticket, future)
+    lifetime._start(ticket)
+    def observe():
+        try:
+            thread.join()  # Includes native target cleanup and threading exception handling.
+        except BaseException:
+            with lifetime._lock:
+                record = lifetime._pending.get(ticket)
+                if record:
+                    record.update(mode='unknown', state='unknown')
+            return
+        lifetime._returned(ticket)
+        future.set_result(None)
+    try:
+        thread.start()
+        threading.Thread(target=observe, daemon=True, name='mesh-background-observer').start()
+    except BaseException:
+        with lifetime._lock:
+            record = lifetime._pending.get(ticket)
+            if record:
+                record.update(mode='unknown', state='unknown')
+        raise  # An uncertain start/observer never authorizes a retry or release.
 
 
 @contextmanager
