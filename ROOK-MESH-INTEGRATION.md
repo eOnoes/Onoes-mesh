@@ -338,3 +338,32 @@ Focused adapter19/19 PASS; full Mesh269 (40+1+29+67+132) PASS, static/diff PASS.
 Logs ../mesh-native-reader-{full,check}.log; frozen contract absent/skipped.
 Live runtime remains unchanged. Next is integration against the real receipt
 endpoint after reviewed rollout and affirmative writer-completion qualification.
+
+
+## Actual Mesh-to-Relay loopback interop and concrete Rook target - 2026-11-08
+
+The actual Node Mesh nativeRunReceipt method successfully read the complete
+isolated Python Relay over a short-lived loopback HTTP listener. It retained
+original/rotated sessions, refused a wrong pinned run, missing receipt and bad
+auth, returned no output and performed zero Mesh writes or POSTs. Native Hermes
+HTTP remained mocked. Proof data/relay-native-full-service-2026-11-08-c/
+mesh-interop-proof.json. The fixture process7355 exited0 after its stop flag;
+no user service was stopped. Replay helper integrations/serve-relay-receipt-fixture.py
+requires qualified source hashes and exact synthetic config, blocks outgoing
+network/processes/external file opens, and self-exits after90seconds. Use a fresh
+qualified candidate folder for a new run; stop flags are deliberately not deleted.
+This does not prove real native child-writer quiescence or live deployment.
+
+Echo's exact status question native run_6a54179cf4ab477c80c9f110db3611a6 was observed
+running, then completed; Relay's stalled label was not treated as termination.
+Echo answered that no Rook patch/tests or isolated checkout were ready. The missing
+input was a concrete checkout, not another approval. Nims created and verified an
+initially clean detached worktree at4e321eadcd99b7cd0b6b6ba1739d35292aed9029:
+C:/Users/eMitchell109/Documents/ChatGPT/Nims Chat/mesh-rook-echo-4e321ea.
+Approved v4 and build-target notes are deliberately added metadata there.
+Return directory C:/Users/eMitchell109/Documents/ChatGPT/Nims Chat/rook-delivery-4e321ea
+exists. See ROOK-ECHO-BUILD-TARGET.md for the build-only handoff. Echo was sent
+that target once, saved intent5b821b1c-6f8c-4b9a-a743-24426e95da4e returned okqueued1;
+this does not establish that the build has started or passed. No shared source
+writer, watcher activation, credentials, live dispatch or service restart authorized
+by this handoff; the already-approved isolated build scope is unchanged.
