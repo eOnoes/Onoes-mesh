@@ -190,3 +190,50 @@ Rook enabled or live native receipt rows changed by these checks. The isolated
 helper itself opened zero live stores; the separate diagnostic above did open the
 one fixed receipt store read-only. Mesh's prior default test baseline remains266;
 these five opt-in cases are separate and do not imply Rook acceptance.
+
+
+## Session-continuation qualification and receipt contract - 2026-11-08
+
+Echo answered the exact coordination question after its native run
+run_445d2918cf034448902af241743034aa changed running -> completed. The immediate
+Relay answer is retained in data/echo-terminal-question-2026-11-08/
+session-mapping-answer-observation.json. This verifies a reply, not Rook build
+completion or child-writer quiescence.
+
+Important source-audit correction: the native index previously returned stale
+api_server_runs.py contents while describing them as fresh. A forced one-file
+index refresh now confirms _resolve_live_session_id (562-576) and _handle_runs
+(704-838). The current file SHA256 is
+481b67c8cddd2dcca3a9b60d938d0cec5d621a4648784119873d60ffcd975138.
+Treat earlier detailed run-admission/executor line-level findings as superseded
+until checked against this version; they are not deployed-byte proof. The index
+is currently explicitly narrowed to this one file; do not infer other native
+features absent from that narrowed coverage. The decorator-routes index provider
+timed out; symbols/text succeeded, route/dependency graph completeness is not proved.
+
+The current admission code computes the idempotency identity from the original
+request before resolving the selected conversation to its live continuation tip.
+It then saves that resolved session in initial_status. Thus original Relay
+conversationId and native status.session_id are distinct identity fields; strict
+string equality would incorrectly reject legitimate session rotation. The exact
+lineage of our two live examples is still unverified, so a mismatch must not be
+accepted merely because rotation exists.
+
+The opt-in helper now executes only the extracted undecorated native resolver
+against fake session providers (no gateway module import). Nine cases pass with
+both installed venv and actual process Python: original five store checks plus
+resolved tip, absent resolver, empty/failing resolver fallback, and retained
+original request fingerprint conflict protection while status names a rotated
+session. Evidence data/hermes-continuation-{venv,process-python}-2026-11-08.
+These are native primitive checks, not nine Rook acceptance tests or default
+Mesh tests. No live session contents, memory, keys or gateway requests are used.
+
+Minimum eventual trusted Relay receipt must persist the original send ID, agent,
+original conversation ID, scoped native run ID and selected native session ID as
+separate fields at admission. Recovery must read that exact durable join without
+POSTing an uncertain send. If continuity must be established later, use an
+authoritative provenance/lineage record; never arbitrary ID mismatch acceptance.
+A native terminal field remains separate from affirmative writer completion.
+Relay currently has no single read surface for this exact join, as Echo also
+confirmed. Implement that boundary in reviewed isolation before activation;
+Rook receives no borrowed owner credentials or raw database access from this note.

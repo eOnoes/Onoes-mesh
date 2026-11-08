@@ -1,9 +1,12 @@
 """Opt-in installed-library qualification; never imports or starts the gateway."""
 import argparse
+import ast
+import asyncio
 import hashlib
 import importlib.util
 import json
 import os
+import logging
 from pathlib import Path
 import sys
 import tempfile
@@ -34,6 +37,25 @@ def main():
         spec.loader.exec_module(module)
         Store = module.RunIdempotencyStore
         fingerprint = hashlib.sha256(b'synthetic frozen request').hexdigest()
+        runs_path = source / 'gateway/platforms/api_server_runs.py'
+        # Compile only this reviewed standalone function, never module imports,
+        # decorators, gateway initialization or access to a real session store.
+        tree = ast.parse(runs_path.read_text(encoding='utf-8'))
+        resolver_nodes = [node for node in tree.body
+                          if isinstance(node, ast.AsyncFunctionDef)
+                          and node.name == '_resolve_live_session_id']
+        if len(resolver_nodes) != 1 or resolver_nodes[0].decorator_list:
+            raise RuntimeError('Expected one undecorated native continuation resolver')
+        namespace = {'asyncio': asyncio, 'logger': logging.getLogger('synthetic-continuation')}
+        exec(compile(ast.Module(body=resolver_nodes, type_ignores=[]), str(runs_path), 'exec'), namespace)
+        resolve_session = namespace['_resolve_live_session_id']
+
+        class SyntheticGateway:
+            def __init__(self, database):
+                self.database = database
+
+            async def _ensure_session_db_async(self):
+                return self.database
 
         class StoreQualification(unittest.TestCase):
             def setUp(self):
@@ -103,11 +125,50 @@ def main():
                 self.assertFalse(value.durable)
                 self.assertEqual(self.reserve(value)[0], 'created')
 
+            def test_native_continuation_selects_live_tip_from_original_id(self):
+                class SyntheticSessions:
+                    def resolve_resume_session_id(inner, original):
+                        self.assertEqual(original, 'original-conversation')
+                        return 'continued-session'
+                result = asyncio.run(resolve_session(SyntheticGateway(SyntheticSessions()),
+                                                     'original-conversation'))
+                self.assertEqual(result, 'continued-session')
+
+            def test_native_continuation_without_resolver_preserves_original_id(self):
+                for database in (None, object()):
+                    self.assertEqual(asyncio.run(resolve_session(SyntheticGateway(database), 'original')),
+                                     'original')
+
+            def test_native_continuation_error_or_empty_result_preserves_original_id(self):
+                class EmptySessions:
+                    def resolve_resume_session_id(inner, original):
+                        return None
+                class FailedSessions:
+                    def resolve_resume_session_id(inner, original):
+                        raise RuntimeError('synthetic resolver failure')
+                for database in (EmptySessions(), FailedSessions()):
+                    self.assertEqual(asyncio.run(resolve_session(SyntheticGateway(database), 'original')),
+                                     'original')
+
+            def test_rotated_status_keeps_original_request_fingerprint_binding(self):
+                value = self.store()
+                value.reserve('scope', 'send', fingerprint, 'run_rotated',
+                              {'status': 'queued', 'session_id': 'continued-session'},
+                              owner_pid=123, owner_started=456)
+                reopened = self.store()
+                outcome, saved = reopened.lookup('scope', 'send', fingerprint)
+                self.assertEqual(outcome, 'reused')
+                self.assertEqual(saved['run_id'], 'run_rotated')
+                self.assertEqual(saved['status']['session_id'], 'continued-session')
+                self.assertEqual(reopened.lookup('scope', 'send', 'changed-request')[0], 'conflict')
+
         result = unittest.TextTestRunner(verbosity=2).run(
             unittest.defaultTestLoader.loadTestsFromTestCase(StoreQualification))
         evidence = {
             'source': str(module_path),
             'sourceSha256': hashlib.sha256(module_path.read_bytes()).hexdigest(),
+            'continuationSource': str(runs_path),
+            'continuationSourceSha256': hashlib.sha256(runs_path.read_bytes()).hexdigest(),
             'python': sys.executable,
             'tests': result.testsRun,
             'failures': len(result.failures),
@@ -115,7 +176,7 @@ def main():
             'passed': result.wasSuccessful(),
             'liveGatewayRequests': 0,
             'liveStoresOpened': 0,
-            'scope': 'Installed standalone store with synthetic temporary data; not live gateway or quiescence qualification',
+            'scope': 'Installed standalone store and extracted continuation resolver with synthetic data; not live gateway, actual session mapping or quiescence qualification',
         }
         (output / 'qualification.json').write_text(json.dumps(evidence, indent=2), encoding='utf-8')
         print(json.dumps(evidence))
