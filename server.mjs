@@ -28,6 +28,7 @@ import { createRelayLink } from './lib/relay-link.mjs';
 import { createRelayHttpLink } from './lib/relay-http.mjs';
 import { createNodeProbeReader } from './lib/node-probes.mjs';
 import { createLocalInference, createDisabledLocalAdapter } from './lib/local-inference.mjs';
+import {createRookRuntime} from './lib/workroom-rook.mjs';
 
 export const ROOT = path.dirname(fileURLToPath(import.meta.url));
 export async function confinedPath(value) {
@@ -97,10 +98,13 @@ async function activity(registryPath) {
     return await readWorkerActivity({ registryPath, nowIso: new Date().toISOString(), staleAfterMs: 600000 });
   } catch { return snapshot('unavailable'); }
 }
-export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, localInferenceTestOptions, supervisedInferenceTestOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
+export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
   // Process configuration only. Standalone wins over ambient Relay enablement
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
+  if (rookRuntimeTestOptions !== undefined && (!standalone || rookRuntimeTestOptions?.source !== 'disposable_fixture'
+      || Object.keys(rookRuntimeTestOptions).some(key => !['source','identity','verifyIdentity','enabled','now','schedule','cancel','previousOwnerGone','ownerPid','transport'].includes(key))))
+    throw Error('Rook runtime seam is synthetic standalone testing only.');
   if(mindRecallTestOptions!==undefined&&(!standalone||mindRecallTestOptions?.source!=='disposable_fixture'||Object.keys(mindRecallTestOptions).sort().join(',')!=='baseUrl,source,token'))throw Error('Mind recall seam is synthetic standalone testing only.');
   const mindRecall=mindRecallTestOptions?createMindRecallClient(mindRecallTestOptions):null;
   if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new Error('A valid loopback port is required.');
@@ -146,6 +150,10 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const activeRuns = new Map();
   let executionPersistenceFailed = false;
   try { store = openTaskStore(filename); } catch { /* Preserve invalid data; serve a visible failure. */ }
+  // No production identity/transport is enrolled here. Activation is a separate owner gate.
+  const rookRuntime = store ? createRookRuntime({store: store.workroom.rook, flow: store.workroom.flow,
+    board: () => store.workroom.list(), ...rookRuntimeTestOptions,
+    enabled: process.env.MESH_SIMPLE_FLOW === '1' && rookRuntimeTestOptions?.enabled === true}) : null;
   let modelDatabase;
   if(!standalone && supervisedInferenceTestOptions && store){modelDatabase=new DatabaseSync(filename);localInference=createSupervisedInference({...supervisedInferenceTestOptions,operations:createModelOperationStore(modelDatabase)});}
   else if(!standalone && process.env.MESH_NEMOTRON_CONTROL==='1' && store){
@@ -318,7 +326,8 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       }
       if(route==='/api/workroom/rook'&&req.method==='GET'){
         if(!store||executionPersistenceFailed)throw new TaskError(503,'Workroom unavailable.');
-        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',sweep:store.workroom.flow.sweepStatus(),connection:{id:'rook',status:'not_configured',reason:'Rook runtime identity and health integration have not been qualified.'},cards:store.workroom.list().filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
+        const connection=rookRuntime?.status()??{id:'rook',status:'unavailable',reason:'Rook state is unavailable.'};
+        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',sweep:{...store.workroom.flow.sweepStatus(),schedulerInstalled:connection.scheduler?.installed??false,schedulerEnabled:connection.scheduler?.enabled??false},connection,reports:rookRuntime?.reports()??[],cards:store.workroom.list().filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
       }
       const workroomRoute = /^\/api\/workroom(?:\/([0-9a-f-]{36})(?:\/(message|progress|sync|apply-update|handoff|apply-review|approval|reconcile|plan|automation|apply-assignment|owner-review|intake|claim))?)?$/.exec(route);
       if (workroomRoute) {
@@ -479,11 +488,12 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     else socket.destroy();
   });
   try { await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }); }
-  catch (e) { await localInference.close?.();modelDatabase?.close();await relay.close(); store?.close(); throw e; }
+  catch (e) { await rookRuntime?.close();await localInference.close?.();modelDatabase?.close();await relay.close(); store?.close(); throw e; }
   guard = createTrialHttpGuard({ manager, port: server.address().port });
-  return { server, mode: standalone ? 'standalone' : 'mesh', url: `http://127.0.0.1:${server.address().port}`, close: async () => {
+  rookRuntime?.start();
+  return { server, rookRuntime, mode: standalone ? 'standalone' : 'mesh', url: `http://127.0.0.1:${server.address().port}`, close: async () => {
     const closed = new Promise((resolve, reject) => server.close(e => e ? reject(e) : resolve()));
-    server.closeAllConnections(); await closed; await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]);await localInference.close?.();modelDatabase?.close(); store?.close();
+    server.closeAllConnections(); await closed; await rookRuntime?.close();await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]);await localInference.close?.();modelDatabase?.close(); store?.close();
   } };
 }
 

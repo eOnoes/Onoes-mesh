@@ -546,3 +546,27 @@ under E:/App-Backups/ONOes-Mesh. No schedule/pruning/off-device change.
 Next is Rook runtime/health/Relay reporting and a qualified positive writer-release
 contract, followed by real end-to-end/owner activation acceptance. No Rook identity,
 watcher scheduler or automatic assignments enabled by this foundation rollout.
+
+
+## 2026-11-08 - Rook runtime milestone (not activated)
+
+Implemented an internal Mesh-owned scheduler runtime, durable single-owner lease,
+saved report queue, read-only health/report API, pause/shutdown and bounded reporting.
+Production identity and reporting transport remain unconfigured; MESH_SIMPLE_FLOW
+and all live activation gates remain unchanged. No Relay/model/Mind service changes.
+
+Local verification: npm test PASS 279 (40+1+29+67+142), including seven new runtime
+checks and an actual admitted HTTP fixture. Tests cover disabled/unverified starts,
+single owner, overlapping ticks, pause, uncertain-send lookup across runtime restart,
+revocation, stale health, contained board failure, unreviewed Done rejection, and
+shutdown releasing its lease. Initial HTTP EACCES required local loopback-enabled
+execution; the fixture path was corrected to the existing owned-data convention.
+A real test caught missing recovery notices after pause/restart; failureCode now
+persists that obligation. The scheduler-enabled status remains true during a tick.
+Evidence: ../rook-runtime-full.log. git diff --check PASS. No live dispatch occurred.
+
+Next: connect the qualified Rook identity and Relay reporting contract, then qualify
+actual worker dispatch/review and positive writer quiescence before owner activation.
+This runtime currently schedules claims and observations, not automatic worker builds.
+Full Mesh goal remains incomplete; memory, model maintenance and external fleet gates
+remain as previously recorded. Preserve the 22 unrelated untracked integration files.
