@@ -1,4 +1,5 @@
 import concurrent.futures
+import asyncio
 from contextvars import copy_context, ContextVar
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -84,6 +85,40 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
     def tearDown(self):
         self.fence.terminate()
         self.fence.close()
+
+    def test_cancelled_canonical_observer_cannot_settle_actual_thread(self):
+        entered,release=threading.Event(),threading.Event()
+        def worker():
+            with scope.canonical_writer_foreground_scope():
+                entered.set();release.wait(timeout=5)
+        async def check():
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                with scope.bind_canonical_writer_claim(self.life):
+                    context=copy_context()
+                    future=pool.submit(context.run,worker)
+                    observer=asyncio.wrap_future(future)
+                    self.assertTrue(entered.wait(timeout=3))
+                    observer.cancel()
+                    await asyncio.sleep(0)
+                # Leaving the asynchronous request context must not release root.
+                held=self.life.snapshot()
+                self.assertFalse(held['rootEnded']);self.assertFalse(held['managedWorkEnded'])
+                release.set();future.result(timeout=3)
+                self.assertTrue(self.life.wait()['managedWorkEnded'])
+                self.assertFalse(self.life.snapshot()['writerQuiescence'])
+        try:asyncio.run(check())
+        finally:release.set()
+
+    def test_unstarted_canonical_claim_and_duplicate_worker_remain_reserved(self):
+        with scope.bind_canonical_writer_claim(self.life):
+            with self.assertRaises(RuntimeError):
+                with scope.bind_canonical_writer_claim(self.life):pass
+        self.assertFalse(self.life.snapshot()['rootEnded'])
+        with scope.bind_canonical_writer_claim(self.life):
+            with scope.canonical_writer_foreground_scope():pass
+            with self.assertRaises(RuntimeError):
+                with scope.canonical_writer_foreground_scope():pass
+        self.assertTrue(self.life.wait()['managedWorkEnded'])
 
     def test_http_acceptance_and_later_external_write_never_imply_effect_settlement(self):
         accepted, release, finished = threading.Event(), threading.Event(), threading.Event()

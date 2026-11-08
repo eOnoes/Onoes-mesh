@@ -1372,3 +1372,36 @@ actual outstanding original scope. First update with unsupported spread fields
 was rejected400 without mutation; explicit supported fields saved/read-back PASS.
 No new source/runtime changes, service restart, dispatch, Mind access or model
 operation. No new tests claimed this investigation turn. Full goal active.
+
+## 2026-11-08 - canonical synchronous worker lifetime seam
+Previous goal turn PROGRESS: c994ee4 routing findings and goal revision39 saved;
+backup E:/App-Backups/ONOes-Mesh/2026-11-08_23-12-42-734_UTC_cbb4c30a verified.
+Added trusted in-process canonical-claim ContextVar binding. Request/observer
+scope reset does not settle reserved or running root. Candidate native
+TurnRunner.run_sync is wrapped around its complete method, including native
+policy cleanup and captured result/CLI fields. No claim => unchanged behavior.
+Nested/reused root bindings refused. This seam does NOT enroll canonical
+admissions, verify authority ownership, activate managed work or grant release.
+Claim must eventually originate from verified canonical owner; never client JSON.
+
+Pinned gateway/run_turn_runner.py baseline efc702798fcb827b77ad485c7559643d5ecf407b06b5f115c8e3047752054c8a.
+Candidate now10native baseline files/12target files. Native function fixture
+qualification PASS47, including actual run_sync with synthetic policy/result
+context; result capture and both native policy exits precede root settlement.
+Real-thread cancellation acceptance: cancelled asyncio observer and exited
+request binding while worker remains running/root held; actual thread exit
+settles managed work, release remains false. Unstarted claim remains reserved;
+second execution cannot reuse root. Focused scope tests PASS30; full npm test
+PASS343 (301Node+42Python), ../canonical-worker-seam-full.log.
+
+Isolated actual direct native runtime requalified PASS6; independent retained
+evidence PASS5/all12source hashes verified. Evidence
+ data/hermes-runtime-446e6cfe-7b18-459a-9256-51176b52ed57.
+Runtime was slow but confirmed child PID7004 remained live; same run observed
+to exit0; no restart/retry. Direct auth, real tool/Windows Job/title callback,
+SQLite idempotency/restart still pass. Actual canonical authority/FIFO/live-owner
+path is NOT covered by this direct runtime result. Review patch git apply
+--check PASS against installed native source; none installed or restarted.
+Next: trusted canonical claimed-admission enrollment/identity wiring and actual
+queue qualification, then external-effect completion and production activation.
+Existing8unknown writer holds remain untouched; full goal active/incomplete.

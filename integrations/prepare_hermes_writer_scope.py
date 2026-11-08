@@ -29,6 +29,7 @@ FOREGROUND_BASELINE = '723e8f0bc27c58c310f9530732c889e5f8480d74e12402656ed0033e0
 FILE_TOOLS_BASELINE = '1a23773abe410feb5dd99276d08b6c0837624309ea489c508d683c6965408f94'
 TERMINAL_TOOL_BASELINE = 'a09910c7c61a93d89e8b9e83efd3abcb5eff4b58a3cb53e3bd0162d2ee59e909'
 TITLE_BASELINE = 'e5beaa6185f91e887d27a35a5acdde613c0144c156e63ed053566127ff25ce0f'
+CANONICAL_WORKER_BASELINE = 'efc702798fcb827b77ad485c7559643d5ecf407b06b5f115c8e3047752054c8a'
 TOOL_WORKER_BASELINES = {
     'agent/tool_executor.py': '3fb81cd7ec8946df1f6e50b0879b4be4499223b4236450da0581ac7c0a1727e6',
     'agent/terminal_approval_batch.py': '3ac8420c2cdbbaf8d6f8241be5154a75aff4da54fd090492e9ce9ce9396e71dc'}
@@ -242,6 +243,26 @@ def title_candidate(native_root):
     return {path: original}, {path: candidate}
 
 
+def canonical_worker_candidate(native_root):
+    path = 'gateway/run_turn_runner.py'
+    raw = (native_root / path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != CANONICAL_WORKER_BASELINE:
+        raise RuntimeError('Native canonical worker source changed')
+    original = raw.decode('utf-8').replace('\r\n', '\n')
+    tree = ast.parse(original)
+    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'TurnRunner')
+    fn = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == 'run_sync')
+    lines = original.splitlines(True)
+    body = lines[fn.body[0].lineno - 1:fn.end_lineno]
+    lines[fn.body[0].lineno - 1:fn.end_lineno] = [
+        '        from tools.mesh_writer_scope import canonical_writer_foreground_scope\n',
+        '        with canonical_writer_foreground_scope():\n',
+        *['    ' + line if line.strip() else line for line in body]]
+    candidate = ''.join(lines)
+    ast.parse(candidate)
+    return {path: original}, {path: candidate}
+
+
 def prepare(source_path):
     raw = source_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != BASELINE:
@@ -291,6 +312,9 @@ def prepare(source_path):
     title_originals, title_modules = title_candidate(source_path.parent.parent)
     lifetime_originals.update(title_originals)
     modules.update(title_modules)
+    canonical_originals, canonical_modules = canonical_worker_candidate(source_path.parent.parent)
+    lifetime_originals.update(canonical_originals)
+    modules.update(canonical_modules)
     patch_text = ''.join(difflib.unified_diff(original.splitlines(True), candidate.splitlines(True),
                                            fromfile='a/tools/process_registry.py', tofile='b/tools/process_registry.py'))
     for path, text in modules.items():
@@ -1028,6 +1052,52 @@ def qualify_title_thread(modules):
         fence.terminate(); fence.close()
 
 
+def qualify_canonical_worker_seam(modules):
+    """Actual native run_sync method; fixture policy/context and reserved claim only."""
+    from contextlib import contextmanager
+    tree = ast.parse(modules['gateway/run_turn_runner.py'])
+    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'TurnRunner')
+    fn = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == 'run_sync')
+    namespace = {}
+    exec(compile(ast.Module(body=[fn], type_ignores=[]), '<native-canonical-worker-seam>', 'exec'), namespace)
+    captured, cleanup = {}, []
+    fence = WindowsWriterFence('canonical-worker-seam', 'one')
+    lifetime = scope.WriterLifetime(fence)
+    @contextmanager
+    def policy(*args, **kwargs):
+        try:
+            yield
+        finally:
+            if lifetime.snapshot()['rootEnded']:
+                raise AssertionError('Canonical root ended before native policy cleanup')
+            cleanup.append('policy-cleanup')
+    replacements = {}
+    for name in ['gateway.session_policy','gateway.session_api_turn','gateway.session_authorities','gateway.session_results']:
+        replacements[name] = types.ModuleType(name)
+    replacements['gateway.session_policy'].policy_for_source = lambda *args: None
+    replacements['gateway.session_policy'].policy_scope = policy
+    replacements['gateway.session_api_turn'].api_policy_scope = policy
+    replacements['gateway.session_authorities'].active_authority = lambda *args: None
+    replacements['gateway.session_results'].execution_result = types.SimpleNamespace(get=lambda: captured)
+    replacements['tools.mesh_writer_scope'] = scope
+    worker = types.SimpleNamespace(_runner=object(), _ctx=types.SimpleNamespace(source='fixture'),
+                                   _cli_result_fields={'fixture': True})
+    def run():
+        if lifetime.snapshot()['rootEnded']:
+            raise AssertionError('Canonical body ran outside the root lifetime')
+        return {'final_response':'synthetic canonical result'}
+    worker._run_sync_scoped = run
+    try:
+        with patch.dict(sys.modules, replacements), scope.bind_canonical_writer_claim(lifetime):
+            result = namespace['run_sync'](worker)
+        if (result['final_response'] != 'synthetic canonical result' or captured['result'].get('fixture') is not True
+                or len(cleanup) != 2 or not lifetime.wait()['managedWorkEnded']):
+            raise AssertionError('Native canonical result/cleanup/lifetime changed')
+        return ['native_canonical_run_sync_result_capture_and_cleanup_inside_lifetime']
+    finally:
+        fence.terminate(); fence.close()
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
@@ -1035,7 +1105,8 @@ if __name__ == '__main__':
                                         'tools/environments/local.py': FOREGROUND_BASELINE, **TOOL_WORKER_BASELINES,
                                         'tools/file_tools.py': FILE_TOOLS_BASELINE,
                                         'tools/terminal_tool.py': TERMINAL_TOOL_BASELINE,
-                                        'agent/title_generator.py': TITLE_BASELINE},
+                                        'agent/title_generator.py': TITLE_BASELINE,
+                                        'gateway/run_turn_runner.py': CANONICAL_WORKER_BASELINE},
               'qualificationScope': 'patched native functions with fixture profiles/ledgers and real threads/processes',
               'files': {name: hashlib.sha256(text.encode()).hexdigest() for name, text in modules.items()},
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
@@ -1044,7 +1115,7 @@ if __name__ == '__main__':
                             + qualify_enrollment(modules) + qualify_tool_worker_submissions(modules)
                             + qualify_tool_effect_boundary(modules) + qualify_file_tool_routes(modules)
                             + qualify_terminal_routes(modules) + qualify_status_observation(modules)
-                            + qualify_title_thread(modules))
+                            + qualify_title_thread(modules) + qualify_canonical_worker_seam(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

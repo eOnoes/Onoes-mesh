@@ -13,6 +13,7 @@ from uuid import uuid4
 _current = ContextVar('mesh_owned_writer_fence', default=None)
 _lifetime = ContextVar('mesh_writer_lifetime', default=None)
 _worker = ContextVar('mesh_owned_worker_ticket', default=None)
+_canonical_claim = ContextVar('mesh_canonical_writer_claim', default=None)
 _unspecified_environment = object()
 
 
@@ -255,6 +256,35 @@ def writer_tool_effect():
         yield
     finally:
         lifetime._end_tool(ticket)
+
+
+@contextmanager
+def bind_canonical_writer_claim(lifetime):
+    """Carry a trusted reserved claim to its real worker; observer exit never settles it.
+
+    This is an in-process seam only. Admission/owner enrollment is not implemented
+    here, and no request field may supply this binding.
+    """
+    if (not isinstance(lifetime, WriterLifetime) or _canonical_claim.get() is not None
+            or _lifetime.get() is not None):
+        raise RuntimeError('A distinct trusted canonical claim is required')
+    claim = (lifetime, lifetime.fence.run_id, lifetime.fence.generation)
+    token = _canonical_claim.set(claim)
+    try:
+        yield
+    finally:
+        _canonical_claim.reset(token)  # Not a worker completion event.
+
+
+@contextmanager
+def canonical_writer_foreground_scope():
+    claim = _canonical_claim.get()
+    if claim is None:
+        yield
+        return
+    lifetime, run_id, generation = claim
+    with writer_foreground_scope(lifetime, expected_run_id=run_id, expected_generation=generation):
+        yield
 
 
 @contextmanager

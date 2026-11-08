@@ -29,7 +29,7 @@
          temp_dir = self._env_temp_dir(env)
 --- /dev/null
 +++ b/tools/mesh_writer_scope.py
-@@ -0,0 +1,400 @@
+@@ -0,0 +1,430 @@
 +"""Candidate native tools.mesh_writer_scope; no HTTP/config enrollment or release grant."""
 +from contextlib import contextmanager
 +from contextvars import ContextVar, copy_context
@@ -45,6 +45,7 @@
 +_current = ContextVar('mesh_owned_writer_fence', default=None)
 +_lifetime = ContextVar('mesh_writer_lifetime', default=None)
 +_worker = ContextVar('mesh_owned_worker_ticket', default=None)
++_canonical_claim = ContextVar('mesh_canonical_writer_claim', default=None)
 +_unspecified_environment = object()
 +
 +
@@ -287,6 +288,35 @@
 +        yield
 +    finally:
 +        lifetime._end_tool(ticket)
++
++
++@contextmanager
++def bind_canonical_writer_claim(lifetime):
++    """Carry a trusted reserved claim to its real worker; observer exit never settles it.
++
++    This is an in-process seam only. Admission/owner enrollment is not implemented
++    here, and no request field may supply this binding.
++    """
++    if (not isinstance(lifetime, WriterLifetime) or _canonical_claim.get() is not None
++            or _lifetime.get() is not None):
++        raise RuntimeError('A distinct trusted canonical claim is required')
++    claim = (lifetime, lifetime.fence.run_id, lifetime.fence.generation)
++    token = _canonical_claim.set(claim)
++    try:
++        yield
++    finally:
++        _canonical_claim.reset(token)  # Not a worker completion event.
++
++
++@contextmanager
++def canonical_writer_foreground_scope():
++    claim = _canonical_claim.get()
++    if claim is None:
++        yield
++        return
++    lifetime, run_id, generation = claim
++    with writer_foreground_scope(lifetime, expected_run_id=run_id, expected_generation=generation):
++        yield
 +
 +
 +@contextmanager
@@ -1207,3 +1237,42 @@
  
  
  def strip_control_wrappers(text: str) -> str:
+--- a/gateway/run_turn_runner.py
++++ b/gateway/run_turn_runner.py
+@@ -1109,20 +1109,22 @@
+         return final_response + "\n" + "\n".join(unique_tags)
+ 
+     def run_sync(self):
+-        from gateway.session_policy import policy_for_source, policy_scope
+-        from gateway.session_api_turn import api_policy_scope
+-        from gateway.session_authorities import active_authority
+-        with policy_scope(policy_for_source(self._runner, self._ctx.source),
+-                          authority=active_authority(self._runner)), api_policy_scope():
+-            result = self._run_sync_scoped()
+-            from gateway.session_results import execution_result
+-            captured = execution_result.get()
+-            if captured is not None:
+-                cli_fields = self.__dict__.pop("_cli_result_fields", None)
+-                # A classic CLI viewer reads the run_conversation-shaped dict from the receipt; the
+-                # delivered reply (message.complete text) keeps the gateway's own copy.
+-                captured['result'] = {**result, **cli_fields} if cli_fields else result
+-            return result
++        from tools.mesh_writer_scope import canonical_writer_foreground_scope
++        with canonical_writer_foreground_scope():
++            from gateway.session_policy import policy_for_source, policy_scope
++            from gateway.session_api_turn import api_policy_scope
++            from gateway.session_authorities import active_authority
++            with policy_scope(policy_for_source(self._runner, self._ctx.source),
++                              authority=active_authority(self._runner)), api_policy_scope():
++                result = self._run_sync_scoped()
++                from gateway.session_results import execution_result
++                captured = execution_result.get()
++                if captured is not None:
++                    cli_fields = self.__dict__.pop("_cli_result_fields", None)
++                    # A classic CLI viewer reads the run_conversation-shaped dict from the receipt; the
++                    # delivered reply (message.complete text) keeps the gateway's own copy.
++                    captured['result'] = {**result, **cli_fields} if cli_fields else result
++                return result
+ 
+     def _run_sync_scoped(self):
+         """Executor-thread body of the turn; returns the gateway result dict.
