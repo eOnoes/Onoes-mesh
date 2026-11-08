@@ -71,6 +71,19 @@ def verify_evidence(root):
                 or any(not worker['lifetime']['managedWorkEnded'] or worker['writerQuiescence'] for worker in fifo['finalWorkers'])):
             raise RuntimeError('Actual canonical FIFO execution evidence is incomplete')
         result['checks'].append('actual_canonical_FIFO_results_cancellation_ordering_and_replay')
+    if 'actual_canonical_retirement_timeout_drain_and_successor_queue_recovery' in report['checks']:
+        retired=json.loads((root/'canonical-retirement-evidence.json').read_text(encoding='utf-8'))
+        held=retired['heldWorker']['lifetime'];unknown=retired['newOwnerObservation']
+        if (not retired['fullNativeRetirementAndRecovery'] or not retired['timeoutRetainedOwnership']
+                or not retired['queuedAdmissionPreserved'] or held['rootEnded'] or held['managedWorkEnded']
+                or retired['newEpoch']<=retired['oldEpoch'] or unknown['state']!='unknown'
+                or unknown['enrollment'] is not None or unknown['writerQuiescence']
+                or not retired['recoveredExactlyOnce'] or not retired['replayCreatedNoWorker']
+                or retired['verifiedOutput']!='mesh fixture completed'
+                or not retired['recoveredWorker']['lifetime']['managedWorkEnded']
+                or retired['recoveredWorker']['writerQuiescence']):
+            raise RuntimeError('Actual canonical owner retirement/recovery evidence is incomplete')
+        result['checks'].append('actual_retirement_keeps_ownership_then_recovers_queue_once')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -109,6 +122,109 @@ def prepare(native_root):
               'files': {name: hashlib.sha256((source / name).read_bytes()).hexdigest() for name in modules}}
     (root / 'manifest.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
     return root
+
+
+async def qualify_canonical_retirement(root, adapter, origin, key, runner, endpoint, factory, fences):
+    """Real owner drain/recovery, held at fixture runtime selection in the actual worker."""
+    import asyncio
+    import threading
+    import time
+    from uuid import uuid4
+    from aiohttp import ClientSession
+    from gateway.config import GatewayConfig, Platform
+    from gateway.run import GatewayRunner
+    from gateway.run_runtime import _retire_profile_authority, initialize_gateway_runtime
+    from gateway.runtime_ownership import process_ownership
+    from gateway.session_api_turn import recover_api_turns, _settled_api_result
+    from gateway.platforms.api_server_authority_runs import run_admission
+    from tools.mesh_writer_scope import WriterRunRegistry, observe_writer_run
+    entered,release = threading.Event(),threading.Event()
+    route = ('mesh-runtime-fixture',{'base_url':endpoint,'api_key':'synthetic-local-provider',
+             'provider':'custom','api_mode':'chat_completions'})
+    def held_route(**kwargs):
+        entered.set()
+        if not release.wait(timeout=30):
+            raise RuntimeError('Synthetic runtime selection gate timed out')
+        return route[0],dict(route[1])
+    runner._resolve_session_agent_runtime = held_route
+    old_registry = adapter._mesh_writer_runs
+    authority = runner.session_authorities.launch
+    home = root/'fixture-home'
+    try:
+        async with ClientSession() as client:
+            headers={'Authorization':'Bearer '+key,'Idempotency-Key':'mesh-retirement-active'}
+            body={'input':'Synthetic owner retirement active request.','session_id':uuid4().hex}
+            async with client.post(origin+'/v1/runs',headers=headers,json=body) as response:
+                active=await response.json()
+                if response.status not in (200,201,202):raise RuntimeError('Retirement active admission failed')
+            active_id=active['run_id'];deadline=time.monotonic()+20
+            while not entered.is_set():
+                if time.monotonic()>deadline:raise RuntimeError('Actual retirement worker did not enter fixture gate')
+                await asyncio.sleep(.02)
+            queued_headers={**headers,'Idempotency-Key':'mesh-retirement-queued'}
+            queued_body={**body,'input':'Synthetic preserved queued request.'}
+            async with client.post(origin+'/v1/runs',headers=queued_headers,json=queued_body) as response:
+                waiting=await response.json()
+                if response.status not in (200,201,202):raise RuntimeError('Retirement queued admission failed')
+            waiting_id=waiting['run_id'];before=run_admission(adapter,waiting_id)[1]
+            if before['status']!='queued' or old_registry.snapshot(waiting_id) is not None:
+                raise RuntimeError('Retirement successor was not queued without a worker')
+            first_retirement=await _retire_profile_authority(authority,timeout=.02)
+            held=old_registry.snapshot(active_id)
+            if first_retirement is not False or not process_ownership.owns(home) or authority.retired:
+                raise RuntimeError('Timed-out owner retirement released ownership')
+            if not held or held['lifetime']['rootEnded'] or held['lifetime']['managedWorkEnded']:
+                raise RuntimeError('Retirement timeout lost its still-running worker')
+            if run_admission(adapter,waiting_id)[1]['status']!='queued' or old_registry.snapshot(waiting_id) is not None:
+                raise RuntimeError('Retiring owner started its queued successor')
+            release.set()
+            if not await _retire_profile_authority(authority,timeout=15):
+                raise RuntimeError('Actual owner did not drain after worker gate release')
+            tasks=list(adapter._active_run_tasks.values())
+            if tasks:await asyncio.wait_for(asyncio.gather(*tasks,return_exceptions=True),timeout=5)
+            if run_admission(adapter,waiting_id)[1]['status']!='queued' or old_registry.snapshot(waiting_id) is not None:
+                raise RuntimeError('Retired owner consumed the waiting request')
+            deadline=time.monotonic()+10
+            while not old_registry.snapshot(active_id)['lifetime']['managedWorkEnded']:
+                if time.monotonic()>deadline:raise RuntimeError('Retired worker background work remained active')
+                await asyncio.sleep(.02)
+            old_epoch=authority.epoch
+            process_ownership.release(home)
+            process_ownership.reserve([home])
+            successor=GatewayRunner(GatewayConfig(multiplex_profiles=False))
+            successor._resolve_session_agent_runtime=lambda **kwargs:(route[0],dict(route[1]))
+            successor._resolve_turn_toolsets=lambda *args,**kwargs:(['terminal'],[])
+            await initialize_gateway_runtime(successor)
+            successor.adapters[Platform.API_SERVER]=adapter;adapter.gateway_runner=successor
+            adapter._mesh_writer_runs=WriterRunRegistry(factory)
+            unknown=observe_writer_run(adapter._mesh_writer_runs,active_id)
+            if unknown['state']!='unknown' or unknown['ownerId']==old_registry.owner_id:
+                raise RuntimeError('Successor reused old worker ownership')
+            recover_api_turns(adapter)
+            deadline=time.monotonic()+30
+            while True:
+                owner,row=run_admission(adapter,waiting_id)
+                state=adapter._mesh_writer_runs.snapshot(waiting_id)
+                if row['status']=='terminal' and state and state['lifetime']['managedWorkEnded']:break
+                if time.monotonic()>deadline:raise RuntimeError('Successor failed to recover queued work')
+                await asyncio.sleep(.02)
+            result,_usage=_settled_api_result(owner,row['admission_id'])
+            if (row['admission_id']!=before['admission_id'] or owner.epoch<=old_epoch
+                    or result.get('failed') or result.get('final_response')!='mesh fixture completed'
+                    or sum(fence.run_id==waiting_id for fence in fences)!=1 or state['writerQuiescence']):
+                raise RuntimeError('Recovered work identity/result/single execution is unproven')
+            fence_count=len(fences)
+            async with client.post(origin+'/v1/runs',headers=queued_headers,json=queued_body) as response:
+                replay=await response.json()
+            if replay.get('run_id')!=waiting_id or len(fences)!=fence_count:
+                raise RuntimeError('Recovered exact retry duplicated work')
+            evidence={'timeoutRetainedOwnership':True,'heldWorker':held,'queuedAdmissionPreserved':True,
+                'oldEpoch':old_epoch,'newEpoch':owner.epoch,'newOwnerObservation':unknown,
+                'recoveredWorker':state,'recoveredExactlyOnce':True,'replayCreatedNoWorker':True,
+                'verifiedOutput':result['final_response'],'fullNativeRetirementAndRecovery':True}
+            (root/'canonical-retirement-evidence.json').write_text(json.dumps(evidence,indent=2),encoding='utf-8')
+    finally:
+        release.set()
 
 
 async def child(root):
@@ -402,6 +518,8 @@ async def child(root):
                     'terminalStatuses':[row['status'] for row in rows],'finalWorkers':states,'verifiedOutputs':outputs,
                     'replayCreatedNoWork':True,'realRunnerAndAuthority':True},indent=2),encoding='utf-8')
                 checks.append('actual_canonical_HTTP_FIFO_observer_cancellation_and_exact_replay')
+            await qualify_canonical_retirement(root,adapter,origin,key,runner,endpoint,factory,fences)
+            checks.append('actual_canonical_retirement_timeout_drain_and_successor_queue_recovery')
         finally:
             canonical_release.set()
             process_ownership.close()

@@ -1479,3 +1479,33 @@ candidate canonical wiring. No live native/Relay/model install/restart, automati
 activation, memory access or historical writer clearance. Next: canonical owner
 retirement/drain/restart and live-owner coverage, plus external-tool completion
 before production rollout. Full original goal remains active/incomplete.
+
+## 2026-11-08 - actual graceful canonical retirement and queue recovery
+Previous goal turn PROGRESS:4d4d78e real canonical FIFO/cancel/replay passed;
+backup E:/App-Backups/ONOes-Mesh/2026-11-08_23-39-42-466_UTC_22b53bcc verified.
+Extended isolated real runner/authority test with a bounded fixture route-selection
+gate inside actual TurnRunner thread. Queued a successor behind it. Actual native
+_retire_profile_authority(timeout=.02) returned false; native ownership reservation
+remained held, authority not retired, root still active. Queued job remained queued
+without enrollment. Released gate, actual cooperative Stop/drain completed, retired
+owner did not start successor. Waited actual background lifetime settlement.
+Native lock released/reacquired; initialized fresh actual runner/authority and
+registry. Epoch advanced2->3, old worker observed unknown under new registry;
+no reuse of old ownership as completion evidence. Native recover_api_turns resumed
+the exact saved queued admission, verified successful committed output, exactly
+one worker fence; exact keyed HTTP retry created no worker. No manual resubmit.
+
+Retained data/hermes-runtime-e4cde1a0-7260-47b5-8c9c-e511086c90ea,
+canonical-retirement-evidence.json, FIFO/claim/title/restart source evidence.
+Runtime PASS9. Updated independent verifier manually rerun after native execution:
+PASS8/all13native candidate hashes verified. Initial parent invocation used the
+previous7-check verifier; final manual verification is the retirement acceptance
+basis. Full npm test PASS347 (301Node+46Python), ../canonical-retirement-full.log.
+Retirement is graceful owner replacement in the same isolated process, not an
+abrupt process crash or production profile qualification. Source patch unchanged.
+
+No live gateway/Relay/model install/restart, automation activation, Mind access or
+historical clearance. Next: abrupt owner-loss behavior/live-chat-owner path and
+external-tool completion contract before rollout. Full original goal active.
+Private checkpoint verified included in prior Mesh-app-source.zip, so evidence
+archive stays within existing manual milestone backup/restore footprint.
