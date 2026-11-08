@@ -29,7 +29,7 @@
          temp_dir = self._env_temp_dir(env)
 --- /dev/null
 +++ b/tools/mesh_writer_scope.py
-@@ -0,0 +1,320 @@
+@@ -0,0 +1,334 @@
 +"""Candidate native tools.mesh_writer_scope; no HTTP/config enrollment or release grant."""
 +from contextlib import contextmanager
 +from contextvars import ContextVar, copy_context
@@ -45,6 +45,7 @@
 +_current = ContextVar('mesh_owned_writer_fence', default=None)
 +_lifetime = ContextVar('mesh_writer_lifetime', default=None)
 +_worker = ContextVar('mesh_owned_worker_ticket', default=None)
++_unspecified_environment = object()
 +
 +
 +class WriterRunRegistry:
@@ -330,6 +331,19 @@
 +        _lifetime.get().assert_current_worker()
 +    if _current.get() is not None and (not local or use_pty or persist_on_release):
 +        raise RuntimeError('Scoped writer requires a local pipe route without retained background work')
++
++
++def require_writer_local_environment(environment, active_environment=_unspecified_environment):
++    """Reject remote/plugin or mismatched cached file backends in an enrolled call."""
++    if _current.get() is None:
++        return
++    if _lifetime.get() is not None:
++        _lifetime.get().assert_current_worker()
++    from tools.environments.local import LocalEnvironment
++    if type(environment) is not LocalEnvironment:
++        raise RuntimeError('Scoped file tools require the native local environment')
++    if active_environment is not _unspecified_environment and environment is not active_environment:
++        raise RuntimeError('Cached file environment no longer matches the active environment')
 +
 +
 +def scoped_popen(argv, **kwargs):
@@ -1040,3 +1054,53 @@
              timeout = _resolve_sequential_tool_timeout()
              started = time.monotonic()
              baseline = self.authorization_gate.excluded_seconds()
+--- a/tools/file_tools.py
++++ b/tools/file_tools.py
+@@ -277,6 +277,8 @@
+ 
+     config = _get_env_config()
+     env_type = config["env_type"]
++    from tools.mesh_writer_scope import require_supported_writer_route
++    require_supported_writer_route(local=env_type == "local")
+     overrides = resolve_task_overrides(raw_task_id)
+     try:
+         recorded_cwd = get_session_cwd(raw_task_id)
+@@ -333,6 +335,8 @@
+         with _env_lock:
+             if task_id in _active_environments:
+                 _last_activity[task_id] = time.time()
++                from tools.mesh_writer_scope import require_writer_local_environment
++                require_writer_local_environment(cached.env, _active_environments[task_id])
+                 return cached
+             # Env was cleaned up: rescue its cwd into the session record FILL-ONLY
+             # (``cached.cwd`` is the SHARED env's cwd, not this session's own).
+@@ -369,6 +373,8 @@
+             _start_cleanup_thread()
+             logger.info("%s environment ready for task %s", env_type, task_id[:8])
+ 
++    from tools.mesh_writer_scope import require_writer_local_environment
++    require_writer_local_environment(terminal_env)
+     file_ops = ShellFileOperations(terminal_env)
+     with _file_ops_lock:
+         _file_ops_cache[task_id] = file_ops
+--- a/tools/terminal_tool.py
++++ b/tools/terminal_tool.py
+@@ -1087,6 +1087,8 @@
+ 
+     config = _get_env_config()
+     env_type = "local" if _host_local else config["env_type"]
++    from tools.mesh_writer_scope import require_supported_writer_route
++    require_supported_writer_route(local=env_type == "local")
+ 
+     # Fail closed under a refusal scope: the routed profile's terminal
+     # policy could not be resolved, so running with the launch process's
+@@ -1236,6 +1238,9 @@
+ ) -> str:
+     """Execute in the foreground with retry on transient errors, then finalize. ``metered``
+     is False for Hermes' own control-plane commands (``_host_local``)."""
++    from tools.mesh_writer_scope import require_supported_writer_route, require_writer_local_environment
++    require_supported_writer_route(local=plan.env_type == "local")
++    require_writer_local_environment(env)
+     from hermes_cli.observability.shared_metrics_harness import record_terminal_outcome
+     max_retries = 3
+     env_type, eff, effective_timeout = plan.env_type, plan.effective_task_id, plan.effective_timeout

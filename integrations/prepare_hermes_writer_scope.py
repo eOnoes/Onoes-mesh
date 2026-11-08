@@ -26,6 +26,8 @@ from integrations.windows_writer_fence import WindowsWriterFence
 
 BASELINE = '6491641456b51eb78c36a50a8508f145da328f7c70a432bced84b3b329e0046e'
 FOREGROUND_BASELINE = '723e8f0bc27c58c310f9530732c889e5f8480d74e12402656ed0033e08afc27c'
+FILE_TOOLS_BASELINE = '1a23773abe410feb5dd99276d08b6c0837624309ea489c508d683c6965408f94'
+TERMINAL_TOOL_BASELINE = 'a09910c7c61a93d89e8b9e83efd3abcb5eff4b58a3cb53e3bd0162d2ee59e909'
 TOOL_WORKER_BASELINES = {
     'agent/tool_executor.py': '3fb81cd7ec8946df1f6e50b0879b4be4499223b4236450da0581ac7c0a1727e6',
     'agent/terminal_approval_batch.py': '3ac8420c2cdbbaf8d6f8241be5154a75aff4da54fd090492e9ce9ce9396e71dc'}
@@ -148,6 +150,57 @@ def tool_worker_candidates(native_root):
     return originals, changed
 
 
+def file_tool_candidate(native_root):
+    path = 'tools/file_tools.py'
+    raw = (native_root / path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != FILE_TOOLS_BASELINE:
+        raise RuntimeError('Native file-tool source changed')
+    original = raw.decode('utf-8').replace('\r\n', '\n')
+    candidate = original
+    replacements = [
+        ('    env_type = config["env_type"]\n',
+         '    env_type = config["env_type"]\n'
+         '    from tools.mesh_writer_scope import require_supported_writer_route\n'
+         '    require_supported_writer_route(local=env_type == "local")\n'),
+        ('                return cached\n',
+         '                from tools.mesh_writer_scope import require_writer_local_environment\n'
+         '                require_writer_local_environment(cached.env, _active_environments[task_id])\n'
+         '                return cached\n'),
+        ('    file_ops = ShellFileOperations(terminal_env)\n',
+         '    from tools.mesh_writer_scope import require_writer_local_environment\n'
+         '    require_writer_local_environment(terminal_env)\n'
+         '    file_ops = ShellFileOperations(terminal_env)\n')]
+    for before, after in replacements:
+        if candidate.count(before) != 1:
+            raise RuntimeError('Unexpected file-tool backend selection shape')
+        candidate = candidate.replace(before, after)
+    ast.parse(candidate)
+    return {path: original}, {path: candidate}
+
+
+def terminal_route_candidate(native_root):
+    path = 'tools/terminal_tool.py'
+    raw = (native_root / path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != TERMINAL_TOOL_BASELINE:
+        raise RuntimeError('Native terminal-tool source changed')
+    original = raw.decode('utf-8').replace('\r\n', '\n')
+    lines = original.splitlines(True)
+    fn = next(n for n in ast.parse(original).body if isinstance(n, ast.FunctionDef) and n.name == '_run_foreground')
+    lines[fn.body[0].end_lineno:fn.body[0].end_lineno] = [
+        '    from tools.mesh_writer_scope import require_supported_writer_route, require_writer_local_environment\n',
+        '    require_supported_writer_route(local=plan.env_type == "local")\n',
+        '    require_writer_local_environment(env)\n']
+    candidate = ''.join(lines)
+    before = '    env_type = "local" if _host_local else config["env_type"]\n'
+    if candidate.count(before) != 1:
+        raise RuntimeError('Unexpected pre-creation terminal plan shape')
+    candidate = candidate.replace(before, before
+        + '    from tools.mesh_writer_scope import require_supported_writer_route\n'
+        + '    require_supported_writer_route(local=env_type == "local")\n')
+    ast.parse(candidate)
+    return {path: original}, {path: candidate}
+
+
 def prepare(source_path):
     raw = source_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != BASELINE:
@@ -188,6 +241,12 @@ def prepare(source_path):
     tool_originals, tool_modules = tool_worker_candidates(source_path.parent.parent)
     lifetime_originals.update(tool_originals)
     modules.update(tool_modules)
+    file_originals, file_modules = file_tool_candidate(source_path.parent.parent)
+    lifetime_originals.update(file_originals)
+    modules.update(file_modules)
+    terminal_originals, terminal_modules = terminal_route_candidate(source_path.parent.parent)
+    lifetime_originals.update(terminal_originals)
+    modules.update(terminal_modules)
     patch_text = ''.join(difflib.unified_diff(original.splitlines(True), candidate.splitlines(True),
                                            fromfile='a/tools/process_registry.py', tofile='b/tools/process_registry.py'))
     for path, text in modules.items():
@@ -638,18 +697,215 @@ def qualify_tool_effect_boundary(modules):
     return checks
 
 
+def qualify_file_tool_routes(modules):
+    """Actual file-backend selection functions with fixture environments/cache only."""
+    tree = ast.parse(modules['tools/file_tools.py'])
+    functions = [n for n in tree.body if isinstance(n, ast.FunctionDef)
+                 and n.name in ('_create_terminal_env_for_file_ops', '_get_file_ops')]
+    class LocalEnvironment:
+        cwd = str(Path.cwd())
+    class RemoteEnvironment:
+        cwd = '/fixture'
+        is_local = True  # A plugin flag cannot impersonate the native local type.
+    constructors, created = [], []
+    class FileOperations:
+        def __init__(self, env):
+            constructors.append(env); self.env, self.cwd = env, env.cwd
+    config = {'env_type': 'local', 'cwd': str(Path.cwd()), 'timeout': 5}
+    active, cache, activity = {}, {}, {}
+    terminal = types.ModuleType('tools.terminal_tool')
+    terminal._active_environments, terminal._last_activity = active, activity
+    terminal._env_lock = threading.RLock()
+    terminal._creation_locks, terminal._creation_locks_lock = {}, threading.RLock()
+    terminal._resolve_container_task_id = lambda task: task
+    terminal.get_session_cwd = lambda task: None
+    terminal.record_session_cwd = lambda *args: None
+    terminal._start_cleanup_thread = lambda: None
+    terminal._get_env_config = lambda: dict(config)
+    terminal.resolve_task_overrides = lambda task: {}
+    terminal._resolve_task_host_cwd = lambda *args: None
+    terminal._select_image = lambda *args: ''
+    terminal._is_mounted_host_cwd = terminal._is_unusable_container_cwd = lambda *args, **kw: False
+    def create(config, env_type, **kwargs):
+        env = LocalEnvironment() if env_type == 'local' else RemoteEnvironment()
+        created.append(env); return env
+    terminal._create_configured_env = create
+    configuration = types.ModuleType('tools.terminal_tool_config')
+    configuration._is_container_backend = lambda name: False
+    configuration.coerce_ssh_remote_cwd = lambda cwd, name: cwd
+    local_module = types.ModuleType('tools.environments.local'); local_module.LocalEnvironment = LocalEnvironment
+    tools = types.ModuleType('tools'); tools.__path__ = []
+    environments = types.ModuleType('tools.environments'); environments.__path__ = []
+    aliases = {'tools': tools, 'tools.mesh_writer_scope': scope, 'tools.terminal_tool': terminal,
+               'tools.terminal_tool_config': configuration, 'tools.environments': environments,
+               'tools.environments.local': local_module}
+    namespace = {'ShellFileOperations': FileOperations, '_file_ops_lock': threading.RLock(),
+                 '_file_ops_cache': cache, 'threading': threading, 'time': time,
+                 'logger': types.SimpleNamespace(info=lambda *args: None)}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), '<native-file-route-fixture>', 'exec'), namespace)
+    get = namespace['_get_file_ops']
+    fence = WindowsWriterFence('native-file-route-fixture', 'one')
+    checks = []
+    try:
+        with patch.dict(sys.modules, aliases):
+            with scope.bind_writer_fence(fence):
+                config['env_type'] = 'ssh'
+                try:
+                    get('remote-new')
+                except RuntimeError:
+                    if created or constructors:
+                        raise AssertionError('Remote environment started before rejection')
+                    checks.append('native_file_remote_creation_refused_before_factory')
+                else:
+                    raise AssertionError('Remote file environment created')
+                config['env_type'] = 'local'
+                first = get('local')
+                if type(first.env) is not LocalEnvironment or len(created) != 1:
+                    raise AssertionError('Native local file backend changed')
+                checks.append('native_file_local_creation_preserved')
+                if get('local') is not first or len(created) != 1:
+                    raise AssertionError('Local cache reuse changed')
+                checks.append('native_file_matching_local_cache_preserved')
+                for label, cached_env, active_env in [
+                    ('remote_cache', RemoteEnvironment(), LocalEnvironment()),
+                    ('replaced_cache', LocalEnvironment(), LocalEnvironment()),
+                    ('missing_active_identity', LocalEnvironment(), None)]:
+                    cache[label] = types.SimpleNamespace(env=cached_env)
+                    active[label] = active_env
+                    try:
+                        get(label)
+                    except RuntimeError:
+                        checks.append('native_file_' + label + '_refused')
+                    else:
+                        raise AssertionError('Invalid cached file backend returned')
+                active['existing-remote'] = RemoteEnvironment()
+                count = len(constructors)
+                try:
+                    get('existing-remote')
+                except RuntimeError:
+                    if len(constructors) != count:
+                        raise AssertionError('Remote file adapter constructed before refusal')
+                    checks.append('native_file_existing_remote_refused_before_adapter')
+                else:
+                    raise AssertionError('Existing remote backend was accepted')
+            config['env_type'] = 'ssh'
+            if type(get('legacy-remote').env) is not RemoteEnvironment:
+                raise AssertionError('Unenrolled remote file behavior changed')
+            checks.append('native_file_legacy_unenrolled_remote_preserved')
+    finally:
+        fence.terminate(); fence.close()
+    return checks
+
+
+def qualify_terminal_routes(modules):
+    """Actual foreground function with fixture routing helpers and real local IO."""
+    fn = next(n for n in ast.parse(modules['tools/terminal_tool.py']).body
+              if isinstance(n, ast.FunctionDef) and n.name == '_run_foreground')
+    calls = []
+    class LocalEnvironment:
+        def execute(self, command, **kwargs):
+            calls.append('local')
+            with scope.scoped_popen([sys.executable, '-c', 'print("foreground route output")'],
+                                    stdout=subprocess.PIPE, text=True) as proc:
+                output, _ = proc.communicate(timeout=5)
+            return {'output': output.strip(), 'exit_code': proc.returncode}
+    class RemoteEnvironment:
+        is_local = True
+        def execute(self, command, **kwargs):
+            calls.append('remote'); return {'output': 'legacy remote fixture', 'exit_code': 0}
+    namespace = {'Any': typing.Any, 'Optional': typing.Optional, '_ExecPlan': types.SimpleNamespace,
+                 '_resolve_command_cwd': lambda **kwargs: str(Path.cwd()), '_yield_kwargs': lambda *a, **kw: {},
+                 'finalize_foreground_result': lambda **kwargs: json.dumps(kwargs['result']), 'json': json,
+                 'time': time, 'logger': types.SimpleNamespace(warning=lambda *a: None, error=lambda *a: None)}
+    exec(compile(ast.Module(body=[fn], type_ignores=[]), '<native-foreground-route-fixture>', 'exec'), namespace)
+    plan_fn = next(n for n in ast.parse(modules['tools/terminal_tool.py']).body
+                   if isinstance(n, ast.FunctionDef) and n.name == '_plan_execution')
+    config = {'env_type': 'local', 'cwd': str(Path.cwd()), 'timeout': 5}
+    namespace.update(_get_env_config=lambda: dict(config), _resolve_container_task_id=lambda value: value,
+        resolve_task_overrides=lambda task: {}, _select_image=lambda *args: '',
+        coerce_ssh_remote_cwd=lambda cwd, env: cwd, get_session_cwd=lambda task: None,
+        _resolve_task_host_cwd=lambda *args: None, _is_container_backend=lambda env: False,
+        _foreground_background_guidance=lambda command: None, FOREGROUND_MAX_TIMEOUT=600,
+        _Rejected=RuntimeError)
+    exec(compile(ast.Module(body=[plan_fn], type_ignores=[]), '<native-terminal-plan-fixture>', 'exec'), namespace)
+    tools = types.ModuleType('tools'); tools.__path__ = []
+    environments = types.ModuleType('tools.environments'); environments.__path__ = []
+    local = types.ModuleType('tools.environments.local'); local.LocalEnvironment = LocalEnvironment
+    cli = types.ModuleType('hermes_cli'); cli.__path__ = []
+    observability = types.ModuleType('hermes_cli.observability'); observability.__path__ = []
+    metrics = types.ModuleType('hermes_cli.observability.shared_metrics_harness')
+    metrics.record_terminal_outcome = lambda *args: None
+    terminal_scope = types.ModuleType('tools.terminal_scope'); terminal_scope.enforce_no_refusal = lambda: None
+    aliases = {'tools': tools, 'tools.mesh_writer_scope': scope, 'tools.environments': environments,
+               'tools.environments.local': local, 'hermes_cli': cli, 'hermes_cli.observability': observability,
+               'hermes_cli.observability.shared_metrics_harness': metrics, 'tools.terminal_scope': terminal_scope}
+    def invoke(env, env_type):
+        plan = types.SimpleNamespace(env_type=env_type, effective_task_id='fixture', effective_timeout=5,
+                                     cwd=str(Path.cwd()), host_cwd=None)
+        return namespace[fn.name]('fixture', env, plan, task_id='fixture', session_id='fixture',
+                    session_key='fixture', workdir=None, approval_note=None, clear_interrupt=False)
+    fence = WindowsWriterFence('native-foreground-route-fixture', 'one')
+    lifetime, checks = scope.WriterLifetime(fence), []
+    try:
+        with patch.dict(sys.modules, aliases):
+            with scope.writer_foreground_scope(lifetime):
+                config['env_type'] = 'ssh'
+                try:
+                    namespace[plan_fn.name]('fixture', task_id='fixture', timeout=5, background=False, _host_local=False)
+                except RuntimeError:
+                    checks.append('native_terminal_plan_remote_refused_before_environment_acquisition')
+                else:
+                    raise AssertionError('Remote terminal plan reached environment acquisition')
+                config['env_type'] = 'local'
+                plan = namespace[plan_fn.name]('fixture', task_id='fixture', timeout=5, background=False, _host_local=False)
+                if plan.env_type != 'local':
+                    raise AssertionError('Local terminal planning changed')
+                checks.append('native_terminal_local_plan_preserved')
+                result = json.loads(invoke(LocalEnvironment(), 'local'))
+                if result != {'output': 'foreground route output', 'exit_code': 0}:
+                    raise AssertionError('Native local foreground output changed')
+                checks.append('native_foreground_local_route_preserves_real_process_output')
+                for env_type in ['ssh', 'local']:
+                    before = len(calls)
+                    try:
+                        invoke(RemoteEnvironment(), env_type)
+                    except RuntimeError:
+                        if len(calls) != before:
+                            raise AssertionError('Remote terminal executed before rejection')
+                        checks.append('native_foreground_' + ('remote' if env_type == 'ssh' else 'impostor_local')
+                                      + '_refused_before_execute')
+                    else:
+                        raise AssertionError('Untracked foreground backend accepted')
+            if not lifetime.wait()['managedWorkEnded']:
+                raise AssertionError('Local foreground process did not settle')
+            if json.loads(invoke(RemoteEnvironment(), 'ssh'))['output'] != 'legacy remote fixture':
+                raise AssertionError('Unenrolled remote terminal behavior changed')
+            checks.append('native_foreground_unenrolled_remote_route_preserved')
+            config['env_type'] = 'ssh'
+            plan = namespace[plan_fn.name]('fixture', task_id='fixture', timeout=5, background=False, _host_local=False)
+            if plan.env_type != 'ssh':
+                raise AssertionError('Legacy remote terminal planning changed')
+            checks.append('native_terminal_unenrolled_remote_plan_preserved')
+    finally:
+        fence.terminate(); fence.close()
+    return checks
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
               'nativeSourceBaselines': {'tools/process_registry.py': BASELINE, **LIFETIME_BASELINES,
-                                        'tools/environments/local.py': FOREGROUND_BASELINE, **TOOL_WORKER_BASELINES},
+                                        'tools/environments/local.py': FOREGROUND_BASELINE, **TOOL_WORKER_BASELINES,
+                                        'tools/file_tools.py': FILE_TOOLS_BASELINE,
+                                        'tools/terminal_tool.py': TERMINAL_TOOL_BASELINE},
               'qualificationScope': 'patched native functions with fixture profiles/ledgers and real threads/processes',
               'files': {name: hashlib.sha256(text.encode()).hexdigest() for name, text in modules.items()},
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
     try:
         report['checks'] = (qualify(candidate) + qualify_lifetimes(modules) + qualify_foreground(modules)
                             + qualify_enrollment(modules) + qualify_tool_worker_submissions(modules)
-                            + qualify_tool_effect_boundary(modules))
+                            + qualify_tool_effect_boundary(modules) + qualify_file_tool_routes(modules)
+                            + qualify_terminal_routes(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

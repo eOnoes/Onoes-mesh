@@ -13,6 +13,7 @@ from uuid import uuid4
 _current = ContextVar('mesh_owned_writer_fence', default=None)
 _lifetime = ContextVar('mesh_writer_lifetime', default=None)
 _worker = ContextVar('mesh_owned_worker_ticket', default=None)
+_unspecified_environment = object()
 
 
 class WriterRunRegistry:
@@ -298,6 +299,19 @@ def require_supported_writer_route(*, local, use_pty=False, persist_on_release=F
         _lifetime.get().assert_current_worker()
     if _current.get() is not None and (not local or use_pty or persist_on_release):
         raise RuntimeError('Scoped writer requires a local pipe route without retained background work')
+
+
+def require_writer_local_environment(environment, active_environment=_unspecified_environment):
+    """Reject remote/plugin or mismatched cached file backends in an enrolled call."""
+    if _current.get() is None:
+        return
+    if _lifetime.get() is not None:
+        _lifetime.get().assert_current_worker()
+    from tools.environments.local import LocalEnvironment
+    if type(environment) is not LocalEnvironment:
+        raise RuntimeError('Scoped file tools require the native local environment')
+    if active_environment is not _unspecified_environment and environment is not active_environment:
+        raise RuntimeError('Cached file environment no longer matches the active environment')
 
 
 def scoped_popen(argv, **kwargs):

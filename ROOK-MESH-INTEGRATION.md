@@ -1063,3 +1063,37 @@ automatic assignment activation. Next: qualify concrete tool/effect adapters and
 durable authenticated release consumed by Mesh, then real integration qualification.
 
 Candidate: C:\Users\eMitchell109\Documents\ChatGPT\Nims Chat\mesh-workroom-ab\data\hermes-writer-scope-cb6cdbea-419c-4890-a78b-afd5718fa95c
+
+
+## 2026-11-08 - Native file/terminal local-backend enforcement
+
+Previous turn PROGRESS:a029ae6 middleware effects tested/committed/pushed/backed up.
+Revalidated clean tracked baseline. Actual file-tools can create remote environments
+or return a cached adapter bound to a different environment; foreground terminal
+can also select a remote backend outside the instrumented local launcher. Closed
+these concrete routes for enrolled local work only; ordinary sessions remain unchanged.
+
+New pinned sources: tools/file_tools.py SHA256
+1a23773abe410feb5dd99276d08b6c0837624309ea489c508d683c6965408f94 and
+tools/terminal_tool.py SHA256
+a09910c7c61a93d89e8b9e83efd3abcb5eff4b58a3cb53e3bd0162d2ee59e909.
+File environment creation checks backend before factory; existing/cached adapters
+require exact native LocalEnvironment type and same active environment object.
+Unknown/missing identity or plugin is_local flag cannot satisfy this check.
+Terminal planning refuses remote backend before acquisition, and foreground
+execution checks configured route plus actual environment identity before execute.
+No tool/credential permission expansion, no live installation or service restart.
+
+Candidate now10files/8pinnednativebaselines. Qualification PASS40: actual native
+file-selection functions with fixture caches/factories prove local create/reuse,
+remote refusal before factory/adapter, replaced/missing cache identity denial,
+legacy remote behavior; actual terminal planning/foreground function with fixture
+routing helpers and real local process IO proves early remote/impostor refusal
+and local/legacy preservation. These are function fixtures, not complete native
+agent or real remote-service acceptance. No private files/model or external
+service used. Existing unknown external effects remain unverified; these guards
+do NOT prove arbitrary local shell code has no broker/network side effects.
+Next: concrete completion adapters/durable authenticated release and strict Mesh
+consumption, then installation/full user-path qualification before activation.
+
+Candidate: C:\Users\eMitchell109\Documents\ChatGPT\Nims Chat\mesh-workroom-ab\data\hermes-writer-scope-9810939c-2d51-4f7d-8168-c17744212641
