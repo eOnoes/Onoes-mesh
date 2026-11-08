@@ -54,6 +54,12 @@ def verify_evidence(root):
                 or not after['managedWorkEnded'] or after['pendingWorkers']):
             raise RuntimeError('Native title callback lifetime evidence is incomplete')
         result['checks'].append('native_title_pending_then_actual_thread_exit')
+    if 'native_SQLite_canonical_claim_lookup_and_worker_binding' in report['checks']:
+        claim = json.loads((root / 'canonical-claim-evidence.json').read_text(encoding='utf-8'))
+        if (not claim['durableClaimMatched'] or not claim['duplicateRefused']
+                or not claim['lifetime']['managedWorkEnded'] or claim['lifetime']['writerQuiescence']):
+            raise RuntimeError('Canonical claim binding evidence is incomplete')
+        result['checks'].append('native_SQLite_canonical_claim_binding_without_release')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -263,6 +269,47 @@ async def child(root):
             if restored['writer_lifecycle']['ownerId'] == old_owner or restored['writer_lifecycle']['writerQuiescence']:
                 raise RuntimeError('Restart reused old owner or granted release')
             checks.append('actual_native_SQLite_restart_replay_without_new_worker_or_old_owner')
+        # Native SQLite admission/claim and lookup, with a synthetic authority
+        # stamp. This is NOT full FIFO/HTTP canonical execution qualification.
+        import types
+        from uuid import uuid4
+        from hermes_state_runtime import begin_runtime_epoch, admit_session_input, claim_session_input
+        from tools.mesh_writer_scope import canonical_admission_writer_scope, canonical_writer_foreground_scope
+        db = adapter._ensure_session_db()
+        sid, canonical_run = uuid4().hex, 'run_' + uuid4().hex
+        db.create_session(sid, 'api_server')
+        epoch = begin_runtime_epoch(db, instance_id='mesh-isolated-canonical-' + uuid4().hex)
+        admitted = admit_session_input(db, epoch=epoch, principal_id='api', session_id=sid,
+            request_id=canonical_run, payload={'text':'synthetic canonical claim',
+                'api_turn_v1':{'run_owner_scope':'a'*64}})
+        claimed = claim_session_input(db, epoch=epoch, session_id=sid, head=admitted['admission_id'])
+        import threading
+        stamp = {'authority_epoch':epoch,'execution_generation':claimed['generation'],'admission_id':claimed['admission_id']}
+        authority = types.SimpleNamespace(db=db, profile_id='fixture', epoch=epoch,
+            sessions={sid:types.SimpleNamespace(event_stream=types.SimpleNamespace(lock=threading.RLock(),execution=stamp))},
+            executing={sid:claimed['generation']})
+        canonical_adapter = types.SimpleNamespace(_mesh_writer_runs=WriterRunRegistry(factory),
+            gateway_runner=types.SimpleNamespace(session_authority=authority))
+        ref = types.SimpleNamespace(profile_id='fixture',session_id=sid)
+        def canonical_body():
+            with canonical_writer_foreground_scope():
+                return 'synthetic worker returned'
+        with canonical_admission_writer_scope(authority,ref,claimed,canonical_adapter):
+            if await asyncio.to_thread(canonical_body) != 'synthetic worker returned':
+                raise RuntimeError('Canonical bound worker did not return')
+        duplicate_refused = False
+        try:
+            with canonical_admission_writer_scope(authority,ref,claimed,canonical_adapter):
+                raise AssertionError('Duplicate canonical claim ran')
+        except RuntimeError:
+            duplicate_refused = True
+        lifetime = canonical_adapter._mesh_writer_runs.snapshot(canonical_run)['lifetime']
+        if not duplicate_refused or not lifetime['managedWorkEnded'] or lifetime['writerQuiescence']:
+            raise RuntimeError('Canonical claim binding did not remain bounded')
+        (root / 'canonical-claim-evidence.json').write_text(json.dumps({'durableClaimMatched':True,
+            'duplicateRefused':duplicate_refused,'lifetime':lifetime,
+            'scope':'native SQLite claim/lookup and actual thread; synthetic authority stamp; no full FIFO qualification'},indent=2),encoding='utf-8')
+        checks.append('native_SQLite_canonical_claim_lookup_and_worker_binding')
         return {'qualification': 'PASS', 'checks': checks, 'providerRequests': len(requests),
                 'nonToolProviderRequests': sum('terminal' not in item['tools'] for item in requests),
                 'agentsCreated': len(agents_created), 'pythonVersion': sys.version.split()[0],

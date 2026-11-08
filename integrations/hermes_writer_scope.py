@@ -8,6 +8,7 @@ import re
 import subprocess
 import threading
 import time
+from types import SimpleNamespace
 from uuid import uuid4
 
 _current = ContextVar('mesh_owned_writer_fence', default=None)
@@ -256,6 +257,47 @@ def writer_tool_effect():
         yield
     finally:
         lifetime._end_tool(ticket)
+
+
+@contextmanager
+def canonical_admission_writer_scope(authority, ref, row, adapter):
+    """Enroll only the currently claimed, durable native API-run admission.
+
+    Native admission authorization stays authoritative. This validates its current
+    execution stamp, not a caller-supplied run/lifetime or an HTTP observer.
+    """
+    registry = getattr(adapter, '_mesh_writer_runs', None)
+    run_id = row.get('request_id')
+    if registry is None or not isinstance(run_id, str) or not run_id.startswith('run_'):
+        yield
+        return
+    if not isinstance(registry, WriterRunRegistry) or not re.fullmatch(r'run_[0-9a-f]{32}', run_id):
+        raise RuntimeError('Canonical native run enrollment is unverified')
+    if _canonical_claim.get() is not None or _lifetime.get() is not None:
+        raise RuntimeError('Canonical execution cannot replace an existing writer claim')
+    from gateway.platforms.api_server_authority_runs import run_admission
+    owned = run_admission(adapter, run_id)
+    fields = ('admission_id', 'request_id', 'target_session_id', 'principal_id', 'owner_epoch', 'generation', 'status', 'payload')
+    scope = row.get('payload', {}).get('api_turn_v1', {}).get('run_owner_scope')
+    if (owned is None or owned[0] is not authority
+            or ref.profile_id != authority.profile_id or row.get('target_session_id') != ref.session_id
+            or row.get('principal_id') != 'api' or row.get('owner_epoch') != authority.epoch
+            or row.get('status') != 'started' or type(row.get('generation')) is not int or row['generation'] < 1
+            or not isinstance(scope, str) or not re.fullmatch(r'[0-9a-f]{64}', scope)
+            or any(owned[1].get(key) != row.get(key) for key in fields)):
+        raise RuntimeError('Canonical admission identity is unverified')
+    live = authority.sessions[ref.session_id]
+    with live.event_stream.lock:
+        stamp = live.event_stream.execution
+        expected = {'authority_epoch': authority.epoch, 'execution_generation': row['generation'],
+                    'admission_id': row['admission_id']}
+        if stamp != expected or authority.executing.get(ref.session_id) != row['generation']:
+            raise RuntimeError('Canonical execution claim is no longer current')
+        run = SimpleNamespace(run_id=run_id, admission=None, writer_lifetime=None, writer_generation='',
+                              canonical_claim=dict(expected))
+        lifetime = registry.enroll(run)  # Duplicate/recovered enrollment remains held, never replaced.
+    with bind_canonical_writer_claim(lifetime):
+        yield
 
 
 @contextmanager

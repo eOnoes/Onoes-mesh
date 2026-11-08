@@ -6,7 +6,8 @@
     "actual_native_title_thread_exit_observed_before_local_settlement",
     "actual_native_tool_thread_and_Windows_job_observed_without_release",
     "actual_native_HTTP_authentication_enforced",
-    "actual_native_SQLite_restart_replay_without_new_worker_or_old_owner"
+    "actual_native_SQLite_restart_replay_without_new_worker_or_old_owner",
+    "native_SQLite_canonical_claim_lookup_and_worker_binding"
   ],
   "providerRequests": 3,
   "nonToolProviderRequests": 1,
@@ -16,10 +17,10 @@
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual native direct-run HTTP/auth, AIAgent, terminal, held native title callback, Windows Job, and SQLite replay; fresh synthetic profile; local fake provider/config factory; pure-Python dependency fixture.",
+  "scope": "Actual direct native HTTP/auth/AIAgent/terminal/title/Windows Job/SQLite replay plus native SQLite canonical claim lookup and real bound worker; fake local provider and synthetic authority stamp. No full canonical FIFO acceptance.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "569c83fa2bc83c22f00908a90b59f015c6528be0cf7ec10067b9d210fce48dd2",
+    "tools/mesh_writer_scope.py": "c58e711cddfd25e18ed314113b8df8b85e135001ce482a4b8fae5407bbc81ca3",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
     "gateway/platforms/api_server_runs.py": "6daad3369059781305e05d26b3fe516a991246ecac526c8ebc342f034b5cf941",
@@ -29,16 +30,18 @@
     "tools/file_tools.py": "af4fcea5046db65657ede46e280dc5f2725d360dd3529e0a1af38ea401e1ea9e",
     "tools/terminal_tool.py": "382f70e0d1af91aabf55059531bfe798b31d570603254fe4db48161aeef754b1",
     "agent/title_generator.py": "6c51388525a8ccf5fceb2b828c7be4c70869cd144091572f1e423539269064f8",
-    "gateway/run_turn_runner.py": "9a8afcf3400bad7930c40811cd325ed0dd36514f800c08b4e8e2ba341aa75d49"
+    "gateway/run_turn_runner.py": "9a8afcf3400bad7930c40811cd325ed0dd36514f800c08b4e8e2ba341aa75d49",
+    "gateway/session_ingress.py": "1bc738f0297c3b24323b48889427f1f589e8de504a5df56b92d81324fdd20cbc"
   },
   "evidenceChecks": [
     "exact_exit_zero_tool_output_without_error",
     "all_candidate_source_hashes",
     "restart_without_new_agent_or_fence",
     "no_writer_release",
-    "native_title_pending_then_actual_thread_exit"
+    "native_title_pending_then_actual_thread_exit",
+    "native_SQLite_canonical_claim_binding_without_release"
   ],
-  "evidenceDirectory": "hermes-runtime-446e6cfe-7b18-459a-9256-51176b52ed57",
+  "evidenceDirectory": "hermes-runtime-ddb283e9-228e-4711-a346-2d531a5decd0",
   "remaining": [
     "Tool external effects and whole-worker release remain unqualified.",
     "Other background workers and canonical/session-authority/live-owner routes are not qualified.",
@@ -47,7 +50,7 @@
   "liveServicesChanged": false,
   "canonicalWorkerSeam": {
     "qualification": "PASS",
-    "scope": "Pinned native TurnRunner.run_sync with synthetic policy/result dependencies and trusted in-process claim; real-thread observer cancellation separately tested. Canonical admission/owner enrollment is not connected.",
+    "scope": "Pinned native TurnRunner.run_sync with fixture policy/result dependencies, real-thread cancellation and native SQLite claim/run lookup with synthetic authority stamp. Pinned native ingress now invokes the binding. Full canonical FIFO/HTTP/owner lifecycle remains unqualified.",
     "liveActivation": false
   }
 }

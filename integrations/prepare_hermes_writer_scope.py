@@ -30,6 +30,7 @@ FILE_TOOLS_BASELINE = '1a23773abe410feb5dd99276d08b6c0837624309ea489c508d683c696
 TERMINAL_TOOL_BASELINE = 'a09910c7c61a93d89e8b9e83efd3abcb5eff4b58a3cb53e3bd0162d2ee59e909'
 TITLE_BASELINE = 'e5beaa6185f91e887d27a35a5acdde613c0144c156e63ed053566127ff25ce0f'
 CANONICAL_WORKER_BASELINE = 'efc702798fcb827b77ad485c7559643d5ecf407b06b5f115c8e3047752054c8a'
+CANONICAL_INGRESS_BASELINE = '9b308b2ddf9cac9223361663c16eed1665feb4087fc0b58e0e3245e9708ce9a0'
 TOOL_WORKER_BASELINES = {
     'agent/tool_executor.py': '3fb81cd7ec8946df1f6e50b0879b4be4499223b4236450da0581ac7c0a1727e6',
     'agent/terminal_approval_batch.py': '3ac8420c2cdbbaf8d6f8241be5154a75aff4da54fd090492e9ce9ce9396e71dc'}
@@ -263,6 +264,23 @@ def canonical_worker_candidate(native_root):
     return {path: original}, {path: candidate}
 
 
+def canonical_ingress_candidate(native_root):
+    path = 'gateway/session_ingress.py'
+    raw = (native_root / path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != CANONICAL_INGRESS_BASELINE:
+        raise RuntimeError('Native canonical ingress source changed')
+    original = raw.decode('utf-8').replace('\r\n', '\n')
+    before = '            response = await authority.runner._handle_message(event)\n'
+    if original.count(before) != 1:
+        raise RuntimeError('Unexpected canonical ingress worker shape')
+    candidate = original.replace(before,
+        '            from tools.mesh_writer_scope import canonical_admission_writer_scope\n'
+        "            with canonical_admission_writer_scope(authority, ref, row, prepared['adapter'] if is_api else None):\n"
+        '                response = await authority.runner._handle_message(event)\n')
+    ast.parse(candidate)
+    return {path: original}, {path: candidate}
+
+
 def prepare(source_path):
     raw = source_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != BASELINE:
@@ -315,6 +333,9 @@ def prepare(source_path):
     canonical_originals, canonical_modules = canonical_worker_candidate(source_path.parent.parent)
     lifetime_originals.update(canonical_originals)
     modules.update(canonical_modules)
+    ingress_originals, ingress_modules = canonical_ingress_candidate(source_path.parent.parent)
+    lifetime_originals.update(ingress_originals)
+    modules.update(ingress_modules)
     patch_text = ''.join(difflib.unified_diff(original.splitlines(True), candidate.splitlines(True),
                                            fromfile='a/tools/process_registry.py', tofile='b/tools/process_registry.py'))
     for path, text in modules.items():
@@ -1106,7 +1127,8 @@ if __name__ == '__main__':
                                         'tools/file_tools.py': FILE_TOOLS_BASELINE,
                                         'tools/terminal_tool.py': TERMINAL_TOOL_BASELINE,
                                         'agent/title_generator.py': TITLE_BASELINE,
-                                        'gateway/run_turn_runner.py': CANONICAL_WORKER_BASELINE},
+                                        'gateway/run_turn_runner.py': CANONICAL_WORKER_BASELINE,
+                                        'gateway/session_ingress.py': CANONICAL_INGRESS_BASELINE},
               'qualificationScope': 'patched native functions with fixture profiles/ledgers and real threads/processes',
               'files': {name: hashlib.sha256(text.encode()).hexdigest() for name, text in modules.items()},
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}

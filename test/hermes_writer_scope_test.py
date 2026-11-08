@@ -393,6 +393,79 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
 
 
 class WriterRunEnrollmentTests(unittest.TestCase):
+    def canonical_fixture(self):
+        run_id='run_'+'a'*32
+        row={'request_id':run_id,'admission_id':'admission-one','target_session_id':'session-one','principal_id':'api','owner_epoch':1,'generation':1,
+             'status':'started','payload':{'api_turn_v1':{'run_owner_scope':'b'*64}}}
+        stamp={'authority_epoch':1,'execution_generation':1,'admission_id':'admission-one'}
+        live=types.SimpleNamespace(event_stream=types.SimpleNamespace(lock=threading.RLock(),execution=stamp))
+        authority=types.SimpleNamespace(profile_id='profile-one',epoch=1,sessions={'session-one':live},executing={'session-one':1})
+        ref=types.SimpleNamespace(profile_id='profile-one',session_id='session-one')
+        fences=[]
+        def factory(run_id,generation):
+            fence=types.SimpleNamespace(run_id=run_id,generation=generation,popen=lambda *a,**k:None,
+                seal=lambda:None,snapshot=lambda:{'state':'not_started','activeProcesses':0})
+            fences.append(fence);return fence
+        registry=scope.WriterRunRegistry(factory)
+        adapter=types.SimpleNamespace(_mesh_writer_runs=registry)
+        native=types.ModuleType('gateway.platforms.api_server_authority_runs')
+        native.run_admission=lambda *args:(authority,dict(row))
+        return authority,ref,row,adapter,native,fences
+
+    def test_canonical_current_claim_enrolls_once_and_observer_exit_does_not_settle(self):
+        authority,ref,row,adapter,native,fences=self.canonical_fixture()
+        with patch.dict(sys.modules,{'gateway.platforms.api_server_authority_runs':native}):
+            with scope.canonical_admission_writer_scope(authority,ref,row,adapter):
+                held=adapter._mesh_writer_runs.snapshot(row['request_id'])
+                self.assertFalse(held['lifetime']['rootEnded'])
+                with scope.canonical_writer_foreground_scope():pass
+            result=adapter._mesh_writer_runs.snapshot(row['request_id'])
+            self.assertTrue(result['lifetime']['managedWorkEnded']);self.assertFalse(result['writerQuiescence'])
+            with self.assertRaises(RuntimeError):
+                with scope.canonical_admission_writer_scope(authority,ref,row,adapter):pass
+        self.assertEqual(len(fences),1)
+
+    def test_canonical_wrong_epoch_generation_profile_and_saved_row_create_no_worker(self):
+        changes=[lambda a,r,row,n:setattr(a,'epoch','other'),
+                 lambda a,r,row,n:setattr(r,'profile_id','other'),
+                 lambda a,r,row,n:row.update(status='queued'),
+                 lambda a,r,row,n:row.update(owner_epoch=2),
+                 lambda a,r,row,n:row.update(principal_id='other'),
+                 lambda a,r,row,n:row.update(generation=2),
+                 lambda a,r,row,n:a.sessions[r.session_id].event_stream.execution.update(admission_id='other'),
+                 lambda a,r,row,n:setattr(n,'run_admission',lambda *args:None),
+                 lambda a,r,row,n:setattr(n,'run_admission',lambda *args:(a,{**row,'admission_id':'other'})),
+                 lambda a,r,row,n:setattr(n,'run_admission',lambda *args:(object(),row))]
+        for change in changes:
+            authority,ref,row,adapter,native,fences=self.canonical_fixture();change(authority,ref,row,native)
+            with patch.dict(sys.modules,{'gateway.platforms.api_server_authority_runs':native}):
+                with self.assertRaises(RuntimeError):
+                    with scope.canonical_admission_writer_scope(authority,ref,row,adapter):pass
+            self.assertEqual(fences,[])
+
+    def test_canonical_claim_scope_exit_keeps_continuing_worker_held(self):
+        authority,ref,row,adapter,native,fences=self.canonical_fixture()
+        entered,release=threading.Event(),threading.Event()
+        def worker():
+            with scope.canonical_writer_foreground_scope():
+                entered.set();release.wait(timeout=5)
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                with patch.dict(sys.modules,{'gateway.platforms.api_server_authority_runs':native}):
+                    with scope.canonical_admission_writer_scope(authority,ref,row,adapter):
+                        context=copy_context();future=pool.submit(context.run,worker)
+                        self.assertTrue(entered.wait(timeout=3))
+                    snapshot=adapter._mesh_writer_runs.snapshot(row['request_id'])
+                    self.assertFalse(snapshot['lifetime']['rootEnded'])
+                    self.assertFalse(snapshot['lifetime']['managedWorkEnded'])
+                    release.set();future.result(timeout=3)
+                    self.assertTrue(adapter._mesh_writer_runs.snapshot(row['request_id'])['lifetime']['managedWorkEnded'])
+        finally:release.set()
+
+    def test_canonical_unconfigured_and_non_run_admissions_keep_legacy_behavior(self):
+        with scope.canonical_admission_writer_scope(None,None,{},None):pass
+        with scope.canonical_admission_writer_scope(None,None,{'request_id':'chat-request'},types.SimpleNamespace(_mesh_writer_runs=object())):pass
+
     def test_observation_after_registry_restart_does_not_reuse_old_ownership(self):
         first = scope.WriterRunRegistry(lambda *args: None)
         second = scope.WriterRunRegistry(lambda *args: None)

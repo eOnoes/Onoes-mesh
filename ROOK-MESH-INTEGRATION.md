@@ -1405,3 +1405,40 @@ path is NOT covered by this direct runtime result. Review patch git apply
 Next: trusted canonical claimed-admission enrollment/identity wiring and actual
 queue qualification, then external-effect completion and production activation.
 Existing8unknown writer holds remain untouched; full goal active/incomplete.
+
+## 2026-11-08 - canonical claimed-admission enrollment candidate
+Previous goal turn PROGRESS:7cee63b worker seam saved/pushed, milestone backup
+E:/App-Backups/ONOes-Mesh/2026-11-08_23-18-06-158_UTC_85bb4eaf restore verified.
+Pinned native gateway/session_ingress.py baseline
+9b308b2ddf9cac9223361663c16eed1665feb4087fc0b58e0e3245e9708ce9a0.
+Ingress now calls candidate canonical_admission_writer_scope around its actual
+_handle_message await, after native API preparation/profile binding. Enrollment
+checks native run_admission lookup against the exact claimed persisted admission,
+profile/target session, API principal, owner_epoch, positive execution generation,
+started state, payload, server-produced owner scope and current event-stream
+execution stamp/authority.executing generation under the native stream lock.
+Existing claims cannot be replaced; registry reserves before creating fence;
+duplicate/recovered run IDs cannot silently replace a prior worker. Non-run and
+unconfigured paths keep original behavior, with no new completion proof.
+
+Native claim source inspection caught field mismatch during implementation:
+ledger uses target_session_id, not session_id; corrected before final evidence.
+Actual native begin_runtime_epoch/admit_session_input/claim_session_input and
+run_admission lookup passed against exclusively synthetic fixture SQLite. A real
+thread carried the verified claim and settled locally after exit; duplicate
+refused. Authority event-stream stamp remains a synthetic fixture, so this is
+NOT full canonical HTTP/FIFO/retirement/owner-lifecycle acceptance.
+Evidence data/hermes-runtime-ddb283e9-228e-4711-a346-2d531a5decd0:
+runtime PASS7, independent evidence PASS6/all13candidate source hashes verified;
+actual direct HTTP/tool/title/Job/auth/restart checks still pass. Function fixture
+qualification PASS47. Final npm test PASS347 (301Node+46Python),
+../canonical-claim-final-full.log. Refusal tests cover wrong profile/authority,
+epoch/generation/principal/current stamp, queued/missing/crossed row; no factory
+called. Request-scope exit while verified thread continues leaves root held.
+
+Candidate now11native baselines/13target files. Native git apply --check PASS;
+installed ingress/TurnRunner sources still clean. No live install/restart,
+automation activation, historical hold release, Mind/model changes or paid
+inference. Next: actual canonical FIFO/HTTP execution and cancellation/retirement
+qualification, then remaining external effects/live-owner coverage before rollout.
+Full original goal active/incomplete.
