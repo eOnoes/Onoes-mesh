@@ -247,6 +247,34 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
 
 
 class WriterRunEnrollmentTests(unittest.TestCase):
+    def test_observation_after_registry_restart_does_not_reuse_old_ownership(self):
+        first = scope.WriterRunRegistry(lambda *args: None)
+        second = scope.WriterRunRegistry(lambda *args: None)
+        run_id = 'run_' + 'a' * 32
+        old = scope.observe_writer_run(first, run_id)
+        new = scope.observe_writer_run(second, run_id)
+        self.assertNotEqual(old['ownerId'], new['ownerId'])
+        self.assertEqual(new['state'], 'unknown')
+        self.assertIsNone(new['enrollment'])
+        self.assertFalse(new['writerQuiescence'])
+
+    def test_failed_observation_does_not_publish_exception_contents_or_release(self):
+        registry = scope.WriterRunRegistry(lambda *args: None)
+        with patch.object(registry, 'snapshot', side_effect=OSError('private diagnostic fixture')):
+            result = scope.observe_writer_run(registry, 'run_' + 'a' * 32)
+        self.assertEqual(result['state'], 'unknown')
+        self.assertNotIn('private diagnostic fixture', str(result))
+        self.assertIsNone(result['enrollment'])
+        self.assertFalse(result['writerQuiescence'])
+
+    def test_unconfigured_or_wrong_registry_can_never_report_finished_ownership(self):
+        for registry, state in [(None, 'not_configured'), (object(), 'unknown')]:
+            result = scope.observe_writer_run(registry, 'run_' + 'a' * 32)
+            self.assertEqual(result['state'], state)
+            self.assertIsNone(result['enrollment'])
+            self.assertTrue(result['observationOnly'])
+            self.assertFalse(result['writerQuiescence'])
+
     def run_fixture(self, number=1, **kwargs):
         return types.SimpleNamespace(run_id=f'run_{number:032x}', admission=None,
                                      writer_lifetime=None, writer_generation='', **kwargs)

@@ -1097,3 +1097,36 @@ Next: concrete completion adapters/durable authenticated release and strict Mesh
 consumption, then installation/full user-path qualification before activation.
 
 Candidate: C:\Users\eMitchell109\Documents\ChatGPT\Nims Chat\mesh-workroom-ab\data\hermes-writer-scope-9810939c-2d51-4f7d-8168-c17744212641
+
+
+## 2026-11-08 - Owned native status observation channel
+
+Previous turn PROGRESS:ad214df local routes tested/committed/pushed/backed up.
+Revalidated tracked baseline. Existing _load_owned_run authenticates and checks
+run ownership before returning status; _set_run_status already forwards selected
+status transitions to the native idempotency store. Reused these native paths.
+
+WriterRunRegistry now has a per-instance owner nonce. Fresh server observations
+bind run ID, owner nonce, enrollment/generation, timestamp and actual lifetime,
+with observationOnly=true and writerQuiescence=false. Missing/unconfigured/wrong
+registry, failed observation or process restart cannot reuse saved completion.
+No diagnostic exception text, private arguments, memory or credentials returned.
+_set_run_status attaches a server observation after incoming fields so a supplied
+writer_lifecycle cannot forge it; existing persistence callback receives it.
+GET status returns a fresh detached observation only AFTER successful owned lookup,
+without mutating the older saved status observation. No new endpoint/auth grant.
+
+Qualification PASS44: actual patched set/get status functions with fixture owned
+lookup/store show completed delivery while worker active, observation passed to
+existing persistence callback, fresh poll after actual root return, restart as
+unknown/new owner, and refusal before observation. This DOES NOT independently
+qualify the native on-disk idempotency store or a complete authenticated HTTP path;
+those dependencies are fixtures. Three added regression tests cover owner change,
+observation failure redaction and absent/wrong registry. No live install/restart,
+worker dispatch, model call, credential change or existing-hold release.
+
+Next: strict Mesh/Relay consumption and durable exact-attempt receipts, concrete
+tool-effect completion adapters, then full installed native user-path qualification.
+A reported observation is not release authority. Full original objective active.
+
+Candidate: C:\Users\eMitchell109\Documents\ChatGPT\Nims Chat\mesh-workroom-ab\data\hermes-writer-scope-c7b0869e-71f7-4d6c-a9d1-fba6bc3b3f75

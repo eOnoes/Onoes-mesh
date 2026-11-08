@@ -83,6 +83,26 @@ def lifetime_candidates(native_root):
                 '            with self._profile_scope(run.request_profile):\n')
             lines = current.splitlines(True)
             lines[execute.lineno - 1:execute.end_lineno] = [body]
+            current = ''.join(lines)
+            before = '    current.update(fields)\n'
+            if current.count(before) != 1:
+                raise RuntimeError('Unexpected native status update shape')
+            current = current.replace(before, before
+                + '    from tools.mesh_writer_scope import observe_writer_run\n'
+                + "    current['writer_lifecycle'] = observe_writer_run(getattr(self, '_mesh_writer_runs', None), run_id)\n")
+            before = ('    _, status, _, _, err = _load_owned_run(\n'
+                      '        self, request, _api_server=_api_server, permission="status", active_fallback=True)\n'
+                      '    return err or web.json_response(status)\n')
+            after = ('    run_id, status, _, _, err = _load_owned_run(\n'
+                     '        self, request, _api_server=_api_server, permission="status", active_fallback=True)\n'
+                     '    if err is not None:\n'
+                     '        return err\n'
+                     '    from tools.mesh_writer_scope import observe_writer_run\n'
+                     "    status = {**status, 'writer_lifecycle': observe_writer_run(getattr(self, '_mesh_writer_runs', None), run_id)}\n"
+                     '    return web.json_response(status)\n')
+            if current.count(before) != 1:
+                raise RuntimeError('Unexpected owned native run-status handler shape')
+            lines = current.replace(before, after).splitlines(True)
         changed[path] = ''.join(lines)
         ast.parse(changed[path])
     return originals, changed
@@ -891,6 +911,63 @@ def qualify_terminal_routes(modules):
     return checks
 
 
+def qualify_status_observation(modules):
+    """Actual status functions; fixture ownership gate/store, real worker lifetime."""
+    functions = [n for n in ast.parse(modules['gateway/platforms/api_server_runs.py']).body
+                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                 and n.name in ('_set_run_status', '_handle_get_run')]
+    namespace = {'Any': typing.Any, 'web': types.SimpleNamespace(Request=object, Response=object,
+                  json_response=lambda body: body), 'time': time, 'TERMINAL_STATUSES': {'completed', 'failed', 'cancelled'},
+                 'logger': types.SimpleNamespace(exception=lambda *args: None)}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), '<native-run-status-fixture>', 'exec'), namespace)
+    stored = []
+    run_id = 'run_' + uuid.uuid4().hex
+    registry = scope.WriterRunRegistry(WindowsWriterFence)
+    run = types.SimpleNamespace(run_id=run_id, admission=None, writer_lifetime=None, writer_generation='')
+    lifetime = registry.enroll(run)
+    host = types.SimpleNamespace(_mesh_writer_runs=registry, _run_statuses={}, _run_idempotency_ids={run_id},
+        _run_idempotency_store=types.SimpleNamespace(update_status=lambda key, body: stored.append(json.loads(json.dumps(body)))))
+    tools = types.ModuleType('tools'); tools.__path__ = []
+    aliases = {'tools': tools, 'tools.mesh_writer_scope': scope}
+    checks = []
+    try:
+        with patch.dict(sys.modules, aliases):
+            with scope.writer_foreground_scope(lifetime):
+                status = namespace['_set_run_status'](host, run_id, 'completed', output='fixture response',
+                            writer_lifecycle={'writerQuiescence': True, 'state': 'forged cached receipt'})
+                observation = status['writer_lifecycle']
+                if observation['writerQuiescence'] or observation['enrollment']['lifetime']['managedWorkEnded']:
+                    raise AssertionError('Native completed response released its active foreground worker')
+                if stored[-1]['writer_lifecycle'] != observation:
+                    raise AssertionError('Existing native persistence callback lost its server observation')
+                checks.append('native_completed_status_persists_active_worker_observation')
+            namespace['_load_owned_run'] = lambda *args, **kwargs: (run_id, status, None, None, None)
+            fresh = asyncio.run(namespace['_handle_get_run'](host, object(), _api_server=object()))
+            if not fresh['writer_lifecycle']['enrollment']['lifetime']['managedWorkEnded']:
+                raise AssertionError('Owned status poll did not refresh actual worker completion')
+            if status['writer_lifecycle']['enrollment']['lifetime']['managedWorkEnded']:
+                raise AssertionError('Read-only fresh poll mutated historical saved observation')
+            checks.append('native_owned_poll_refreshes_lifetime_without_reusing_saved_completion')
+            original_owner = fresh['writer_lifecycle']['ownerId']
+            host._mesh_writer_runs = scope.WriterRunRegistry(WindowsWriterFence)
+            restarted = asyncio.run(namespace['_handle_get_run'](host, object(), _api_server=object()))
+            observation = restarted['writer_lifecycle']
+            if (observation['ownerId'] == original_owner or observation['state'] != 'unknown'
+                    or observation['enrollment'] is not None or observation['writerQuiescence']):
+                raise AssertionError('Restart recovered false ownership from old run status')
+            checks.append('native_owned_poll_restart_reports_unknown_new_owner')
+            refusal = types.SimpleNamespace(status=403)
+            namespace['_load_owned_run'] = lambda *args, **kwargs: (None, None, None, None, refusal)
+            with patch.object(host._mesh_writer_runs, 'snapshot', side_effect=AssertionError('Unauthorized observation')):
+                denied = asyncio.run(namespace['_handle_get_run'](host, object(), _api_server=object()))
+            if denied is not refusal:
+                raise AssertionError('Unauthorized status request reached worker observations')
+            checks.append('native_owned_poll_refusal_precedes_writer_observation')
+    finally:
+        lifetime.fence.terminate(); lifetime.fence.close()
+    return checks
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
@@ -905,7 +982,7 @@ if __name__ == '__main__':
         report['checks'] = (qualify(candidate) + qualify_lifetimes(modules) + qualify_foreground(modules)
                             + qualify_enrollment(modules) + qualify_tool_worker_submissions(modules)
                             + qualify_tool_effect_boundary(modules) + qualify_file_tool_routes(modules)
-                            + qualify_terminal_routes(modules))
+                            + qualify_terminal_routes(modules) + qualify_status_observation(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

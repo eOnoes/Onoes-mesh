@@ -27,6 +27,11 @@ class WriterRunRegistry:
             raise ValueError('A trusted fence factory and bounded capacity are required')
         self._factory, self._limit = fence_factory, max_entries
         self._lock, self._entries = threading.RLock(), {}
+        self._owner_id = str(uuid4())
+
+    @property
+    def owner_id(self):
+        return self._owner_id
 
     def enroll(self, run):
         run_id = getattr(run, 'run_id', None)
@@ -67,6 +72,29 @@ class WriterRunRegistry:
                     'generation': entry['generation'], 'state': entry['state'],
                     'lifetime': lifetime.snapshot() if lifetime is not None else None,
                     'writerQuiescence': False}
+
+
+def observe_writer_run(registry, run_id):
+    """Fresh server observation; cached status/delivery can never grant release."""
+    result = {'schema': 'mesh-native-writer-observation/v1', 'runId': run_id,
+              'observedAt': int(time.time() * 1000), 'ownerId': None,
+              'state': 'not_configured', 'enrollment': None,
+              'observationOnly': True, 'writerQuiescence': False}
+    if registry is None:
+        return result
+    result['state'] = 'unknown'
+    if not isinstance(registry, WriterRunRegistry):
+        return result
+    result['ownerId'] = registry.owner_id
+    try:
+        enrollment = registry.snapshot(run_id)
+        if enrollment is not None:
+            result['enrollment'] = enrollment
+            if enrollment['state'] == 'enrolled':
+                result['state'] = 'observed'
+    except Exception:
+        pass  # Missing process observation must remain unknown, never reuse a stale receipt.
+    return result
 
 
 def enroll_direct_writer_run(registry, run):
