@@ -22,7 +22,7 @@ if(root){
   let checkingStatus='';
   const boardLoader=createBoardLoader({request,onBoard(result){
     tasks=result.tasks;teamPolicy=result.teamPolicy||null;agentsKnown=false;draw();
-    window.meshWorkroom.simpleFlow=Boolean(teamPolicy?.simpleFlow);
+    root.dataset.managedFlow=teamPolicy?.simpleFlow?'1':'0';
     if(teamPolicy?.simpleFlow){const lead=document.getElementById('create-owner');if(lead){lead.required=false;lead.hidden=true;document.querySelector('label[for="create-owner"]')?.setAttribute('hidden','');if(lead.nextElementSibling)lead.nextElementSibling.textContent='Ideas stay unassigned in To do. Move to In progress for the team to inspect them.';}}
     checkingStatus=`${tasks.length} saved tasks · Checking agent connections…`;status.textContent=checkingStatus;
   },onAgents(peers,available){
@@ -125,7 +125,7 @@ if(root){
     });
   }
   window.meshWorkroom.onClear(()=>{
-    boardLoader.clear();agentsKnown=false;
+    boardLoader.clear();agentsKnown=false;root.dataset.managedFlow='0';
     viewEpoch++;clearTimeout(followTimer);
     tasks=[];selected=null;agents=[];pending=null;teamPolicy=null;
     details.close();details.replaceChildren();board.replaceChildren();
@@ -183,15 +183,16 @@ if(root){
     const actionBar=el('section');actionBar.className='workroom-sheet-footer';actionBar.setAttribute('aria-label','Card actions');
     let actionTask=selected,finishAction=null,recordAction=null,reviewAnchor=null,renderActions=()=>{};
     const toolbar=el('div');toolbar.className='workroom-sheet-toolbar';
-    const stageName=stages.find(stage=>stage[0]===selected.workroom.stage)?.[1]||'Unknown';
+    const stageName=teamPolicy?.simpleFlow&&['working','needs_you'].includes(selected.workroom.stage)?'In progress':stages.find(stage=>stage[0]===selected.workroom.stage)?.[1]||'Unknown';
     const stageBadge=el('span',(selected.workroom.stage==='done'?'✓ ':'')+stageName.toUpperCase());stageBadge.className='workroom-sheet-stage';stageBadge.setAttribute('aria-label','Card status: '+stageName);
     const close=el('button','Close card');close.type='button';close.addEventListener('click',()=>{if(!busy)closeDetails();});toolbar.append(stageBadge,close);details.append(toolbar);
     details.append(content,actionBar);
     const dialogStatus=el('p');dialogStatus.setAttribute('role','status');content.append(dialogStatus);
     content.append(el('h2',selected.title),el('p',selected.description));
     if(selected.flow?.state==='clarification')content.append(el('h3','Clarification requested · '+new Date(selected.flow.askedAt).toLocaleString()),el('p',selected.flow.question));
+    if(teamPolicy?.simpleFlow&&selected.flow?.ownerNote)content.append(el('h3','Your requested changes'),el('p',selected.flow.ownerNote));
     const summary=el('section');
-    summary.append(el('p',`${selected.workroom.project||'No project'} · ${selected.workroom.owner||'Unassigned'} · ${stages.find(stage=>stage[0]===selected.workroom.stage)[1]}`),el('h3','Goal'),el('p',selected.progress.goal||'No goal saved yet.'));
+    summary.append(el('p',`${selected.workroom.project||'No project'} · ${selected.workroom.owner||'Unassigned'} · ${stageName}`),el('h3','Goal'),el('p',selected.progress.goal||'No goal saved yet.'));
     const checklist=el('ul');for(const step of selected.progress.checklist)checklist.append(el('li',`${step.status==='done'?'✓':step.status==='working'?'→':'○'} ${step.text} — ${step.status}`));summary.append(checklist);
     summary.append(el('h3','Result'),el('p',selected.progress.result||'No result recorded yet.'),el('p',teamPolicy?.simpleFlow?(selected.workroom.stage==='done'?'Independent checks passed. Your acceptance is separate.':'Team verification: '+selected.progress.decision):'Review: '+selected.progress.decision));
     const edit=el('button','Edit card');edit.type='button';toolbar.insertBefore(edit,close);content.append(summary);
@@ -213,7 +214,7 @@ if(root){
     paintTimeline(selected);
     const editor=el('section');editor.hidden=true;edit.addEventListener('click',()=>{summary.hidden=true;editor.hidden=false;renderActions(actionTask);editor.querySelector('input')?.focus();});
     const cancel=el('button','Cancel edits');cancel.type='button';cancel.addEventListener('click',()=>{if(!busy)closeDetails();});content.append(editor);
-    const reports=el('section');reports.className='agent-reports';content.append(reports);
+    const reports=el('section');reports.className='agent-reports';(teamPolicy?.simpleFlow?advanced:content).append(reports);
     let reportSignature=null;
     function paintReports(task){
       const latest=task.agentUpdates?.at(-1);
@@ -521,7 +522,7 @@ if(root){
         else if(next==='close'){primary=back;note=teamPolicy?.simpleFlow?'Done · accepted by you':'Done · review recorded';}
         else if(next==='finish'&&finishAction){primary=finishAction;primary.disabled=false;secondary=reviewAnchor?inspectReview:null;note='Review recorded · ready to finish';}
         else if(next==='record'&&recordAction){primary=recordAction;secondary=inspectReview;note='Independent review: '+task.agentReviews.at(-1).review.verdict.replaceAll('_',' ');}
-        else if(next==='progress'){primary=checkProgress;note='Team working · completion still needs review';}
+        else if(next==='progress'){primary=checkProgress;note=teamPolicy?.simpleFlow?(task.flow?.state==='queued'?'Queued · waiting for the assigned lead':task.flow?.state==='planning'?'Lead is reviewing the request':task.automation?.state==='paused'?'Team paused · check the saved blocker':task.automation?.state==='active'?(task.automation.phase==='reviewer'?'Independent review in progress':'Build in progress'):'Check the latest saved progress'):'Team working · completion still needs review';}
         else{primary=edit;note=task.progress.decision==='changes_requested'?'Changes requested · update and review again':'Edit the task or use its team tools below';}
       }
       const actionNote=el('p',note);actionNote.setAttribute('role','status');actionBar.append(actionNote);const row=el('div');row.className='workroom-sheet-action-row';if(secondary)row.append(secondary);primary.classList.add('workroom-primary-action');row.append(primary);actionBar.append(row);

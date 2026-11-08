@@ -906,7 +906,7 @@ if (savedDemo && navigator.onLine && !workspaceLocked) {
 } else { savedDemo = undefined; }
 
 // Reuse the same admitted request path for Workroom; no second credential store.
-window.meshWorkroom = Object.freeze({ request: api, onClear: listener => { clearWorkroom = listener; } });
+window.meshWorkroom = Object.freeze({ request: api, get simpleFlow(){return document.getElementById('workroom-board')?.dataset.managedFlow==='1';}, onClear: listener => { clearWorkroom = listener; } });
 
 // Only the serving adapter can declare this an authorized automatic-entry surface.
 import('/session-entry.mjs').then(({createSessionEntry})=>{

@@ -23,6 +23,7 @@ Manual movement into In progress uses the existing brief PATCH and preserves an 
 - Real HTTP simultaneous claims yield one 200 and one 409. Readback survives an app restart; the fixture dispatches zero workers. Missing session, bad CSRF and foreign Origin are refused.
 - A forced database failure rolls back a manual lane move and its history. An explicit Echo lead is preserved. An unavailable claimed Nims lead waits rather than substituting Echo.
 - Existing disposable managed-flow tests exercise scope/build/independent review/Done, bounded corrections, clarification, and separate owner acceptance/changes. These use fake peers, not a live Rook integration.
+- Actual disposable browser checks passed: new idea stays unassigned, Work on this queues it with Nims, Done offers Accept result/Request changes, saved change request returns to the middle lane and survives reload, and a saved clarification answer queues fresh intake. Both themes checked at 390x844; no real workers dispatched. Browser discovered and fixed a frozen-interface assignment error, hidden owner feedback and misleading queued-work wording. Independent actual-browser acceptance of Accept result is still outstanding; its store behavior is tested.
 
 Full local `npm test`: 260 passing (40 + 1 + 29 + 67 + 123). `npm run check`: passing; optional frozen contract file absent, so that optional pin check is skipped. Logs: `../mesh-rook-bridge-full.log` and `../mesh-rook-bridge-static.log`.
 
@@ -31,7 +32,7 @@ Full local `npm test`: 260 passing (40 + 1 + 29 + 67 + 123). `npm run check`: pa
 1. Agree the Rook service identity/auth adapter with Echo, with no inherited broad credentials; qualify real Relay agent presence and Mesh health updates. Keep `not_configured` truthful until then.
 2. Qualify exact-dispatch recovery at both crash boundaries and same-chain bounded failure retry. Fresh scans must never treat failed/cancelled/uncertain claims as new ideas.
 3. Qualify workspace serialization across the deployed runner and Rook, including overlapping scheduled/manual triggers, source changes and any outside writers. Current global active-team gating is not proof of safety across all applications.
-4. Finish actual browser qualification of the simpler card flow and card-bound question/report delivery. No new UI or physical-phone acceptance is inferred from backend tests.
+4. Finish remaining browser acceptance of Accept result and real Rook card-bound question/report delivery. The disposable browser paths above are verified; physical-phone acceptance of this new managed flow remains outstanding.
 5. Deploy reviewed Mesh changes, then connect one Rook scheduler, test end-to-end with a disposable task, and separately approve activation. `MESH_SIMPLE_FLOW` remains off in the named live launcher. No real cards or running model services were changed for these checks.
 
 The obsolete `integrations/sweep-workroom-backlog.mjs` now exits with an error and queues nothing. Do not schedule it. Echo's Rook replaces that prototype.

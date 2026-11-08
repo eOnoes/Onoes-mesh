@@ -1,0 +1,17 @@
+import {mkdirSync,writeFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {randomUUID} from 'node:crypto';
+import {startApp} from '../server.mjs';
+import {openTaskStore} from '../lib/task-store.mjs';
+process.env.MESH_SIMPLE_FLOW='1';
+const directory='data/managed-browser-'+randomUUID();mkdirSync(directory,{recursive:true});
+const store=openTaskStore(resolve(directory,'tasks.sqlite'));
+const idea=store.create({title:'Fixture fresh idea',description:'A simple idea awaiting a scoped plan.'});
+let q=store.workroom.get(store.create({title:'Fixture needs a decision',description:'Choose an output format before building.'}).id);
+q=store.workroom.save(q.id,{project:'Fixture',criteria:'Chosen output format',owner:'echo',team:'local_build',stage:'working',revision:q.workroom.revision});store.workroom.flow.question(q.id,'Should the guide use Markdown or plain text?',q.flow.sendId);
+let done=store.workroom.get(store.create({title:'Fixture completed guide',description:'Disposable fixture only. No real agent work.'}).id);
+done=store.workroom.save(done.id,{project:'Fixture',criteria:'Guide is readable',owner:'nims',team:'local_build',stage:'ready',revision:done.workroom.revision});
+done=store.workroom.saveProgress(done.id,{goal:'Produce a readable quick-start guide',checklist:[{id:'write',text:'Write and check guide',status:'done'}],result:'Fixture guide is ready to read.',evidence:'Synthetic browser fixture, not a real independent review.',reviewer:'Fixture reviewer',decision:'approved',revision:done.progress.revision,taskRevision:done.revision,briefRevision:done.workroom.revision});
+done=store.workroom.save(done.id,{...Object.fromEntries(['project','criteria','owner','team','revision'].map(k=>[k,done.workroom[k]])),stage:'done'});
+store.close();const app=await startApp({dataDir:directory,relayEnabled:false});const proof={directory,url:app.url,ids:{idea:idea.id,question:q.id,done:done.id}};writeFileSync(resolve(directory,'fixture.json'),JSON.stringify(proof,null,2));writeFileSync('../mesh-managed-browser-current.json',JSON.stringify(proof,null,2));console.log(JSON.stringify(proof));
+for(const sig of ['SIGINT','SIGTERM'])process.on(sig,async()=>{await app.close();process.exit(0);});
