@@ -488,3 +488,6 @@ full automatic workflow and owner activation acceptance remain unfinished. Mind,
 model maintenance, external apps and other machine qualification remain separate
 original requirements. Relay's live receipt observation is complete but never
 substitutes for positive writer quiescence. No auto assignment or watcher enabled.
+
+
+2026-11-08 Rook notices rollout: build0a0ab3234660 verified on private8453, 14cards/19 prior tables unchanged. Rook not_configured/managedoff. Verified pre/post E backups19-46-40-090_UTC_45dcd303 and19-47-12-720_UTC_0ba21e07. Later claim-handoff guards are candidate only; full288 localtestsPASS. No native model/Relay restart or watcheractivation.

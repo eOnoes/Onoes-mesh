@@ -596,3 +596,46 @@ credentials, shared models or live watcher changed. Candidate not deployed yet.
 Next: qualify the named Rook reporting/identity contract with Relay and connect the
 existing durable claim to the build/review runner; retain separate activation gate.
 Full original Mesh/Mind/inference/fleet goal stays active and incomplete.
+
+
+## 2026-11-08 - Notices rollout and Rook claim-to-runner qualification
+
+Previous goal turn was PROGRESS (2f914c6 saved notices UI). Named Mesh app restarted
+only after read-only worker check: five completed Nims runs, teams closed1 and
+needs_review1, no active automation. Existing 19 table row hashes and all14cards
+preserved exactly; new Rook tables additive and runtime not_configured, no owner,
+managedFlowEnabled false and scheduler false. Actual admitted GET and served panel
+verified; runtime build0a0ab3234660, sourceSHA
+0a0ab3234660147f34b0c28ab3218b068a2856f5cb09a3e8b913a0c35bebba36.
+Private proofs data/rook-notices-rollout-2026-11-08/{before,verified}.json.
+Tailscale8453 mapping unchanged; native Relay/gateway/model services untouched.
+
+Verified manual E backups under E:/App-Backups/ONOes-Mesh:
+- pre:2026-11-08_19-46-40-090_UTC_45dcd303
+- post:2026-11-08_19-47-12-720_UTC_0ba21e07
+Both integrity/FK/isolated restore/source extraction/hash/syntax/restored HTTP PASS.
+
+Code review found intake was not enforcing immutable claim revisions before first
+planning dispatch. Added recheck after async roster read, exact revision admission
+at transport preflight, and global unproven writer hold even for inactive teams.
+Already saved sends retain original identity/reconciliation; no automatic replay.
+Automatic intake now requires Echo builder and Nims reviewer exactly, as approved
+for Rook (DeepSeek/dsh is not silently interchangeable with Nims).
+
+Full npm test PASS288 (40+1+29+71+147). Four new tests prove edit-during-roster-read
+prevents dispatch and saves clarification; old accepted writer blocks new intake;
+aged claim traverses existing planner/Echo-build/Nims-review to Done with original
+claim/dispatch ID, one assignment/Done notice and separate Eddie acceptance; dsh
+reviewer proposal is rejected. Fixture completion still does NOT clear writer hold.
+Evidence ../rook-handoff-full.log. No real worker build was dispatched by tests.
+These handoff changes are candidate source, not installed into the running process.
+
+Echo read-only coordination question accepted once with durable prepared intent:
+send bf390c07-80ff-409f-b6d2-e5d890998379,
+run run_cbea63d463dd461e8c355b549237e17f observed running at19:51:34Z.
+Question asks for exact-run positive all-writer-quiescence semantics and whether
+Rook identity/report-only registration exists; prohibits edits/spawning/service,
+credential/model/memory changes. No blind resend or terminal inference permitted.
+Original request/receipt saved under rollout proof folder. Next poll exact run,
+then implement only a source-supported release/identity boundary. Scheduler remains
+OFF and full original Mesh/Mind/inference/fleet goal remains active/incomplete.
