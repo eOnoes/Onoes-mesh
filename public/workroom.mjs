@@ -213,6 +213,8 @@ if(root){
       if(latest.update.evidence)reports.append(el('p','Reported evidence: '+latest.update.evidence));
       if(!latest.applied){
         const apply=el('button','Apply update to checklist');apply.type='button';
+        apply.disabled=task.status==='done'||task.progress.decision==='approved';
+        if(apply.disabled)reports.append(el('p','This card is completed or approved. This update cannot replace its saved checklist.'));
         apply.addEventListener('click',()=>act(async()=>{
           if(!editor.hidden)throw new Error('Save or cancel your edits before applying an agent update.');
           await request('/api/workroom/'+id+'/apply-update',{method:'POST',body:JSON.stringify({sendId:latest.sendId,messageId:latest.messageId,hash:latest.hash,
