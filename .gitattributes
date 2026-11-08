@@ -1,2 +1,3 @@
 # Native source uses LF; keep this review patch applicable after Windows checkouts.
 integrations/hermes-writer-scope.patch text eol=lf
+integrations/relay-writer-observation.patch text eol=lf

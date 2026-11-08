@@ -1130,3 +1130,44 @@ tool-effect completion adapters, then full installed native user-path qualificat
 A reported observation is not release authority. Full original objective active.
 
 Candidate: C:\Users\eMitchell109\Documents\ChatGPT\Nims Chat\mesh-workroom-ab\data\hermes-writer-scope-c7b0869e-71f7-4d6c-a9d1-fba6bc3b3f75
+
+
+## 2026-11-08 - Relay to Mesh exact writer-observation bridge
+
+Previous turn PROGRESS:b0a6f5f native status reporting tested/committed/pushed/backed up.
+Revalidated clean tracked baseline. Refreshed stale Mesh index and Relay receipt
+module. Actual Relay read() already binds saved send to original agent/conversation,
+native run and gateway fingerprint. Its small module was clean; pinned SHA256
+ad0444ac043dcdb5aa6baa008c4b58b47144f56925b39759a44dbbeafac2fafd.
+
+Prepared separate two-file Relay candidate via prepare_relay_writer_observation.py;
+no installed Relay source edited/restarted. Projection validates nested native
+run/generation/lifetime/process/effect consistency and exports bounded metadata only,
+never raw output/arguments/private fields or writer release. Unknown/malformed
+reports remain unknown. Local completion still retains unverified tool counts.
+Mesh exact-send HTTP reader now validates this optional summary; expected owner/
+generation pins require exact run ID and reject changed identity. Unknown parent
+receipt cannot carry observed worker ownership or null run metadata. Legacy Relay
+responses without metadata remain supported and never qualify for release.
+
+Qualification: candidate Relay read() executed with actual binding code and a real
+synthetic SQLite outbox, reopened on second read. Exact run/conversation retained
+through native session rotation; crossed agent refused before read; output stripped.
+Five checks PASS. Actual resulting Python receipt passed through a real loopback
+HTTP server into Mesh's actual reader with synthetic bearer/exact identity pins;
+GET only/no resend/no release PASS. Native status client and outbox facade are
+fixtures: not a full installed Relay/gateway/Workroom user-path qualification.
+Candidate data/relay-writer-observation-f7a6b0dd-6dc8-4a4c-bf53-19ecaa57a98f;
+qualification.json pins two candidate hashes; qualified-receipt.json retained.
+Review patch integrations/relay-writer-observation.patch passes native apply-check.
+Added exact LF attribute and explicit backup inclusion for helper/preparer/patch;
+projection tests included in normal npm suite. Full npm test PASS329 (294Node+35Python).
+Final review added rejection of inconsistent unknown-parent/observed-child metadata;
+reran full suite. Evidence ../relay-writer-observation-full.log.
+
+Parent33->34 preserved six checklist objects and pending decision. Prior3746char
+evidence archived verbatim here with SHA256 before consolidation; no history lost.
+No live deployment, native dispatch, model call, credential grant or hold release.
+Next: durable observation storage and task reconciliation consuming the exact
+receipt; complete effect adapters/whole-worker evidence and installed verification
+remain unfinished. Full original Mesh/Mind/inference/fleet objective stays active.

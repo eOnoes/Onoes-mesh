@@ -1,0 +1,69 @@
+--- a/relay_native_receipts.py
++++ b/relay_native_receipts.py
+@@ -3,6 +3,7 @@
+ import hashlib
+ import json
+ import re
++from relay_writer_observation import project as project_writer_observation
+ 
+ PREFIX = 'hermes-run-v1:'
+ RUN_ID = re.compile(r'run_[A-Za-z0-9_-]{1,128}\Z')
+@@ -88,4 +89,4 @@
+     if not isinstance(session, str) or not session or len(session) > 256:
+         return {**result, 'reason': 'native_session_unverified'}
+     return {**result, 'nativeSessionId': session, 'status': status['status'],
+-            'observation': 'observed', 'terminal': status['status'] in TERMINAL}
++            'observation': 'observed', 'terminal': status['status'] in TERMINAL, 'writerLifecycle': project_writer_observation(status.get('writer_lifecycle'), saved['runId'])}
+--- /dev/null
++++ b/relay_writer_observation.py
+@@ -0,0 +1,50 @@
++"""Candidate Relay projection: bounded lifecycle metadata, never release authority."""
++import re
++
++UUID = re.compile(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\Z')
++
++
++def project(observation, run_id):
++    result = {'schema': 'mesh-relay-writer-observation/v1', 'runId': run_id,
++              'state': 'unknown', 'ownerId': None, 'generation': None,
++              'localWorkEnded': False, 'unverifiedToolCalls': None,
++              'sourceObservedAt': None, 'observationOnly': True, 'writerQuiescence': False}
++    if (not isinstance(observation, dict) or observation.get('schema') != 'mesh-native-writer-observation/v1'
++            or observation.get('runId') != run_id or observation.get('observationOnly') is not True
++            or observation.get('writerQuiescence') is not False):
++        return result
++    if observation.get('state') == 'not_configured':
++        return {**result, 'state': 'not_configured'}
++    if observation.get('state') != 'observed':
++        return result
++    enrollment = observation.get('enrollment')
++    if not isinstance(enrollment, dict):
++        return result
++    life = enrollment.get('lifetime')
++    if not isinstance(life, dict):
++        return result
++    owner, generation, stamp = observation.get('ownerId'), enrollment.get('generation'), observation.get('observedAt')
++    if (not isinstance(owner, str) or not UUID.fullmatch(owner)
++            or not isinstance(generation, str) or not UUID.fullmatch(generation)
++            or type(stamp) is not int or stamp <= 0 or stamp > 9007199254740991
++            or enrollment.get('schema') != 'mesh-native-writer-enrollment/v1'
++            or enrollment.get('state') != 'enrolled' or enrollment.get('runId') != run_id
++            or enrollment.get('writerQuiescence') is not False
++            or life.get('schema') != 'mesh-managed-writer-lifetime/v1'
++            or life.get('runId') != run_id or life.get('generation') != generation
++            or life.get('writerQuiescence') is not False or type(life.get('managedWorkEnded')) is not bool):
++        return result
++    effects, process, workers = life.get('toolEffects'), life.get('processTree'), life.get('pendingWorkers')
++    if not isinstance(effects, dict) or not isinstance(process, dict) or not isinstance(workers, list):
++        return result
++    counts = [effects.get(key) for key in ('observedCalls', 'activeCalls', 'unverifiedCalls')]
++    if (any(type(value) is not int or not 0 <= value <= 9007199254740991 for value in counts)
++            or counts[0] != counts[1] + counts[2] or len(workers) > 4096):
++        return result
++    ended = life['managedWorkEnded']
++    if ended and (life.get('rootEnded') is not True or workers or counts[1] or life.get('reason')
++                  or process.get('sealed') is not True or type(process.get('activeProcesses')) is not int
++                  or process['activeProcesses'] != 0 or process.get('state') not in ('ended', 'not_started')):
++        return result
++    return {**result, 'state': 'observed', 'ownerId': owner, 'generation': generation,
++            'localWorkEnded': ended, 'unverifiedToolCalls': counts[2], 'sourceObservedAt': stamp}

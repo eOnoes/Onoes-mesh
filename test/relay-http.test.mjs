@@ -70,6 +70,57 @@ async function fakeRelay(handler) {
   return { url: `http://127.0.0.1:${port}`, close: () => new Promise(r => server.close(r)) };
 }
 
+const WRITER = {schema: 'mesh-relay-writer-observation/v1', runId: 'run_one', state: 'observed',
+  ownerId: '11111111-1111-4111-8111-111111111111', generation: '22222222-2222-4222-8222-222222222222',
+  localWorkEnded: true, unverifiedToolCalls: 2, sourceObservedAt: 1000, observationOnly: true, writerQuiescence: false};
+
+test('exact native receipt carries bounded writer observation over authenticated HTTP without release', async () => {
+  const seen = [];
+  const relay = await fakeRelay((req, res) => {
+    seen.push([req.method, req.url, req.headers.authorization]);
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ok: true, receipt: {agentId: 'echo', sendId: 'send', conversationId: 'original',
+      runId: 'run_one', nativeSessionId: 'rotated', observation: 'observed', status: 'completed', terminal: true,
+      writerQuiescence: false, writerLifecycle: {...WRITER, privateOutput: 'discard'}}}));
+  });
+  try {
+    const link = await createRelayHttpLink({baseUrl: relay.url, token: 'synthetic'});
+    const receipt = await link.nativeRunReceipt({agentId: 'echo', sendId: 'send', conversationId: 'original',
+      expectedRunId: 'run_one', expectedWriterOwnerId: WRITER.ownerId, expectedWriterGeneration: WRITER.generation});
+    assert.deepEqual(receipt.writerLifecycle, WRITER);
+    assert.equal(receipt.writerQuiescence, false);
+    assert.deepEqual(seen, [['GET', '/api/agents/echo/outbox/send/native-run', 'Bearer synthetic']]);
+  } finally { await relay.close(); }
+});
+
+test('writer receipt rejects changed ownership, generation, run and malformed completion without resending', async () => {
+  for (const change of [{ownerId: WRITER.generation}, {generation: WRITER.ownerId}, {runId: 'run_other'},
+    {writerQuiescence: true}, {localWorkEnded: 'true'}, {unverifiedToolCalls: -1}, {state: 'unknown'}, {sourceObservedAt: null}]) {
+    const calls = [];
+    const link = await createRelayHttpLink({baseUrl: 'http://127.0.0.1:9', token: 'synthetic',
+      fetchImpl: async (url, options) => {calls.push(options.method); return Response.json({ok: true, receipt: {
+        agentId: 'echo', sendId: 'send', conversationId: 'original', runId: 'run_one', nativeSessionId: 'rotated',
+        observation: 'observed', status: 'completed', terminal: true, writerQuiescence: false,
+        writerLifecycle: {...WRITER, ...change}}});}});
+    await assert.rejects(link.nativeRunReceipt({agentId: 'echo', sendId: 'send', conversationId: 'original',
+      expectedRunId: 'run_one', expectedWriterOwnerId: WRITER.ownerId, expectedWriterGeneration: WRITER.generation}), e => e.status === 503);
+    assert.deepEqual(calls, ['GET']);
+  }
+});
+
+test('unknown saved receipt cannot carry an observed worker or a null run identity', async () => {
+  for (const runId of [null, 'run_one']) {
+    const calls = [];
+    const link = await createRelayHttpLink({baseUrl: 'http://127.0.0.1:9', token: 'synthetic',
+      fetchImpl: async (url, options) => {calls.push(options.method);return Response.json({ok: true, receipt: {
+        agentId: 'echo', sendId: 'send', conversationId: 'original', runId, nativeSessionId: null,
+        observation: 'unknown', status: 'unknown', terminal: false, writerQuiescence: false,
+        writerLifecycle: {...WRITER, runId}}});}});
+    await assert.rejects(link.nativeRunReceipt({agentId: 'echo', sendId: 'send', conversationId: 'original'}), e => e.status === 503);
+    assert.deepEqual(calls, ['GET']);
+  }
+});
+
 function jsonRoute(body, status = 200) {
   return (req, res) => {
     res.writeHead(status, { 'Content-Type': 'application/json' });
