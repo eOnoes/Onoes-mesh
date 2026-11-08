@@ -165,7 +165,7 @@ if(root){
     if(epoch!==viewEpoch)return;
     // Never carry an uncertain message into another task.
     pending=null;details.replaceChildren();
-    const toolbar=el('div');toolbar.className='workroom-sheet-toolbar';const close=el('button','Done / close');close.type='button';close.addEventListener('click',()=>{if(!busy)closeDetails();});toolbar.append(close);details.append(toolbar);
+    const toolbar=el('div');toolbar.className='workroom-sheet-toolbar';const close=el('button','Close card');close.type='button';close.addEventListener('click',()=>{if(!busy)closeDetails();});toolbar.append(close);details.append(toolbar);
     const dialogStatus=el('p');dialogStatus.setAttribute('role','status');details.append(dialogStatus);
     details.append(el('h2',selected.title),el('p',selected.description));
     const summary=el('section');
@@ -173,6 +173,13 @@ if(root){
     const checklist=el('ul');for(const step of selected.progress.checklist)checklist.append(el('li',`${step.status==='done'?'✓':step.status==='working'?'→':'○'} ${step.text} — ${step.status}`));summary.append(checklist);
     summary.append(el('h3','Result'),el('p',selected.progress.result||'No result recorded yet.'),el('p','Review: '+selected.progress.decision));
     const edit=el('button','Edit card');edit.type='button';summary.append(edit);details.append(summary);
+    if(selected.workroom.stage!=='done'){
+      const finish=el('button','Move to Done');finish.type='button';
+      finish.disabled=selected.progress.decision!=='approved';
+      if(finish.disabled)summary.append(el('p','Record an approved review before moving this card to Done.'));
+      finish.addEventListener('click',()=>act(async()=>{await move(selected,'done');closeDetails();}));
+      summary.append(finish);
+    }
     const timeline=el('section');timeline.className='workroom-timeline';details.append(timeline);
     let timelineSignature='';
     function paintTimeline(task){
