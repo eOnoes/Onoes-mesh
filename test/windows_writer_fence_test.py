@@ -137,6 +137,56 @@ class WindowsWriterFenceTests(unittest.TestCase):
         finally:
             self.cleanup_fence(fence)
 
+    def test_pipe_launch_preserves_stdin_stdout_stderr_and_nonzero_exit(self):
+        fence = native.WindowsWriterFence('pipe-io', 'one')
+        try:
+            with fence.popen([sys.executable, '-c',
+                             'import sys;print(sys.stdin.read().upper());print("warning",file=sys.stderr);sys.exit(7)'],
+                             stdin=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                             encoding='utf-8', errors='replace', start_new_session=True) as proc:
+                out, err = proc.communicate('scoped input', timeout=5)
+                self.assertEqual(proc.returncode, 7)
+                self.assertEqual(out.strip(), 'SCOPED INPUT')
+                self.assertEqual(err.strip(), 'warning')
+            fence.seal()
+            self.assertTrue(fence.wait()['processTreeEnded'])
+            self.assertFalse(fence.snapshot()['writerQuiescence'])
+        finally:
+            self.cleanup_fence(fence)
+
+    def test_pipe_launch_keeps_child_after_root_ends_and_caller_closes_root_handle(self):
+        with tempfile.TemporaryDirectory(prefix='pipe-child-', dir=self.fixture_root) as directory:
+            marker = Path(directory) / 'release'
+            child = 'import sys,pathlib,time;p=pathlib.Path(sys.argv[1]);end=time.monotonic()+15\nwhile not p.exists() and time.monotonic()<end:time.sleep(.02)'
+            root = 'import sys,subprocess;subprocess.Popen([sys.executable,"-c",sys.argv[1],sys.argv[2]],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL);print("root done")'
+            fence = native.WindowsWriterFence('pipe-child', 'one')
+            try:
+                with fence.popen([sys.executable, '-c', root, child, str(marker)], text=True) as proc:
+                    out, _ = proc.communicate(timeout=5)
+                    self.assertEqual(out.strip(), 'root done')
+                    proc._handle.Close()  # Fence observation uses its independent retained handle.
+                fence.seal()
+                self.assertTrue(fence.snapshot()['allRootsEnded'])
+                self.assertFalse(fence.wait(20)['processTreeEnded'])
+                marker.touch()
+                self.assertTrue(fence.wait()['processTreeEnded'])
+            finally:
+                self.cleanup_fence(fence)
+
+    def test_pipe_thread_lookup_failure_executes_nothing_and_retains_failed_cleanup(self):
+        fence = native.WindowsWriterFence('pipe-refused', 'one')
+        try:
+            with patch.object(native, '_new_suspended_thread', side_effect=OSError('fixture unavailable')), \
+                    patch.object(subprocess.Popen, 'terminate', side_effect=OSError('fixture cleanup uncertain')):
+                with self.assertRaises(OSError):
+                    fence.popen([sys.executable, '-c', 'raise Exception("must never execute")'])
+            self.assertEqual(fence.snapshot()['state'], 'unknown')
+            with self.assertRaises(RuntimeError):
+                fence.close()
+            self.assertFalse(fence.terminate()['processTreeEnded'])
+        finally:
+            self.cleanup_fence(fence)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -806,3 +806,72 @@ No existing native code or service changed, no live Mesh restart in this slice.
 Next: adapt this primitive to native worker tool execution without losing output,
 track/join async delegates and publish exact-run/generation authenticated evidence;
 then qualify Mesh consumption and owner activation. Full original goal incomplete.
+
+
+## 2026-11-08 - Pipe-compatible fence and isolated native launcher hook
+
+Previous turn PROGRESS2740482 real Windows tree primitive/full297/parent26; fresh
+trackedclean/22untracked verified. Implemented CPython-Windows Popen-compatible
+fenced launch preserving stdin/stdout/stderr, text encoding, exit code and existing
+reader/poll/wait behavior. Creates suspended, retains an independent process handle,
+uses read-only Toolhelp thread metadata to identify ONLY the newly created root's
+unique initial thread, verifies handle ownership, assigns Job, then resumes. Missing,
+ambiguous or failed thread lookup refuses execution; failed cleanup retains Popen
+control/unknown state and blocks further starts/close. No existing process attached
+or terminated. Sealing and separate caller handle lifetime retain tree observation.
+All-worker authority remains ALWAYS false.
+
+Added internal ContextVar scope bridge: distinct concurrent attempts stay separate,
+nested different-attempt replacement refused, context restored after exceptions.
+Bound local launches use the fence with no unfenced fallback; initial executable
+resolution uses host PATH, not child-supplied PATH. Unbound legacy calls keep their
+arguments. Active scoped mode rejects PTY, nonlocal backends and persist-on-release;
+these routes are not silently downgraded. No HTTP/config enrollment or agent identity
+provided by this bridge; native worker turn ownership/delegation integration remains
+unimplemented. Foreground tool paths outside this launcher are not claimed covered.
+
+Prepared a review-only patch for exact clean installed process_registry.py baseline
+SHA6491641456b51eb78c36a50a8508f145da328f7c70a432bced84b3b329e0046e.
+Installer is NOT provided or run. integrations/prepare_hermes_writer_scope.py pins
+source, edits only isolated copies, packages three native target files and tests
+actual edited spawn_local/spawn_via_env method bodies with fixture session/registry
+and rewrite dependencies (no native singleton/private config import) plus real OS
+processes. This qualifies the method seam, NOT the whole native engine/profile.
+Tracked review artifact: integrations/hermes-writer-scope.patch. Native git apply
+--check PASS; installed target files remain clean/unchanged. Source patch targets
+local pipe entry plus early unsupported-route guards and two new tools modules.
+
+Final candidate data/hermes-writer-scope-dc435b4c-a4c3-4262-a2f1-730c02d6db8d:
+process_registry.py SHAf5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725;
+mesh_writer_scope.py SHA0654aafd0fb3261e5e4f510b7b58eb27eaf3476975173c07350f811a9d54df38;
+mesh_windows_writer_fence.py SHA7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33.
+All actual candidate file bytes matched recorded hashes. Equivalent preparation and
+qualification also PASS on gateway Python3.14.7, separate candidate directory in
+../native-writer-launcher-native-python.log. Native gateway1592 never restarted.
+
+Verification: npm test PASS303 =291Node (40+1+29+72+149)+9Windows process+3scope tests.
+Same12 PASS with gateway Python3.14.7. Additional five exact native-method fixture
+checks PASS on both interpreters: output, PTY denial, retained denial, remote denial,
+and ended process tree remains NOT a whole-worker release. Added tests cover real
+pipe input/output/error/nonzeroexit, live child after root/caller-handle closure,
+uncertain thread-lookup cleanup, attempt-context overlap/restoration and no fallback.
+Logs ../native-writer-scope-full.log, ../native-writer-scope-native-python.log,
+../native-writer-launcher-qualification.log, ../native-writer-launcher-native-python.log.
+
+Initial method fixture lacked _safe_host_start_time metadata; supplied fixture value
+and reran (not an installed runtime defect). First patch-check failed because Windows
+write_text converted native LF to CRLF and hashes described pre-translation text.
+Fixed preparer to normalize LF and write exact UTF8 bytes; fresh hashes and native
+apply-check PASS. Earlier candidate folders preserved; first failing tool evidence
+retained. No native source rewrite, service/model/credential changes or live dispatch.
+
+Backup source list now includes the bridge/preparer/review patch; tests already
+covered by root-level test inclusion. Next: native turn factory/binding, complete
+foreground/tool/delegate coverage and sealing/join, persisted authenticated exact
+attempt release, then Mesh consumption and separate owner activation. Existing8holds
+must not be cleared by processTreeEnded alone. Live07732e9cffb6 still managedoff;
+cb20198 atomic lead fix and this native hook remain candidate-only. Full original
+Mesh/Mind/model/fleet objective remains active/incomplete.
+
+Primary thread API reference:
+https://learn.microsoft.com/en-us/windows/win32/toolhelp/traversing-the-thread-list

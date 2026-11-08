@@ -52,6 +52,11 @@ class _Process(ctypes.Structure):
     _fields_ = [("process", w.HANDLE), ("thread", w.HANDLE), ("pid", w.DWORD), ("tid", w.DWORD)]
 
 
+class _ThreadEntry(ctypes.Structure):
+    _fields_ = [("size", w.DWORD), ("usage", w.DWORD), ("tid", w.DWORD),
+                ("pid", w.DWORD), ("priority", w.LONG), ("delta", w.LONG), ("flags", w.DWORD)]
+
+
 _kernel = None
 if sys.platform == "win32":
     _kernel = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -67,6 +72,14 @@ if sys.platform == "win32":
         ("TerminateProcess", [w.HANDLE, w.UINT], w.BOOL),
         ("TerminateJobObject", [w.HANDLE, w.UINT], w.BOOL),
         ("CloseHandle", [w.HANDLE], w.BOOL),
+        ("GetCurrentProcess", [], w.HANDLE),
+        ("DuplicateHandle", [w.HANDLE, w.HANDLE, w.HANDLE, ctypes.POINTER(w.HANDLE),
+                             w.DWORD, w.BOOL, w.DWORD], w.BOOL),
+        ("CreateToolhelp32Snapshot", [w.DWORD, w.DWORD], w.HANDLE),
+        ("Thread32First", [w.HANDLE, ctypes.POINTER(_ThreadEntry)], w.BOOL),
+        ("Thread32Next", [w.HANDLE, ctypes.POINTER(_ThreadEntry)], w.BOOL),
+        ("OpenThread", [w.DWORD, w.BOOL, w.DWORD], w.HANDLE),
+        ("GetProcessIdOfThread", [w.HANDLE], w.DWORD),
     ]:
         fn = getattr(_kernel, name)
         fn.argtypes, fn.restype = args, result
@@ -76,6 +89,42 @@ def _check(result):
     if not result:
         raise ctypes.WinError(ctypes.get_last_error())
     return result
+
+
+def _new_suspended_thread(pid):
+    """Find only our newly created suspended root's unique initial thread.
+
+    Popen closes its initial thread handle. Toolhelp is read-only; OpenThread is
+    restricted to the exact new PID and ownership is checked again on the handle.
+    Multiple threads or incomplete enumeration fail closed, never guess a thread.
+    """
+    snapshot = _kernel.CreateToolhelp32Snapshot(4, 0)
+    if snapshot == ctypes.c_void_p(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    matches = []
+    try:
+        entry = _ThreadEntry()
+        entry.size = ctypes.sizeof(entry)
+        _check(_kernel.Thread32First(snapshot, ctypes.byref(entry)))
+        while True:
+            if entry.size < _ThreadEntry.pid.offset + ctypes.sizeof(w.DWORD):
+                raise OSError('Thread snapshot incomplete')
+            if entry.pid == pid:
+                matches.append(entry.tid)
+            entry.size = ctypes.sizeof(entry)
+            if not _kernel.Thread32Next(snapshot, ctypes.byref(entry)):
+                if ctypes.get_last_error() != 18:  # ERROR_NO_MORE_FILES
+                    raise ctypes.WinError(ctypes.get_last_error())
+                break
+    finally:
+        _kernel.CloseHandle(snapshot)
+    if len(matches) != 1:
+        raise OSError('New suspended root thread is not unique')
+    handle = _check(_kernel.OpenThread(0x0802, False, matches[0]))
+    if _kernel.GetProcessIdOfThread(handle) != pid:
+        _kernel.CloseHandle(handle)
+        raise OSError('New root thread ownership changed')
+    return handle
 
 
 class WindowsWriterFence:
@@ -88,7 +137,7 @@ class WindowsWriterFence:
             raise ValueError("Exact run and generation identities are required")
         self._run_id, self._generation = run_id, generation
         self._lock = threading.RLock()
-        self._roots, self._failed_roots = [], []
+        self._roots, self._failed_roots, self._failed_popen = [], [], []
         self._sealed, self._closed, self._termination = False, False, False
         self._job = _check(_kernel.CreateJobObjectW(None, None))
         limits = _ExtendedLimits()
@@ -109,7 +158,7 @@ class WindowsWriterFence:
 
     def launch(self, argv, *, cwd=None):
         with self._lock:
-            if self._closed or self._sealed or self._failed_roots:
+            if self._closed or self._sealed or self._failed_roots or self._failed_popen:
                 raise RuntimeError("Attempt is sealed or closed")
             if not isinstance(argv, (list, tuple)) or not argv or any(
                     not isinstance(a, str) or "\0" in a for a in argv):
@@ -144,6 +193,63 @@ class WindowsWriterFence:
             finally:
                 _kernel.CloseHandle(process.thread)
 
+    def popen(self, argv, *, cwd=None, env=None, stdin=subprocess.DEVNULL,
+              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=False,
+              encoding=None, errors=None, start_new_session=False, creationflags=0):
+        """Pipe-compatible launch for the native local-command path, without PTY/fallback.
+
+        Return a real CPython Popen for its existing readers/stdin/poll/wait logic.
+        The fence retains a separate process handle; caller handle lifetime cannot
+        invalidate observation. Only hidden-console flags are accepted from callers.
+        """
+        with self._lock:
+            if self._closed or self._sealed or self._failed_roots or self._failed_popen:
+                raise RuntimeError('Attempt is sealed or cleanup is uncertain')
+            if sys.implementation.name != 'cpython' or creationflags not in (0, 0x08000000):
+                raise ValueError('Unsupported process implementation or creation flags')
+            if not isinstance(argv, (list, tuple)) or not argv or any(
+                    not isinstance(a, str) or '\0' in a for a in argv):
+                raise ValueError('An explicit executable and argument list are required')
+            if not Path(argv[0]).is_absolute() or not Path(argv[0]).is_file():
+                raise ValueError('Executable must be an existing absolute file')
+            proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=stdin, stdout=stdout,
+                                    stderr=stderr, text=text, encoding=encoding, errors=errors,
+                                    start_new_session=start_new_session, close_fds=True,
+                                    creationflags=0x08000004)
+            self._failed_popen.append(proc)  # Keep exact control until containment is confirmed.
+            owned, thread = w.HANDLE(), None
+            try:
+                current = _kernel.GetCurrentProcess()
+                _check(_kernel.DuplicateHandle(current, int(proc._handle), current,
+                                              ctypes.byref(owned), 0, False, 2))
+                if _kernel.WaitForSingleObject(owned, 0) != 258:
+                    raise OSError('New suspended process is no longer running')
+                thread = _new_suspended_thread(proc.pid)
+                _check(_kernel.AssignProcessToJobObject(self._job, owned))
+                if _kernel.ResumeThread(thread) != 1:
+                    raise OSError('New root suspension state changed')
+                self._roots.append(owned.value)
+                self._failed_popen.remove(proc)
+                return proc
+            except BaseException:
+                self._cleanup_popen(proc)
+                self._failed_popen.remove(proc)
+                raise
+            finally:
+                if thread:
+                    _kernel.CloseHandle(thread)
+                if owned.value and owned.value not in self._roots:
+                    _kernel.CloseHandle(owned)
+
+    @staticmethod
+    def _cleanup_popen(proc):
+        if proc.poll() is None:
+            proc.terminate()  # Popen's retained exact handle, never a scanned PID.
+        proc.wait(timeout=5)
+        for pipe in (proc.stdin, proc.stdout, proc.stderr):
+            if pipe is not None:
+                pipe.close()
+
     def seal(self):
         with self._lock:
             if self._closed:
@@ -163,7 +269,7 @@ class WindowsWriterFence:
                     "writerQuiescence": False, "processTreeEnded": False}
             if self._closed:
                 return {**base, "state": "unknown", "reason": "fence_closed"}
-            if self._failed_roots:
+            if self._failed_roots or self._failed_popen:
                 return {**base, "state": "unknown", "reason": "failed_launch_cleanup_unconfirmed"}
             try:
                 active = self._active_count()
@@ -193,6 +299,10 @@ class WindowsWriterFence:
             if self._closed:
                 raise RuntimeError("Attempt is closed")
             self._sealed, self._termination = True, True
+            _check(_kernel.TerminateJobObject(self._job, 1))
+            for proc in self._failed_popen[:]:
+                self._cleanup_popen(proc)
+                self._failed_popen.remove(proc)
             for handle in self._failed_roots[:]:
                 if _kernel.WaitForSingleObject(handle, 0) != 0:
                     _check(_kernel.TerminateProcess(handle, 1))
@@ -200,14 +310,13 @@ class WindowsWriterFence:
                         raise OSError('Failed launch termination is unconfirmed')
                 _check(_kernel.CloseHandle(handle))
                 self._failed_roots.remove(handle)
-            _check(_kernel.TerminateJobObject(self._job, 1))
         return self.wait()
 
     def close(self):
         with self._lock:
             if self._closed:
                 return
-            if self._failed_roots:
+            if self._failed_roots or self._failed_popen:
                 raise RuntimeError('Failed launch cleanup remains unconfirmed')
             if self._active_count():
                 raise RuntimeError("Owned processes remain; wait or explicitly terminate this tree")
