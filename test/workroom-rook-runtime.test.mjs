@@ -32,6 +32,16 @@ test('unverified and disabled runtimes install no timer and claim nothing', asyn
   }
 });
 
+test('report inbox shows latest notices while pending delivery retains oldest-first ordering', async () => {
+  const f = fixture();
+  try {
+    for (let n = 0; n < 25; n++) f.store.enqueue('event-' + n, {kind: 'needs_input', title: String(n)}, Date.now());
+    assert.equal(f.runtime.reports()[0].payload.title, '24');
+    assert.equal(f.runtime.reports().length, 20);
+    assert.equal(f.store.reports({pending: true})[0].payload.title, '0');
+  } finally {await f.close();}
+});
+
 test('one durable scheduler owner; pause preserves reports and permits a new owner', async () => {
   const f = fixture(); const other = createRookRuntime(f.options);
   try {

@@ -570,3 +570,29 @@ actual worker dispatch/review and positive writer quiescence before owner activa
 This runtime currently schedules claims and observations, not automatic worker builds.
 Full Mesh goal remains incomplete; memory, model maintenance and external fleet gates
 remain as previously recorded. Preserve the 22 unrelated untracked integration files.
+
+
+## 2026-11-08 - Rook saved notices in Mesh Relay (candidate, not live)
+
+Added a compact collapsed Rook panel to Mesh Relay with truthful connection state,
+manual GET-only refresh, newest 20 saved notices, and task navigation. Opening a
+notice does not assign, dispatch, approve or complete a task. Known report kinds
+only; untrusted title/summary render as bounded text. Notices clear on lock,
+pagehide/offline and late responses cannot restore private content. No report
+bodies enter browser storage. Pending delivery remains oldest-first; inbox display
+now uses newest-first so old reports cannot hide current questions.
+
+Local npm test PASS284 (40+1+29+71+143), including four UI privacy/navigation tests
+and one queue ordering test. Actual disposable HTTP/browser preview verified saved
+synthetic notice, disconnected status, desktop and 390x844 phone layout. Screenshot
+../rook-relay-mobile-preview.png; suite log ../rook-notices-full.log. Preview had
+no live Relay/model/Mind connection, so its ordinary chat history correctly remained
+unavailable. Temporary browser viewport reset and disposable server stopped.
+
+Existing live Relay has no dedicated report-only Rook endpoint found in the indexed
+server. No native Rook agent, service principal, report transport, worker dispatch
+or positive writer release is qualified by this UI milestone. No production source,
+credentials, shared models or live watcher changed. Candidate not deployed yet.
+Next: qualify the named Rook reporting/identity contract with Relay and connect the
+existing durable claim to the build/review runner; retain separate activation gate.
+Full original Mesh/Mind/inference/fleet goal stays active and incomplete.

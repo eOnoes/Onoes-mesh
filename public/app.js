@@ -121,6 +121,7 @@ function applyLocalStubs() {
   for (const el of document.querySelectorAll('.service-status')) el.textContent = 'SYNTHETIC. Not connected on this PC.';
 }
 function controls() {
+  $('rook-refresh').disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine;
   mindWorkspace.setAvailable(!busy && !lifecycleSuspended && admitted && navigator.onLine);
   document.querySelectorAll('form button, form input, form textarea, form select, #refresh, #agent-refresh, #node-probes-refresh').forEach(el => { el.disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine; });
   if (nodeProbeSnapshot?.status === 'not_configured') $('node-probes-refresh').disabled = true;
@@ -148,6 +149,7 @@ function controls() {
   relayChat.setAvailable(!lifecycleSuspended && admitted && navigator.onLine,busy);
 }
 function clearPrivate(reason) {
+  renderRookReports();
   relayChat.clear();
   mindWorkspace.clear();
   clearWorkroom();
@@ -642,6 +644,56 @@ async function refreshNodeProbes() {
   renderNodeProbes(snapshot);
 }
 
+function renderRookReports(snapshot) {
+  const root = $('rook-reports');
+  root.replaceChildren();
+  const names = {not_configured: 'not connected', unavailable: 'unavailable', paused: 'paused', running: 'running', failing: 'needs attention'};
+  const state = names[snapshot?.connection?.status] ?? 'unavailable';
+  $('rook-summary').textContent = snapshot ? `Rook · ${state}` : 'Rook · connect to check';
+  $('rook-status').textContent = !snapshot ? 'Saved notices unavailable. Connect and check again.'
+    : state === 'not connected' ? 'Rook is not connected yet. Saved notices do not mean a worker has started.'
+    : `Watcher: ${state}. Opening these notices does not start work or approve a result.`;
+  if (!Array.isArray(snapshot?.reports)) return;
+  const labels = {claim_saved: 'Assignment reserved', needs_input: 'Your input needed', failed: 'Task needs attention',
+    ready_for_review: 'Result ready', watcher_failed: 'Rook needs attention', watcher_recovered: 'Rook recovered'};
+  for (const report of snapshot.reports.slice(0, 20)) {
+    const payload = report?.payload;
+    if (!payload || !Object.hasOwn(labels, payload.kind)) continue;
+    const article = document.createElement('article'); article.className = 'box section-gap';
+    const heading = document.createElement('h3'); heading.textContent = labels[payload.kind]; article.append(heading);
+    for (const value of [payload.title, payload.summary]) {
+      if (typeof value !== 'string' || !value) continue;
+      const text = document.createElement('p'); text.textContent = value.slice(0, 500); article.append(text);
+    }
+    const timestamp = document.createElement('p');
+    const at = Date.parse(report.createdAt);
+    timestamp.textContent = Number.isFinite(at) ? `Saved ${new Date(at).toLocaleString()}` : 'Saved time unavailable';
+    article.append(timestamp);
+    if (typeof payload.taskId === 'string' && /^[0-9a-f-]{36}$/.test(payload.taskId)) {
+      const open = document.createElement('button'); open.type = 'button'; open.textContent = 'Open card';
+      open.addEventListener('click', () => {
+        if (!admitted || lifecycleSuspended || !navigator.onLine || !proofAvailable()) return;
+        activate($('tab-workroom'));
+        window.dispatchEvent(new CustomEvent('mesh-open-task', {detail: {id: payload.taskId}}));
+      }); article.append(open);
+    }
+    root.append(article);
+  }
+  if (!root.children.length) {
+    const empty = document.createElement('p'); empty.textContent = 'No saved Rook notices yet.'; root.append(empty);
+  }
+}
+$('rook-refresh').addEventListener('click', async () => {
+  if (busy || lifecycleSuspended || !admitted || !navigator.onLine || !proofAvailable()) return;
+  const requestDemo = demo, requestGeneration = generation;
+  $('rook-refresh').disabled = true;
+  try {
+    const result = await api('/api/workroom/rook');
+    if (currentDemo(requestDemo, requestGeneration)) renderRookReports(result);
+  } catch { if (currentDemo(requestDemo, requestGeneration)) renderRookReports(); }
+  finally { controls(); }
+});
+
 export async function refresh() {
   if (!admitted || !proofAvailable()) return;
   const refreshGeneration = generation;
@@ -658,7 +710,8 @@ export async function refresh() {
     api('/api/node-probes'),
     api('/api/inference/status'),
     api('/api/release'),
-    api('/api/workroom')
+    api('/api/workroom'),
+    api('/api/workroom/rook')
   ]);
   if (!admitted || !currentDemo(refreshDemo, refreshGeneration)) return;
   const failed = results.some(r => r.status === 'rejected');
@@ -705,6 +758,7 @@ export async function refresh() {
   try { renderInference(results[4].status === 'fulfilled' ? results[4].value : undefined); } catch { renderInference(undefined); }
   renderCommands(results[5].status === 'fulfilled' ? results[5].value : undefined);
   renderRelay(results[6].status === 'fulfilled' ? results[6].value : undefined);
+  renderRookReports(results[11].status === 'fulfilled' ? results[11].value : undefined);
   mindWorkspace.setTasks(results[10].status === 'fulfilled' ? results[10].value.tasks : undefined);
   renderAgentWorkspace($('agent-workspace'), results[6].status === 'fulfilled' ? results[6].value : undefined,
     results[10].status === 'fulfilled' ? results[10].value.tasks : undefined, id => {
