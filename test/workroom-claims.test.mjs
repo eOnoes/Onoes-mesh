@@ -43,6 +43,27 @@ test('bad claim body and stale task revision cannot create a claim',()=>{
  const s=openTaskStore(join(mkdtempSync(join(tmpdir(),'mesh-claim-stale-')),'tasks.sqlite'));
  try{const t=s.workroom.get(s.create({title:'Stale fixture',description:''}).id);assert.throws(()=>s.workroom.flow.claim(t.id,{revision:0,taskRevision:99,briefRevision:t.workroom.revision,progressRevision:0}),/changed/);assert.throws(()=>s.workroom.flow.claim(t.id,{revision:0,owner:'echo'}),/Invalid/);assert.equal(s.workroom.flow.read(t.id),undefined);}finally{s.close();}
 });
+
+test('lead assignment rolls back with a rejected claim and restart before dispatch keeps its exact brief',async()=>{
+ const path=join(mkdtempSync(join(tmpdir(),'mesh-claim-lead-')),'tasks.sqlite');let s=openTaskStore(path);
+ const db=new DatabaseSync(path);
+ try{
+  const task=s.create({title:'Atomic lead fixture',description:'Never dispatch a real worker'}),before=s.workroom.get(task.id);
+  db.exec("CREATE TRIGGER reject_lead_claim BEFORE INSERT ON workroom_claims BEGIN SELECT RAISE(ABORT,'claim fixture rejected'); END");
+  assert.throws(()=>s.workroom.flow.enqueue(task.id),/claim fixture rejected/);
+  assert.deepEqual(s.workroom.get(task.id),before);
+  db.exec('DROP TRIGGER reject_lead_claim');
+  const claim=s.workroom.flow.enqueue(task.id),assigned=s.workroom.get(task.id);
+  assert.equal(assigned.workroom.owner,'nims');assert.equal(claim.claim.briefRevision,assigned.workroom.revision);
+  s.close();s=openTaskStore(path);
+  let handoffs=0;const relay={agents:async()=>[{id:'nims',backend:'codex',status:'idle',conversation_id:'nims'}],
+   nativeRead:async()=>({taskSessionBinding:1}),taskMessage:async()=>{handoffs++;}};
+  const tick=createIntakeRunner({workroom:s.workroom,relay,root:process.cwd(),sendTaskHandoff,syncTaskReplies});
+  await tick();await tick();
+  const after=s.workroom.get(task.id);assert.equal(handoffs,1);assert.equal(after.messages[0].id,claim.sendId);
+  assert.equal(after.workroom.revision,assigned.workroom.revision);assert.equal(after.flow.claim.claimId,claim.claim.claimId);
+ }finally{db.close();s.close();}
+});
 test('manual lane move preserves Echo and saves its claim atomically; claim failure rolls the move back',()=>{
  const old=process.env.MESH_SIMPLE_FLOW;process.env.MESH_SIMPLE_FLOW='1';const path=join(mkdtempSync(join(tmpdir(),'mesh-manual-claim-')),'tasks.sqlite');const s=openTaskStore(path);
  try{

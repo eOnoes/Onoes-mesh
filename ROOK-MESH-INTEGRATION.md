@@ -688,3 +688,62 @@ and intentionally changes its evidence; do not claim original table hashes after
 Next: qualify actual native lifecycle/writer-release evidence and the dedicated Rook
 identity/report transport, then owner activation. No automatic assignments enabled.
 Full original Mesh/Mind/model/fleet goal remains active and incomplete.
+
+
+## 2026-11-08 - Atomic lead/claim recovery and native release boundary
+
+Previous turn PROGRESS1059001: deployed read-only holds, preserved14cards21tables,
+parent24, full290tests. This turn revalidated trackedclean/22untracked preserved.
+Native ownership audit expanded the index from one file to these four exact sources
+at installed HEAD acc3cada0da86c81efc8aa6c5a291989549ca900 (target files clean):
+- gateway/platforms/api_server.py SHA74158a9bcac885e238508e0b36160bd6a676b0424894554d3674c67cfc7858f4
+- gateway/platforms/api_server_runs.py SHA481b67c8cddd2dcca3a9b60d938d0cec5d621a4648784119873d60ffcd975138
+- tools/process_registry.py SHA6491641456b51eb78c36a50a8508f145da328f7c70a432bced84b3b329e0046e
+- tools/async_delegation.py SHA1bcff60c59c453f1e3d7d049bcf525b727df07c1d7e1eeb45ba0776598c3c2b6
+Private source-baseline.json at data/native-writer-release-audit-2026-11-08/.
+No native source, service, model, credentials or data changed. Native tests NOT RUN.
+
+Source facts: api_server.py::_publish_turn_process_ownership records task ID,
+process-registry baseline and epoch; _clear_turn_process_ownership clears them on
+return to preserve deliberately running background work. Disconnect cleanup starts
+a daemon reaper and is epoch gated, not a synchronous completion proof. Registry
+records tracked processes and async delegation has separate running-child tracking.
+These observations do not establish complete descendant coverage or a release proof.
+Audit scope was four files; no claim that an unindexed implementation cannot exist.
+Index symbols succeeded; decorator-route context hit30s ceiling and was skipped.
+Munch session budget warning honored; no further source exploration this turn.
+
+Concrete next native release contract (implementation/activation NOT complete):
+1. Bind run ID, immutable attempt generation, workspace and process incarnation
+before launch; capture every permitted write-bearing tool/delegate/background child.
+Session-wide counts, global zero counts, idle time and chat completion are insufficient.
+2. Keep the ownership evidence through a sealed finish boundary: no further writer
+can start, foreground turn ended, tracked tools/delegates/process trees positively
+ended. Unknown, detached/uncovered or unreadable descendants stay held. Do not invent
+complete coverage from an empty registry. Unsupported routes remain unavailable.
+3. Persist an exact-attempt authenticated release observation with provenance; a
+later turn/session must never authorize an earlier attempt. Restart, missing owner,
+expired observation, cancellation or PID reuse cannot manufacture affirmative proof.
+4. Mesh consumes only its original send/run/generation/workspace binding. Rook gets
+no raw native DB access, borrowed agent credentials or release-override control.
+Legacy eight writer receipts stay held unless their original evidence qualifies.
+5. Qualify delayed background child, async child, failure/cancel, lost response,
+restart, overlapping generation and unavailable tracker with disposable native
+fixtures, then verify installed interface before any separate owner activation.
+Keep this in the existing native/runtime boundary; no new orchestration platform.
+
+Independently found/fixed a smaller real handoff crash window: intake assigned an
+empty lead by changing its brief AFTER claim commit and BEFORE send reservation.
+A crash there made an unchanged card fail its own frozen brief-revision check.
+Lead assignment now participates in the same BEGIN IMMEDIATE transaction as claim
+creation, records its event, and freezes the assigned brief revision. Explicit
+existing leads stay unchanged. Intake no longer edits the brief before delivery;
+incomplete legacy assignment stops with a specific saved question, not a new send.
+
+Full npm test PASS291 (40+1+29+72+149). New rejected-claim fixture rolls back lead,
+brief, flow and events; restart-before-send retains assigned brief/claim/send ID and
+delivers once. Existing explicit-Echo preservation, uncertain-receipt no-replay,
+source-bound scope/build/review/Done and all regressions pass. Evidence
+../rook-atomic-lead-full.log. git diff --check PASS. Fix is candidate source only;
+live07732e9cffb6 remains managedoff/scheduleroff and all original holds unchanged.
+Full original Mesh/Mind/inference/fleet goal remains active/incomplete.
