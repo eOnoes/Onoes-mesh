@@ -291,3 +291,36 @@ system Python were corrected using the existing Relay venv, not package installs
 Next: full isolated service startup/regression review, compatible Mesh receipt
 consumer, native writer/child quiescence contract, and Echo's isolated Rook patch.
 Rook activation remains off; this candidate alone is not Rook acceptance.
+
+
+## Full isolated Relay service qualification - 2026-11-08
+
+The candidate now passes ten checks, including complete relay_server import,
+FastAPI lifespan startup/shutdown, all three actual background tasks, real
+HermesRunsClient request construction against synthetic HTTP transport, native
+SSE completion, durable outbox binding/settlement, authenticated exact-send GET
+and recovery without a second native POST. This supersedes the earlier limitation
+that only extracted functions had been exercised. Evidence:
+data/relay-native-full-service-2026-11-08-c/qualification.json.
+
+Only the 14 explicit source dependencies identified by the indexed import graph
+are copied; their hashes are included in the proof. Config, auth key, agent,
+database, notification channels and native responses are synthetic. The test
+blocks application socket connects/DNS, process launches and file opens outside
+the isolated tree or read-only interpreter libraries. Windows' internal event
+loop wake-up socketpair is created before that application block. Async generators
+and executor are drained before closing the loop; the final run has no pending
+task/async-generator cleanup warnings. No live service/state/key was imported.
+
+The full queue check found that raw receipt-binding errors were not recognized
+by drain_hermes_messages. The patch now converts them to the existing HermesError
+with native_binding_unverified and reports a stopped/reconciliation state.
+Crucially, even a configured demo fallback is refused for this uncertainty.
+The complete-server test exercises that actual queue path and verifies no second
+native POST. A genuine lost admission remains unknown; it is not fabricated as
+success, silently retried or treated as writer completion.
+
+This is still a candidate, not a deployed Relay change or live Hermes acceptance.
+Native HTTP is synthetic; no actual tools/subagents/child-writer quiescence is
+proved. Managed mode and Rook remain off. Mesh consumer integration, reviewed
+runtime rollout and live readback retain their separate verification requirements.

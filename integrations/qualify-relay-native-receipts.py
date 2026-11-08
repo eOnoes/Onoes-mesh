@@ -11,6 +11,7 @@ import shutil
 import sys
 import tempfile
 import threading
+import os
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 import unittest
@@ -67,10 +68,14 @@ def main():
         '            await hermes_send(a, text, message_id, attachments, admission_claimed=claim is not None)\n')
     candidate = replace_once(candidate,
         '    await client.ensure_session(session_id, title=f"Relay · {a.name}")\n',
-        '    previous = (relay_native_receipts.binding(\n'
-        '        SESSIONS, a.id, message_id, client, conversation_id=session_id,\n'
-        '        for_dispatch=True, fresh_claim=admission_claimed)\n'
-        '        if message_id else None)\n'
+        '    try:\n'
+        '        previous = (relay_native_receipts.binding(\n'
+        '            SESSIONS, a.id, message_id, client, conversation_id=session_id,\n'
+        '            for_dispatch=True, fresh_claim=admission_claimed)\n'
+        '            if message_id else None)\n'
+        '    except Exception as exc:\n'
+        '        raise HermesError("Native admission requires reconciliation; nothing resubmitted",\n'
+        '                          code="native_binding_unverified") from exc\n'
         '    if previous is None:\n'
         '        await client.ensure_session(session_id, title=f"Relay · {a.name}")\n')
     candidate = replace_once(candidate,
@@ -87,14 +92,27 @@ def main():
         '            text=body, session_id=session_id, idempotency_key=message_id or "")\n'
         '    run_id = str(admitted["run_id"])\n'
         '    if message_id:\n'
-        '        relay_native_receipts.bind(SESSIONS, a.id, session_id, message_id, run_id, client)\n')
+        '        try:\n'
+        '            relay_native_receipts.bind(SESSIONS, a.id, session_id, message_id, run_id, client)\n'
+        '        except Exception as exc:\n'
+        '            raise HermesError("Native acceptance could not be saved; reconcile before retry",\n'
+        '                              code="native_binding_unverified") from exc\n')
+    candidate = replace_once(candidate,
+        '                if a.cfg.get("demo_fallback", False):\n',
+        '                if a.cfg.get("demo_fallback", False) and getattr(exc, "code", "") != "native_binding_unverified":\n')
     candidate = replace_once(candidate, '@app.get("/api/agents/{aid}/outbox")\n',
                              ROUTE + '@app.get("/api/agents/{aid}/outbox")\n')
     compile(candidate, 'relay_server.py', 'exec')
     # Preserve only explicit source files. No config, credentials, attachment,
     # conversation, native memory or live database is copied or imported.
-    for file in ('relay_db.py', 'relay_sessions.py', 'relay_auth.py'):
+    source_files = ('relay_a2a.py', 'relay_a2a_reconcile.py', 'relay_auth.py',
+                    'relay_budget.py', 'relay_channels.py', 'relay_config.py',
+                    'relay_db.py', 'relay_hermes.py', 'relay_inbox.py', 'relay_mcp.py',
+                    'relay_notify.py', 'relay_openclaw.py', 'relay_sessions.py', 'relay_webpush.py')
+    source_hashes = {}
+    for file in source_files:
         shutil.copyfile(source / file, output / file)
+        source_hashes[file] = hashlib.sha256((output / file).read_bytes()).hexdigest()
     (output / 'relay_server.py').write_text(candidate, encoding='utf-8')
     shutil.copyfile(module_path, output / module_path.name)
     patch = ''.join(difflib.unified_diff(original.splitlines(True), candidate.splitlines(True),
@@ -243,6 +261,7 @@ def main():
                      '_hermes_client': lambda a: self.client,
                      'relay_hermes': SimpleNamespace(split_attachments=lambda t, a, **k: (t, []),
                                                     TERMINAL_STATUSES={'completed'}),
+                     'HermesError': RuntimeError,
                      'IMAGE_MIME_TYPES': set(), 'RUN_SETTLE_TIMEOUT': 1, 'asyncio': asyncio}
             for name in ('set_status', 'publish', 'feed', '_dbg', '_persist_hermes_reply'):
                 space[name] = lambda *a, **k: None
@@ -298,14 +317,153 @@ def main():
             self.assertEqual(self.store.db.total_changes, before)
             self.assertEqual(self.client.posts, 0)
 
+        def test_complete_server_import_startup_native_http_binding_and_shutdown(self):
+            import httpx
+            # All app state/credentials here are synthetic; never import the live
+            # server or let its background loops open the real native state store.
+            config_path = output / 'synthetic-config.json'
+            key_path = output / 'synthetic-relay.key'
+            key_path.write_text('synthetic-relay-access', encoding='utf-8')
+            config_path.write_text(json.dumps({'agents': {'echo': {
+                'name': 'Synthetic Echo', 'backend': 'hermes', 'device': 'fixture',
+                'url': 'http://synthetic-native', 'api_key': 'synthetic-native-access',
+                'demo_fallback': False}}, 'notifications': {}}), encoding='utf-8')
+            (output / 'static').mkdir(exist_ok=True)
+            overrides = {'RELAY_CONFIG_PATH': str(config_path),
+                         'RELAY_SESSION_DB': str(output / 'synthetic-full-server.sqlite'),
+                         'RELAY_AUTH_KEY_FILE': str(key_path), 'RELAY_SKIP_OPENCLAW': '1',
+                         'RELAY_ARTIFACTS_DIR': str(output / 'synthetic-artifacts'),
+                         'RELAY_ATTACHMENT_STORE': str(output / 'synthetic-attachments')}
+            previous = {k: os.environ.get(k) for k in overrides}
+            os.environ.update(overrides)
+            enabled = [True]
+            # Windows creates its private wake-up socketpair while constructing
+            # an event loop. Construct it before blocking all application connects.
+            loop = asyncio.new_event_loop()
+            library_roots = [Path(sys.prefix).resolve(), Path(sys.base_prefix).resolve()]
+            def inside(path, root):
+                return path == root or path.is_relative_to(root)
+            def audit(event, args):
+                if not enabled[0]:
+                    return
+                if event in {'socket.connect', 'socket.getaddrinfo', 'subprocess.Popen', 'os.system',
+                             'os.startfile', 'os.startfile/2'}:
+                    raise RuntimeError('Isolated qualification forbids network/process launches')
+                if event == 'open' and not isinstance(args[0], int):
+                    path = Path(args[0]).resolve()
+                    mode = str(args[1] or '')
+                    flags = int(args[2] or 0)
+                    writing = any(ch in mode for ch in 'wax+') or bool(
+                        flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND))
+                    allowed = inside(path, output) or (not writing and any(
+                        inside(path, root) for root in library_roots))
+                    if not allowed:
+                        raise RuntimeError('Isolated qualification refused external file access')
+            sys.addaudithook(audit)
+            server = None
+            native_posts = []
+            native_reads = []
+            try:
+                server = load('synthetic_complete_relay_server', output / 'relay_server.py')
+                self.assertTrue(server.AUTH_ENABLED)
+                self.assertEqual(Path(server.SESSION_DB_PATH).resolve().parent, output)
+                self.assertEqual(set(server.AGENTS), {'echo'})
+                self.assertEqual(server.NOTIFIER.channels, {})
+                agent = server.AGENTS['echo']
+                original_session = agent.conversation_id
+                def native_http(request):
+                    if request.method == 'POST' and request.url.path == '/v1/runs':
+                        native_posts.append({'id': request.headers.get('Idempotency-Key'),
+                                             'body': json.loads(request.content)})
+                        return httpx.Response(202, json={'run_id': 'run_full', 'status': 'started'})
+                    native_reads.append(request.url.path)
+                    if request.url.path == '/v1/capabilities':
+                        return httpx.Response(200, json={'features': {
+                            'run_submission': True, 'run_status': True, 'run_events_sse': True}})
+                    if request.url.path.startswith('/api/sessions/'):
+                        return httpx.Response(200, json={'id': original_session})
+                    if request.url.path == '/v1/runs/run_full/events':
+                        payload = {'run_id': 'run_full', 'event': 'run.completed',
+                                   'output': 'synthetic private answer'}
+                        return httpx.Response(200, headers={'content-type': 'text/event-stream'},
+                                              text='data: ' + json.dumps(payload) + '\n\n')
+                    if request.url.path == '/v1/runs/run_full':
+                        return httpx.Response(200, json={'run_id': 'run_full', 'status': 'completed',
+                                                        'session_id': 'rotated-full-session',
+                                                        'output': 'synthetic private answer'})
+                    raise AssertionError('Unexpected synthetic native request')
+                async def exercise():
+                    native = server.HermesRunsClient('http://synthetic-native',
+                                                      api_key='synthetic-native-access')
+                    native._client = httpx.AsyncClient(transport=httpx.MockTransport(native_http))
+                    agent.hermes = native
+                    async with server.app.router.lifespan_context(server.app):
+                        await asyncio.sleep(0)
+                        self.assertTrue(all(task is not None and not task.done() for task in (
+                            server.WATCHDOG_TASK, server.HERMES_DESKTOP_TASK, server.NOTIFICATION_TASK)))
+                        store = server.SESSIONS
+                        store.outbox_enqueue('echo', original_session, 'full synthetic send',
+                                             idem_key='full-send')
+                        await server.run_turn(agent, 'full synthetic send', 'full-send')
+                        self.assertEqual(len(native_posts), 1)
+                        # A real queue retry must report the uncertainty without
+                        # an unhandled task or synthetic demo "success".
+                        uncertain = store.outbox_enqueue('echo', original_session, 'lost synthetic send',
+                                                         idem_key='lost-send')
+                        store.outbox_claim(uncertain['id'])
+                        store.outbox_fail(uncertain['id'], 'synthetic lost acceptance')
+                        async def forbid_demo(*args, **kwargs):
+                            raise AssertionError('Uncertain admission must not fall back to a demo')
+                        server.demo_run = forbid_demo
+                        agent.cfg['demo_fallback'] = True
+                        agent.message_queue.append(('lost synthetic send', [], 'lost-send'))
+                        await server.drain_hermes_messages(agent)
+                        self.assertEqual(agent.status, 'stopped')
+                        self.assertIsNone(agent.run_task)
+                        self.assertEqual(len(native_posts), 1)
+                        self.assertEqual(native_posts[0]['id'], 'full-send')
+                        self.assertEqual(native_posts[0]['body']['session_id'], original_session)
+                        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app),
+                                                     base_url='http://synthetic-relay') as client:
+                            route = '/api/agents/echo/outbox/full-send/native-run'
+                            self.assertEqual((await client.get(route)).status_code, 401)
+                            response = await client.get(route, headers={
+                                'Authorization': 'Bearer synthetic-relay-access'})
+                            self.assertEqual(response.status_code, 200)
+                            receipt = response.json()['receipt']
+                            self.assertEqual(receipt['conversationId'], original_session)
+                            self.assertEqual(receipt['nativeSessionId'], 'rotated-full-session')
+                            self.assertEqual(receipt['runId'], 'run_full')
+                            self.assertFalse(receipt['writerQuiescence'])
+                            self.assertNotIn('synthetic private answer', response.text)
+                        await server.run_turn(agent, 'full synthetic send', 'full-send')
+                        self.assertEqual(len(native_posts), 1)
+                    self.assertTrue(all(task is None for task in (server.WATCHDOG_TASK,
+                        server.HERMES_DESKTOP_TASK, server.NOTIFICATION_TASK)))
+                loop.run_until_complete(exercise())
+                self.assertIn('/v1/runs/run_full', native_reads)
+            finally:
+                if server is not None:
+                    server.SESSIONS.close()
+                loop.run_until_complete(loop.shutdown_asyncgens())
+                loop.run_until_complete(loop.shutdown_default_executor())
+                enabled[0] = False
+                loop.close()
+                for key, value in previous.items():
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
+
     result = unittest.TextTestRunner(verbosity=2).run(
         unittest.defaultTestLoader.loadTestsFromTestCase(Qualification))
     proof = {'passed': result.wasSuccessful(), 'tests': result.testsRun,
              'failures': len(result.failures), 'errors': len(result.errors),
              'baselineServerSha256': hashlib.sha256(original.encode()).hexdigest(),
              'candidateServerSha256': hashlib.sha256(candidate.encode()).hexdigest(),
+             'copiedSourceSha256': source_hashes,
              'liveServiceChanges': 0, 'liveRequests': 0,
-             'limitations': ['Not deployed', 'HTTP qualifies extracted route and actual auth gate, not full service startup',
+             'limitations': ['Not deployed', 'Native HTTP is synthetic, not live Hermes qualification',
                              'No writer-quiescence claim', 'Lost admission before binding remains unknown']}
     (output / 'qualification.json').write_text(json.dumps(proof, indent=2), encoding='utf-8')
     print(json.dumps(proof))

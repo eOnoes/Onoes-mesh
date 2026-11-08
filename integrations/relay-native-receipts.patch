@@ -17,15 +17,19 @@
      """Run one turn through Hermes' native Runs API.
  
      The conversation id is handed to Hermes as ``session_id``, so Hermes owns the
-@@ -1221,17 +1222,24 @@
+@@ -1221,17 +1222,32 @@
      await client.require_runs_api()
      session_id = a.conversation_id or str(uuid.uuid4())
      a.conversation_id = session_id
 -    await client.ensure_session(session_id, title=f"Relay · {a.name}")
-+    previous = (relay_native_receipts.binding(
-+        SESSIONS, a.id, message_id, client, conversation_id=session_id,
-+        for_dispatch=True, fresh_claim=admission_claimed)
-+        if message_id else None)
++    try:
++        previous = (relay_native_receipts.binding(
++            SESSIONS, a.id, message_id, client, conversation_id=session_id,
++            for_dispatch=True, fresh_claim=admission_claimed)
++            if message_id else None)
++    except Exception as exc:
++        raise HermesError("Native admission requires reconciliation; nothing resubmitted",
++                          code="native_binding_unverified") from exc
 +    if previous is None:
 +        await client.ensure_session(session_id, title=f"Relay · {a.name}")
  
@@ -44,11 +48,15 @@
 +            text=body, session_id=session_id, idempotency_key=message_id or "")
      run_id = str(admitted["run_id"])
 +    if message_id:
-+        relay_native_receipts.bind(SESSIONS, a.id, session_id, message_id, run_id, client)
++        try:
++            relay_native_receipts.bind(SESSIONS, a.id, session_id, message_id, run_id, client)
++        except Exception as exc:
++            raise HermesError("Native acceptance could not be saved; reconcile before retry",
++                              code="native_binding_unverified") from exc
      a.active_run_ids = [run_id]
      publish(a, {"type": "status", "status": a.status, "runId": run_id})
      if admitted.get("replayed"):
-@@ -1424,7 +1432,7 @@
+@@ -1424,7 +1440,7 @@
          if a.is_a2a:
              await a2a_send(a, text, message_id, attachments)
          else:
@@ -57,7 +65,16 @@
      except Exception as exc:
          if claim:
              try:
-@@ -2390,6 +2398,21 @@
+@@ -1450,7 +1466,7 @@
+                 await run_turn(a, text, message_id, attachments)
+             except (HermesError, A2AError, asyncio.TimeoutError) as exc:
+                 _dbg(a.id, f"turn failed: {type(exc).__name__}: {exc}")
+-                if a.cfg.get("demo_fallback", False):
++                if a.cfg.get("demo_fallback", False) and getattr(exc, "code", "") != "native_binding_unverified":
+                     await demo_run(a, text, attachments)
+                 else:
+                     feed(a, f"!! {a.name} unavailable: {exc}", "wr")
+@@ -2390,6 +2406,21 @@
      })
  
  
