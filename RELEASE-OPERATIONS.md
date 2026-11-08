@@ -491,3 +491,6 @@ substitutes for positive writer quiescence. No auto assignment or watcher enable
 
 
 2026-11-08 Rook notices rollout: build0a0ab3234660 verified on private8453, 14cards/19 prior tables unchanged. Rook not_configured/managedoff. Verified pre/post E backups19-46-40-090_UTC_45dcd303 and19-47-12-720_UTC_0ba21e07. Later claim-handoff guards are candidate only; full288 localtestsPASS. No native model/Relay restart or watcheractivation.
+
+
+2026-11-08: live07732e9cffb6 installs read-only Rook assignment holds and d02a178 handoff guards, all14cards/21tables preserved. Full290testsPASS. Managedflow/Rookscheduler remainoff; nativequiescence/identity/reporttransport notqualified. Parentprogress24 intentionallyupdates evidence.

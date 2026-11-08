@@ -639,3 +639,52 @@ credential/model/memory changes. No blind resend or terminal inference permitted
 Original request/receipt saved under rollout proof folder. Next poll exact run,
 then implement only a source-supported release/identity boundary. Scheduler remains
 OFF and full original Mesh/Mind/inference/fleet goal remains active/incomplete.
+
+
+## 2026-11-08 - Read-only assignment holds and native-answer qualification
+
+Previous turn PROGRESS: notices rollout/d02a178 handoff guards/parent23; pending
+Echo run now revalidated completed. Exact native run_cbea63d463dd461e8c355b549237e17f
+and Relay both returned only "Relay receipt check received." This is not an answer
+or approval. Relay stores different integer message IDs than the send UUID; the
+reply was bound by unique exact request text in the original conversation and the
+verified original run. No unrelated conversation content exported. Direct read-only
+native run-status inspection confirmed the same output; initial access denial was
+resolved with authorized read-only access, not a new credential or service change.
+
+One distinct no-tools freshness probe (not a replay of the completed question):
+send9f179fe3-eaae-4d49-a031-ab18aeb698ab,
+run_343f5740c0f34b078106b4675e0068b1 completed and returned its unique expected
+nonce exactly. Thus new requests are delivered; the earlier generic answer is not
+proof of a Relay display defect. Both runs terminal; no outstanding Echo job here.
+Saved request/native receipts/results in data/rook-notices-rollout-2026-11-08/.
+No builds, private memory/key reads, service/model/permission changes requested.
+
+Indexed installed native gateway/platforms/api_server_runs.py::_run_agent_sync
+explicitly clears turn process ownership on return so a later stop cannot reap work
+left running. The live-owner path also says cancellation may finish the API run
+while the owner's chat continues. Terminal run status therefore cannot authorize
+writer release. No new positive all-tools/subagents/children-ended proof established.
+
+Implemented private GET /api/workroom/rook assignmentHolds derived from the existing
+writer policy, with original task titles/IDs/attempt IDs and reasons; GET never
+clears receipts or dispatches. Relay panel groups duplicate holds by card, explains
+active-team/unverified-writer waits and provides guarded navigation only. Privacy
+clearance and late-reply guards retained. Existing notices stay newest-first.
+Full npm test PASS290 (40+1+29+72+148), including actual admitted HTTP unchanged
+receipt/zero-claim checks and UI hold grouping/privacy. ../rook-holds-full.log.
+
+Named Mesh-only rollout installed hold UI and prior d02a178 handoff guards after
+fresh inactive-worker check (Nims5completed; teams closed1/needs_review1), pre E
+backup and exact 21-table snapshot. All14cards/21 prior tables preserved unchanged.
+Live build07732e9cffb6; managedFlow false, Rook not_configured, scheduler false.
+Actual private API has8holds across5cards; actual browser verified explanatory links
+and current disconnected status. Screenshot ../rook-assignment-holds.png. Native
+Relay/gateway/models untouched; Tailscale8453 mapping unchanged. Private rollout
+proofs data/rook-holds-rollout-2026-11-08/{before,verified}.json. Later deliberate
+parent progress23->24 preserves all6checklistIDs/text/statuses/pendingdecision/open
+and intentionally changes its evidence; do not claim original table hashes after it.
+
+Next: qualify actual native lifecycle/writer-release evidence and the dedicated Rook
+identity/report transport, then owner activation. No automatic assignments enabled.
+Full original Mesh/Mind/model/fleet goal remains active and incomplete.

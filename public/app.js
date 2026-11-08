@@ -653,6 +653,28 @@ function renderRookReports(snapshot) {
   $('rook-status').textContent = !snapshot ? 'Saved notices unavailable. Connect and check again.'
     : state === 'not connected' ? 'Rook is not connected yet. Saved notices do not mean a worker has started.'
     : `Watcher: ${state}. Opening these notices does not start work or approve a result.`;
+  const openCard = (parent, taskId) => {
+    if (typeof taskId !== 'string' || !/^[0-9a-f-]{36}$/.test(taskId)) return;
+    const open = document.createElement('button'); open.type = 'button'; open.textContent = 'Open card';
+    open.addEventListener('click', () => {
+      if (!admitted || lifecycleSuspended || !navigator.onLine || !proofAvailable()) return;
+      activate($('tab-workroom'));
+      window.dispatchEvent(new CustomEvent('mesh-open-task', {detail: {id: taskId}}));
+    }); parent.append(open);
+  };
+  const seenHolds = new Set();
+  for (const hold of Array.isArray(snapshot?.assignmentHolds) ? snapshot.assignmentHolds : []) {
+    if (!['active_team','writer_quiescence_unproven'].includes(hold?.reason) || seenHolds.has(hold.taskId)) continue;
+    seenHolds.add(hold.taskId);
+    if (seenHolds.size > 20) break;
+    const article = document.createElement('article'); article.className = 'box section-gap';
+    const heading = document.createElement('h3'); heading.textContent = 'Assignment on hold'; article.append(heading);
+    const title = document.createElement('p'); title.textContent = typeof hold.title === 'string' ? hold.title.slice(0,500) : 'Saved card'; article.append(title);
+    const reason = document.createElement('p'); reason.textContent = hold.reason === 'active_team'
+      ? 'A team is already working. Another card will wait.'
+      : 'A previous worker has not been verified stopped. Review its original attempt before another assignment.';
+    article.append(reason); openCard(article, hold.taskId); root.append(article);
+  }
   if (!Array.isArray(snapshot?.reports)) return;
   const labels = {claim_saved: 'Assignment reserved', needs_input: 'Your input needed', failed: 'Task needs attention',
     ready_for_review: 'Result ready', watcher_failed: 'Rook needs attention', watcher_recovered: 'Rook recovered'};
@@ -669,14 +691,7 @@ function renderRookReports(snapshot) {
     const at = Date.parse(report.createdAt);
     timestamp.textContent = Number.isFinite(at) ? `Saved ${new Date(at).toLocaleString()}` : 'Saved time unavailable';
     article.append(timestamp);
-    if (typeof payload.taskId === 'string' && /^[0-9a-f-]{36}$/.test(payload.taskId)) {
-      const open = document.createElement('button'); open.type = 'button'; open.textContent = 'Open card';
-      open.addEventListener('click', () => {
-        if (!admitted || lifecycleSuspended || !navigator.onLine || !proofAvailable()) return;
-        activate($('tab-workroom'));
-        window.dispatchEvent(new CustomEvent('mesh-open-task', {detail: {id: payload.taskId}}));
-      }); article.append(open);
-    }
+    openCard(article, payload.taskId);
     root.append(article);
   }
   if (!root.children.length) {

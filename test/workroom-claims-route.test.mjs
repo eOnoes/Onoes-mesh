@@ -32,6 +32,27 @@ test('HTTP claim race has one winner; guarded readback survives restart without 
  }finally{if(app)await app.close();if(old===undefined)delete process.env.MESH_SIMPLE_FLOW;else process.env.MESH_SIMPLE_FLOW=old;}
 });
 
+test('private Rook status exposes exact writer holds without changing receipts or clearing assignments',async()=>{
+ const directory='data/rook-holds-'+randomUUID();mkdirSync(directory,{recursive:true});const filename=resolve(directory,'tasks.sqlite');
+ const store=openTaskStore(filename);const task=store.create({title:'Original writer fixture',description:'Synthetic only'});store.close();
+ const db=new DatabaseSync(filename);
+ db.prepare('INSERT INTO workroom_sends(id,taskId,agentId,conversationId,text,fingerprint,state,at,payload,basis,phase) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
+  .run('held-send',task.id,'echo','fixture-session','Synthetic held writer','fixture-hash','accepted',new Date().toISOString(),'{}','','work');
+ const before=JSON.stringify(db.prepare('SELECT * FROM workroom_sends').all());let app;
+ try{
+  app=await startApp({dataDir:directory,relayEnabled:false});
+  assert.equal((await fetch(app.url+'/api/workroom/rook')).status,401);
+  const b=await fetch(app.url+'/api/trial-session/bootstrap',{method:'POST',headers:{Origin:app.url,'Content-Type':'application/json'},body:'{}'});
+  const proof=await b.json(),headers={Origin:app.url,Cookie:b.headers.get('set-cookie').split(';')[0],'X-Trial-CSRF':proof.csrfToken};
+  for(let n=0;n<2;n++){
+   const response=await fetch(app.url+'/api/workroom/rook',{headers});assert.equal(response.status,200);const status=await response.json();
+   assert.deepEqual(status.assignmentHolds,[{taskId:task.id,sendId:'held-send',state:'accepted',reason:'writer_quiescence_unproven',title:task.title}]);
+  }
+  assert.equal(JSON.stringify(db.prepare('SELECT * FROM workroom_sends').all()),before);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM workroom_claims').get().n,0);
+ }finally{await app?.close();db.close();}
+});
+
 test('scheduled claim endpoint stays inert until explicitly called, enforces auth and a durable five-hour gate',async()=>{
  const directory='data/rook-scheduled-'+randomUUID();mkdirSync(directory,{recursive:true});const path=resolve(directory,'tasks.sqlite');
  const store=openTaskStore(path);const task=store.create({title:'Rook scheduled fixture',description:'No real worker or Relay'});store.close();

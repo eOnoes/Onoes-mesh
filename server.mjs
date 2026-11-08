@@ -29,6 +29,7 @@ import { createRelayHttpLink } from './lib/relay-http.mjs';
 import { createNodeProbeReader } from './lib/node-probes.mjs';
 import { createLocalInference, createDisabledLocalAdapter } from './lib/local-inference.mjs';
 import {createRookRuntime} from './lib/workroom-rook.mjs';
+import {writerQuiescenceBlockers} from './lib/workroom-claim-policy.mjs';
 
 export const ROOT = path.dirname(fileURLToPath(import.meta.url));
 export async function confinedPath(value) {
@@ -327,7 +328,9 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       if(route==='/api/workroom/rook'&&req.method==='GET'){
         if(!store||executionPersistenceFailed)throw new TaskError(503,'Workroom unavailable.');
         const connection=rookRuntime?.status()??{id:'rook',status:'unavailable',reason:'Rook state is unavailable.'};
-        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',sweep:{...store.workroom.flow.sweepStatus(),schedulerInstalled:connection.scheduler?.installed??false,schedulerEnabled:connection.scheduler?.enabled??false},connection,reports:rookRuntime?.reports()??[],cards:store.workroom.list().filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
+        const tasks=store.workroom.list(),titles=new Map(tasks.map(t=>[t.id,t.title]));
+        const assignmentHolds=writerQuiescenceBlockers(tasks).map(hold=>({...hold,title:titles.get(hold.taskId)}));
+        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',sweep:{...store.workroom.flow.sweepStatus(),schedulerInstalled:connection.scheduler?.installed??false,schedulerEnabled:connection.scheduler?.enabled??false},connection,assignmentHolds,reports:rookRuntime?.reports()??[],cards:tasks.filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
       }
       const workroomRoute = /^\/api\/workroom(?:\/([0-9a-f-]{36})(?:\/(message|progress|sync|apply-update|handoff|apply-review|approval|reconcile|plan|automation|apply-assignment|owner-review|intake|claim))?)?$/.exec(route);
       if (workroomRoute) {

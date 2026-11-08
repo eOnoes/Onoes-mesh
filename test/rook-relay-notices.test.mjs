@@ -32,6 +32,17 @@ test('unconfigured watcher stays visibly unconnected; unknown report kinds are i
   assert.ok(!text(ui).includes('Never show me'));
 });
 
+test('assignment holds explain the original worker and open its card without releasing it', async () => {
+  const hold={taskId:id,title:'Unconfirmed original worker',reason:'writer_quiescence_unproven'};
+  const ui=await admittedUi({connection:{status:'not_configured'},assignmentHolds:[hold,{...hold,sendId:'another-attempt'}],reports:[]});
+  assert.ok(text(ui).includes('previous worker has not been verified stopped'));
+  assert.equal(walk(ui.ids.get('rook-reports')).filter(n=>n.textContent==='Assignment on hold').length,1);
+  assert.equal(walk(ui.ids.get('rook-reports')).filter(n=>n.textContent==='Open card').length,1);
+  assert.equal(ui.ids.get('rook-summary').textContent,'Rook · not connected');
+  const before=ui.requests.length;ui.events.pagehide({persisted:true});
+  assert.equal(text(ui),'');assert.equal(ui.requests.length,before);
+});
+
 test('page privacy clears notices and late responses cannot restore them', async () => {
   const ui = await admittedUi(); let release;
   ui.context.fetch = async route => route === '/api/workroom/rook' ? new Promise(resolve => {release = resolve;}) : response(200, {});
