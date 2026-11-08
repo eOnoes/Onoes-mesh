@@ -379,3 +379,32 @@ model readiness or control permission. The future AI box has no configured ident
 No check yet is Not checked; an unusable first result is Unavailable; an expired
 positive check is Check expired. Refresh deliberately to obtain current records.
 Native node-probe v1 compatibility and its separate provenance fields remain intact.
+
+## Current PC/phone recovery acceptance
+
+The current C2 recovery contract is accepted from these distinct evidence sources:
+
+| Case | Evidence and result |
+| --- | --- |
+| Phone background/resume | Owner returned from another app and reopened the completed card successfully. |
+| Phone keyboard/rotation | Unsaved draft and keyboard remained usable through landscape/back; edit cancelled. |
+| Phone network loss/reconnect | Owner disconnected/reconnected without saving/sending offline; guide still Done. |
+| Session expiry | Real isolated browser rejected stale save, cleared private data and restored original saved state after fresh admission; database unchanged. |
+| Conflicting edit | Real browser and HTTP checks preserve newer goal and retain the older draft for reconciliation. |
+| Duplicate activation | Real desktop double-click saved one Done transition and sent no agent messages. |
+| Uncertain delivery/restart | HTTP/store tests retain original send identity and refuse blind duplicate dispatch. |
+
+This does not claim physical double-finger testing during a native agent run,
+remote machine hardware qualification, native model lifecycle or whole-app owner
+release acceptance. Those broader requirements retain their separate gates.
+
+
+Manual replay: run `node test/serve-recovery-acceptance.mjs` from this checkout.
+Use its printed loopback URL and Start local session; all three cards are
+disposable synthetic data, with workers disconnected. Double-click the approved
+card's Move to Done and verify one saved transition. For expiry, edit the pending
+card without saving, create the empty file at the printed expireFlag path, then
+save: access must be rejected and private data cleared. Start a fresh session
+and verify the original goal. Ctrl+C stops only this disposable server; its
+evidence remains in the printed unique data directory. This is a desktop replay,
+not live phone or model-lifecycle acceptance.
