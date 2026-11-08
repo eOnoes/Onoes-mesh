@@ -747,3 +747,62 @@ source-bound scope/build/review/Done and all regressions pass. Evidence
 ../rook-atomic-lead-full.log. git diff --check PASS. Fix is candidate source only;
 live07732e9cffb6 remains managedoff/scheduleroff and all original holds unchanged.
 Full original Mesh/Mind/inference/fleet goal remains active/incomplete.
+
+
+## 2026-11-08 - Real Windows process-tree fence (not live worker release)
+
+Previous goal turn PROGRESScb20198 atomic lead/claim recovery; live07732e9cffb6
+unchanged and managedoff. Tracked worktree revalidated clean/22 unrelated untracked
+files preserved. Current native source trackers expose registered processes, not a
+qualified whole-worker release. Regex search first used unsupported regex argument;
+that result was degraded and was NOT treated as absence evidence. No broad absence
+claim made for unindexed native sources.
+
+Implemented integrations/windows_writer_fence.py as a small internal process-tree
+primitive with no service, model, credential, HTTP control or existing-PID attachment.
+It creates a fresh unnamed Windows Job, starts only its own new root suspended,
+assigns before resume, forbids breakaway, hides windows, seals further launches,
+queries current member count plus retained root handles, and binds immutable public
+run/generation properties. It can stop only its own job, never a PID scan. If launch
+cleanup is unconfirmed it retains the owned suspended process handle, reports
+unknown, blocks more starts/close and requires explicit owned cleanup. Closed,
+unstarted and unreadable fences cannot mint ended evidence. Closing an active tree
+is refused unless explicitly stopped. Fresh observations include termination intent
+separately; process ending never implies successful work, review or a retry decision.
+
+Critical scope: schema mesh-writer-process-tree/v1 reports processTreeEnded only for
+this owned Job's members; writerQuiescence is ALWAYS false. Remote MCP tools,
+service/WMI/broker launches and independent async delegates are outside this
+primitive's coverage. It is NOT wired into native Echo/Relay/Nims execution and
+cannot clear any of the eight legacy receipts or enable automatic assignment.
+Qualified integration must cover/deny unsupported writer paths and separately seal
+and join tools/delegates before an authenticated whole-attempt release can exist.
+
+Primary API references (implementation paraphrase, no copied third-party code):
+- https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects
+- https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-queryinformationjobobject
+- https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information
+The documented WMI/breakaway exceptions are explicitly not claimed as covered.
+
+Verification: npm test PASS297 =291Node (40+1+29+72+149) +6 actual Windows process
+fixtures on Python3.14.3. Same6 PASS using the live gateway1592 executable's Python
+3.14.7 in a separate process; gateway itself not restarted/changed. Tests prove:
+root exit while detached-console child survives stays held; sealing rejects another
+launch; explicit termination leaves a different attempt running; assigning failure
+never executes the suspended root; failed cleanup retains control/unknown state;
+tracker failure/closed state never grants ended; controller crash closes its Job and
+stops its child (nested Job tested). Fixtures create/stop only their own helpers.
+No live model calls, native worker dispatches or app data changes in these tests.
+Initial default restricted TEMP denied fixture writes/cleanup; moved fixtures under
+owned project data/writer-fence-fixtures and reran successfully. Failed evidence is
+in tool output. No permissions were loosened. All helper windows stayed hidden.
+
+Evidence ../writer-process-tree-full.log and ../writer-process-tree-native-python.log.
+Added npm test:writer-fence to standard npm test. Source backup inclusion explicitly
+adds the new Python helper (tests already included). Caught/fixed locale decoding
+of the backup script before backup/commit by restoring original Git bytes then
+applying only the byte-preserving inclusion change; unrelated text preserved.
+No existing native code or service changed, no live Mesh restart in this slice.
+Next: adapt this primitive to native worker tool execution without losing output,
+track/join async delegates and publish exact-run/generation authenticated evidence;
+then qualify Mesh consumption and owner activation. Full original goal incomplete.
