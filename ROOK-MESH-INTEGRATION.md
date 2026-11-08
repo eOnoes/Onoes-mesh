@@ -101,3 +101,56 @@ Evidence: deployment-followup.json and gateway-capabilities-observation.json.
 Do not start a parallel Rook implementation, treat a research snapshot as deployed,
 or silently widen the reconciler. Resolve the deployed native-runtime contract
 before planning a production adapter or activating managed automatic building.
+
+## Installed native receipt-store qualification - 2026-11-08
+
+The installed tree is C:/Users/eMitchell109/AppData/Local/hermes/hermes-agent,
+with observed Git HEAD acc3cada0da. It differs materially from the research
+snapshot inspected earlier: gateway/platforms/api_server_run_idempotency.py
+provides durable scoped SQLite reservations/status, and api_server_runs.py
+handles matching replay before concurrency admission and atomically reserves
+before launching a new run. The indexed _http_routes has run-ID reads, not a
+separate read-by-send-key route; never discover a missing run by blindly posting.
+
+The gateway-service launchers set PYTHONPATH to this installed tree; PID1592 on
+8642 uses hermes_cli.main with the bundled Python executable and started
+2026-10-30T16:45:25.8956260Z. The examined module file timestamps predate that
+process start. This is a consistent operational linkage, not an authenticated
+live feature declaration or proof that the running process loaded these bytes.
+Native file/source/launcher hashes are saved under the evidence folder below.
+Git tracked-status output was empty; source-index freshness nevertheless marked
+these modules edited_uncommitted, so retain hashes and do not infer pristine
+upstream contents from HEAD alone. No installed files were modified.
+
+Opt-in replay command from the Mesh checkout:
+
+`<native-python.exe> -I integrations/qualify-hermes-idempotency.py --source C:/Users/eMitchell109/AppData/Local/hermes/hermes-agent --evidence data/<unique-qualification-folder>`
+
+The command imports only the standalone native SQLite store, gives its subprocess
+an empty synthetic HERMES_HOME, and opens only explicit temporary test databases.
+It never imports/starts the gateway or submits a model/agent run. Tests cover
+reopen persistence and exact identity, fingerprint conflicts and scope isolation,
+two-connection single-winner reservation, lookup without admission, terminal
+status retention without quiescence, and explicit non-durable memory fallback.
+
+All five checks passed with both the installed venv Python and the exact bundled
+Python executable observed on the listener. Separate evidence directories:
+`data/hermes-native-store-qualification-2026-11-08` and
+`data/hermes-native-store-process-python-2026-11-08`. These five cases are not
+added to Mesh's default 266-test count and do not qualify live HTTP recovery.
+The tested store source SHA256 is
+4ad0c20dfe220cf0aac8b340702b54621f7ecdb075799816407406c5cd733c03.
+
+The venv interpreter reported a SQLite/WAL compatibility warning and used its
+native safe rollback-journal policy; the bundled process interpreter passed too.
+The deliberate unusable-path case warns and advertises durable=false. No runtime
+upgrade, journal policy change on live stores or service restart was performed.
+
+Do not rebuild a capability that already exists or assume it is active. Remaining
+work is the qualified live capability/identity observation, durable Relay-to-run
+binding/read-only recovery surface, and affirmative per-run writer quiescence.
+Existing store support does not release a writer merely because status is terminal.
+Echo received one installed-source correction/question, original saved send ID
+fc87c4ed-a697-40c8-9267-a34a8c193ad8, accepted once through the session-bound client;
+no native job or reply is inferred from that receipt. Rook remains isolated and
+automation remains off.
