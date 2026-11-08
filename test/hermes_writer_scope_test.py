@@ -1,4 +1,5 @@
 import concurrent.futures
+from contextvars import copy_context
 from pathlib import Path
 import shutil
 import sys
@@ -6,6 +7,7 @@ import threading
 import unittest
 from unittest.mock import patch
 from integrations import hermes_writer_scope as scope
+from integrations.windows_writer_fence import WindowsWriterFence
 
 
 class FakeFence:
@@ -55,6 +57,132 @@ class HermesWriterScopeTests(unittest.TestCase):
         with patch.object(scope.subprocess, 'Popen', return_value='legacy') as launch:
             self.assertEqual(scope.scoped_popen(argv, stdout=-1), 'legacy')
             launch.assert_called_once_with(argv, stdout=-1)
+
+
+@unittest.skipUnless(sys.platform == 'win32', 'Real Windows job accounting required')
+class ManagedWriterLifetimeTests(unittest.TestCase):
+    def setUp(self):
+        self.fence = WindowsWriterFence('lifetime-fixture', 'one')
+        self.life = scope.WriterLifetime(self.fence)
+
+    def tearDown(self):
+        self.fence.terminate()
+        self.fence.close()
+
+    def test_parent_return_and_early_result_record_do_not_settle_running_delegate(self):
+        started, delivery_recorded, release = threading.Event(), threading.Event(), threading.Event()
+        def child():
+            started.set()
+            delivery_recorded.set()  # Native stale monitor can finalize a record early.
+            release.wait(timeout=5)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            try:
+                with scope.writer_foreground_scope(self.life):
+                    future = scope.submit_writer_work(pool, child)
+                    self.assertTrue(started.wait(timeout=3))
+                self.assertTrue(delivery_recorded.is_set())
+                self.assertFalse(self.life.wait(20)['managedWorkEnded'])
+                self.assertTrue(future.running())
+                self.assertFalse(self.fence.snapshot()['sealed'])
+                release.set(); future.result(timeout=3)
+                self.assertTrue(self.life.wait()['managedWorkEnded'])
+                self.assertFalse(self.life.snapshot()['writerQuiescence'])
+            finally:
+                release.set()
+
+    def test_cancelled_queued_future_never_runs_and_does_not_leak_a_worker_ticket(self):
+        occupied, release = threading.Event(), threading.Event()
+        def occupy():
+            occupied.set(); release.wait(timeout=5)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            blocker = pool.submit(occupy)
+            try:
+                self.assertTrue(occupied.wait(timeout=3))
+                with scope.writer_foreground_scope(self.life):
+                    future = scope.submit_writer_work(pool, lambda: self.fail('Cancelled child ran'))
+                    self.assertTrue(future.cancel())
+                self.assertTrue(self.life.wait()['managedWorkEnded'])
+            finally:
+                release.set(); blocker.result(timeout=3)
+
+    def test_submit_exception_after_start_stays_held_until_actual_callable_return(self):
+        started, release = threading.Event(), threading.Event()
+        def child():
+            started.set(); release.wait(timeout=5)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            class LostSubmit:
+                def submit(_, fn):
+                    pool.submit(fn)
+                    if not started.wait(timeout=3):
+                        raise AssertionError('Fixture worker did not start')
+                    raise RuntimeError('Submission response lost')
+            try:
+                with scope.writer_foreground_scope(self.life):
+                    with self.assertRaises(RuntimeError):
+                        scope.submit_writer_work(LostSubmit(), child)
+                self.assertFalse(self.life.wait(20)['managedWorkEnded'])
+                release.set()
+                self.assertTrue(self.life.wait()['managedWorkEnded'])
+            finally:
+                release.set()
+
+    def test_unobserved_submit_failure_stays_unknown_instead_of_claiming_no_work(self):
+        class UnknownSubmit:
+            def submit(_, fn):
+                raise RuntimeError('Unknown admission')
+        with scope.writer_foreground_scope(self.life):
+            with self.assertRaises(RuntimeError):
+                scope.submit_writer_work(UnknownSubmit(), lambda: None)
+        status = self.life.wait(20)
+        self.assertFalse(status['managedWorkEnded'])
+        self.assertEqual(status['pendingWorkers'][0]['state'], 'unknown')
+
+    def test_copied_stale_context_cannot_start_another_writer_or_delegate(self):
+        with scope.writer_foreground_scope(self.life):
+            saved = copy_context()
+        self.assertTrue(self.life.wait()['managedWorkEnded'])
+        with patch.object(self.fence, 'popen', side_effect=AssertionError('Late process launched')):
+            with self.assertRaises(RuntimeError):
+                saved.run(scope.scoped_popen, [sys.executable, '-c', 'pass'])
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            with self.assertRaises(RuntimeError):
+                saved.run(scope.submit_writer_work, pool, lambda: self.fail('Late delegate ran'))
+
+    def test_wrong_native_run_or_generation_never_enters_the_worker(self):
+        for run, generation in [('wrong-run', 'one'), ('lifetime-fixture', 'wrong-generation'), ('lifetime-fixture', '')]:
+            with self.assertRaises(RuntimeError):
+                with scope.writer_foreground_scope(self.life, expected_run_id=run, expected_generation=generation):
+                    self.fail('Wrong attempt entered worker')
+        self.assertFalse(self.life.snapshot()['rootEnded'])
+        with scope.writer_foreground_scope(self.life, expected_run_id='lifetime-fixture', expected_generation='one'):
+            pass
+        self.assertTrue(self.life.wait()['managedWorkEnded'])
+
+    def test_active_child_can_spawn_a_nested_worker_after_foreground_returns(self):
+        enter, next_step, nested_started, release = [threading.Event() for _ in range(4)]
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            def nested():
+                nested_started.set(); release.wait(timeout=5)
+                with scope.scoped_popen([sys.executable, '-c', 'print("nested output")'], text=True) as proc:
+                    output, _ = proc.communicate(timeout=3)
+                return output.strip()
+            def child():
+                enter.set(); next_step.wait(timeout=5)
+                results.append(scope.submit_writer_work(pool, nested))
+            try:
+                with scope.writer_foreground_scope(self.life):
+                    first = scope.submit_writer_work(pool, child)
+                    self.assertTrue(enter.wait(timeout=3))
+                next_step.set(); first.result(timeout=3)
+                self.assertTrue(nested_started.wait(timeout=3))
+                self.assertFalse(self.life.wait(20)['managedWorkEnded'])
+                release.set()
+                self.assertEqual(results[0].result(timeout=3), 'nested output')
+                self.assertTrue(self.life.wait()['managedWorkEnded'])
+                self.assertTrue(self.fence.snapshot()['processTreeEnded'])
+            finally:
+                next_step.set(); release.set()
 
 
 if __name__ == '__main__':

@@ -29,15 +29,184 @@
          temp_dir = self._env_temp_dir(env)
 --- /dev/null
 +++ b/tools/mesh_writer_scope.py
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,217 @@
 +"""Candidate native tools.mesh_writer_scope; no HTTP/config enrollment or release grant."""
 +from contextlib import contextmanager
-+from contextvars import ContextVar
++from contextvars import ContextVar, copy_context
++from concurrent.futures import Future
 +from pathlib import Path
 +import shutil
 +import subprocess
++import threading
++import time
++from uuid import uuid4
 +
 +_current = ContextVar('mesh_owned_writer_fence', default=None)
++_lifetime = ContextVar('mesh_writer_lifetime', default=None)
++_worker = ContextVar('mesh_owned_worker_ticket', default=None)
++
++
++class WriterLifetime:
++    """Track actual managed callables/futures; never grant whole-worker release.
++
++    Constructed by a trusted future native-run factory, not HTTP request fields.
++    Root admission starts held. Unknown submissions stay held unless their callable
++    later actually returns. A forced delivery/finalization record cannot settle a
++    ticket; only its observed callable/future lifecycle can do so.
++    """
++    def __init__(self, fence):
++        self.fence = fence
++        self._lock = threading.RLock()
++        self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
++        self._root_started = self._root_ended = self._sealed = False
++        self._fault = ''
++
++    def assert_current_worker(self):
++        with self._lock:
++            owner = _worker.get()
++            record = self._pending.get(owner[1]) if owner and owner[0] is self else None
++            if _lifetime.get() is not self or not record or record['state'] != 'running':
++                raise RuntimeError('This worker context is no longer active')
++
++    def _reserve(self):
++        with self._lock:
++            self.assert_current_worker()
++            ticket = str(uuid4())
++            self._pending[ticket] = {'kind': 'delegate', 'state': 'reserved', 'started': False, 'mode': 'submitting'}
++            return ticket
++
++    def _start(self, ticket):
++        with self._lock:
++            record = self._pending.get(ticket)
++            if not record or record['started']:
++                raise RuntimeError('Worker admission is missing or already consumed')
++            record.update(started=True, state='running')
++
++    def _maybe_seal(self):
++        if self._root_ended and not self._pending and not self._sealed:
++            try:
++                self.fence.seal()
++                self._sealed = True
++            except BaseException:
++                self._fault = 'process_fence_unavailable'
++
++    def _returned(self, ticket):
++        with self._lock:
++            record = self._pending.get(ticket)
++            if not record:
++                self._fault = 'worker_lifecycle_unconfirmed'
++                return
++            record['state'] = 'returned'
++            # No future was returned after an uncertain submit. The actual callable
++            # returning is still affirmative evidence that this admitted body ended.
++            if record.get('mode') == 'unknown':
++                self._pending.pop(ticket)
++            self._maybe_seal()
++
++    def _submission_unknown(self, ticket):
++        with self._lock:
++            record = self._pending[ticket]
++            record['mode'] = 'unknown'
++            if record['state'] == 'returned':
++                self._pending.pop(ticket)
++            elif not record['started']:
++                record['state'] = 'unknown'
++            self._maybe_seal()
++
++    def _attach(self, ticket, future):
++        if not isinstance(future, Future):
++            self._submission_unknown(ticket)
++            raise TypeError('A native concurrent future is required')
++        with self._lock:
++            self._pending[ticket]['mode'] = 'future'
++        def done(observed):
++            with self._lock:
++                record = self._pending.get(ticket)
++                if not record:
++                    return
++                if not observed.done() or record['started'] and record['state'] != 'returned':
++                    self._fault = 'future_lifecycle_unconfirmed'
++                    return
++                # A genuine future cancelled/rejected before starting cannot run
++                # its callable. A running future cannot become done before return.
++                self._pending.pop(ticket)
++                self._maybe_seal()
++        future.add_done_callback(done)
++
++    def snapshot(self):
++        with self._lock:
++            process = self.fence.snapshot()
++            managed = (self._root_ended and not self._pending and self._sealed and not self._fault
++                       and process.get('state') in ('ended', 'not_started') and process.get('activeProcesses') == 0)
++            return {'schema': 'mesh-managed-writer-lifetime/v1', 'runId': self.fence.run_id,
++                    'generation': self.fence.generation, 'rootEnded': self._root_ended,
++                    'pendingWorkers': [{'id': key, 'kind': value['kind'], 'state': value['state']}
++                                       for key, value in self._pending.items()],
++                    'processTree': process, 'managedWorkEnded': managed,
++                    'writerQuiescence': False, 'reason': self._fault,
++                    'coverage': 'instrumented_foreground_delegate_and_job_members_only'}
++
++    def wait(self, timeout_ms=5000):
++        if not isinstance(timeout_ms, int) or not 0 <= timeout_ms <= 60000:
++            raise ValueError('A bounded observation wait is required')
++        deadline = time.monotonic() + timeout_ms / 1000
++        while True:
++            result = self.snapshot()
++            if result['managedWorkEnded'] or time.monotonic() >= deadline:
++                return result
++            time.sleep(min(.02, max(0, deadline - time.monotonic())))
++
++
++@contextmanager
++def writer_foreground_scope(lifetime, *, expected_run_id=None, expected_generation=None):
++    if lifetime is None:
++        yield
++        return
++    if not isinstance(lifetime, WriterLifetime) or _lifetime.get() not in (None, lifetime):
++        raise RuntimeError('Invalid native writer lifetime binding')
++    if (expected_run_id is not None and (not expected_run_id or expected_run_id != lifetime.fence.run_id)
++            or expected_generation is not None and (not expected_generation or expected_generation != lifetime.fence.generation)):
++        raise RuntimeError('Native run/generation does not match its writer lifetime')
++    with bind_writer_fence(lifetime.fence):
++        lifetime._start('root')
++        lifetime._root_started = True
++        owner, ticket = _lifetime.set(lifetime), _worker.set((lifetime, 'root'))
++        try:
++            yield
++        finally:
++            _worker.reset(ticket)
++            _lifetime.reset(owner)
++            with lifetime._lock:
++                lifetime._pending.pop('root')
++                lifetime._root_ended = True
++                lifetime._maybe_seal()
++
++
++def submit_writer_work(executor, fn, propagate=None):
++    """Use the existing executor and its context propagator, not a new worker pool."""
++    if propagate is None:
++        def propagate(call):
++            context = copy_context()
++            return lambda: context.run(call)
++    lifetime = _lifetime.get()
++    if lifetime is None:
++        return executor.submit(propagate(fn))
++    ticket = lifetime._reserve()  # Held before any worker can start.
++    def tracked():
++        lifetime._start(ticket)
++        token = _worker.set((lifetime, ticket))
++        try:
++            return fn()
++        finally:
++            _worker.reset(token)
++            lifetime._returned(ticket)
++    try:
++        future = executor.submit(propagate(tracked))
++    except BaseException:
++        lifetime._submission_unknown(ticket)
++        raise
++    lifetime._attach(ticket, future)
++    return future
 +
 +
 +@contextmanager
@@ -54,6 +223,8 @@
 +
 +
 +def require_supported_writer_route(*, local, use_pty=False, persist_on_release=False):
++    if _lifetime.get() is not None:
++        _lifetime.get().assert_current_worker()
 +    if _current.get() is not None and (not local or use_pty or persist_on_release):
 +        raise RuntimeError('Scoped writer requires a local pipe route without retained background work')
 +
@@ -62,6 +233,8 @@
 +    fence = _current.get()
 +    if fence is None:
 +        return subprocess.Popen(argv, **kwargs)
++    if _lifetime.get() is not None:
++        _lifetime.get().assert_current_worker()
 +    if not isinstance(argv, (list, tuple)) or not argv or not isinstance(argv[0], str):
 +        raise ValueError('A qualified executable argument list is required')
 +    argv = list(argv)
@@ -404,3 +577,170 @@
 +                self._roots.pop()
 +            _check(_kernel.CloseHandle(self._job))
 +            self._closed = True
+--- a/tools/async_delegation.py
++++ b/tools/async_delegation.py
+@@ -799,6 +799,7 @@
+     can't pile up unbounded background work. ``slot_key`` names the pool slot the unit occupies
+     (default: its own id); the units of one delegate_task call share the first unit's id so
+     splitting a call into per-group completions never consumes more capacity than the call did."""
++    from tools.mesh_writer_scope import submit_writer_work
+     worker_ledger()  # refuse unbound workers before publishing a live record
+     is_batch = goals is not None
+     label = " batch" if is_batch else ""
+@@ -856,7 +857,7 @@
+     # reservation too: the stall monitor may finalize its registry record before it really exits.
+     retirement.acquire()
+     try:
+-        future = executor.submit(propagate_context_to_thread(_worker))
++        future = submit_writer_work(executor, _worker, propagate_context_to_thread)
+         future.add_done_callback(lambda _: retirement.release())
+     except Exception as exc:  # pragma: no cover — pool submit failure is rare
+         retirement.release()
+--- a/gateway/platforms/api_server_runs.py
++++ b/gateway/platforms/api_server_runs.py
+@@ -525,6 +525,8 @@
+     browser_control_transport_family: Any
+     turn_author: Optional[dict[str, Any]] = None  # memory-attribution label only; grants nothing
+     admission: Any = None
++    writer_lifetime: Any = None  # Trusted in-process factory only; never request JSON.
++    writer_generation: str = ''
+ 
+     @property
+     def approval_session_key(self) -> str:
+@@ -862,71 +864,73 @@
+ 
+ def _run_agent_sync(self, run: _RunLaunch, agent, approval_notify, *, _api_server):
+     """Executor-thread body of one run; returns ``(result, usage, served_runtime)``."""
+-    from gateway.session_context import clear_session_vars
+-    from gateway.hosted_room_execution_policy import (
+-        RoomExecutionPolicy, bind_room_execution_policy, reset_room_execution_policy)
+-    # No eager slash-worker pre-warm: slash.exec spawns one on demand (its error path already relies on that
+-    # respawn to recover from a dead worker). Each worker child runs its own MCP discovery (#61891), so
+-    # pre-warming one per session forks the full stdio MCP fleet — ~20 OS processes per retained session on
+-    # a config with a few stdio servers — even for sessions that never run a worker-routed command. Sessions
+-    # held by a live transport are never reaped, so with the desktop app open for days those fleets
+-    # accumulate until the OS refuses new process spawns.
+-    from tools.approval import register_gateway_notify, unregister_gateway_notify
+-    from tools.approval_context import reset_current_session_key, set_current_session_key
+-    session_id = run.session_id
+-    effective_task_id = session_id or run.run_id
+-    # (token, reset) pairs unwound in the finally block; bound only once each step succeeds.
+-    resets: list[tuple[Any, Callable]] = []
+-    with self._profile_scope(run.request_profile):
+-        try:
+-            # Contextvars, not process env: concurrent runs must not share identity.
+-            resets.append((set_current_session_key(run.approval_session_key), reset_current_session_key))
+-            # chat_id carries the raw session id like _run_agent() does; without it
+-            # tools.async_delegation sees no HERMES_SESSION_CHAT_ID and forces delegations sync.
+-            session_tokens = self._bind_api_server_session(
+-                chat_id=session_id or "", session_key=run.approval_session_key, session_id=session_id or "",
+-                profile=run.request_profile or "",
+-                browser_control_principal=run.browser_control_principal,
+-                browser_control_transport_family=run.browser_control_transport_family,
+-                # #98619 audited opt-in: the /v1/runs session id is wake-capable only when its
+-                # own continuation path reloads session history — an explicit body/chained
+-                # session id or a declared X-Hermes-Session-Key conversation (both load
+-                # SessionDB in _handle_runs), or the run_id fallback the client can post back
+-                # as body.session_id.  A previous_response_id continuation consumes its
+-                # ResponseStore snapshot instead and can never see a SessionDB delivery row,
+-                # so it stays default-denied until a merge contract exists for that chain;
+-                # likewise a caller-supplied conversation_history is authoritative for the
+-                # turn and never reads the delivery row, so it is denied the same way.
+-                session_history_delivery="1" if run.session_history_delivery else "")
+-            if session_tokens:
+-                resets.append((session_tokens, clear_session_vars))
+-            if run.agent_kwargs["room_dispatch"] is not None:
+-                policy = RoomExecutionPolicy.from_mapping(run.agent_kwargs["room_execution_policy"] or {})
+-                resets.append((bind_room_execution_policy(policy), reset_room_execution_policy))
+-            register_gateway_notify(run.approval_session_key, approval_notify)
+-            # /v1/runs owns its agent lifecycle (no TurnRunner): record process ownership
+-            # so stop/cancel reaps only the background processes this run created.
+-            _api_server._publish_turn_process_ownership(agent, effective_task_id)
+-            # Passed only when set: a human turn keeps today's call shape.
+-            author_kwargs = {"turn_author": run.turn_author} if run.turn_author is not None else {}
+-            r = agent.run_conversation(
+-                user_message=run.user_message, conversation_history=run.conversation_history,
+-                task_id=effective_task_id, **author_kwargs)
+-        finally:
+-            # Clear ownership now so a later stop can't reap work this run left running.
+-            _api_server._clear_turn_process_ownership(agent)
+-            self._memory_sessions.checkin(agent)
+-            # Declared-conversation binding, same precedence gate as _run_agent.
+-            if run.declared_selected:
+-                self._bind_declared_conversation(
+-                    getattr(agent, "session_id", None) or session_id, run.gateway_session_key)
++    from tools.mesh_writer_scope import writer_foreground_scope
++    with writer_foreground_scope(getattr(run, 'writer_lifetime', None), expected_run_id=run.run_id, expected_generation=getattr(run, 'writer_generation', '')):
++        from gateway.session_context import clear_session_vars
++        from gateway.hosted_room_execution_policy import (
++            RoomExecutionPolicy, bind_room_execution_policy, reset_room_execution_policy)
++        # No eager slash-worker pre-warm: slash.exec spawns one on demand (its error path already relies on that
++        # respawn to recover from a dead worker). Each worker child runs its own MCP discovery (#61891), so
++        # pre-warming one per session forks the full stdio MCP fleet — ~20 OS processes per retained session on
++        # a config with a few stdio servers — even for sessions that never run a worker-routed command. Sessions
++        # held by a live transport are never reaped, so with the desktop app open for days those fleets
++        # accumulate until the OS refuses new process spawns.
++        from tools.approval import register_gateway_notify, unregister_gateway_notify
++        from tools.approval_context import reset_current_session_key, set_current_session_key
++        session_id = run.session_id
++        effective_task_id = session_id or run.run_id
++        # (token, reset) pairs unwound in the finally block; bound only once each step succeeds.
++        resets: list[tuple[Any, Callable]] = []
++        with self._profile_scope(run.request_profile):
+             try:
+-                unregister_gateway_notify(run.approval_session_key)
++                # Contextvars, not process env: concurrent runs must not share identity.
++                resets.append((set_current_session_key(run.approval_session_key), reset_current_session_key))
++                # chat_id carries the raw session id like _run_agent() does; without it
++                # tools.async_delegation sees no HERMES_SESSION_CHAT_ID and forces delegations sync.
++                session_tokens = self._bind_api_server_session(
++                    chat_id=session_id or "", session_key=run.approval_session_key, session_id=session_id or "",
++                    profile=run.request_profile or "",
++                    browser_control_principal=run.browser_control_principal,
++                    browser_control_transport_family=run.browser_control_transport_family,
++                    # #98619 audited opt-in: the /v1/runs session id is wake-capable only when its
++                    # own continuation path reloads session history — an explicit body/chained
++                    # session id or a declared X-Hermes-Session-Key conversation (both load
++                    # SessionDB in _handle_runs), or the run_id fallback the client can post back
++                    # as body.session_id.  A previous_response_id continuation consumes its
++                    # ResponseStore snapshot instead and can never see a SessionDB delivery row,
++                    # so it stays default-denied until a merge contract exists for that chain;
++                    # likewise a caller-supplied conversation_history is authoritative for the
++                    # turn and never reads the delivery row, so it is denied the same way.
++                    session_history_delivery="1" if run.session_history_delivery else "")
++                if session_tokens:
++                    resets.append((session_tokens, clear_session_vars))
++                if run.agent_kwargs["room_dispatch"] is not None:
++                    policy = RoomExecutionPolicy.from_mapping(run.agent_kwargs["room_execution_policy"] or {})
++                    resets.append((bind_room_execution_policy(policy), reset_room_execution_policy))
++                register_gateway_notify(run.approval_session_key, approval_notify)
++                # /v1/runs owns its agent lifecycle (no TurnRunner): record process ownership
++                # so stop/cancel reaps only the background processes this run created.
++                _api_server._publish_turn_process_ownership(agent, effective_task_id)
++                # Passed only when set: a human turn keeps today's call shape.
++                author_kwargs = {"turn_author": run.turn_author} if run.turn_author is not None else {}
++                r = agent.run_conversation(
++                    user_message=run.user_message, conversation_history=run.conversation_history,
++                    task_id=effective_task_id, **author_kwargs)
+             finally:
+-                for token, reset in resets:
+-                    with suppress(Exception):
+-                        reset(token)
+-        return r, _run_usage(agent), _served_runtime(agent)
++                # Clear ownership now so a later stop can't reap work this run left running.
++                _api_server._clear_turn_process_ownership(agent)
++                self._memory_sessions.checkin(agent)
++                # Declared-conversation binding, same precedence gate as _run_agent.
++                if run.declared_selected:
++                    self._bind_declared_conversation(
++                        getattr(agent, "session_id", None) or session_id, run.gateway_session_key)
++                try:
++                    unregister_gateway_notify(run.approval_session_key)
++                finally:
++                    for token, reset in resets:
++                        with suppress(Exception):
++                            reset(token)
++            return r, _run_usage(agent), _served_runtime(agent)
+ 
+ 
+ def _make_approval_notify(self, run: _RunLaunch, *, _api_server) -> Callable[[dict[str, Any]], None]:
