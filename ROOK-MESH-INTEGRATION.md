@@ -972,3 +972,29 @@ and trusted exact-attempt enrollment. Full original goal remains active/incomple
 Index navigation initially stalled under restricted execution; bounded elevated
 local index calls succeeded. A malformed literal combined search proved nothing
 about code absence; precise outline/source inspection established the launcher.
+
+
+## 2026-11-08 - Native direct-run enrollment candidate
+
+Previous goal turn: progress (96417e4 foreground adapter, tested/pushed/backed up).
+Revalidated clean tracked baseline and parent checklist revision28. Native admission
+has three distinct paths: direct gateway executor; session-authority observer;
+live Bot Chat owner. Only the direct branch now has an optional in-process
+WriterRunRegistry hook before agent construction. Other routes mint no ownership
+evidence. No HTTP enrollment field, configuration activation, service restart,
+new credential or installed-source change. Unconfigured behavior is preserved.
+
+Registry reserves native run ID before fence creation, generates its own generation,
+rejects prebound caller fields/canonical admission, serializes concurrent duplicates,
+and retains failed/uncertain setup and completed lifetimes. Bounded capacity fails
+closed; no forget/retry API until durable acknowledgment is designed. Snapshots
+never grant whole-worker release. This is an internal connection candidate, not
+a production-enabled dispatch system or complete-tool policy.
+
+Focused regressions PASS24 (prior19 plus five enrollment tests). Native qualification
+PASS19, including three new checks of the actual direct-branch enrollment prefix
+with a real process, duplicate refusal before agent creation, and retained completed
+enrollment without release authority. This prefix fixture is NOT full HTTP/agent
+end-to-end acceptance. Candidate data/hermes-writer-scope-ebb8d1ed-f38f-42bd-912d-273bda90905b.
+Next: complete allowed-tool coverage and authenticated durable release/strict Mesh
+consumer, then real installation qualification before automatic assignment.

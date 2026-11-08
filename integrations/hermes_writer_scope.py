@@ -4,6 +4,7 @@ from contextvars import ContextVar, copy_context
 from concurrent.futures import Future
 from pathlib import Path
 import shutil
+import re
 import subprocess
 import threading
 import time
@@ -12,6 +13,68 @@ from uuid import uuid4
 _current = ContextVar('mesh_owned_writer_fence', default=None)
 _lifetime = ContextVar('mesh_writer_lifetime', default=None)
 _worker = ContextVar('mesh_owned_worker_ticket', default=None)
+
+
+class WriterRunRegistry:
+    """In-process direct-run enrollment; no HTTP/config activation or release grant.
+
+    Entries survive delivery completion/cancellation. A later durable consumer must
+    acknowledge retirement; this candidate deliberately provides no forget/retry API.
+    """
+    def __init__(self, fence_factory, *, max_entries=256):
+        if not callable(fence_factory) or type(max_entries) is not int or not 1 <= max_entries <= 4096:
+            raise ValueError('A trusted fence factory and bounded capacity are required')
+        self._factory, self._limit = fence_factory, max_entries
+        self._lock, self._entries = threading.RLock(), {}
+
+    def enroll(self, run):
+        run_id = getattr(run, 'run_id', None)
+        if not isinstance(run_id, str) or not re.fullmatch(r'run_[0-9a-f]{32}', run_id):
+            raise ValueError('A native generated run ID is required')
+        if getattr(run, 'admission', None) is not None:
+            raise RuntimeError('Canonical session-owner execution is not a direct managed run')
+        with self._lock:
+            if run_id in self._entries:
+                raise RuntimeError('Native run enrollment is already reserved')
+            if len(self._entries) >= self._limit:
+                raise RuntimeError('Native writer enrollment capacity is held')
+            if getattr(run, 'writer_lifetime', None) is not None or getattr(run, 'writer_generation', ''):
+                raise RuntimeError('A caller cannot supply native lifetime enrollment')
+            generation = str(uuid4())
+            entry = {'run': run, 'generation': generation, 'state': 'reserved', 'fence': None, 'lifetime': None}
+            self._entries[run_id] = entry  # Reserve before resource creation; unknown failures stay held.
+            try:
+                fence = entry['fence'] = self._factory(run_id, generation)
+                if (getattr(fence, 'run_id', None) != run_id or getattr(fence, 'generation', None) != generation
+                        or not callable(getattr(fence, 'popen', None))):
+                    raise RuntimeError('Factory returned a mismatched native process fence')
+                lifetime = entry['lifetime'] = WriterLifetime(fence)
+                run.writer_lifetime, run.writer_generation = lifetime, generation
+                entry['state'] = 'enrolled'
+                return lifetime
+            except BaseException:
+                entry['state'] = 'unknown'
+                raise
+
+    def snapshot(self, run_id):
+        with self._lock:
+            entry = self._entries.get(run_id)
+            if entry is None:
+                return None
+            lifetime = entry['lifetime']
+            return {'schema': 'mesh-native-writer-enrollment/v1', 'runId': run_id,
+                    'generation': entry['generation'], 'state': entry['state'],
+                    'lifetime': lifetime.snapshot() if lifetime is not None else None,
+                    'writerQuiescence': False}
+
+
+def enroll_direct_writer_run(registry, run):
+    """Called only by the native direct-executor branch, before agent construction."""
+    if registry is None:
+        return None  # Unconfigured gateway keeps its original behavior, without new proof.
+    if not isinstance(registry, WriterRunRegistry):
+        raise RuntimeError('Native writer registry must be installed in-process')
+    return registry.enroll(run)
 
 
 class WriterLifetime:

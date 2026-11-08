@@ -66,6 +66,18 @@ def lifetime_candidates(native_root):
             lines = current.splitlines(True)
             lines.insert(last, '    writer_lifetime: Any = None  # Trusted in-process factory only; never request JSON.\n')
             lines.insert(last + 1, "    writer_generation: str = ''\n")
+            current = ''.join(lines)
+            execute = next(n for n in ast.parse(current).body if isinstance(n, ast.AsyncFunctionDef) and n.name == '_execute_run')
+            body = ''.join(current.splitlines(True)[execute.lineno - 1:execute.end_lineno])
+            old = '        else:\n            with self._profile_scope(run.request_profile):\n'
+            if body.count(old) != 1:
+                raise RuntimeError('Unexpected native direct-executor admission shape')
+            body = body.replace(old, '        else:\n'
+                '            from tools.mesh_writer_scope import enroll_direct_writer_run\n'
+                "            enroll_direct_writer_run(getattr(self, '_mesh_writer_runs', None), run)\n"
+                '            with self._profile_scope(run.request_profile):\n')
+            lines = current.splitlines(True)
+            lines[execute.lineno - 1:execute.end_lineno] = [body]
         changed[path] = ''.join(lines)
         ast.parse(changed[path])
     return originals, changed
@@ -406,6 +418,55 @@ def qualify_foreground(modules):
     return checks
 
 
+def qualify_enrollment(modules):
+    """Execute the actual direct-branch enrollment prefix, not an entire API request."""
+    tree = ast.parse(modules['gateway/platforms/api_server_runs.py'])
+    execute = next(n for n in tree.body if isinstance(n, ast.AsyncFunctionDef) and n.name == '_execute_run')
+    branch = next(n for n in ast.walk(execute) if isinstance(n, ast.If)
+                  and ast.unparse(n.test) == 'run.admission is not None')
+    if (not isinstance(branch.orelse[0], ast.ImportFrom)
+            or branch.orelse[0].module != 'tools.mesh_writer_scope'
+            or not isinstance(branch.orelse[2], ast.With)
+            or 'self._create_agent(' not in ast.unparse(branch.orelse[2])
+            or 'enroll_direct_writer_run' in ast.unparse(ast.Module(body=branch.body, type_ignores=[]))):
+        raise AssertionError('Enrollment must precede direct agent creation and avoid canonical-owner claims')
+    prefix = compile(ast.Module(body=branch.orelse[:2], type_ignores=[]), '<native-direct-enrollment-prefix>', 'exec')
+    registry = scope.WriterRunRegistry(WindowsWriterFence)
+    run = types.SimpleNamespace(run_id='run_' + uuid.uuid4().hex, admission=None,
+                                writer_lifetime=None, writer_generation='')
+    host = types.SimpleNamespace(_mesh_writer_runs=registry)
+    tools = types.ModuleType('tools'); tools.__path__ = []
+    checks = []
+    try:
+        with patch.dict(sys.modules, {'tools': tools, 'tools.mesh_writer_scope': scope}):
+            exec(prefix, {'self': host, 'run': run})
+            lifetime = run.writer_lifetime
+            with scope.writer_foreground_scope(lifetime, expected_run_id=run.run_id,
+                                                expected_generation=run.writer_generation):
+                with scope.scoped_popen([sys.executable, '-c', 'print("enrolled run")'],
+                                        stdout=subprocess.PIPE, text=True) as proc:
+                    output, _ = proc.communicate(timeout=5)
+                if output.strip() != 'enrolled run':
+                    raise AssertionError('Enrolled native run lost command output')
+            if not lifetime.wait()['managedWorkEnded']:
+                raise AssertionError('Actual enrolled run did not settle')
+            checks.append('native_direct_enrollment_prefix_real_process_lifetime')
+            try:
+                exec(prefix, {'self': host, 'run': run})
+            except RuntimeError:
+                checks.append('native_direct_duplicate_enrollment_refused_before_agent_creation')
+            else:
+                raise AssertionError('Duplicate native admission was accepted')
+            snapshot = registry.snapshot(run.run_id)
+            if snapshot['writerQuiescence'] or snapshot['state'] != 'enrolled':
+                raise AssertionError('Finished delivery removed enrollment or granted release')
+            checks.append('native_completed_enrollment_retained_without_release_authority')
+    finally:
+        if run.writer_lifetime is not None:
+            run.writer_lifetime.fence.terminate(); run.writer_lifetime.fence.close()
+    return checks
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
@@ -415,7 +476,7 @@ if __name__ == '__main__':
               'files': {name: hashlib.sha256(text.encode()).hexdigest() for name, text in modules.items()},
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
     try:
-        report['checks'] = qualify(candidate) + qualify_lifetimes(modules) + qualify_foreground(modules)
+        report['checks'] = qualify(candidate) + qualify_lifetimes(modules) + qualify_foreground(modules) + qualify_enrollment(modules)
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

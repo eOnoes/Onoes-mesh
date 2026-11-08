@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import sys
 import threading
+import types
 import unittest
 from unittest.mock import patch
 from integrations import hermes_writer_scope as scope
@@ -183,6 +184,78 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
                 self.assertTrue(self.fence.snapshot()['processTreeEnded'])
             finally:
                 next_step.set(); release.set()
+
+
+class WriterRunEnrollmentTests(unittest.TestCase):
+    def run_fixture(self, number=1, **kwargs):
+        return types.SimpleNamespace(run_id=f'run_{number:032x}', admission=None,
+                                     writer_lifetime=None, writer_generation='', **kwargs)
+
+    def test_server_mints_generation_and_duplicate_admission_cannot_replace_it(self):
+        created = []
+        def factory(run_id, generation):
+            fence = types.SimpleNamespace(run_id=run_id, generation=generation, popen=lambda *a, **k: None,
+                                          snapshot=lambda: {'processTreeEnded': False})
+            created.append(fence)
+            return fence
+        registry, run = scope.WriterRunRegistry(factory), self.run_fixture()
+        lifetime = scope.enroll_direct_writer_run(registry, run)
+        self.assertIs(run.writer_lifetime, lifetime)
+        self.assertEqual(run.writer_generation, created[0].generation)
+        with self.assertRaises(RuntimeError):
+            scope.enroll_direct_writer_run(registry, self.run_fixture())
+        self.assertEqual(len(created), 1)
+        self.assertFalse(registry.snapshot(run.run_id)['writerQuiescence'])
+
+    def test_unknown_creation_retains_reservation_and_capacity(self):
+        def fail(*args):
+            raise OSError('uncertain resource creation')
+        registry, run = scope.WriterRunRegistry(fail, max_entries=1), self.run_fixture()
+        with self.assertRaises(OSError):
+            registry.enroll(run)
+        self.assertEqual(registry.snapshot(run.run_id)['state'], 'unknown')
+        with self.assertRaises(RuntimeError):
+            registry.enroll(self.run_fixture())
+        with self.assertRaises(RuntimeError):
+            registry.enroll(self.run_fixture(2))
+
+    def test_external_lifetime_and_canonical_owner_routes_are_refused_before_creation(self):
+        calls = []
+        registry = scope.WriterRunRegistry(lambda *args: calls.append(args))
+        for field, value in [('writer_generation', 'request-generation'),
+                             ('writer_lifetime', object()), ('admission', object())]:
+            run = self.run_fixture()
+            setattr(run, field, value)
+            with self.assertRaises(RuntimeError):
+                registry.enroll(run)
+        with self.assertRaises(ValueError):
+            registry.enroll(types.SimpleNamespace(run_id='client-picked'))
+        self.assertEqual(calls, [])
+
+    def test_unconfigured_registry_preserves_legacy_and_arbitrary_registry_is_refused(self):
+        run = self.run_fixture()
+        self.assertIsNone(scope.enroll_direct_writer_run(None, run))
+        self.assertIsNone(run.writer_lifetime)
+        with self.assertRaises(RuntimeError):
+            scope.enroll_direct_writer_run(types.SimpleNamespace(enroll=lambda _: None), run)
+
+    def test_concurrent_same_run_enrolls_only_once(self):
+        created = []
+        def factory(run_id, generation):
+            created.append(run_id)
+            return types.SimpleNamespace(run_id=run_id, generation=generation, popen=lambda *a, **k: None)
+        registry, barrier = scope.WriterRunRegistry(factory), threading.Barrier(2)
+        def attempt():
+            barrier.wait(timeout=3)
+            try:
+                registry.enroll(self.run_fixture())
+                return 'enrolled'
+            except RuntimeError:
+                return 'refused'
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _: attempt(), range(2)))
+        self.assertEqual(sorted(results), ['enrolled', 'refused'])
+        self.assertEqual(len(created), 1)
 
 
 if __name__ == '__main__':
