@@ -237,3 +237,57 @@ A native terminal field remains separate from affirmative writer completion.
 Relay currently has no single read surface for this exact join, as Echo also
 confirmed. Implement that boundary in reviewed isolation before activation;
 Rook receives no borrowed owner credentials or raw database access from this note.
+
+
+## Isolated Relay native-run receipt candidate - 2026-11-08
+
+Mesh now carries an isolated candidate in integrations/relay_native_receipts.py,
+relay-native-receipts.patch, and qualify-relay-native-receipts.py. It has NOT been
+installed in Relay and no running service was restarted. The read-only process
+observation confirms listener8787/PID42628 uses Pythonw and
+D:/Dev/Onoes-Relay/relay_server.py. That directory's historical AGENTS calls it a
+sanitized snapshot; the process path is current operational evidence, not proof
+that its in-memory code equals today's file. Review/restart qualification remains.
+
+The candidate reuses existing outbox.transport_ref for a versioned native run ID
+and configured gateway fingerprint. Agent and original conversation are checked
+against the existing outbox row; no schema migration, credential copy, raw native
+DB access, model call or new principal is needed. The admission is committed
+before event streaming. Conflicting binds cannot overwrite each other, including
+across two SQLite connections. Existing outbox settlement preserves the reference.
+
+The patched dispatcher supplies a fresh-claim flag. A genuinely first claimed
+send can submit once; an existing saved binding reattaches to that run without
+POSTing. A missing binding on a nonfresh/retried send is uncertain and refused.
+The crash window between native acceptance and local bind remains unknown; this
+patch deliberately does not pretend to recover it by blind admission replay.
+
+Candidate GET /api/agents/{aid}/outbox/{send_id}/native-run resolves only that
+agent's saved binding and uses the existing native client's GET. A five-second
+read deadline returns unknown on failure. The result keeps original conversation
+and native selected session separate, excludes output/error/message contents,
+and always reports writerQuiescence=false. Wrong endpoint/run/session/status or
+missing receipt cannot unlock a workspace; unavailable is not terminal proof.
+
+Replay from Mesh using Relay's existing dependency environment:
+`D:/Dev/Onoes-Relay/.venv/Scripts/python.exe -I integrations/qualify-relay-native-receipts.py --source D:/Dev/Onoes-Relay --evidence data/<new-empty-folder> --patch integrations/relay-native-receipts.patch`
+It copies only explicit source files to the new evidence folder and creates
+synthetic SQLite stores. It never imports live relay_server or copies config,
+credentials, conversations, attachments or private memory. Source anchors are
+unique/exact; changed upstream code refuses generation rather than guessing.
+
+Nine checks PASS in data/relay-native-receipts-2026-11-08-integrated:
+durable reopen/exact IDs and rotation; identity conflicts; missing binding/no
+native requests; unavailable/malformed status denial; settlement preservation;
+two-connection single winner; uncertain pre-bind refusal; actual patched
+run_turn+hermes_send with simulated stream failure and no second submit; and
+actual ASGI route plus existing AuthGate (no/wrong auth401, valid200, wrong/missing
+identity404, POST405, no response output and zero database changes on reads).
+This qualifies the extracted functions/auth gate, not full-service startup or
+live deployment. Existing default Mesh266 tests were not rerun for this isolated
+Python-only adapter. Initial fake missing _apply_run_event and missing FastAPI in
+system Python were corrected using the existing Relay venv, not package installs.
+
+Next: full isolated service startup/regression review, compatible Mesh receipt
+consumer, native writer/child quiescence contract, and Echo's isolated Rook patch.
+Rook activation remains off; this candidate alone is not Rook acceptance.
