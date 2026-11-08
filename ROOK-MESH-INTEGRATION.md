@@ -998,3 +998,34 @@ enrollment without release authority. This prefix fixture is NOT full HTTP/agent
 end-to-end acceptance. Candidate data/hermes-writer-scope-ebb8d1ed-f38f-42bd-912d-273bda90905b.
 Next: complete allowed-tool coverage and authenticated durable release/strict Mesh
 consumer, then real installation qualification before automatic assignment.
+
+
+## 2026-11-08 - Tool-thread lifetime coverage candidate
+
+Previous turn PROGRESS:6b8c06b enrollment committed/pushed/tested/backed up.
+Revalidated clean tracked baseline. Native tool executor uses dedicated threads
+for sequential and parallel calls; terminal approval batches have a third prepared
+worker submission. Deadlines synthesize tool results and cancel futures, but an
+already-running callable may remain alive. Prepared calls also outlive the waiter.
+
+Pinned two additional native sources: agent/tool_executor.py SHA256
+3fb81cd7ec8946df1f6e50b0879b4be4499223b4236450da0581ac7c0a1727e6;
+agent/terminal_approval_batch.py SHA256
+3ac8420c2cdbbaf8d6f8241be5154a75aff4da54fd090492e9ce9ce9396e71dc.
+Three isolated submission replacements use the existing native executor and context
+propagator through submit_writer_work. Helper now preserves positional/keyword
+arguments; fixed default propagator arity and added legacy/managed argument tests.
+No timeout/interruption/result/guardrail policy changed.
+
+Candidate has eight files and six pinned native baselines. Native qualification
+PASS22 includes the three actual patched submission statements executing real
+thread/process work under fixture worker bodies; parent return and failed future
+cancellation cannot end the live callable ticket. A worker can still start its
+owned child after root returns; exact future completion settles it. These are
+submission-statement fixtures, NOT full native tool timeout/batch end-to-end tests.
+Focused Windows/lifetime/enrollment suite PASS26. Whole-worker release remains
+unqualified: tool handler/plugin/MCP/remote side effects need an explicit audited
+policy plus durable authenticated completion and strict Mesh consumption. No live
+installation, restart, model call, watcher activation or existing-hold release.
+
+Candidate: C:\Users\eMitchell109\Documents\ChatGPT\Nims Chat\mesh-workroom-ab\data\hermes-writer-scope-cc6b92af-5f68-432a-a04b-c16dd2b65079

@@ -26,6 +26,9 @@ from integrations.windows_writer_fence import WindowsWriterFence
 
 BASELINE = '6491641456b51eb78c36a50a8508f145da328f7c70a432bced84b3b329e0046e'
 FOREGROUND_BASELINE = '723e8f0bc27c58c310f9530732c889e5f8480d74e12402656ed0033e08afc27c'
+TOOL_WORKER_BASELINES = {
+    'agent/tool_executor.py': '3fb81cd7ec8946df1f6e50b0879b4be4499223b4236450da0581ac7c0a1727e6',
+    'agent/terminal_approval_batch.py': '3ac8420c2cdbbaf8d6f8241be5154a75aff4da54fd090492e9ce9ce9396e71dc'}
 LIFETIME_BASELINES = {
     'tools/async_delegation.py': '1bcff60c59c453f1e3d7d049bcf525b727df07c1d7e1eeb45ba0776598c3c2b6',
     'gateway/platforms/api_server_runs.py': '481b67c8cddd2dcca3a9b60d938d0cec5d621a4648784119873d60ffcd975138'}
@@ -105,6 +108,35 @@ def foreground_candidate(native_root):
     return {path: original}, {path: candidate}
 
 
+def tool_worker_candidates(native_root):
+    originals, changed = {}, {}
+    replacements = {
+        'agent/tool_executor.py': [
+            ('        future = executor.submit(propagate_context_to_thread(_run))',
+             '        from tools.mesh_writer_scope import submit_writer_work\n'
+             '        future = submit_writer_work(executor, _run, propagate_context_to_thread)'),
+            ('                f = executor.submit(propagate_context_to_thread(self.run_worker), i, submit_index)',
+             '                from tools.mesh_writer_scope import submit_writer_work\n'
+             '                f = submit_writer_work(executor, self.run_worker, propagate_context_to_thread, i, submit_index)')],
+        'agent/terminal_approval_batch.py': [
+            ('            slot.future = self.executor.submit(propagate_context_to_thread(slot.run))',
+             '            from tools.mesh_writer_scope import submit_writer_work\n'
+             '            slot.future = submit_writer_work(self.executor, slot.run, propagate_context_to_thread)')]}
+    for path, expected in TOOL_WORKER_BASELINES.items():
+        raw = (native_root / path).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != expected:
+            raise RuntimeError('Native tool-worker source changed: ' + path)
+        original = raw.decode('utf-8').replace('\r\n', '\n')
+        candidate = original
+        for before, after in replacements[path]:
+            if candidate.count(before) != 1:
+                raise RuntimeError('Unexpected native tool-worker submission shape: ' + path)
+            candidate = candidate.replace(before, after)
+        ast.parse(candidate)
+        originals[path], changed[path] = original, candidate
+    return originals, changed
+
+
 def prepare(source_path):
     raw = source_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != BASELINE:
@@ -142,6 +174,9 @@ def prepare(source_path):
     foreground_originals, foreground_modules = foreground_candidate(source_path.parent.parent)
     lifetime_originals.update(foreground_originals)
     modules.update(foreground_modules)
+    tool_originals, tool_modules = tool_worker_candidates(source_path.parent.parent)
+    lifetime_originals.update(tool_originals)
+    modules.update(tool_modules)
     patch_text = ''.join(difflib.unified_diff(original.splitlines(True), candidate.splitlines(True),
                                            fromfile='a/tools/process_registry.py', tofile='b/tools/process_registry.py'))
     for path, text in modules.items():
@@ -467,16 +502,77 @@ def qualify_enrollment(modules):
     return checks
 
 
+def qualify_tool_worker_submissions(modules):
+    """Actual three patched submission statements, real threads/processes, fixture bodies."""
+    statements = []
+    for path in TOOL_WORKER_BASELINES:
+        for node in ast.walk(ast.parse(modules[path])):
+            if (isinstance(node, ast.Assign) and isinstance(node.value, ast.Call)
+                    and isinstance(node.value.func, ast.Name) and node.value.func.id == 'submit_writer_work'):
+                statements.append((path, node))
+    if len(statements) != 3:
+        raise AssertionError('Expected sequential/concurrent/prepared tool submissions')
+    checks = []
+    tools = types.ModuleType('tools'); tools.__path__ = []
+    for index, (path, statement) in enumerate(statements):
+        fence = WindowsWriterFence('native-tool-worker-' + str(index), 'one')
+        lifetime = scope.WriterLifetime(fence)
+        entered, release = threading.Event(), threading.Event()
+        outputs, arguments = [], []
+        def worker(*args, **kwargs):
+            lifetime.assert_current_worker()
+            arguments.append((args, kwargs))
+            entered.set()
+            if not release.wait(timeout=5):
+                raise RuntimeError('Tool fixture release timed out')
+            with scope.scoped_popen([sys.executable, '-c', 'print("tool still owned")'],
+                                    stdout=subprocess.PIPE, text=True) as proc:
+                output, _ = proc.communicate(timeout=5)
+            outputs.append(output.strip())
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            try:
+                slot = types.SimpleNamespace(run=worker)
+                namespace = {'submit_writer_work': scope.submit_writer_work, 'executor': executor,
+                             'self': types.SimpleNamespace(executor=executor, run_worker=worker),
+                             'slot': slot, '_run': worker, 'i': 7, 'submit_index': 2}
+                # The native propagator supports positional arguments, as does copy_context.run.
+                def propagate(fn):
+                    context = copy_context()
+                    return lambda *args, **kwargs: context.run(fn, *args, **kwargs)
+                namespace['propagate_context_to_thread'] = propagate
+                code = compile(ast.Module(body=[statement], type_ignores=[]), '<native-tool-submission>', 'exec')
+                with scope.writer_foreground_scope(lifetime):
+                    exec(code, namespace)
+                    future = getattr(slot, 'future', None) or namespace.get('future') or namespace.get('f')
+                    if not entered.wait(timeout=3):
+                        raise AssertionError('Native tool worker did not start')
+                if future.cancel() or lifetime.wait(20)['managedWorkEnded']:
+                    raise AssertionError('Abandoned tool future released its still-running callable')
+                release.set(); future.result(timeout=5)
+                if outputs != ['tool still owned'] or not lifetime.wait()['managedWorkEnded']:
+                    raise AssertionError('Native tool worker lost owned context after parent return')
+                expected_args = (7, 2) if ast.unparse(statement.targets[0]) == 'f' else ()
+                if arguments != [(expected_args, {})]:
+                    raise AssertionError('Native tool positional arguments changed')
+                checks.append('native_' + ('prepared' if 'approval_batch' in path else
+                              'concurrent' if expected_args else 'sequential') + '_tool_future_holds_actual_callable')
+            finally:
+                release.set()
+                fence.terminate(); fence.close()
+    return checks
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
               'nativeSourceBaselines': {'tools/process_registry.py': BASELINE, **LIFETIME_BASELINES,
-                                        'tools/environments/local.py': FOREGROUND_BASELINE},
+                                        'tools/environments/local.py': FOREGROUND_BASELINE, **TOOL_WORKER_BASELINES},
               'qualificationScope': 'patched native functions with fixture profiles/ledgers and real threads/processes',
               'files': {name: hashlib.sha256(text.encode()).hexdigest() for name, text in modules.items()},
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
     try:
-        report['checks'] = qualify(candidate) + qualify_lifetimes(modules) + qualify_foreground(modules) + qualify_enrollment(modules)
+        report['checks'] = (qualify(candidate) + qualify_lifetimes(modules) + qualify_foreground(modules)
+                            + qualify_enrollment(modules) + qualify_tool_worker_submissions(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

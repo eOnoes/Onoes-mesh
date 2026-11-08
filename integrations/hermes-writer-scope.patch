@@ -245,21 +245,21 @@
 +                lifetime._maybe_seal()
 +
 +
-+def submit_writer_work(executor, fn, propagate=None):
++def submit_writer_work(executor, fn, propagate=None, *args, **kwargs):
 +    """Use the existing executor and its context propagator, not a new worker pool."""
 +    if propagate is None:
 +        def propagate(call):
 +            context = copy_context()
-+            return lambda: context.run(call)
++            return lambda *call_args, **call_kwargs: context.run(call, *call_args, **call_kwargs)
 +    lifetime = _lifetime.get()
 +    if lifetime is None:
-+        return executor.submit(propagate(fn))
++        return executor.submit(propagate(fn), *args, **kwargs)
 +    ticket = lifetime._reserve()  # Held before any worker can start.
 +    def tracked():
 +        lifetime._start(ticket)
 +        token = _worker.set((lifetime, ticket))
 +        try:
-+            return fn()
++            return fn(*args, **kwargs)
 +        finally:
 +            _worker.reset(token)
 +            lifetime._returned(ticket)
@@ -835,3 +835,37 @@
              args, text=True, env=_make_run_env(self.env), encoding="utf-8", errors="replace",
              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
              stdin=subprocess.PIPE if stdin_data is not None else subprocess.DEVNULL,
+--- a/agent/tool_executor.py
++++ b/agent/tool_executor.py
+@@ -944,7 +944,8 @@
+         ref.trace = []
+     if prepared is None:
+         executor = DaemonThreadPoolExecutor(max_workers=1)
+-        future = executor.submit(propagate_context_to_thread(_run))
++        from tools.mesh_writer_scope import submit_writer_work
++        future = submit_writer_work(executor, _run, propagate_context_to_thread)
+     deadline = time.monotonic() + timeout_s if timeout_s is not None else None
+     started = time.monotonic()
+     abandoned = False
+@@ -1410,7 +1411,8 @@
+         future_to_index = {}
+         for submit_index, i in enumerate(runnable):
+             try:
+-                f = executor.submit(propagate_context_to_thread(self.run_worker), i, submit_index)
++                from tools.mesh_writer_scope import submit_writer_work
++                f = submit_writer_work(executor, self.run_worker, propagate_context_to_thread, i, submit_index)
+             except RuntimeError as submit_error:
+                 if not _is_interpreter_shutdown_submit_error(submit_error):
+                     raise
+--- a/agent/terminal_approval_batch.py
++++ b/agent/terminal_approval_batch.py
+@@ -109,7 +109,8 @@
+         from agent.tool_executor import _resolve_sequential_tool_timeout
+         for slot in self.slots:
+             slot.check_cancelled()
+-            slot.future = self.executor.submit(propagate_context_to_thread(slot.run))
++            from tools.mesh_writer_scope import submit_writer_work
++            slot.future = submit_writer_work(self.executor, slot.run, propagate_context_to_thread)
+             timeout = _resolve_sequential_tool_timeout()
+             started = time.monotonic()
+             baseline = self.authorization_gate.excluded_seconds()

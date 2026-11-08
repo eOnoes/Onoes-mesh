@@ -59,6 +59,12 @@ class HermesWriterScopeTests(unittest.TestCase):
             self.assertEqual(scope.scoped_popen(argv, stdout=-1), 'legacy')
             launch.assert_called_once_with(argv, stdout=-1)
 
+    def test_unbound_submission_preserves_positional_and_keyword_arguments(self):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = scope.submit_writer_work(pool, lambda value, *, suffix: value + suffix,
+                                               None, 'legacy', suffix=' arguments')
+            self.assertEqual(future.result(timeout=3), 'legacy arguments')
+
 
 @unittest.skipUnless(sys.platform == 'win32', 'Real Windows job accounting required')
 class ManagedWriterLifetimeTests(unittest.TestCase):
@@ -69,6 +75,14 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
     def tearDown(self):
         self.fence.terminate()
         self.fence.close()
+
+    def test_managed_submission_preserves_positional_and_keyword_arguments(self):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            with scope.writer_foreground_scope(self.life):
+                future = scope.submit_writer_work(pool, lambda value, *, suffix: value + suffix,
+                                                   None, 'managed', suffix=' arguments')
+                self.assertEqual(future.result(timeout=3), 'managed arguments')
+            self.assertTrue(self.life.wait()['managedWorkEnded'])
 
     def test_parent_return_and_early_result_record_do_not_settle_running_delegate(self):
         started, delivery_recorded, release = threading.Event(), threading.Event(), threading.Event()

@@ -213,21 +213,21 @@ def writer_foreground_scope(lifetime, *, expected_run_id=None, expected_generati
                 lifetime._maybe_seal()
 
 
-def submit_writer_work(executor, fn, propagate=None):
+def submit_writer_work(executor, fn, propagate=None, *args, **kwargs):
     """Use the existing executor and its context propagator, not a new worker pool."""
     if propagate is None:
         def propagate(call):
             context = copy_context()
-            return lambda: context.run(call)
+            return lambda *call_args, **call_kwargs: context.run(call, *call_args, **call_kwargs)
     lifetime = _lifetime.get()
     if lifetime is None:
-        return executor.submit(propagate(fn))
+        return executor.submit(propagate(fn), *args, **kwargs)
     ticket = lifetime._reserve()  # Held before any worker can start.
     def tracked():
         lifetime._start(ticket)
         token = _worker.set((lifetime, ticket))
         try:
-            return fn()
+            return fn(*args, **kwargs)
         finally:
             _worker.reset(token)
             lifetime._returned(ticket)
