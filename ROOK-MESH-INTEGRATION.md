@@ -398,3 +398,25 @@ running twice during preparation. No Relay restart or cancellation performed.
 The isolated checkout currently shows only its two deliberately added metadata
 files, with no delivered patch yet; this does not prove the native build stopped.
 Wait on that exact run/actual artifacts, not elapsed time or global process counts.
+
+
+## Receipt bridge staged on disk; runtime unchanged - 2026-11-08
+
+The verified candidate server/helper were staged in D:/Dev/Onoes-Relay using new
+exclusive temporary files and atomic replacement. Original bytes/all14 dependency
+hashes matched the verified E package immediately before staging; changed source
+or an existing helper would refuse it. Resulting hashes and Python compile PASS.
+Evidence: data/relay-native-source-staging-2026-11-08.json and the backup's
+source-staging-record.json. Initial Windows manifest separator lookup failed
+before writes; normalized keys corrected preflight. Original backups preserved.
+
+This is an on-disk code change, NOT runtime activation. Same RelayPID42628 stayed
+healthy with4agents, new receipt route still unavailable as expected before reload.
+No restart, new credential/grant, model operation, scheduler or Rook activation.
+The implementation patch remains versioned in Mesh; separate Relay Git metadata
+was already unqualified, so no separate clean/commit claim. Relay index caches
+invalidated for both changed files. Recovery note now explains staging state.
+
+The fixed Echo run is still running, with WIP edits to claim policy, flow,
+Workroom, server and claim tests in its isolated checkout. No patch is delivered;
+those edits are not acceptance. Preserve that writer and its receipt transport.
