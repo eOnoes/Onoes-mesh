@@ -59,3 +59,45 @@ A single read-only question was sent to Echo through the existing Mesh Relay con
 Evidence: `data/echo-terminal-question-2026-11-08/receipt.json` and `../mesh-echo-terminal-question.png`. The current live task count remains 14; no new Workroom question card was found, so no task ID is invented. The old generic `relay-http.message` linking path is not sufficient evidence that the current chat UI created a card.
 
 Relay's `rev-parse` reported `5cc0154`; its tracked-status check failed with a referenced worktree metadata path error. No Relay Git repair was attempted and no clean-working-tree assertion is made. This audit does not qualify the live Echo adapter or authorize activation.
+
+## Echo answer received - 2026-11-08
+
+Echo replied to the original scoped question. Redacted answer retained at
+`data/echo-terminal-question-2026-11-08/echo-answer.txt`. This supersedes the
+previous pending-reply observation; it does not establish native completion proof.
+
+Echo reports no existing durable Mesh-send/session/native-run binding in the
+inspected Relay/Hermes source. Relay's session activity can contain run IDs but
+cannot unambiguously join multiple sends in one session. The inspected Hermes
+research snapshot may not implement the Idempotency-Key durability that Relay's
+client expects, and its terminal status/event retention is not a durable replay
+log. Echo explicitly did not verify that snapshot against the deployed gateway.
+These are source-audit findings, not verified live gateway behavior.
+
+Echo also reports that native run completion does not establish that all writing
+children/tools ended. Nims independently verified Relay's TERMINAL_STATUSES
+includes unavailable; never map that state to success or writer quiescence.
+The proposed receipt needs original send/agent/conversation/workspace/native-run
+binding plus affirmative per-run tool/subagent/child completion evidence. A bare
+native run ID or accepted outbox row cannot close the acceptance-to-binding crash
+gap. Missing/expired/404/unavailable evidence must preserve uncertainty.
+
+Fresh live Relay observations: Echo status done, activeRunIds empty, no native
+outcome; latest outbox entry accepted once with no native reference. The exact
+original chat message has only k/t fields in the public agent snapshot, so no
+message ID was invented from that text. One following Echo answer was observed.
+Metadata proof: native-observation.json in the evidence folder above. These
+observations do not prove a Rook build is running or that a writer has stopped.
+
+The existing Echo gateway URL observed from Relay is http://localhost:8642.
+Nims made one anonymous GET to the source-confirmed /v1/capabilities path; it
+returned401 and the read stopped. No gateway key was read/copied and no identity
+was borrowed. This confirms access protection, not gateway version/features.
+A distinct version-only follow-up was accepted through the existing session-bound
+Relay client with saved send ID304a1fe3-a038-462e-bb65-e6fbccb8502c. Its prepared
+intent was written before submission, and re-execution refuses to resend it.
+Evidence: deployment-followup.json and gateway-capabilities-observation.json.
+
+Do not start a parallel Rook implementation, treat a research snapshot as deployed,
+or silently widen the reconciler. Resolve the deployed native-runtime contract
+before planning a production adapter or activating managed automatic building.
