@@ -1171,3 +1171,45 @@ No live deployment, native dispatch, model call, credential grant or hold releas
 Next: durable observation storage and task reconciliation consuming the exact
 receipt; complete effect adapters/whole-worker evidence and installed verification
 remain unfinished. Full original Mesh/Mind/inference/fleet objective stays active.
+
+
+## 2026-11-08 - LIVE Workroom native receipt persistence
+
+Previous turn PROGRESS:4058084 Relay/Mesh bridge tested/committed/pushed/backed up.
+Revalidated clean tracked baseline. Added additive workroom_native_receipts table
+bound by send/task foreign keys. Existing accepted Echo sync reads only that saved
+send; native run and first observed writer owner/generation become durable pins.
+Shared dependency-free lifecycle normalizer reused by transport/store to avoid
+validation drift. Only bounded metadata retained; output/errors/credentials omitted.
+
+SQLite BEGIN IMMEDIATE and observation revision prevent stale/concurrent updates
+from overwriting newer observations. Cross-task/run/worker changes refused. A failed
+check marks latest observation unavailable while retaining original pins/last known
+receipt. Session expiry after network return cannot save observation or failure.
+No send/task state, card lane, review decision, approval or release is changed.
+Nims/DeepSeek adapters remain separate. Legacy Relay receipts remain usable as
+observations only, with unknown/unavailable tracking stated honestly.
+
+Existing card Sync now invokes this actual receipt reader; no new UI action/button.
+Five regression tests PASS: real SQLite reopen/pins, unavailable checks, cross-task/
+run/worker/CAS refusal, expired session, and actual Mesh HTTP sync admission+CSRF
+with real loopback Relay fixture followed by app restart/readback. Initial HTTP
+fixture assumed denied responses had JSON; fixed empty-response parsing and reran.
+Full npm test PASS334 (299Node+35Python), ../workroom-native-receipts-full.log.
+
+Predeploy backup ../workroom-native-receipts-predeploy-backup.log PASS all restore
+checks. Named launcher verified prior live PID46752, then controlled Mesh-only hidden
+restart to PID37724; Relay/native gateway/model services not restarted. Live health
+PASS. Initial probe mistakenly used /api/rook/board404; corrected from source to
+/api/workroom/rook (no service defect). Unhandled probe CLI failure retained; live
+app stayed healthy. Corrected probe verifies managedFlowEnabled=false, Rook remains
+not_configured, all8 assignment holds retained,14savedcards. Live existing task
+f047062e-3655-473b-bbd1-f697ee41e652 sync/readback saved unknown for legacy Echo send
+4ce60c15-8da5-4c6f-af3a-404a1b870b70; no run identity invented, no task/send/decision
+changes. Tailscale https://emitchell.tail8c4a75.ts.net:8453/ returned200.
+
+Parent35->36 preserves six checklist objects/pending decision. This Mesh-side slice
+is deployed; native Hermes and Relay lifecycle candidates remain NOT installed.
+Observations never release writers. Next: concrete tool-effect adapters/verified
+whole-worker completion and installed native/Relay qualification, then automatic
+assignment activation. Full original Mesh/Mind/inference/fleet goal active/incomplete.
