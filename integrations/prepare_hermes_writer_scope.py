@@ -132,6 +132,17 @@ def tool_worker_candidates(native_root):
             if candidate.count(before) != 1:
                 raise RuntimeError('Unexpected native tool-worker submission shape: ' + path)
             candidate = candidate.replace(before, after)
+        if path == 'agent/tool_executor.py':
+            lines = candidate.splitlines(True)
+            fn = next(n for n in ast.parse(candidate).body if isinstance(n, ast.FunctionDef)
+                      and n.name == '_run_agent_tool_execution_middleware')
+            split = fn.body[0].end_lineno
+            body = lines[split:fn.end_lineno]
+            lines[split:fn.end_lineno] = [
+                '    from tools.mesh_writer_scope import writer_tool_effect\n',
+                '    with writer_tool_effect():\n',
+                *['    ' + line if line.strip() else line for line in body]]
+            candidate = ''.join(lines)
         ast.parse(candidate)
         originals[path], changed[path] = original, candidate
     return originals, changed
@@ -562,6 +573,71 @@ def qualify_tool_worker_submissions(modules):
     return checks
 
 
+def qualify_tool_effect_boundary(modules):
+    """Full patched middleware function, fixture hooks; no live Relay/external calls."""
+    tree = ast.parse(modules['agent/tool_executor.py'])
+    fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef)
+              and n.name == '_run_agent_tool_execution_middleware')
+    namespace = {'Any': typing.Any, '_ManagedToolResult': types.SimpleNamespace,
+                 '_ConcurrentToolAuthorizationGate': object, 'threading': threading,
+                 '_ToolCallRef': lambda name, args, *rest: types.SimpleNamespace(name=name, args=args),
+                 'tool_hook_ids': lambda *args: {}}
+    namespace['_dispatch_authorized_once'] = lambda agent, state, ref, **kw: kw['execute'](ref.args)
+    exec(compile(ast.Module(body=[fn], type_ignores=[]), '<native-tool-effect-boundary>', 'exec'), namespace)
+    fence = WindowsWriterFence('native-tool-effect-fixture', 'one')
+    lifetime, stages = scope.WriterLifetime(fence), []
+    def observe(stage):
+        if lifetime.snapshot()['toolEffects']['activeCalls'] != 1:
+            raise AssertionError('Tool effects were not reserved before ' + stage)
+        stages.append(stage)
+    def relay_execute(name, args, pipeline, **kwargs):
+        observe('relay'); return pipeline(args), args
+    def request_middleware(name, args, **kwargs):
+        observe('request_middleware'); return types.SimpleNamespace(payload=args, trace=[])
+    def execution_middleware(name, args, dispatch, **kwargs):
+        observe('execution_middleware'); return dispatch(args)
+    def handler(args):
+        observe('handler'); return 'fixture response'
+    tools = types.ModuleType('tools'); tools.__path__ = []
+    agent_module = types.ModuleType('agent'); agent_module.__path__ = []
+    agent_module.relay_tools = types.SimpleNamespace(execute=relay_execute)
+    cli = types.ModuleType('hermes_cli'); cli.__path__ = []
+    middleware = types.ModuleType('hermes_cli.middleware')
+    middleware.apply_tool_request_middleware = request_middleware
+    middleware.run_tool_execution_middleware = execution_middleware
+    prepared = types.ModuleType('agent.terminal_approval_batch'); prepared.bind_prepared_dispatch = lambda fn: fn
+    aliases = {'tools': tools, 'tools.mesh_writer_scope': scope, 'agent': agent_module,
+               'hermes_cli': cli, 'hermes_cli.middleware': middleware,
+               'agent.terminal_approval_batch': prepared}
+    checks = []
+    try:
+        with patch.dict(sys.modules, aliases), scope.writer_foreground_scope(lifetime):
+            result = namespace[fn.name](types.SimpleNamespace(session_id='fixture'), function_name='fixture_tool',
+                        function_args={}, effective_task_id='fixture', tool_call_id='fixture', execute=handler)
+            if result.result != 'fixture response' or stages != ['relay', 'request_middleware', 'execution_middleware', 'handler']:
+                raise AssertionError('Native middleware order/output changed')
+            checks.append('native_tool_effect_reserved_before_all_middleware_and_handler')
+            def fail(*args, **kwargs):
+                observe('relay_error'); raise ValueError('uncertain external outcome')
+            agent_module.relay_tools.execute = fail
+            try:
+                namespace[fn.name](types.SimpleNamespace(session_id='fixture'), function_name='fixture_tool',
+                    function_args={}, effective_task_id='fixture', tool_call_id='second', execute=handler)
+            except ValueError:
+                checks.append('native_middleware_failure_retains_unverified_effect')
+            else:
+                raise AssertionError('Native middleware error was swallowed')
+        snapshot = lifetime.wait()
+        effects = snapshot['toolEffects']
+        if (not snapshot['managedWorkEnded'] or effects['activeCalls'] or effects['unverifiedCalls'] != 2
+                or effects['effectsSettled'] or snapshot['writerQuiescence']):
+            raise AssertionError('Returned middleware manufactured settled external effects')
+        checks.append('native_returned_tool_responses_cannot_settle_external_effects')
+    finally:
+        fence.terminate(); fence.close()
+    return checks
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
@@ -572,7 +648,8 @@ if __name__ == '__main__':
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
     try:
         report['checks'] = (qualify(candidate) + qualify_lifetimes(modules) + qualify_foreground(modules)
-                            + qualify_enrollment(modules) + qualify_tool_worker_submissions(modules))
+                            + qualify_enrollment(modules) + qualify_tool_worker_submissions(modules)
+                            + qualify_tool_effect_boundary(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

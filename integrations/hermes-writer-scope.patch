@@ -29,7 +29,7 @@
          temp_dir = self._env_temp_dir(env)
 --- /dev/null
 +++ b/tools/mesh_writer_scope.py
-@@ -0,0 +1,280 @@
+@@ -0,0 +1,320 @@
 +"""Candidate native tools.mesh_writer_scope; no HTTP/config enrollment or release grant."""
 +from contextlib import contextmanager
 +from contextvars import ContextVar, copy_context
@@ -123,6 +123,28 @@
 +        self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
 +        self._root_started = self._root_ended = self._sealed = False
 +        self._fault = ''
++        self._tool_calls = 0
++        self._tool_active = set()
++        self._tool_uncertain = 0
++
++    def _begin_tool(self):
++        with self._lock:
++            self.assert_current_worker()
++            ticket = str(uuid4())
++            self._tool_calls += 1
++            self._tool_active.add(ticket)
++            return ticket
++
++    def _end_tool(self, ticket):
++        with self._lock:
++            if ticket not in self._tool_active:
++                self._fault = 'tool_lifecycle_unconfirmed'
++                return
++            self._tool_active.remove(ticket)
++            # A returned handler/middleware is not proof that an external service
++            # stopped. Only a separately qualified adapter may ever settle effects.
++            self._tool_uncertain += 1
++            self._maybe_seal()
 +
 +    def assert_current_worker(self):
 +        with self._lock:
@@ -146,7 +168,7 @@
 +            record.update(started=True, state='running')
 +
 +    def _maybe_seal(self):
-+        if self._root_ended and not self._pending and not self._sealed:
++        if self._root_ended and not self._pending and not self._tool_active and not self._sealed:
 +            try:
 +                self.fence.seal()
 +                self._sealed = True
@@ -199,7 +221,7 @@
 +    def snapshot(self):
 +        with self._lock:
 +            process = self.fence.snapshot()
-+            managed = (self._root_ended and not self._pending and self._sealed and not self._fault
++            managed = (self._root_ended and not self._pending and not self._tool_active and self._sealed and not self._fault
 +                       and process.get('state') in ('ended', 'not_started') and process.get('activeProcesses') == 0)
 +            return {'schema': 'mesh-managed-writer-lifetime/v1', 'runId': self.fence.run_id,
 +                    'generation': self.fence.generation, 'rootEnded': self._root_ended,
@@ -207,6 +229,10 @@
 +                                       for key, value in self._pending.items()],
 +                    'processTree': process, 'managedWorkEnded': managed,
 +                    'writerQuiescence': False, 'reason': self._fault,
++                    'toolEffects': {'observedCalls': self._tool_calls, 'activeCalls': len(self._tool_active),
++                                    'unverifiedCalls': self._tool_uncertain,
++                                    'effectsSettled': self._tool_calls == 0,
++                                    'policy': 'no_external_effect_adapter_qualified'},
 +                    'coverage': 'instrumented_foreground_delegate_and_job_members_only'}
 +
 +    def wait(self, timeout_ms=5000):
@@ -218,6 +244,20 @@
 +            if result['managedWorkEnded'] or time.monotonic() >= deadline:
 +                return result
 +            time.sleep(min(.02, max(0, deadline - time.monotonic())))
++
++
++@contextmanager
++def writer_tool_effect():
++    """Observe before middleware; no arguments, results, credentials or memory retained."""
++    lifetime = _lifetime.get()
++    if lifetime is None:
++        yield
++        return
++    ticket = lifetime._begin_tool()
++    try:
++        yield
++    finally:
++        lifetime._end_tool(ticket)
 +
 +
 +@contextmanager
@@ -837,7 +877,138 @@
              stdin=subprocess.PIPE if stdin_data is not None else subprocess.DEVNULL,
 --- a/agent/tool_executor.py
 +++ b/agent/tool_executor.py
-@@ -944,7 +944,8 @@
+@@ -769,69 +769,71 @@
+     authorization_gate: _ConcurrentToolAuthorizationGate | None = None,
+ ) -> _ManagedToolResult:
+     """Run Relay rewrites before Hermes policy and dispatch exactly once."""
+-    from agent import relay_tools
+-    from hermes_cli.middleware import (
+-        apply_tool_request_middleware,
+-        run_tool_execution_middleware,
+-    )
+-
+-    trace = middleware_trace if middleware_trace is not None else []
+-    state = _ManagedToolResult(result=None, args=function_args, middleware_trace=trace, blocked=False, dispatched=False)
+-    dispatch_lock = threading.Lock()
+-
+-    def _authorized_dispatch(final_args: dict[str, Any]) -> Any:
+-        with dispatch_lock:
+-            if state.dispatched:
+-                raise RuntimeError("Hermes tool execution callback invoked more than once")
+-            state.dispatched = True
+-            state.blocked = False
+-            state.args = final_args
+-        return _dispatch_authorized_once(
+-            agent,
+-            state,
+-            _ToolCallRef(function_name, final_args, effective_task_id, tool_call_id, trace),
+-            execute=execute,
+-            scope_block=scope_block,
+-            display_index=display_index,
+-            begin_execution=begin_execution,
+-            authorization_gate=authorization_gate,
++    from tools.mesh_writer_scope import writer_tool_effect
++    with writer_tool_effect():
++        from agent import relay_tools
++        from hermes_cli.middleware import (
++            apply_tool_request_middleware,
++            run_tool_execution_middleware,
+         )
+ 
+-    from agent.terminal_approval_batch import bind_prepared_dispatch
+-    _authorized_dispatch = bind_prepared_dispatch(_authorized_dispatch)
+-
+-    def _hermes_pipeline(relay_args: dict[str, Any]) -> Any:
+-        request_result = apply_tool_request_middleware(
++        trace = middleware_trace if middleware_trace is not None else []
++        state = _ManagedToolResult(result=None, args=function_args, middleware_trace=trace, blocked=False, dispatched=False)
++        dispatch_lock = threading.Lock()
++
++        def _authorized_dispatch(final_args: dict[str, Any]) -> Any:
++            with dispatch_lock:
++                if state.dispatched:
++                    raise RuntimeError("Hermes tool execution callback invoked more than once")
++                state.dispatched = True
++                state.blocked = False
++                state.args = final_args
++            return _dispatch_authorized_once(
++                agent,
++                state,
++                _ToolCallRef(function_name, final_args, effective_task_id, tool_call_id, trace),
++                execute=execute,
++                scope_block=scope_block,
++                display_index=display_index,
++                begin_execution=begin_execution,
++                authorization_gate=authorization_gate,
++            )
++
++        from agent.terminal_approval_batch import bind_prepared_dispatch
++        _authorized_dispatch = bind_prepared_dispatch(_authorized_dispatch)
++
++        def _hermes_pipeline(relay_args: dict[str, Any]) -> Any:
++            request_result = apply_tool_request_middleware(
++                function_name,
++                relay_args,
++                skip_relay=True,
++                **tool_hook_ids(agent, effective_task_id, tool_call_id),
++            )
++            request_args = request_result.payload if isinstance(request_result.payload, dict) else relay_args
++            trace.clear()
++            trace.extend(request_result.trace)
++            return run_tool_execution_middleware(
++                function_name,
++                request_args,
++                lambda next_args: _authorized_dispatch(next_args if isinstance(next_args, dict) else request_args),
++                original_args=function_args,
++                **tool_hook_ids(agent, effective_task_id, tool_call_id),
++            )
++
++        state.result, _relay_args = relay_tools.execute(
+             function_name,
+-            relay_args,
+-            skip_relay=True,
+-            **tool_hook_ids(agent, effective_task_id, tool_call_id),
++            function_args,
++            _hermes_pipeline,
++            session_id=str(getattr(agent, "session_id", "") or ""),
++            tool_call_id=tool_call_id or None,
++            metadata={
++                "task_id": effective_task_id or "",
++                "turn_id": getattr(agent, "_current_turn_id", "") or "",
++                "api_request_id": getattr(agent, "_current_api_request_id", "") or "",
++                "tool_call_id": tool_call_id or "",
++            },
+         )
+-        request_args = request_result.payload if isinstance(request_result.payload, dict) else relay_args
+-        trace.clear()
+-        trace.extend(request_result.trace)
+-        return run_tool_execution_middleware(
+-            function_name,
+-            request_args,
+-            lambda next_args: _authorized_dispatch(next_args if isinstance(next_args, dict) else request_args),
+-            original_args=function_args,
+-            **tool_hook_ids(agent, effective_task_id, tool_call_id),
+-        )
+-
+-    state.result, _relay_args = relay_tools.execute(
+-        function_name,
+-        function_args,
+-        _hermes_pipeline,
+-        session_id=str(getattr(agent, "session_id", "") or ""),
+-        tool_call_id=tool_call_id or None,
+-        metadata={
+-            "task_id": effective_task_id or "",
+-            "turn_id": getattr(agent, "_current_turn_id", "") or "",
+-            "api_request_id": getattr(agent, "_current_api_request_id", "") or "",
+-            "tool_call_id": tool_call_id or "",
+-        },
+-    )
+-    return state
++        return state
+ 
+ 
+ # Sequential wait-loop poll cadence: /stop lands within ~1s even if the tool never polls is_interrupted().
+@@ -944,7 +946,8 @@
          ref.trace = []
      if prepared is None:
          executor = DaemonThreadPoolExecutor(max_workers=1)
@@ -847,7 +1018,7 @@
      deadline = time.monotonic() + timeout_s if timeout_s is not None else None
      started = time.monotonic()
      abandoned = False
-@@ -1410,7 +1411,8 @@
+@@ -1410,7 +1413,8 @@
          future_to_index = {}
          for submit_index, i in enumerate(runnable):
              try:

@@ -1029,3 +1029,37 @@ policy plus durable authenticated completion and strict Mesh consumption. No liv
 installation, restart, model call, watcher activation or existing-hold release.
 
 Candidate: C:\Users\eMitchell109\Documents\ChatGPT\Nims Chat\mesh-workroom-ab\data\hermes-writer-scope-cc6b92af-5f68-432a-a04b-c16dd2b65079
+
+
+## 2026-11-08 - Tool middleware/external-effect boundary
+
+Previous turn PROGRESS:498cc03 tool-thread tracking tested/committed/pushed/backed up.
+Clean tracked baseline revalidated. Inspected actual native middleware: Relay
+execution and request/execution middleware run outside/before final native
+authorization/handler. A handler-only completion hook would miss those effects.
+
+Pinned candidate now wraps the entire actual _run_agent_tool_execution_middleware
+body in writer_tool_effect before imports/Relay hooks. No args/results/tool names,
+private memory or credentials are retained: only attempt-local counts/tickets.
+A returned or failed middleware call remains an unverified external effect.
+No settlement API or qualification grant is provided. Stale worker contexts
+cannot enter middleware. Active middleware calls also prevent sealing/managed
+completion even if their borrowed parent context ends; actual finally settles
+only local call activity and keeps external effect uncertainty sticky.
+
+Snapshot toolEffects distinguishes observedCalls/activeCalls/unverifiedCalls and
+effectsSettled. managedWorkEnded means only instrumented local work, never external
+completion; writerQuiescence remains always false. This preserves existing tool
+authorization, hooks and execution behavior; it does not authorize extra access.
+
+Native qualification PASS25: entire actual middleware function executed with
+fixture Relay/middleware/handler dependencies verifies reservation before every
+hook, original order/output, thrown middleware failure retained, and returned
+responses never settle unknown external effects. Not live external-service or
+full native agent acceptance. Focused tests also cover stale context, normal/error
+return and active borrowed-context middleware preventing root seal. Eight-file
+candidate; six pinned installed baselines. No live install/restart/model call or
+automatic assignment activation. Next: qualify concrete tool/effect adapters and
+durable authenticated release consumed by Mesh, then real integration qualification.
+
+Candidate: C:\Users\eMitchell109\Documents\ChatGPT\Nims Chat\mesh-workroom-ab\data\hermes-writer-scope-cb6cdbea-419c-4890-a78b-afd5718fa95c

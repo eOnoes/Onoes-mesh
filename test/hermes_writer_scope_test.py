@@ -84,6 +84,52 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
                 self.assertEqual(future.result(timeout=3), 'managed arguments')
             self.assertTrue(self.life.wait()['managedWorkEnded'])
 
+    def test_tool_return_or_error_cannot_settle_unknown_external_effects(self):
+        with scope.writer_foreground_scope(self.life):
+            with scope.writer_tool_effect():
+                self.assertEqual(self.life.snapshot()['toolEffects']['activeCalls'], 1)
+            with self.assertRaises(ValueError):
+                with scope.writer_tool_effect():
+                    raise ValueError('External request outcome unknown')
+        snapshot = self.life.wait()
+        self.assertTrue(snapshot['managedWorkEnded'])
+        self.assertEqual(snapshot['toolEffects']['unverifiedCalls'], 2)
+        self.assertFalse(snapshot['toolEffects']['effectsSettled'])
+        self.assertFalse(snapshot['writerQuiescence'])
+
+    def test_tool_scope_rejects_stale_copied_context_before_body(self):
+        with scope.writer_foreground_scope(self.life):
+            copied = copy_context()
+        def enter():
+            with scope.writer_tool_effect():
+                self.fail('Stale worker entered middleware')
+        with self.assertRaises(RuntimeError):
+            copied.run(enter)
+        self.assertEqual(self.life.snapshot()['toolEffects']['observedCalls'], 0)
+
+    def test_active_middleware_in_copied_context_keeps_root_from_sealing(self):
+        entered, release = threading.Event(), threading.Event()
+        def tool():
+            with scope.writer_tool_effect():
+                entered.set(); release.wait(timeout=5)
+        worker = None
+        try:
+            with scope.writer_foreground_scope(self.life):
+                context = copy_context()
+                worker = threading.Thread(target=lambda: context.run(tool))
+                worker.start()
+                self.assertTrue(entered.wait(timeout=3))
+            self.assertFalse(self.life.wait(20)['managedWorkEnded'])
+            self.assertFalse(self.fence.snapshot()['sealed'])
+            release.set(); worker.join(timeout=3)
+            self.assertFalse(worker.is_alive())
+            self.assertTrue(self.life.wait()['managedWorkEnded'])
+            self.assertFalse(self.life.snapshot()['toolEffects']['effectsSettled'])
+        finally:
+            release.set()
+            if worker is not None:
+                worker.join(timeout=3)
+
     def test_parent_return_and_early_result_record_do_not_settle_running_delegate(self):
         started, delivery_recorded, release = threading.Event(), threading.Event(), threading.Event()
         def child():

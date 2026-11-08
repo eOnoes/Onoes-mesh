@@ -91,6 +91,28 @@ class WriterLifetime:
         self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
         self._root_started = self._root_ended = self._sealed = False
         self._fault = ''
+        self._tool_calls = 0
+        self._tool_active = set()
+        self._tool_uncertain = 0
+
+    def _begin_tool(self):
+        with self._lock:
+            self.assert_current_worker()
+            ticket = str(uuid4())
+            self._tool_calls += 1
+            self._tool_active.add(ticket)
+            return ticket
+
+    def _end_tool(self, ticket):
+        with self._lock:
+            if ticket not in self._tool_active:
+                self._fault = 'tool_lifecycle_unconfirmed'
+                return
+            self._tool_active.remove(ticket)
+            # A returned handler/middleware is not proof that an external service
+            # stopped. Only a separately qualified adapter may ever settle effects.
+            self._tool_uncertain += 1
+            self._maybe_seal()
 
     def assert_current_worker(self):
         with self._lock:
@@ -114,7 +136,7 @@ class WriterLifetime:
             record.update(started=True, state='running')
 
     def _maybe_seal(self):
-        if self._root_ended and not self._pending and not self._sealed:
+        if self._root_ended and not self._pending and not self._tool_active and not self._sealed:
             try:
                 self.fence.seal()
                 self._sealed = True
@@ -167,7 +189,7 @@ class WriterLifetime:
     def snapshot(self):
         with self._lock:
             process = self.fence.snapshot()
-            managed = (self._root_ended and not self._pending and self._sealed and not self._fault
+            managed = (self._root_ended and not self._pending and not self._tool_active and self._sealed and not self._fault
                        and process.get('state') in ('ended', 'not_started') and process.get('activeProcesses') == 0)
             return {'schema': 'mesh-managed-writer-lifetime/v1', 'runId': self.fence.run_id,
                     'generation': self.fence.generation, 'rootEnded': self._root_ended,
@@ -175,6 +197,10 @@ class WriterLifetime:
                                        for key, value in self._pending.items()],
                     'processTree': process, 'managedWorkEnded': managed,
                     'writerQuiescence': False, 'reason': self._fault,
+                    'toolEffects': {'observedCalls': self._tool_calls, 'activeCalls': len(self._tool_active),
+                                    'unverifiedCalls': self._tool_uncertain,
+                                    'effectsSettled': self._tool_calls == 0,
+                                    'policy': 'no_external_effect_adapter_qualified'},
                     'coverage': 'instrumented_foreground_delegate_and_job_members_only'}
 
     def wait(self, timeout_ms=5000):
@@ -186,6 +212,20 @@ class WriterLifetime:
             if result['managedWorkEnded'] or time.monotonic() >= deadline:
                 return result
             time.sleep(min(.02, max(0, deadline - time.monotonic())))
+
+
+@contextmanager
+def writer_tool_effect():
+    """Observe before middleware; no arguments, results, credentials or memory retained."""
+    lifetime = _lifetime.get()
+    if lifetime is None:
+        yield
+        return
+    ticket = lifetime._begin_tool()
+    try:
+        yield
+    finally:
+        lifetime._end_tool(ticket)
 
 
 @contextmanager
