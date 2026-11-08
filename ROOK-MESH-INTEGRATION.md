@@ -154,3 +154,39 @@ Echo received one installed-source correction/question, original saved send ID
 fc87c4ed-a697-40c8-9267-a34a8c193ad8, accepted once through the session-bound client;
 no native job or reply is inferred from that receipt. Rook remains isolated and
 automation remains off.
+
+
+## Live own-send receipt binding check - 2026-11-08
+
+A separate bounded operator diagnostic opened the fixed native receipt database
+read-only with query_only=ON, selecting only the two coordination send IDs already
+recorded above. This is not a Rook database grant or a production adapter. Both
+rows exist with native run IDs, owner PID1592/start179337872590 and completed
+status. The installed process-start helper uses psutil create_time rounded to
+centiseconds on Windows, consistent with the independently observed process start.
+
+Importantly, both persisted status.session_id fields are present but differ from
+the saved Relay conversationId. A second explicit comparison against the correct
+savedIntent.conversationId field confirmed this; it is not merely a missing field.
+Native IDs are 20261107_174310_23f1cc and 20261108_110505_3500c1 respectively.
+No routing error is established: an internal session mapping may explain this,
+but it has not been proved. Do not weaken identity checks to make these rows pass.
+Evidence: data/hermes-native-store-process-python-2026-11-08/
+live-own-receipt-metadata-corrected.json. Preserve the original observation too.
+
+Indexed Relay hermes_send/submit_run pass the conversation as session_id; current
+installed _set_run_status retains fields, and _execute_run finishes after its
+executor returns but before final live-run retirement. Those source observations
+do not establish the running process loaded the current bytes or that detached
+writers/delegations ended. Authenticated runtime identity, the precise original
+conversation-to-native-session mapping, and writer-quiescence evidence remain
+required before automatic managed dispatch can release the workspace.
+
+Final helper rerun using the installed venv passed all five cases including the
+explicit temporary-path safety assertions. Evidence:
+data/hermes-native-store-final-venv-2026-11-08/qualification.json.
+No services restarted, model runs submitted, keys read/copied, live memory opened,
+Rook enabled or live native receipt rows changed by these checks. The isolated
+helper itself opened zero live stores; the separate diagnostic above did open the
+one fixed receipt store read-only. Mesh's prior default test baseline remains266;
+these five opt-in cases are separate and do not imply Rook acceptance.
