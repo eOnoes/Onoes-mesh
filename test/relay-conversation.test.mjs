@@ -84,6 +84,52 @@ test('Privacy clearance drops late history/acknowledgments and all draft/history
   let acknowledge;const g=fixture({intercept:(r,o)=>o?.method==='POST'?new Promise(resolve=>acknowledge=resolve):undefined});await g.ready();g.core.setDraft('unknown');const sending=g.core.send();await new Promise(resolve=>setImmediate(resolve));await g.core.setAvailable(false);acknowledge({ok:true});await sending;
   assert.equal(g.core.state().destination,null);assert.equal(g.core.state().draft,'');assert.ok(g.storage.has(RECEIPT_KEY));
 });
+
+test('Slow Relay reads coalesce repeated polls and still paint the completed history',async()=>{
+  let hold=false,releaseList,releaseHistory;
+  const f=fixture({intercept:r=>{
+    if(!hold)return;
+    if(r==='/relay/api/agents')return new Promise(resolve=>releaseList=resolve);
+    if(r.endsWith('/messages'))return new Promise(resolve=>releaseHistory=resolve);
+  }});
+  await f.ready();f.core.setDraft('keep my draft');hold=true;const before=f.calls.length;
+  const first=f.core.refresh();await new Promise(resolve=>setImmediate(resolve));
+  const polls=Array.from({length:6},()=>f.core.refresh());
+  assert.equal(f.calls.length-before,1,'timer/manual refreshes must share the pending agent read');
+  releaseList([{id:'echo',name:'Echo',conversation_id:'one'}]);
+  await new Promise(resolve=>setImmediate(resolve));
+  const more=f.core.refresh();assert.equal(f.calls.length-before,2,'history read is shared too');
+  releaseHistory({messages:[{id:2,k:'ag',t:'Slow response arrived'}]});
+  await Promise.all([first,...polls,more]);
+  assert.equal(f.core.state().messages[0].t,'Slow response arrived');
+  assert.equal(f.core.state().draft,'keep my draft');assert.equal(f.receipts.size,0);
+});
+
+test('Selecting another conversation bypasses an old slow read without allowing its late result to repaint',async()=>{
+  let hold=false,release;
+  const f=fixture({intercept:r=>hold&&r.includes('/echo/')&&r.endsWith('/messages')?new Promise(resolve=>release=resolve):undefined});
+  await f.ready();hold=true;const old=f.core.refresh();await new Promise(resolve=>setImmediate(resolve));
+  await f.core.select('deep');assert.equal(f.core.state().destination.agentId,'deep');
+  assert.equal(f.core.state().messages[0].t,'Original history');
+  release({messages:[{id:9,t:'Late Echo history'}]});await old;
+  assert.equal(f.core.state().destination.agentId,'deep');assert.equal(f.core.state().messages[0].t,'Original history');
+});
+
+test('A locked and reconnected Relay does not wait for or accept the previous admission read',async()=>{
+  let hold=false,release;
+  const f=fixture({intercept:r=>hold&&r.endsWith('/messages')?new Promise(resolve=>release=resolve):undefined});
+  await f.ready();hold=true;const old=f.core.refresh();await new Promise(resolve=>setImmediate(resolve));
+  await f.core.setAvailable(false);hold=false;await f.core.setAvailable(true);await f.core.select('echo');
+  assert.equal(f.core.state().live,true);release({messages:[{t:'Old admission secret'}]});await old;
+  assert.equal(f.core.state().messages[0].t,'Original history');assert.equal(f.core.state().draft,'');
+});
+
+test('A failed shared Relay refresh permits a later deliberate read',async()=>{
+  const f=fixture();await f.ready();f.setOffline(true);
+  await Promise.all([f.core.refresh(),f.core.refresh()]);assert.equal(f.core.state().live,false);
+  f.setOffline(false);f.setHistory({messages:[{id:2,t:'Recovered'}]});await f.core.refresh();
+  assert.equal(f.core.state().live,true);assert.equal(f.core.state().messages[0].t,'Recovered');
+});
 test('Legacy uncertain receipts migrate without dispatch; invalid/conflicting records stay preserved and blocked',async()=>{
   const id=randomUUID(),legacy={id,agentId:'echo',sessionId:'one',text:'old original'};
   const storage=new Map([['mesh.relay.pending.v1',JSON.stringify(legacy)]]);const f=fixture({storage});await f.core.setAvailable(true);

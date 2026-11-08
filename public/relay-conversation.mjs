@@ -11,6 +11,7 @@ const hashText = async text => Array.from(new Uint8Array(await crypto.subtle.dig
 export function createRelayConversation({request,storage,onChange=()=>{},uuid=()=>crypto.randomUUID(),digest=hashText}) {
   let available=false,blocked=false,initializing=false,sending=false,live=false,epoch=0,reads=0;
   let agents=[],destination=null,messages=[],observedAt=null,pending=null,note='Connect to choose a Relay agent.';
+  let refreshFlight=null;
   const drafts=new Map();
   function state() {
     return {available,initializing,sending,live,agents:[...agents],destination:destination && {...destination},
@@ -40,7 +41,18 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
     }
     if(current(turn)&&pending){destination={agentId:pending.agentId,sessionId:pending.sessionId,name:pending.agentId};note='Uncertain send restored. Re-enter its exact original text to retry the same receipt; no automatic send.';}
   }
-  async function refresh() {
+  function refresh() {
+    if(!available||initializing)return Promise.resolve();
+    if(refreshFlight?.turn===epoch)return refreshFlight.promise;
+    // Timer/manual reads share work only within this selected admission/conversation.
+    // A new selection or privacy epoch must never wait for an obsolete request.
+    const flight={turn:epoch};refreshFlight=flight;
+    flight.promise=Promise.resolve().then(()=>{
+      if(current(flight.turn)&&!initializing)return refreshOnce();
+    }).finally(()=>{if(refreshFlight===flight)refreshFlight=null;});
+    return flight.promise;
+  }
+  async function refreshOnce() {
     if(!available||initializing)return;
     const turn=epoch,read=++reads;
     try {

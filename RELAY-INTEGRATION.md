@@ -104,3 +104,29 @@ preserved. A future notification delivery path is still unselected/unqualified;
 F2 remains open and no push/Telegram synchronization is implied by this release.
 Full canonical Mind context, writes, shared skills and MCP access are separate
 outstanding work. See the private running checkpoint for evidence and live status.
+
+
+## Foreground delivery and staged notification boundary
+
+For the current release, public/chat.mjs polls the selected native Relay
+conversation every five seconds while its panel and document are visible.
+public/relay-conversation.mjs shares one pending refresh per admission and
+selection. A slow agent/history read can finish without the next timer tick
+invalidating it. Explicit selection and privacy changes start a new epoch; old
+results cannot paint into that epoch or hold its refresh hostage. Failed reads
+release the shared operation so the next deliberate/polled read can recover.
+
+The preserved _incoming/sandbox/app.js instead has startProactiveStream: an
+EventSource room stream plus startProactivePoll catch-up, message sequence cursor
+and gap reconciliation. That proactive event contract is not the current native
+selected-agent history contract. Do not import it as a second conversation path
+or assume its cursor/room identity matches native conversations. The existing
+public/pwa-register.mjs only permits its assigned HTTP loopback shell worker; it
+is not a qualified Tailscale phone push subscription/notification implementation.
+
+Retain native Relay as conversation/outbox authority and Workroom as task/review
+authority. Foreground refresh is the only current conversation update path.
+Background phone push, its credential/subscription custody and any future event
+contract still require a separate decision and qualification; no push provider,
+subscription, Telegram mirror, credential or second store is installed here.
+F2 remains open for that explicit delivery decision, not for a bulk sandbox merge.
