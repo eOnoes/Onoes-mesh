@@ -20,7 +20,7 @@ ROUTE = '''
 @app.get("/api/agents/{aid}/outbox/{send_id}/native-run")
 async def native_run_receipt(aid: str, send_id: str):
     agent = AGENTS.get(aid)
-    if agent is None or agent.is_a2a:
+    if agent is None or agent.backend != "hermes":
         return JSONResponse({"ok": False, "error": "native receipt not found"}, status_code=404)
     try:
         receipt = await relay_native_receipts.read(SESSIONS, aid, send_id, _hermes_client(agent))
@@ -284,11 +284,17 @@ def main():
             self.assertEqual({n.name for n in nodes}, wanted)
             app = FastAPI()
             key = 'synthetic-test-key-not-an-operator-credential'
+            client_lookups = []
+            def lookup_native(agent):
+                client_lookups.append(agent)
+                return self.client
             space = {'app': app, 'AUTH_ENABLED': True, 'AUTH_TOKEN': key,
                      'AUTH_OPEN_PATHS': frozenset({'/api/auth', '/api/unlock'}),
                      'relay_auth': auth, 'JSONResponse': JSONResponse,
-                     'AGENTS': {'echo': SimpleNamespace(is_a2a=False)}, 'SESSIONS': self.store,
-                     'relay_native_receipts': receipts, '_hermes_client': lambda a: self.client}
+                     'AGENTS': {'echo': SimpleNamespace(backend='hermes', is_a2a=False),
+                                'tripp': SimpleNamespace(backend='openclaw', is_a2a=False),
+                                'dsh': SimpleNamespace(backend='a2a', is_a2a=True)}, 'SESSIONS': self.store,
+                     'relay_native_receipts': receipts, '_hermes_client': lookup_native}
             exec(compile(ast.Module(body=nodes, type_ignores=[]), 'isolated-http', 'exec'), space)
             app.add_middleware(space['AuthGate'])
             self.bind()
@@ -312,6 +318,13 @@ def main():
                                                        headers=valid)).status_code, 404)
                     self.assertEqual((await client.get('/api/agents/other/outbox/send/native-run',
                                                        headers=valid)).status_code, 404)
+                    reads_before = len(self.client.gets)
+                    lookups_before = len(client_lookups)
+                    for agent in ('tripp', 'dsh'):
+                        self.assertEqual((await client.get(f'/api/agents/{agent}/outbox/send/native-run',
+                                                           headers=valid)).status_code, 404)
+                    self.assertEqual(len(self.client.gets), reads_before)
+                    self.assertEqual(len(client_lookups), lookups_before)
                     self.assertEqual((await client.post(route, headers=valid)).status_code, 405)
             asyncio.run(exercise())
             self.assertEqual(self.store.db.total_changes, before)

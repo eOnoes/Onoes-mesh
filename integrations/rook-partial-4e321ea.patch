@@ -1,0 +1,187 @@
+diff --git a/lib/workroom-claim-policy.mjs b/lib/workroom-claim-policy.mjs
+index 45ae289..bf368fb 100644
+--- a/lib/workroom-claim-policy.mjs
++++ b/lib/workroom-claim-policy.mjs
+@@ -6,6 +6,20 @@ export function backlogEligibility(task,at=Date.now()){
+  // Failure reconciliation belongs to the original claim, never to fresh intake.
+  if(task.flow?.claim||task.flow?.state&&task.flow.state!=='idea')return {eligible:false,reason:'Already claimed or waiting for clarification'};
+  if(task.automation?.state==='active')return {eligible:false,reason:'Team active'};
+- if(task.messages.some(m=>m.phase==='work'&&['prepared','unknown','accepted'].includes(m.state)&&!m.outcome&&!task.agentUpdates.some(u=>u.sendId===m.id&&u.applied)))return {eligible:false,reason:'Unresolved original worker'};
++ if(task.messages.some(m=>m.phase==='work'&&['prepared','unknown','accepted'].includes(m.state)))return {eligible:false,reason:'Writer quiescence is unproven'};
+  return {eligible:true,reason:'Unassigned idea older than twelve hours'};
+ }
++
++// A terminal task/run status does not prove that tools, subagents, or child
++// processes have ended. Current Workroom receipts carry no positive quiescence
++// proof, so every accepted/prepared/uncertain writer send remains a blocker.
++export function writerQuiescenceBlockers(tasks){
++ const blockers=[];
++ for(const task of tasks){
++  if(task.automation?.state==='active')blockers.push({taskId:task.id,sendId:'',state:'active',reason:'active_team'});
++  for(const message of task.messages||[]){
++   if(message.phase==='work'&&['prepared','unknown','accepted'].includes(message.state))blockers.push({taskId:task.id,sendId:message.id,state:message.state,reason:'writer_quiescence_unproven'});
++  }
++ }
++ return blockers;
++}
+diff --git a/lib/workroom-flow.mjs b/lib/workroom-flow.mjs
+index 8eb20b0..b7d7864 100644
+--- a/lib/workroom-flow.mjs
++++ b/lib/workroom-flow.mjs
+@@ -3,18 +3,41 @@ import {resolve,relative,isAbsolute} from 'node:path';
+ import {TaskError} from './task-store.mjs';
+ import {existsSync,realpathSync} from 'node:fs';
+ import {dirname} from 'node:path';
+-import {backlogEligibility} from './workroom-claim-policy.mjs';
++import {backlogEligibility,writerQuiescenceBlockers} from './workroom-claim-policy.mjs';
+ 
+-export function createFlowStore(db,get){
++const SWEEP_INTERVAL_MS=5*60*60*1000;
++
++export function createFlowStore(db,get,listTasks=()=>[]){
+  db.exec(`CREATE TABLE IF NOT EXISTS workroom_flow(taskId TEXT PRIMARY KEY REFERENCES tasks(id),state TEXT NOT NULL,question TEXT NOT NULL,askedAt TEXT,ownerDecision TEXT NOT NULL,ownerNote TEXT NOT NULL,ownerAt TEXT,revision INTEGER NOT NULL,sendId TEXT NOT NULL,progressRevision INTEGER NOT NULL);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS workroom_claims(claimId TEXT PRIMARY KEY,taskId TEXT NOT NULL REFERENCES tasks(id),dispatchId TEXT NOT NULL UNIQUE,trigger TEXT NOT NULL,claimedAt TEXT NOT NULL,createdAt TEXT NOT NULL,intendedLead TEXT NOT NULL,taskRevision INTEGER NOT NULL,briefRevision INTEGER NOT NULL,progressRevision INTEGER NOT NULL,flowRevision INTEGER NOT NULL);`);
++ db.exec(`CREATE TABLE IF NOT EXISTS workroom_sweep_state(id INTEGER PRIMARY KEY CHECK(id=1),lastScheduledAt TEXT,lastTaskId TEXT NOT NULL DEFAULT '',lastResult TEXT NOT NULL DEFAULT 'never');`);
++ db.prepare("INSERT OR IGNORE INTO workroom_sweep_state(id,lastScheduledAt,lastTaskId,lastResult) VALUES(1,NULL,'','never')").run();
+  const read=id=>{const row=db.prepare('SELECT * FROM workroom_flow WHERE taskId=?').get(id);if(!row)return row;const claim=db.prepare('SELECT * FROM workroom_claims WHERE taskId=? ORDER BY rowid DESC LIMIT 1').get(id);return {...row,...(claim?{claim}: {})};};
+  const event=(id,kind,detail)=>db.prepare('INSERT INTO workroom_events(taskId,kind,detail,at) VALUES(?,?,?,?)').run(id,kind,detail,new Date().toISOString());
+  function ensure(id){db.prepare("INSERT OR IGNORE INTO workroom_flow VALUES(?,'idea','',NULL,'pending','',NULL,0,'',0)").run(id);}
+  function queue(id,trigger){const t=get(id);if(t.status==='done')throw new TaskError(409,'Completed cards cannot be queued. Request changes first.');ensure(id);const old=read(id);if(['queued','planning','working'].includes(old.state))return old;const dispatchId=randomUUID();db.prepare('INSERT INTO workroom_claims VALUES(?,?,?,?,?,?,?,?,?,?,?)').run(randomUUID(),id,dispatchId,trigger,new Date().toISOString(),t.createdAt,t.workroom.owner||'nims',t.revision,t.workroom.revision,t.progress.revision,old.revision);db.prepare("UPDATE workroom_flow SET state='queued',question='',askedAt=NULL,sendId=?,revision=revision+1 WHERE taskId=?").run(dispatchId,id);event(id,'triage_queued','Agent will inspect the request and either establish scope or ask a specific question.');return read(id);}
+  function transaction(fn){if(db.isTransaction)return fn();db.exec('BEGIN IMMEDIATE;');try{const value=fn();db.exec('COMMIT;');return value;}catch(error){db.exec('ROLLBACK;');throw error;}}
++ function scheduledSweep(at=Date.now()){
++  if(!Number.isSafeInteger(at)||!Number.isFinite(new Date(at).getTime()))throw new TaskError(400,'Invalid scheduled sweep time.');
++  const stamp=new Date(at).toISOString();
++  return transaction(()=>{
++   const previous=db.prepare('SELECT * FROM workroom_sweep_state WHERE id=1').get();
++   if(previous.lastScheduledAt){const last=Date.parse(previous.lastScheduledAt);if(!Number.isFinite(last)||at-last<SWEEP_INTERVAL_MS)return {status:'not_due',lastScheduledAt:previous.lastScheduledAt,lastResult:previous.lastResult};}
++   const finish=(result,lastTaskId='')=>{db.prepare('UPDATE workroom_sweep_state SET lastScheduledAt=?,lastTaskId=?,lastResult=? WHERE id=1').run(stamp,lastTaskId,result.status);return {...result,lastScheduledAt:stamp};};
++   const tasks=listTasks();
++   const blockers=writerQuiescenceBlockers(tasks);
++   if(blockers.length){const reason=blockers.some(item=>item.reason==='writer_quiescence_unproven')?'writer_quiescence_unproven':'active_team';return finish({status:'blocked',reason,blockers});}
++   const eligible=tasks.filter(task=>backlogEligibility(task,at).eligible).sort((a,b)=>Date.parse(a.createdAt)-Date.parse(b.createdAt)||a.id.localeCompare(b.id));
++   if(!eligible.length)return finish({status:'empty'});
++   const task=eligible[0];const flow=queue(task.id,'aged');event(task.id,'watcher_claimed','Five-hour sweep claimed this twelve-hour-old request before dispatch.');
++   return finish({status:'claimed',taskId:task.id,flow},task.id);
++  });
++ }
++ function sweepStatus(){const row=db.prepare('SELECT * FROM workroom_sweep_state WHERE id=1').get();return {schedulerInstalled:false,schedulerEnabled:false,lastScheduledAt:row.lastScheduledAt,lastTaskId:row.lastTaskId||null,lastResult:row.lastResult};}
+  return {read,enqueue:id=>transaction(()=>queue(id,'manual')),
+-  claim(id,body){if(!body||Object.keys(body).sort().join(',')!=='briefRevision,progressRevision,revision,taskRevision'||Object.values(body).some(v=>!Number.isSafeInteger(v)||v<0))throw new TaskError(400,'Invalid board claim.');return transaction(()=>{const t=get(id);if(t.revision!==body.taskRevision||t.workroom.revision!==body.briefRevision||t.progress.revision!==body.progressRevision||(t.flow?.revision??0)!==body.revision)throw new TaskError(409,'Card changed before assignment.');const eligibility=backlogEligibility(t);if(!eligibility.eligible)throw new TaskError(409,eligibility.reason);const claimed=queue(id,'aged');event(id,'watcher_claimed','Five-hour watcher claimed this twelve-hour-old request before dispatch.');return claimed;});},
++  claim(id,body){if(!body||Object.keys(body).sort().join(',')!=='briefRevision,progressRevision,revision,taskRevision'||Object.values(body).some(v=>!Number.isSafeInteger(v)||v<0))throw new TaskError(400,'Invalid board claim.');return transaction(()=>{const t=get(id);if(t.revision!==body.taskRevision||t.workroom.revision!==body.briefRevision||t.progress.revision!==body.progressRevision||(t.flow?.revision??0)!==body.revision)throw new TaskError(409,'Card changed before assignment.');const blockers=writerQuiescenceBlockers(listTasks());if(blockers.length)throw new TaskError(409,'Workspace writer quiescence is unproven; reconcile the original writer before assigning another card.');const eligibility=backlogEligibility(t);if(!eligibility.eligible)throw new TaskError(409,eligibility.reason);const claimed=queue(id,'aged');event(id,'watcher_claimed','Five-hour watcher claimed this twelve-hour-old request before dispatch.');return claimed;});},
++  scheduledSweep,
++  sweepStatus,
+   pending:()=>db.prepare("SELECT * FROM workroom_flow WHERE state IN ('queued','planning') ORDER BY rowid").all(),
+   planning(id){db.prepare("UPDATE workroom_flow SET state='planning',revision=revision+1 WHERE taskId=? AND state='queued'").run(id);},
+   working(id){ensure(id);db.prepare("UPDATE workroom_flow SET state='working',question='',askedAt=NULL,revision=revision+1 WHERE taskId=?").run(id);},
+diff --git a/lib/workroom.mjs b/lib/workroom.mjs
+index cd66445..9f68f81 100644
+--- a/lib/workroom.mjs
++++ b/lib/workroom.mjs
+@@ -54,7 +54,7 @@ export function createWorkroom(db, store) {
+   db.prepare("UPDATE workroom_sends SET state='unknown' WHERE state='prepared'").run();
+   const nims=createNimsStore(db);
+   const automation=createAutomationStore(db,get);
+-  const flow=createFlowStore(db,get);
++  const flow=createFlowStore(db,get,()=>store.list().map(task=>get(task.id)));
+   function event(taskId, kind, detail) {
+     db.prepare('INSERT INTO workroom_events(taskId,kind,detail,at) VALUES(?,?,?,?)')
+       .run(taskId, kind, detail, new Date().toISOString());
+diff --git a/server.mjs b/server.mjs
+index 2f01e8a..3bbb2e6 100644
+--- a/server.mjs
++++ b/server.mjs
+@@ -309,9 +309,16 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath,
+         if (!current()) return;
+         return send(200, await relay.reconnect());
+       }
++      if(route==='/api/workroom/claim-next'){
++        if(req.method!=='POST')throw new TaskError(405,'Method not allowed.');
++        if(!store||executionPersistenceFailed)throw new TaskError(503,'Workroom unavailable.');
++        if(process.env.MESH_SIMPLE_FLOW!=='1')throw new TaskError(409,'Managed claims unavailable.');
++        if(!context.body||Object.keys(context.body).length)throw new TaskError(400,'Scheduled claim accepts no overrides.');
++        return send(200,{sweep:store.workroom.flow.scheduledSweep()});
++      }
+       if(route==='/api/workroom/rook'&&req.method==='GET'){
+         if(!store||executionPersistenceFailed)throw new TaskError(503,'Workroom unavailable.');
+-        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',connection:{id:'rook',status:'not_configured',reason:'Rook runtime identity and health integration have not been qualified.'},cards:store.workroom.list().filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
++        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',sweep:store.workroom.flow.sweepStatus(),connection:{id:'rook',status:'not_configured',reason:'Rook runtime identity and health integration have not been qualified.'},cards:store.workroom.list().filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
+       }
+       const workroomRoute = /^\/api\/workroom(?:\/([0-9a-f-]{36})(?:\/(message|progress|sync|apply-update|handoff|apply-review|approval|reconcile|plan|automation|apply-assignment|owner-review|intake|claim))?)?$/.exec(route);
+       if (workroomRoute) {
+diff --git a/test/workroom-claims-route.test.mjs b/test/workroom-claims-route.test.mjs
+index 536d228..8acc919 100644
+--- a/test/workroom-claims-route.test.mjs
++++ b/test/workroom-claims-route.test.mjs
+@@ -24,10 +24,31 @@ test('HTTP claim race has one winner; guarded readback survives restart without
+   const race=await Promise.all([api(route,'POST',body),api(route,'POST',body)]);assert.deepEqual(race.map(x=>x.status).sort(),[200,409]);
+   const saved=(await api(route)).body.flow;assert.equal(saved.sendId,saved.claim.dispatchId);assert.equal(saved.claim.trigger,'aged');
+   assert.equal((await api('/api/workroom/'+task.id)).body.task.messages.length,0);
+-  const status=(await api('/api/workroom/rook')).body;assert.equal(status.connection.status,'not_configured');assert.equal(status.cards.length,1);assert.equal(status.cards[0].flow.claim.claimId,saved.claim.claimId);
++  const status=(await api('/api/workroom/rook')).body;assert.equal(status.connection.status,'not_configured');assert.equal(status.sweep.schedulerInstalled,false);assert.equal(status.sweep.schedulerEnabled,false);assert.equal(status.sweep.lastResult,'never');assert.equal(status.cards.length,1);assert.equal(status.cards[0].flow.claim.claimId,saved.claim.claimId);
+   assert.equal((await api('/api/workroom/rook','POST',{})).status,404);
+   await app.close();app=null;proof={};app=await startApp({dataDir:directory,relayEnabled:false});await admit();
+   assert.deepEqual((await api(route)).body.flow,saved);assert.equal((await api(route,'POST',body)).status,409);
+   assert.equal((await api('/api/workroom/'+task.id)).body.task.messages.length,0);
+  }finally{if(app)await app.close();if(old===undefined)delete process.env.MESH_SIMPLE_FLOW;else process.env.MESH_SIMPLE_FLOW=old;}
+ });
++
++test('scheduled claim endpoint stays inert until explicitly called, enforces auth and a durable five-hour gate',async()=>{
++ const directory='data/rook-scheduled-'+randomUUID();mkdirSync(directory,{recursive:true});const path=resolve(directory,'tasks.sqlite');
++ const store=openTaskStore(path);const task=store.create({title:'Rook scheduled fixture',description:'No real worker or Relay'});store.close();
++ const db=new DatabaseSync(path);db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2020-01-01T00:00:00.000Z',task.id);db.close();
++ const old=process.env.MESH_SIMPLE_FLOW;delete process.env.MESH_SIMPLE_FLOW;let app,proof={};
++ async function api(route,method='GET',body,extra={}){const r=await fetch(app.url+route,{method,headers:{Origin:app.url,'Content-Type':'application/json',...proof,...extra},...(body===undefined?{}:{body:JSON.stringify(body)})});const raw=await r.text();return {status:r.status,body:raw?JSON.parse(raw):null,cookie:r.headers.get('set-cookie')};}
++ async function admit(){const b=await api('/api/trial-session/bootstrap','POST',{});assert.equal(b.status,201);proof={Cookie:b.cookie.split(';')[0],'X-Trial-CSRF':b.body.csrfToken};}
++ try{
++  app=await startApp({dataDir:directory,relayEnabled:false});assert.equal((await api('/api/workroom/claim-next','POST',{})).status,401);await admit();
++  assert.equal((await api('/api/workroom/claim-next','POST',{})).status,409);
++  assert.equal((await api('/api/workroom/rook')).body.sweep.schedulerEnabled,false);
++  process.env.MESH_SIMPLE_FLOW='1';
++  const races=await Promise.all([api('/api/workroom/claim-next','POST',{}),api('/api/workroom/claim-next','POST',{})]);assert.deepEqual(races.map(x=>x.status),[200,200]);
++  const claimed=races.filter(x=>x.body.sweep.status==='claimed');assert.equal(claimed.length,1);assert.equal(races.filter(x=>x.body.sweep.status==='not_due').length,1);
++  const first=claimed[0];assert.equal(first.body.sweep.taskId,task.id);
++  assert.equal((await api('/api/workroom/claim-next','POST',{at:0})).status,400);
++  const status=(await api('/api/workroom/rook')).body;assert.equal(status.sweep.schedulerInstalled,false);assert.equal(status.sweep.schedulerEnabled,false);assert.equal(status.sweep.lastResult,'claimed');
++  assert.equal((await api('/api/workroom/'+task.id)).body.task.messages.length,0,'explicit claim does not itself dispatch');
++ }finally{if(app)await app.close();if(old===undefined)delete process.env.MESH_SIMPLE_FLOW;else process.env.MESH_SIMPLE_FLOW=old;}
++});
+diff --git a/test/workroom-claims.test.mjs b/test/workroom-claims.test.mjs
+index 994163b..9de36eb 100644
+--- a/test/workroom-claims.test.mjs
++++ b/test/workroom-claims.test.mjs
+@@ -21,6 +21,7 @@ test('scheduled claim requires original age, ownership and no saved claim or unc
+ });
+ test('cancelled and failed native receipts never turn an existing assignment into a fresh idea',()=>{
+  for(const state of ['TASK_STATE_CANCELED','TASK_STATE_FAILED','TASK_STATE_REJECTED'])assert.equal(backlogEligibility({...idea(),flow:{state:'failed',sendId:'original'},messages:[{id:'original',phase:'work',state:'accepted',outcome:{state}}]},at).eligible,false);
++ assert.equal(backlogEligibility({...idea(),messages:[{id:'terminal',phase:'work',state:'accepted',outcome:{state:'TASK_STATE_COMPLETED'}}]},at).eligible,false,'terminal task status is not proof all writers ended');
+ });
+ test('atomic claim persists original basis and planned dispatch; second writer and restart cannot replace it',()=>{
+  const path=join(mkdtempSync(join(tmpdir(),'mesh-claim-')),'tasks.sqlite');let a=openTaskStore(path),b;
+@@ -65,3 +66,27 @@ test('uncertain planning delivery keeps its original claim and asks for reconcil
+   await tick();await tick();const flow=s.workroom.flow.read(t.id);assert.equal(sends,0);assert.equal(flow.state,'clarification');assert.match(flow.question,/uncertain/);assert.equal(flow.claim.claimId,claim.claim.claimId);assert.equal(flow.claim.dispatchId,claim.sendId);assert.equal(flow.sendId,claim.sendId);
+  }finally{s.close();}
+ });
++
++test('five-hour Rook sweep selects one oldest card, coalesces duplicate ticks and survives restart',()=>{
++ const path=join(mkdtempSync(join(tmpdir(),'mesh-rook-sweep-')),'tasks.sqlite');let a=openTaskStore(path),b;
++ try{
++  const older=a.create({title:'Oldest sweep fixture',description:'No live dispatch'}),newer=a.create({title:'Next sweep fixture',description:'No live dispatch'});
++  const db=new DatabaseSync(path);db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2020-01-01T00:00:00.000Z',older.id);db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2021-01-01T00:00:00.000Z',newer.id);db.close();
++  b=openTaskStore(path);const first=a.workroom.flow.scheduledSweep(at);assert.equal(first.status,'claimed');assert.equal(first.taskId,older.id);assert.equal(first.flow.claim.trigger,'aged');assert.equal(first.flow.claim.dispatchId,first.flow.sendId);
++  assert.equal(b.workroom.flow.scheduledSweep(at).status,'not_due');
++  a.close();a=openTaskStore(path);assert.equal(a.workroom.flow.sweepStatus().lastScheduledAt,new Date(at).toISOString());
++  const second=a.workroom.flow.scheduledSweep(at+5*60*60*1000);assert.equal(second.status,'claimed');assert.equal(second.taskId,newer.id);
++ }finally{b?.close();a.close();}
++});
++
++test('Rook sweep fails closed when a terminal native status lacks an all-writers-ended receipt',()=>{
++ const path=join(mkdtempSync(join(tmpdir(),'mesh-rook-quiescence-')),'tasks.sqlite');const s=openTaskStore(path);
++ try{
++  const candidate=s.create({title:'Eligible but gated',description:'No live dispatch'}),writer=s.create({title:'Terminal but not quiescent',description:'Saved native outcome only'});
++  const db=new DatabaseSync(path);db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2020-01-01T00:00:00.000Z',candidate.id);db.close();
++  const t=s.workroom.get(writer.id);s.workroom.saveProgress(writer.id,{goal:'Bounded source work',checklist:[{id:'build',text:'Build locally',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision});
++  s.workroom.reserve(writer.id,{id:'writer-send',agentId:'dsh',conversationId:'writer-conv',text:'Build the source'},'work');s.workroom.settle('writer-send','accepted');
++  s.workroom.recordSendOutcome(writer.id,'writer-send',{peerTaskId:'native-task',state:'TASK_STATE_COMPLETED',proofHash:'a'.repeat(64),verifiedAt:new Date(at).toISOString()});
++  const result=s.workroom.flow.scheduledSweep(at);assert.equal(result.status,'blocked');assert.equal(result.reason,'writer_quiescence_unproven');assert.equal(result.blockers[0].sendId,'writer-send');assert.equal(s.workroom.flow.read(candidate.id),undefined);
++ }finally{s.close();}
++});

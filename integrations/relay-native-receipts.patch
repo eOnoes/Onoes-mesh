@@ -82,7 +82,7 @@
 +@app.get("/api/agents/{aid}/outbox/{send_id}/native-run")
 +async def native_run_receipt(aid: str, send_id: str):
 +    agent = AGENTS.get(aid)
-+    if agent is None or agent.is_a2a:
++    if agent is None or agent.backend != "hermes":
 +        return JSONResponse({"ok": False, "error": "native receipt not found"}, status_code=404)
 +    try:
 +        receipt = await relay_native_receipts.read(SESSIONS, aid, send_id, _hermes_client(agent))

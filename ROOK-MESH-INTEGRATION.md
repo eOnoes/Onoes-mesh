@@ -420,3 +420,44 @@ invalidated for both changed files. Recovery note now explains staging state.
 The fixed Echo run is still running, with WIP edits to claim policy, flow,
 Workroom, server and claim tests in its isolated checkout. No patch is delivered;
 those edits are not acceptance. Preserve that writer and its receipt transport.
+
+
+## Hermes-only route and independently packaged Rook foundation - 2026-11-08
+
+Receipt route now explicitly requires backend=hermes; A2A and OpenClaw return404
+before constructing a Hermes client. Final ten-check isolated suite PASS includes
+this regression with realistic is_a2a values and a client-lookup counter, plus
+complete service lifecycle. Evidence data/relay-native-backend-guard-final-2026-11-08.
+Source replay now uses data/relay-native-pristine-baseline-2026-11-08, made from
+the verified original E server plus14 hash-checked source dependencies. Do not
+point the generator at already-patched D:/Dev/Onoes-Relay; anchors correctly refuse.
+
+Revision2 staged server raw SHA8dad2ce28ae1bfe9101c8c88c0bbaf7252e1aee9a4279e05f6ad9de47766e2f9;
+normalized candidate SHA6b61632e3fcb11b7d01df3bc486919e94e7c9e5b5b4a1ec7f6ebbd8162f17b59.
+Helper unchanged. Prior candidate and original backups preserved; E package now
+contains candidate-revision2-hermes-only and source-staging-record-revision2.json.
+No runtime restart/activation. Final proof copied as qualification-final.json.
+
+Echo's native build run completed with a partial six-file implementation and no
+packaging. Nims independently ran Workroom126/126, focused claim/route11/11
+(the11 are included in126), static and diff PASS. Echo reported31 focused tests;
+that count was not reproduced by the exact independent two-file command. The
+changed-symbol tool compared identical commits and did not inspect uncommitted
+edits; actual Git status and indexed current symbol sources were used instead.
+
+Nims packaged rook.patch, changed-files.txt, acceptance-report.md and manifest.json
+in C:/Users/eMitchell109/Documents/ChatGPT/Nims Chat/rook-delivery-4e321ea, with
+exact base4e321eadcd99b7cd0b6b6ba1739d35292aed9029 and unchanged before/after file
+hashes. Reverse apply check PASS. Patch SHA
+b0f53e531a3988431f175f5197bfb678e8242523f4b64bac5bcf0ca26af9f15a.
+Versioned copy: integrations/rook-partial-4e321ea.patch. It is NOT launch-ready.
+
+Reviewed foundation has persisted5h cadence, server-clock/empty-body claim-next,
+oldest eligible12h atomic claim, assigned/clarification exclusions and held writers.
+Runtime identity/health remain not_configured, scheduler disabled, positive writer
+release/automatic retry/end-to-end reporting unqualified. No fake availability or
+acceptance granted. Dry-run apply against current Mesh found overlap in
+ test/workroom-claims.test.mjs:65; no files changed. Reconcile that delta while
+preserving current recovery/writer/body-size guards, never replace whole files.
+Next is controlled Relay restart/readback now the tracked build returned, followed
+by reviewed foundation integration and completion of the missing Rook runtime.
