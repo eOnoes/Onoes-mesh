@@ -418,3 +418,38 @@ result there; pausing or closing a team does not cancel accepted work. An applie
 worker result or existing native terminal outcome releases the same reservation
 as the lower-level handoff guard. No receipt is removed and no worker is retried
 by this check. The handoff-time guard remains active for later races.
+
+## 2026-11-08 readiness update (supersedes older current-state summaries)
+
+The parent Workroom card, Finish Onoes-Mesh - all assessed stages, now has progress
+revision20. Its six original checklist entries and status remain unchanged:
+A/B done, C/E/F working, D blocked on deferred shared-model maintenance. The
+whole goal remains open with review pending. Refresh/reopen shows this summary;
+it is not a scoped worker assignment and does not authorize automatic dispatch.
+
+Latest tested candidate code is01f0ea1, pushed to the existing branch. Complete
+local npm test265/265 (40+1+29+67+128), static/diffPASS; optional frozen contract
+file absent/skipped. A later doc-only audit isd307ad8. These source results are
+not live Rook acceptance or a measurement of the current deployed build identity.
+The admitted live board policy still has managed flow off and14saved tasks.
+
+Managed candidate paths have disposable SQLite/HTTP/browser evidence for claims,
+original-send recovery, clarification, owner changes and accepted-result reload.
+Managed workspace admission now requires verified terminal evidence from the
+previous writer, even if its progress report was applied or its team closed.
+The earlier paragraph allowing an applied report to release a writer describes
+legacy unflagged behavior only; do not apply it to the managed candidate.
+
+Rook remains separately built by Echo in an isolated4e321ea snapshot. Qualification
+still needs its real identity/Relay health, durable Echo send-to-native-run
+binding, tool/child completion guarantees, bounded same-chain retry, actual
+report delivery, reviewed deployment and new owner-phone acceptance. Echo was
+asked one read-only question through Relay; acceptance is not a reply or native
+completion proof. See ROOK-MESH-INTEGRATION.md for the exact source audit.
+
+Native model control/lifecycle remains unqualified and maintenance deferred.
+Onoes-Mind has no verified canonical live store, keys or activated service here.
+Shared context/skills/MCP, external apps and three-machine hardware integration
+remain in scope and incomplete. Current source test totals do not close those
+stages. Manual/milestone E backups continue; no scheduled/off-device protection
+or automatic pruning is claimed.
