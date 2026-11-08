@@ -875,3 +875,6 @@ Mesh/Mind/model/fleet objective remains active/incomplete.
 
 Primary thread API reference:
 https://learn.microsoft.com/en-us/windows/win32/toolhelp/traversing-the-thread-list
+
+
+Milestone follow-up: d1b6f8b candidate committed/pushed, 4d64948 pins the native review patch to LF via exact .gitattributes rule; native apply --check PASS after attributes change. Backup source list now retains .gitattributes as well. Verified E backup E:\App-Backups\ONOes-Mesh\2026-11-08_20-43-26-210_UTC_41a4eace includes all new bridge/preparer/patch/test/attribute files with matching hashes,14cards and parent27. Previous root evidence at26 archived verbatim with SHA in private WORKROOM-AB-CHECKPOINT.md before replacing the UI evidence with a concise current-state summary; all6checklist IDs/text/states, pendingdecision and open status unchanged. No evidence history deleted. No live Mesh/native/model restart, worker release or automatic activation.
