@@ -25,7 +25,7 @@ Manual movement into In progress uses the existing brief PATCH and preserves an 
 - Existing disposable managed-flow tests exercise scope/build/independent review/Done, bounded corrections, clarification, and separate owner acceptance/changes. These use fake peers, not a live Rook integration.
 - Actual disposable browser checks passed: new idea stays unassigned, Work on this queues it with Nims, Done offers Accept result/Request changes, saved change request returns to the middle lane and survives reload, and a saved clarification answer queues fresh intake. Both themes checked at 390x844; no real workers dispatched. Browser discovered and fixed a frozen-interface assignment error, hidden owner feedback and misleading queued-work wording. Accept result was subsequently clicked in a fresh disposable browser fixture and persisted across reload; native readback confirms Done, accepted owner decision bound to the current progress revision, and zero worker sends. This is synthetic acceptance, not Eddie accepting a real result.
 
-Full local `npm test`: 265 passing (40 + 1 + 29 + 67 + 128). `npm run check`: passing; optional frozen contract file absent, so that optional pin check is skipped. Logs: `../mesh-writer-release-full.log` and `../mesh-writer-release-static.log`.
+Full local `npm test`: 266 passing (40 + 1 + 29 + 67 + 129). `npm run check`: passing; optional frozen contract file absent, so that optional pin check is skipped. Logs: `../mesh-workroom-body-full.log` and `../mesh-workroom-body-static.log`.
 
 ## Remaining before activation
 
