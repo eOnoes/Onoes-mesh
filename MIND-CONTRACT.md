@@ -30,6 +30,16 @@ conflict resolution and separate deletion/retention policies require their own
 selected source and scope. This initial task-record reader does not qualify them.
 
 
+## Current setup status (2026-11-07 Chicago)
+
+The approved private folder is `D:/App-Data/Onoes-Mind`; read-only verification
+found it empty. No live ledger, recovery keys, service principal or recall service
+has been initialized there. Eddie owns the data and recovery keys; Echo and Nims
+operate it. A specific runtime identity, single shared scope and live binding
+still need their separate reviewed decisions. Existing synthetic recall/recovery
+components are prepared, not live memory access. The earlier audit and planning
+sections below are historical evidence, not instructions to activate them.
+
 ## Canonical Onoes-Mind integration boundary (2026-11-07)
 
 The existing Onoes-Mind project owns durable agent memory, shared knowledge,
@@ -237,8 +247,10 @@ memory database was opened. This limited inventory does not prove no other
 instance exists elsewhere on the machine.
 
 Proposed future data location: D:/App-Data/ONOes-Mind/ledger.sqlite, owned by
-Mind's authority, with runtime/filesystem custodian still UNASSIGNED. Canonical
-source stays D:/Dev/Onoes-Mind. The proposed directory/file has not been created.
+Mind's authority: Eddie owns its data/keys and Echo/Nims operate it;
+the specific service/runtime identity remains unassigned. Canonical
+source stays D:/Dev/Onoes-Mind. The private folder was approved and created as D:/App-Data/Onoes-Mind;
+read-only verification found it empty. No ledger file has been created.
 Exact data path, authority/custodian, reviewed initialization and restore/deletion
 history must be resolved in the binding record before provisioning. Mesh must
 not create a separate memory store. Single-scope service credentials, grants,

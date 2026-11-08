@@ -410,3 +410,11 @@ save: access must be rejected and private data cleared. Start a fresh session
 and verify the original goal. Ctrl+C stops only this disposable server; its
 evidence remains in the printed unique data directory. This is a desktop replay,
 not live phone or model-lifecycle acceptance.
+
+
+Scoped-team Start/Resume checks unresolved worker receipts on other cards before
+admitting the attempt. If it names another card, inspect that original worker
+result there; pausing or closing a team does not cancel accepted work. An applied
+worker result or existing native terminal outcome releases the same reservation
+as the lower-level handoff guard. No receipt is removed and no worker is retried
+by this check. The handoff-time guard remains active for later races.

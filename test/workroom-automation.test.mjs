@@ -40,6 +40,39 @@ test('restart pauses consent; stale action, arbitrary workspace and second activ
 test('new writer is rejected while another unresolved worker owns the same workspace',()=>{
  const store=openTaskStore(file());try{const a=ready(store),b=ready(store);store.workroom.reserve(a.id,{id:randomUUID(),agentId:'echo',conversationId:'e',text:'One writer'},'work');assert.throws(()=>store.workroom.reserve(b.id,{id:randomUUID(),agentId:'echo',conversationId:'e',text:'Second writer'},'work'),/second writer/);}finally{store.close();}
 });
+
+test('team start refuses a paused or closed unresolved worker before creating another attempt',async()=>{
+ const store=openTaskStore(file()),relay=fakeRelay(store),runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000});try{
+  let a=ready(store),b=ready(store);store.workroom.automation.action(a.id,action(a),agents,process.cwd());await runner.tick();
+  a=store.workroom.get(a.id);assert.equal(relay.sends.length,1);
+  a=store.workroom.automation.action(a.id,action(a,'pause'),agents,process.cwd()).task;
+  assert.throws(()=>store.workroom.automation.action(b.id,action(b),agents,process.cwd()),/Resolve the worker on/);
+  assert.equal(store.workroom.get(b.id).automation,undefined);
+  a=store.workroom.automation.action(a.id,action(a,'close'),[],process.cwd()).task;
+  assert.throws(()=>store.workroom.automation.action(b.id,action(b),agents,process.cwd()),/Resolve the worker on/);
+  assert.equal(relay.sends.length,1);
+  await syncTaskReplies({workroom:store.workroom,taskId:a.id,relay,admitted:()=>true});a=store.workroom.get(a.id);
+  const report=a.agentUpdates[0];assert.ok(report);
+  store.workroom.applyAgentUpdate(a.id,{sendId:report.sendId,messageId:report.messageId,hash:report.hash,revision:a.progress.revision,taskRevision:a.revision,briefRevision:a.workroom.revision});
+  b=store.workroom.automation.action(b.id,action(b),agents,process.cwd()).task;assert.equal(b.automation.state,'active');
+  assert.equal(relay.sends.length,1,'admitting the next team does not itself dispatch it');
+ }finally{await runner.close();store.close();}
+});
+
+test('team resume refuses an unresolved worker from another task, including after restart',()=>{
+ for(const state of ['prepared','unknown','accepted']){
+  const name=file();let store=openTaskStore(name);try{
+   let b=ready(store);store.workroom.automation.action(b.id,action(b),agents,process.cwd());b=store.workroom.get(b.id);
+   b=store.workroom.automation.action(b.id,action(b,'pause'),agents,process.cwd()).task;
+   const a=ready(store),id=randomUUID();store.workroom.reserve(a.id,{id,agentId:'echo',conversationId:'e',text:'Unresolved original worker'},'work');
+   if(state!=='prepared')store.workroom.settle(id,state);
+   store.close();store=openTaskStore(name);b=store.workroom.get(b.id);
+   assert.throws(()=>store.workroom.automation.action(b.id,action(b,'resume'),agents,process.cwd()),/Resolve the worker on/);
+   assert.equal(store.workroom.get(b.id).automation.state,'paused');
+   assert.equal(store.workroom.get(a.id).messages[0].id,id);
+  }finally{store.close();}
+ }
+});
 test('assignment proposals require exact source/schema and apply only as an unlocked draft',()=>{
  const store=openTaskStore(file());try{let t=ready(store);const b={id:randomUUID(),agentId:'echo',conversationId:'e',text:'Plan only'},s=store.workroom.reserve(t.id,b,'plan');store.workroom.settle(b.id,'accepted');const p={schema:'workroom-assignment/v1',taskId:t.id,sendId:b.id,spec:'Proposed outcome',workspace:process.cwd(),allowedFiles:'one.mjs',checks:'node --check one.mjs',boundaries:'No other edits',workerId:'echo',reviewerId:'nims'};const text='```workroom-assignment\n'+JSON.stringify(p)+'\n```';assert.equal(parseAssignment(text,'other',b.id),null);assert.equal(parseAssignment(text+text,t.id,b.id),null);assert.equal(parseAssignment('```workroom-assignment\n'+JSON.stringify({...p,approved:true})+'\n```',t.id,b.id),null);store.workroom.captureReplies(t.id,b.id,[{id:b.id,k:'you',t:s.payload},{id:'lead',k:'ag',t:text}]);t=store.workroom.get(t.id);const offer=t.assignments[0];t=store.workroom.applyAssignment(t.id,{sendId:offer.sendId,messageId:offer.messageId,hash:offer.hash,revision:t.plan.revision,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision}).task;assert.equal(t.plan.state,'draft');assert.equal(t.plan.reviewerId,'nims');assert.equal(t.progress.decision,'pending');}finally{store.close();}
 });
