@@ -61,6 +61,21 @@ test('team start refuses a paused or closed unresolved worker before creating an
  }finally{await runner.close();store.close();}
 });
 
+test('managed admission retains the writer after an applied report and rejects unsupported Echo reconciliation',async()=>{
+ const old=process.env.MESH_SIMPLE_FLOW;const name=file();let store=openTaskStore(name);const relay=fakeRelay(store),runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000});
+ try{
+  let a=ready(store),b=ready(store);store.workroom.automation.action(a.id,action(a),agents,process.cwd());await runner.tick();a=store.workroom.get(a.id);
+  a=store.workroom.automation.action(a.id,action(a,'pause'),agents,process.cwd()).task;store.workroom.automation.action(a.id,action(a,'close'),[],process.cwd());
+  await syncTaskReplies({workroom:store.workroom,taskId:a.id,relay,admitted:()=>true});a=store.workroom.get(a.id);const report=a.agentUpdates[0];store.workroom.applyAgentUpdate(a.id,{sendId:report.sendId,messageId:report.messageId,hash:report.hash,revision:a.progress.revision,taskRevision:a.revision,briefRevision:a.workroom.revision});
+  process.env.MESH_SIMPLE_FLOW='1';
+  assert.throws(()=>store.workroom.automation.action(b.id,action(b),agents,process.cwd()),/verified terminal receipt/);
+  assert.throws(()=>store.workroom.reserve(b.id,{id:randomUUID(),agentId:'echo',conversationId:'e',text:'Competing writer'},'work'),/verified terminal receipt/);
+  assert.throws(()=>store.workroom.recordSendOutcome(a.id,report.sendId,{peerTaskId:'echo-task',state:'TASK_STATE_COMPLETED',proofHash:'a'.repeat(64),verifiedAt:new Date().toISOString()}),/Only this task/);
+  await runner.close();store.close();store=openTaskStore(name);b=store.workroom.get(b.id);
+  assert.throws(()=>store.workroom.automation.action(b.id,action(b),agents,process.cwd()),/verified terminal receipt/);assert.equal(store.workroom.get(b.id).messages.length,0);assert.equal(relay.sends.length,1);
+ }finally{await runner.close();store.close();if(old===undefined)delete process.env.MESH_SIMPLE_FLOW;else process.env.MESH_SIMPLE_FLOW=old;}
+});
+
 test('team resume refuses an unresolved worker from another task, including after restart',()=>{
  for(const state of ['prepared','unknown','accepted']){
   const name=file();let store=openTaskStore(name);try{
@@ -77,7 +92,7 @@ test('team resume refuses an unresolved worker from another task, including afte
 });
 
 test('real team endpoint refuses competing start/resume with admission intact and zero worker dispatch',async()=>{
- const keys=['MESH_RELAY_MODE','MESH_RELAY_URL','MESH_RELAY_TOKEN_FILE','MESH_STANDALONE','MESH_NIMS','MESH_NEMOTRON_CONTROL','MESH_MODEL_OBSERVATION','MESH_DSH_APPROVAL_ORIGIN','MESH_DSH_TOKEN_FILE'],previous=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+ const keys=['MESH_RELAY_MODE','MESH_RELAY_URL','MESH_RELAY_TOKEN_FILE','MESH_STANDALONE','MESH_NIMS','MESH_NEMOTRON_CONTROL','MESH_MODEL_OBSERVATION','MESH_DSH_APPROVAL_ORIGIN','MESH_DSH_TOKEN_FILE','MESH_SIMPLE_FLOW'],previous=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
  const token='fixture-'+randomUUID(),tokenPath=join(mkdtempSync(join(tmpdir(),'mesh-auto-http-')),'key');writeFileSync(tokenPath,token);
  let posts=0,app;
  const peers=http.createServer((req,res)=>{
@@ -93,12 +108,14 @@ test('real team endpoint refuses competing start/resume with admission intact an
   a=ready(store);b=ready(store);c=ready(store);
   b=store.workroom.automation.action(b.id,action(b),agents,ROOT).task;
   b=store.workroom.automation.action(b.id,action(b,'pause'),agents,ROOT).task;
-  const id=randomUUID();store.workroom.reserve(a.id,{id,agentId:'echo',conversationId:'e',text:'Original accepted fixture'},'work');store.workroom.settle(id,'accepted');
+  const id=randomUUID(),send=store.workroom.reserve(a.id,{id,agentId:'echo',conversationId:'e',text:'Original accepted fixture'},'work');store.workroom.settle(id,'accepted');
+  const report={schema:'workroom-update/v1',taskId:a.id,sendId:id,goal:a.progress.goal,checklist:a.progress.checklist.map(s=>({...s,status:'done'})),result:'Reported complete, native end unverified',evidence:'Fixture report only'};
+  store.workroom.captureReplies(a.id,id,[{id,k:'you',t:send.payload},{id:'fixture-report',k:'ag',t:'```workroom-update\n'+JSON.stringify(report)+'\n```'}]);a=store.workroom.get(a.id);const update=a.agentUpdates[0];store.workroom.applyAgentUpdate(a.id,{sendId:id,messageId:update.messageId,hash:update.hash,revision:a.progress.revision,taskRevision:a.revision,briefRevision:a.workroom.revision});
  }finally{store.close();}
  try{
   await new Promise(r=>peers.listen(0,'127.0.0.1',r));
   process.env.MESH_RELAY_MODE='http';process.env.MESH_RELAY_URL='http://127.0.0.1:'+peers.address().port;process.env.MESH_RELAY_TOKEN_FILE=tokenPath;process.env.MESH_STANDALONE='0';
-  process.env.MESH_NIMS='0';process.env.MESH_NEMOTRON_CONTROL='0';process.env.MESH_MODEL_OBSERVATION='0';
+  process.env.MESH_NIMS='0';process.env.MESH_NEMOTRON_CONTROL='0';process.env.MESH_MODEL_OBSERVATION='0';process.env.MESH_SIMPLE_FLOW='1';
   process.env.MESH_DSH_APPROVAL_ORIGIN=process.env.MESH_RELAY_URL;process.env.MESH_DSH_TOKEN_FILE=tokenPath;
   app=await startApp({dataDir,relayEnabled:true});
   const headers={Origin:app.url,'Content-Type':'application/json'},path=t=>'/api/workroom/'+t.id+'/automation';
