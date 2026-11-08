@@ -9,7 +9,8 @@
     "actual_native_SQLite_restart_replay_without_new_worker_or_old_owner",
     "native_SQLite_canonical_claim_lookup_and_worker_binding",
     "actual_canonical_HTTP_FIFO_observer_cancellation_and_exact_replay",
-    "actual_canonical_retirement_timeout_drain_and_successor_queue_recovery"
+    "actual_canonical_retirement_timeout_drain_and_successor_queue_recovery",
+    "actual_abrupt_owner_process_loss_blocks_replay_and_preserves_queue"
   ],
   "providerRequests": 10,
   "nonToolProviderRequests": 3,
@@ -19,7 +20,7 @@
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual direct/canonical native API, real runner/authority FIFO, observer cancellation, graceful retirement timeout/drain and fresh-owner queue recovery. Synthetic profile under native ownership locks, local fake provider/runtime route and terminal-only fixture toolset.",
+  "scope": "Actual native direct/canonical API, FIFO/cancellation/replay, graceful retirement/recovery and abrupt owner loss across two separate isolated processes. Native locks and SQLite; synthetic profiles, fake local provider/runtime route and bounded fixture tools.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
     "tools/mesh_writer_scope.py": "c58e711cddfd25e18ed314113b8df8b85e135001ce482a4b8fae5407bbc81ca3",
@@ -43,12 +44,13 @@
     "native_title_pending_then_actual_thread_exit",
     "native_SQLite_canonical_claim_binding_without_release",
     "actual_canonical_FIFO_results_cancellation_ordering_and_replay",
-    "actual_retirement_keeps_ownership_then_recovers_queue_once"
+    "actual_retirement_keeps_ownership_then_recovers_queue_once",
+    "separate_process_loss_preserves_unknown_and_blocks_duplicate_work"
   ],
-  "evidenceDirectory": "hermes-runtime-e4cde1a0-7260-47b5-8c9c-e511086c90ea",
+  "evidenceDirectory": "hermes-runtime-7a66870f-d086-4d4e-bb8b-d34203cf6d06",
   "remaining": [
     "Tool external effects and whole-worker release remain unqualified.",
-    "Other background workers, abrupt process loss and live-chat-owner execution remain unqualified.",
+    "Other background workers and live-chat-owner execution remain unqualified.",
     "Installed native/Relay deployment and production provider/profile selection remain unverified."
   ],
   "liveServicesChanged": false,
@@ -63,6 +65,11 @@
     "oldEpoch": 2,
     "newEpoch": 3,
     "scope": "Actual native timeout retains ownership; graceful drain then lock release/reacquisition and fresh runner recover exact queued admission once. Same isolated process; not abrupt process-crash acceptance.",
+    "liveActivation": false
+  },
+  "abruptOwnerLoss": {
+    "qualification": "PASS",
+    "scope": "Separate actual owner process exits73 without cleanup; fresh process exits0 with active admission unknown, successor queued, new claims blocked and retry creating no worker. No automatic resolution or replay.",
     "liveActivation": false
   }
 }

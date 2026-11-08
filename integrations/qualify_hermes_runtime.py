@@ -84,6 +84,19 @@ def verify_evidence(root):
                 or retired['recoveredWorker']['writerQuiescence']):
             raise RuntimeError('Actual canonical owner retirement/recovery evidence is incomplete')
         result['checks'].append('actual_retirement_keeps_ownership_then_recovers_queue_once')
+    if 'actual_abrupt_owner_process_loss_blocks_replay_and_preserves_queue' in report['checks']:
+        before=json.loads((root/'abrupt-owner-before.json').read_text(encoding='utf-8'))
+        lost=json.loads((root/'abrupt-owner-recovery.json').read_text(encoding='utf-8'))
+        writer=lost['writerObservation'];held=before['heldWorker']['lifetime']
+        if (not lost['realSeparateProcesses'] or lost['processExitCodes']!=[73,0]
+                or lost['newEpoch']<=lost['oldEpoch'] or held['rootEnded'] or held['managedWorkEnded']
+                or lost['activeStatus']!='unknown' or lost['queuedStatus']!='queued'
+                or not lost['queuedAdmissionPreserved'] or not lost['claimBlockedByUnknown']
+                or not lost['retryCreatedNoWorker'] or lost['savedAdmissionCount']!=2
+                or writer['state']!='unknown' or writer['enrollment'] is not None
+                or writer['ownerId']==before['ownerId'] or writer['writerQuiescence']):
+            raise RuntimeError('Abrupt process-loss recovery evidence is incomplete')
+        result['checks'].append('separate_process_loss_preserves_unknown_and_blocks_duplicate_work')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -225,6 +238,134 @@ async def qualify_canonical_retirement(root, adapter, origin, key, runner, endpo
             (root/'canonical-retirement-evidence.json').write_text(json.dumps(evidence,indent=2),encoding='utf-8')
     finally:
         release.set()
+
+
+async def abrupt_owner_process(root, recovering):
+    """Dedicated synthetic owner process; the first intentionally skips all cleanup."""
+    import asyncio
+    import socket
+    import threading
+    import time
+    from uuid import uuid4
+    from aiohttp import ClientSession
+    sys.path.insert(0,str(root/'source'));os.chdir(root/'source')
+    from hermes_constants import get_hermes_home
+    from gateway.config import GatewayConfig, Platform, PlatformConfig
+    from gateway.run import GatewayRunner
+    from gateway.run_runtime import initialize_gateway_runtime
+    from gateway.runtime_ownership import process_ownership
+    from gateway.session_api_turn import recover_api_turns
+    from gateway.platforms.api_server import APIServerAdapter
+    from gateway.platforms.api_server_authority_runs import run_admission
+    from hermes_state_runtime import claim_session_input, list_session_admissions, RuntimeStoreError
+    from tools.mesh_writer_scope import WriterRunRegistry
+    from tools.mesh_windows_writer_fence import WindowsWriterFence
+    home=root/'crash-home'
+    if Path(get_hermes_home()).resolve()!=home.resolve():raise RuntimeError('Abrupt-loss profile is not isolated')
+    process_ownership.reserve([home]);fences=[];adapter=None;entered=threading.Event()
+    def factory(run_id,generation):
+        fence=WindowsWriterFence(run_id,generation);fences.append(fence);return fence
+    def route(**kwargs):
+        if not recovering:
+            entered.set()
+            if not threading.Event().wait(timeout=30):raise RuntimeError('Abrupt-loss gate expired without intentional exit')
+        raise RuntimeError('Unexpected model request in crash-recovery fixture')
+    try:
+        runner=GatewayRunner(GatewayConfig(multiplex_profiles=False))
+        runner._resolve_session_agent_runtime=route
+        runner._resolve_turn_toolsets=lambda *args,**kwargs:(['terminal'],[])
+        await initialize_gateway_runtime(runner)
+        with socket.socket() as free:free.bind(('127.0.0.1',0));port=free.getsockname()[1]
+        # Fixed synthetic key for the two isolated processes, never a live key.
+        key=hashlib.sha256(b'mesh-abrupt-owner-fixture-only').hexdigest()
+        adapter=APIServerAdapter(PlatformConfig(enabled=True,extra={'host':'127.0.0.1','port':port,
+            'key':key,'model_name':'mesh-runtime-fixture'}))
+        adapter._mesh_writer_runs=WriterRunRegistry(factory)
+        adapter.gateway_runner=runner;runner.adapters[Platform.API_SERVER]=adapter
+        if not await adapter.connect():raise RuntimeError('Crash fixture API did not start')
+        origin='http://127.0.0.1:'+str(port);headers={'Authorization':'Bearer '+key}
+        authority=runner.session_authorities.launch
+        async with ClientSession() as client:
+            if not recovering:
+                body={'input':'Synthetic abrupt loss active.','session_id':uuid4().hex}
+                queued_body={**body,'input':'Synthetic abrupt loss queued.'}
+                async with client.post(origin+'/v1/runs',headers={**headers,'Idempotency-Key':'mesh-crash-active'},json=body) as response:
+                    active=await response.json()
+                    if response.status not in (200,201,202):raise RuntimeError('Crash active admission refused')
+                deadline=time.monotonic()+20
+                while not entered.is_set():
+                    if time.monotonic()>deadline:raise RuntimeError('Crash worker did not enter real synchronous body')
+                    await asyncio.sleep(.02)
+                async with client.post(origin+'/v1/runs',headers={**headers,'Idempotency-Key':'mesh-crash-queued'},json=queued_body) as response:
+                    queued=await response.json()
+                    if response.status not in (200,201,202):raise RuntimeError('Crash queued admission refused')
+                row=run_admission(adapter,queued['run_id'])[1]
+                held=adapter._mesh_writer_runs.snapshot(active['run_id'])
+                if row['status']!='queued' or held['lifetime']['rootEnded'] or adapter._mesh_writer_runs.snapshot(queued['run_id']) is not None:
+                    raise RuntimeError('Crash fixture was not active-plus-queued')
+                evidence={'pid':os.getpid(),'epoch':authority.epoch,'ownerId':adapter._mesh_writer_runs.owner_id,
+                    'activeRunId':active['run_id'],'queuedRunId':queued['run_id'],'queuedAdmissionId':row['admission_id'],
+                    'sessionId':body['session_id'],'activeBody':body,'heldWorker':held}
+                with (root/'abrupt-owner-before.json').open('w',encoding='utf-8') as output:
+                    json.dump(evidence,output,indent=2);output.flush();os.fsync(output.fileno())
+                os._exit(73)  # This fixture process only: genuinely bypass finally/owner drain.
+            before=json.loads((root/'abrupt-owner-before.json').read_text(encoding='utf-8'))
+            recover_api_turns(adapter)
+            await asyncio.sleep(0)
+            active_row=run_admission(adapter,before['activeRunId'])[1]
+            queued_row=run_admission(adapter,before['queuedRunId'])[1]
+            if (authority.epoch<=before['epoch'] or active_row['status']!='unknown'
+                    or queued_row['status']!='queued' or queued_row['admission_id']!=before['queuedAdmissionId']):
+                raise RuntimeError('Abrupt loss did not preserve unknown-plus-queued input')
+            blocked=False
+            try:claim_session_input(authority.db,epoch=authority.epoch,session_id=before['sessionId'])
+            except RuntimeStoreError as error:
+                if error.reason!='unknown_execution':raise
+                blocked=True
+            async with client.get(origin+'/v1/runs/'+before['activeRunId'],headers=headers) as response:
+                observed=await response.json()
+                if response.status!=200:raise RuntimeError('Crash native status lookup failed')
+            writer=observed['writer_lifecycle']
+            if writer['state']!='unknown' or writer['enrollment'] is not None or writer['ownerId']==before['ownerId'] or writer['writerQuiescence']:
+                raise RuntimeError('New process reused stale writer proof')
+            async with client.post(origin+'/v1/runs',headers={**headers,'Idempotency-Key':'mesh-crash-active'},json=before['activeBody']) as response:
+                retry=await response.json();retry_status=response.status
+            if retry_status not in (200,201,202,409) or retry_status!=409 and retry.get('run_id')!=before['activeRunId']:
+                raise RuntimeError('Unknown execution retry did not preserve its identity')
+            rows=list_session_admissions(authority.db,session_id=before['sessionId'],pending_only=False)
+            if not blocked or len(rows)!=2 or fences or authority.executing:
+                raise RuntimeError('New owner dispatched or duplicated unresolved work')
+            evidence={'oldPid':before['pid'],'newPid':os.getpid(),'oldEpoch':before['epoch'],'newEpoch':authority.epoch,
+                'activeStatus':active_row['status'],'queuedStatus':queued_row['status'],'queuedAdmissionPreserved':True,
+                'claimBlockedByUnknown':blocked,'writerObservation':writer,'retryStatus':retry_status,
+                'retryCreatedNoWorker':True,'savedAdmissionCount':len(rows),'realSeparateProcesses':True}
+            (root/'abrupt-owner-recovery.json').write_text(json.dumps(evidence,indent=2),encoding='utf-8')
+    finally:
+        if adapter is not None:await adapter.disconnect()
+        for fence in fences:fence.terminate();fence.close()
+        process_ownership.close()
+
+
+async def qualify_abrupt_owner_loss(root):
+    import asyncio
+    home=root/'crash-home';home.mkdir()
+    (home/'config.yaml').write_text('model:\n  provider: custom\n  default: mesh-runtime-fixture\nterminal:\n  backend: local\n',encoding='utf-8')
+    environment={name:value for name,value in os.environ.items() if name.upper() in {
+        'SYSTEMROOT','WINDIR','COMSPEC','PATH','PATHEXT','PROGRAMFILES','PROGRAMFILES(X86)','PYTHONPATH'}}
+    environment.update(HERMES_HOME=str(home),HOME=str(home),USERPROFILE=str(home),APPDATA=str(root/'appdata'),
+        LOCALAPPDATA=str(root/'localappdata'),TEMP=str(root/'temp'),TMP=str(root/'temp'),
+        PYTHONIOENCODING='utf-8',TERMINAL_ENV='local',TERMINAL_CWD=str(root/'workspace'))
+    exits=[]
+    for mode,expected in [('--crash-owner',73),('--recover-owner',0)]:
+        with (root/(mode[2:]+'.log')).open('wb') as log:
+            result=await asyncio.to_thread(subprocess.run,[sys.executable,str(Path(__file__).resolve()),mode,str(root)],
+                cwd=root/'source',env=environment,stdout=log,stderr=subprocess.STDOUT,
+                creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),timeout=90)
+        exits.append(result.returncode)
+        if result.returncode!=expected:raise RuntimeError('Isolated '+mode+' exited unexpectedly: '+str(result.returncode))
+    evidence=json.loads((root/'abrupt-owner-recovery.json').read_text(encoding='utf-8'))
+    evidence['processExitCodes']=exits
+    (root/'abrupt-owner-recovery.json').write_text(json.dumps(evidence,indent=2),encoding='utf-8')
 
 
 async def child(root):
@@ -520,6 +661,8 @@ async def child(root):
                 checks.append('actual_canonical_HTTP_FIFO_observer_cancellation_and_exact_replay')
             await qualify_canonical_retirement(root,adapter,origin,key,runner,endpoint,factory,fences)
             checks.append('actual_canonical_retirement_timeout_drain_and_successor_queue_recovery')
+            await qualify_abrupt_owner_loss(root)
+            checks.append('actual_abrupt_owner_process_loss_blocks_replay_and_preserves_queue')
         finally:
             canonical_release.set()
             process_ownership.close()
@@ -540,6 +683,9 @@ async def child(root):
 if __name__ == '__main__':
     if len(sys.argv) == 3 and sys.argv[1] == '--verify':
         print(json.dumps(verify_evidence(Path(sys.argv[2]).resolve())))
+    elif len(sys.argv) == 3 and sys.argv[1] in ('--crash-owner','--recover-owner'):
+        import asyncio
+        asyncio.run(abrupt_owner_process(Path(sys.argv[2]).resolve(),sys.argv[1]=='--recover-owner'))
     elif len(sys.argv) == 3 and sys.argv[1] == '--child':
         import asyncio
         root = Path(sys.argv[2]).resolve()
@@ -583,7 +729,7 @@ if __name__ == '__main__':
             try:
                 result = subprocess.run([executable, str(Path(__file__).resolve()), '--child', str(root)],
                     env=environment, cwd=root / 'source', stdout=log, stderr=subprocess.STDOUT,
-                    creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), timeout=180)
+                    creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), timeout=360)
             except subprocess.TimeoutExpired:
                 (root / 'runtime-qualification.json').write_text(json.dumps({'qualification': 'FAIL',
                     'errorClass': 'TimeoutExpired', 'liveInstallation': False, 'wholeWorkerReleaseQualified': False}, indent=2), encoding='utf-8')

@@ -1509,3 +1509,39 @@ historical clearance. Next: abrupt owner-loss behavior/live-chat-owner path and
 external-tool completion contract before rollout. Full original goal active.
 Private checkpoint verified included in prior Mesh-app-source.zip, so evidence
 archive stays within existing manual milestone backup/restore footprint.
+
+## 2026-11-08 - actual abrupt owner process-loss qualification
+Previous goal turn PROGRESS:e78ad20 graceful owner retirement/recovery saved;
+backup E:/App-Backups/ONOes-Mesh/2026-11-08_23-47-49-803_UTC_950833f9 verified,
+including full previous-goal evidence archive SHA256
+d853afa549de92eedb0a6d56a93a4a41a47605458b1fa6aa3578df501cf1e960.
+Added two dedicated isolated native-owner CLI modes. First process reserves its
+own fresh crash-home profile via native lock, starts actual GatewayRunner/API/
+SessionAuthority, holds real TurnRunner thread at fixture runtime selection,
+queues second admission, fsyncs metadata evidence, then os._exit(73). This exits
+only its own fixture process without cleanup; no PID-kill/reaping/live service.
+Second distinct process reserves same native profile after OS lock release,
+starts fresh real runner/authority/API, runs native recovery. Epoch1->2; active
+admission unknown, exact queued admission preserved, native claim_session_input
+refuses unknown_execution. Authenticated native GET returns fresh unknown writer
+observation, no old enrollment/owner reuse. Exact keyed retry returns202 with same
+run ID; native ledger still exactly2admissions, no new process fence or execution.
+No interrupted-work replay, successor dispatch or operator resolution performed.
+
+Retained data/hermes-runtime-7a66870f-d086-4d4e-bb8b-d34203cf6d06,
+abrupt-owner-before.json/abrupt-owner-recovery.json and per-process logs.
+Process exit codes73(expected abrupt loss)/0; whole runtime PASS10. Independent
+updated verifier manually rerun PASS9/all13candidate hashes verified. Parent run
+loaded previous8-check verifier; final manual9-check verification is acceptance
+basis. Prior full direct/FIFO/graceful retirement checks still pass. Fixture uses
+fixed synthetic local-only bearer key solely for stable two-process identity;
+no live credentials/profile/memory read, no paid inference or model service.
+Nested subprocesses bounded90seconds each; overall native fixture bound360 to
+accommodate real multi-process startup; tool observation stays on same live run.
+Full npm test PASS347 (301Node+46Python), ../abrupt-owner-full.log.
+
+Native installed source patch unchanged; no live install/restart, automation
+activation or historical8writer hold clearance. Next: live-chat-owner execution
+coverage and external-tool completion/production provider-profile qualification.
+Full original goal active/incomplete. Abrupt-loss acceptance is refusal/preservation,
+not proof old external effects ended or permission to reassign uncertain work.
