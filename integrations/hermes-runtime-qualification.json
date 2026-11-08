@@ -7,17 +7,18 @@
     "actual_native_tool_thread_and_Windows_job_observed_without_release",
     "actual_native_HTTP_authentication_enforced",
     "actual_native_SQLite_restart_replay_without_new_worker_or_old_owner",
-    "native_SQLite_canonical_claim_lookup_and_worker_binding"
+    "native_SQLite_canonical_claim_lookup_and_worker_binding",
+    "actual_canonical_HTTP_FIFO_observer_cancellation_and_exact_replay"
   ],
-  "providerRequests": 3,
-  "nonToolProviderRequests": 1,
+  "providerRequests": 7,
+  "nonToolProviderRequests": 2,
   "agentsCreated": 1,
   "pythonVersion": "3.14.7",
   "liveInstallation": false,
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual direct native HTTP/auth/AIAgent/terminal/title/Windows Job/SQLite replay plus native SQLite canonical claim lookup and real bound worker; fake local provider and synthetic authority stamp. No full canonical FIFO acceptance.",
+  "scope": "Actual direct and canonical native HTTP, real GatewayRunner/SessionAuthority FIFO, claimed workers, observer cancellation, saved successful results and exact replay. Synthetic profile under native ownership lock; local fake provider/runtime route and terminal-only toolset selection.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
     "tools/mesh_writer_scope.py": "c58e711cddfd25e18ed314113b8df8b85e135001ce482a4b8fae5407bbc81ca3",
@@ -39,18 +40,20 @@
     "restart_without_new_agent_or_fence",
     "no_writer_release",
     "native_title_pending_then_actual_thread_exit",
-    "native_SQLite_canonical_claim_binding_without_release"
+    "native_SQLite_canonical_claim_binding_without_release",
+    "actual_canonical_FIFO_results_cancellation_ordering_and_replay"
   ],
-  "evidenceDirectory": "hermes-runtime-ddb283e9-228e-4711-a346-2d531a5decd0",
+  "evidenceDirectory": "hermes-runtime-89957cfc-5328-4431-b124-69b120d348a1",
   "remaining": [
     "Tool external effects and whole-worker release remain unqualified.",
-    "Other background workers and canonical/session-authority/live-owner routes are not qualified.",
+    "Other background workers, canonical retirement/drain/restart and live-chat-owner execution remain unqualified.",
     "Installed native/Relay deployment and production provider/profile selection remain unverified."
   ],
   "liveServicesChanged": false,
   "canonicalWorkerSeam": {
     "qualification": "PASS",
-    "scope": "Pinned native TurnRunner.run_sync with fixture policy/result dependencies, real-thread cancellation and native SQLite claim/run lookup with synthetic authority stamp. Pinned native ingress now invokes the binding. Full canonical FIFO/HTTP/owner lifecycle remains unqualified.",
+    "scope": "Native ingress enrollment and actual TurnRunner.run_sync via real runner/authority FIFO. Synthetic local-provider profile only; not production deployment qualification.",
     "liveActivation": false
-  }
+  },
+  "agentsCreatedScope": "Direct test factory only; canonical runner agent creation count is not instrumented."
 }

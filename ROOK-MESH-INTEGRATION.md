@@ -1442,3 +1442,40 @@ automation activation, historical hold release, Mind/model changes or paid
 inference. Next: actual canonical FIFO/HTTP execution and cancellation/retirement
 qualification, then remaining external effects/live-owner coverage before rollout.
 Full original goal active/incomplete.
+
+## 2026-11-08 - real canonical HTTP/FIFO qualification
+Previous goal turn PROGRESS:1c00e37 claimed-admission enrollment saved/pushed;
+backup E:/App-Backups/ONOes-Mesh/2026-11-08_23-28-59-706_UTC_223d799e restore verified.
+Extended isolated runtime qualifier through actual GatewayRunner, native exclusive
+profile ownership reservation, initialize_gateway_runtime, real SessionAuthority
+admission/claim/drain, patched ingress and complete TurnRunner.run_sync. Only
+model/runtime route and terminal-only toolset selection are fixture overrides;
+provider is local fake HTTP; no queue/worker/ownership stamp methods replaced in
+this full path. Profile/data/config/libraries remain isolated from live profile.
+
+Two /v1/runs requests target the same session. First actual model call held by
+local gate; second verified durably queued and not enrolled. Cancelled first
+adapter API observer: actual canonical worker remains rootEnded=false and held.
+Released provider gate; actual FIFO commits both terminal results, increasing
+native generations. Both authoritative saved outputs verified exactly
+'mesh fixture completed', neither failed nor interrupted. Actual managed threads,
+background title work and process fence settle without granting writer release.
+Exact keyed HTTP replay returns first run ID without new provider call or fence.
+
+Final data/hermes-runtime-89957cfc-5328-4431-b124-69b120d348a1:
+runtime PASS8; independent evidence PASS7 including actual saved results,
+ordering, held lifetime after observer cancellation and duplicate-free replay;
+all13candidate source hashes verified. canonical-fifo-evidence.json retained.
+../canonical-fifo-final-runtime.log, runtime.log and verified-evidence.json.
+Earlier exploratory b5d697a3-8a64-49e5-b859-37732fd9d5b1 passed FIFO, but lacked
+the final independent saved-success-result assertions; retained, not used as the
+final acceptance basis. No live process was restarted on observation delay.
+Full npm test PASS347 (301Node+46Python), ../canonical-fifo-full.log.
+
+Report agentsCreated count is the direct test factory only, explicitly labelled;
+canonical native cache agent creations are not instrumented. No claim of total
+agent count. Native source patch unchanged; this milestone qualifies existing
+candidate canonical wiring. No live native/Relay/model install/restart, automation
+activation, memory access or historical writer clearance. Next: canonical owner
+retirement/drain/restart and live-owner coverage, plus external-tool completion
+before production rollout. Full original goal remains active/incomplete.

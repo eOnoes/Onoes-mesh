@@ -60,6 +60,17 @@ def verify_evidence(root):
                 or not claim['lifetime']['managedWorkEnded'] or claim['lifetime']['writerQuiescence']):
             raise RuntimeError('Canonical claim binding evidence is incomplete')
         result['checks'].append('native_SQLite_canonical_claim_binding_without_release')
+    if 'actual_canonical_HTTP_FIFO_observer_cancellation_and_exact_replay' in report['checks']:
+        fifo = json.loads((root/'canonical-fifo-evidence.json').read_text(encoding='utf-8'))
+        held = fifo['heldAfterObserverCancellation']['lifetime']
+        if (not fifo['realRunnerAndAuthority'] or not fifo['successorWaitedQueued']
+                or not fifo['replayCreatedNoWork'] or held['rootEnded'] or held['managedWorkEnded']
+                or fifo['generations'][0] >= fifo['generations'][1]
+                or fifo['terminalStatuses'] != ['terminal','terminal']
+                or fifo.get('verifiedOutputs') != ['mesh fixture completed','mesh fixture completed']
+                or any(not worker['lifetime']['managedWorkEnded'] or worker['writerQuiescence'] for worker in fifo['finalWorkers'])):
+            raise RuntimeError('Actual canonical FIFO execution evidence is incomplete')
+        result['checks'].append('actual_canonical_FIFO_results_cancellation_ordering_and_replay')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -119,6 +130,8 @@ async def child(root):
         raise RuntimeError('Native home is not isolated')
     requests, tools_seen, fences, agents_created = [], [], [], []
     title_started, title_release = asyncio.Event(), asyncio.Event()
+    canonical_started, canonical_release = asyncio.Event(), asyncio.Event()
+    canonical_mode = False
     async def provider(request):
         body = await request.json()
         requests.append({'path': request.path, 'tools': [item.get('function', {}).get('name') or item.get('name')
@@ -127,6 +140,9 @@ async def child(root):
             if message.get('role') == 'tool':
                 tools_seen.append(str(message.get('content', '')))
         terminal_allowed = any(item.get('function', {}).get('name') == 'terminal' for item in body.get('tools', []))
+        if canonical_mode and terminal_allowed:
+            canonical_started.set()
+            await asyncio.wait_for(canonical_release.wait(), timeout=30)
         if not terminal_allowed:
             title_started.set()
             await asyncio.wait_for(title_release.wait(), timeout=30)
@@ -310,12 +326,92 @@ async def child(root):
             'duplicateRefused':duplicate_refused,'lifetime':lifetime,
             'scope':'native SQLite claim/lookup and actual thread; synthetic authority stamp; no full FIFO qualification'},indent=2),encoding='utf-8')
         checks.append('native_SQLite_canonical_claim_lookup_and_worker_binding')
+        # Full native runner and authority pump. Only runtime/provider selection
+        # is a fixture; no synthetic execution stamps or replaced queue methods.
+        from gateway.config import GatewayConfig, Platform
+        from gateway.run import GatewayRunner
+        from gateway.run_runtime import initialize_gateway_runtime
+        from gateway.runtime_ownership import process_ownership
+        from gateway.platforms.api_server_authority_runs import run_admission
+        home = root / 'fixture-home'
+        process_ownership.reserve([home])
+        try:
+            runner = GatewayRunner(GatewayConfig(multiplex_profiles=False))
+            runner._resolve_session_agent_runtime = lambda **kwargs: ('mesh-runtime-fixture', {
+                'base_url':endpoint,'api_key':'synthetic-local-provider','provider':'custom','api_mode':'chat_completions'})
+            runner._resolve_turn_toolsets = lambda *args, **kwargs: (['terminal'], [])
+            await initialize_gateway_runtime(runner)
+            runner.adapters[Platform.API_SERVER] = adapter
+            adapter.gateway_runner = runner
+            canonical_mode = True
+            sid = uuid4().hex
+            async with ClientSession() as client:
+                headers = {'Authorization':'Bearer '+key,'Idempotency-Key':'mesh-canonical-one'}
+                body = {'input':'Synthetic canonical queue proof one.','session_id':sid}
+                async with client.post(origin+'/v1/runs',headers=headers,json=body) as response:
+                    first = await response.json()
+                    if response.status not in (200,201,202):
+                        raise RuntimeError('Canonical first admission failed: '+str(response.status))
+                first_id = first['run_id']
+                await asyncio.wait_for(canonical_started.wait(),timeout=20)
+                async with client.post(origin+'/v1/runs',headers={**headers,'Idempotency-Key':'mesh-canonical-two'},
+                        json={**body,'input':'Synthetic canonical queue proof two.'}) as response:
+                    second = await response.json()
+                    if response.status not in (200,201,202):
+                        raise RuntimeError('Canonical second admission failed: '+str(response.status))
+                second_id = second['run_id']
+                queued = run_admission(adapter,second_id)
+                if queued is None or queued[1]['status'] != 'queued' or adapter._mesh_writer_runs.snapshot(second_id) is not None:
+                    raise RuntimeError('Canonical successor did not wait unstarted in FIFO')
+                observer = adapter._active_run_tasks[first_id]
+                observer.cancel()
+                try:
+                    await observer
+                except asyncio.CancelledError:
+                    pass
+                held = adapter._mesh_writer_runs.snapshot(first_id)
+                if held is None or held['lifetime']['rootEnded'] or held['lifetime']['managedWorkEnded']:
+                    raise RuntimeError('Cancelled native observer lost its continuing canonical worker')
+                canonical_release.set()
+                deadline = time.monotonic()+30
+                while True:
+                    rows = [run_admission(adapter,ident)[1] for ident in [first_id,second_id]]
+                    states = [adapter._mesh_writer_runs.snapshot(ident) for ident in [first_id,second_id]]
+                    if all(row['status']=='terminal' for row in rows) and all(state and state['lifetime']['managedWorkEnded'] for state in states):
+                        break
+                    if time.monotonic()>deadline:
+                        raise RuntimeError('Canonical FIFO did not settle both actual workers')
+                    await asyncio.sleep(.02)
+                if rows[0]['generation'] >= rows[1]['generation'] or any(state['writerQuiescence'] for state in states):
+                    raise RuntimeError('Canonical generation ordering/release changed')
+                from gateway.session_api_turn import _settled_api_result
+                outputs = []
+                for ident,row in zip([first_id,second_id],rows):
+                    result,_usage = _settled_api_result(run_admission(adapter,ident)[0],row['admission_id'])
+                    if result.get('failed') or result.get('interrupted') or result.get('final_response') != 'mesh fixture completed':
+                        raise RuntimeError('Canonical terminal row did not contain the successful result')
+                    outputs.append(result['final_response'])
+                fence_count, request_count = len(fences),len(requests)
+                async with client.post(origin+'/v1/runs',headers=headers,json=body) as response:
+                    replay = await response.json()
+                if replay.get('run_id') != first_id or len(fences)!=fence_count or len(requests)!=request_count:
+                    raise RuntimeError('Canonical exact replay created new work')
+                (root/'canonical-fifo-evidence.json').write_text(json.dumps({
+                    'firstRunId':first_id,'secondRunId':second_id,'successorWaitedQueued':True,
+                    'heldAfterObserverCancellation':held,'generations':[row['generation'] for row in rows],
+                    'terminalStatuses':[row['status'] for row in rows],'finalWorkers':states,'verifiedOutputs':outputs,
+                    'replayCreatedNoWork':True,'realRunnerAndAuthority':True},indent=2),encoding='utf-8')
+                checks.append('actual_canonical_HTTP_FIFO_observer_cancellation_and_exact_replay')
+        finally:
+            canonical_release.set()
+            process_ownership.close()
         return {'qualification': 'PASS', 'checks': checks, 'providerRequests': len(requests),
                 'nonToolProviderRequests': sum('terminal' not in item['tools'] for item in requests),
                 'agentsCreated': len(agents_created), 'pythonVersion': sys.version.split()[0],
                 'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
     finally:
         title_release.set()
+        canonical_release.set()
         if adapter is not None:
             await adapter.disconnect()
         await provider_runner.cleanup()
@@ -369,7 +465,7 @@ if __name__ == '__main__':
             try:
                 result = subprocess.run([executable, str(Path(__file__).resolve()), '--child', str(root)],
                     env=environment, cwd=root / 'source', stdout=log, stderr=subprocess.STDOUT,
-                    creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), timeout=120)
+                    creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), timeout=180)
             except subprocess.TimeoutExpired:
                 (root / 'runtime-qualification.json').write_text(json.dumps({'qualification': 'FAIL',
                     'errorClass': 'TimeoutExpired', 'liveInstallation': False, 'wholeWorkerReleaseQualified': False}, indent=2), encoding='utf-8')
