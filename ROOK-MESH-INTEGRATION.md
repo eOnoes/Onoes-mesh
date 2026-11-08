@@ -324,3 +324,17 @@ This is still a candidate, not a deployed Relay change or live Hermes acceptance
 Native HTTP is synthetic; no actual tools/subagents/child-writer quiescence is
 proved. Managed mode and Rook remain off. Mesh consumer integration, reviewed
 runtime rollout and live readback retain their separate verification requirements.
+
+
+## Mesh read-only receipt consumer - 2026-11-08
+
+createRelayHttpLink.nativeRunReceipt now reads only the exact agent/send route
+and validates its original conversation, optional pinned run ID, native session,
+status and observation consistency. Rotation is retained as a separate field.
+It sanitizes the returned metadata, rejects unsupported writerQuiescence=true,
+and makes no store writes, retries, native outcome reconciliation or writer
+release. It is not yet wired to an automatic reconciler or deployed Relay endpoint.
+Focused adapter19/19 PASS; full Mesh269 (40+1+29+67+132) PASS, static/diff PASS.
+Logs ../mesh-native-reader-{full,check}.log; frozen contract absent/skipped.
+Live runtime remains unchanged. Next is integration against the real receipt
+endpoint after reviewed rollout and affirmative writer-completion qualification.

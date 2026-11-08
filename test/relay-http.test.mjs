@@ -20,6 +20,49 @@ const AGENTS = [
   { id: 'tripp', name: 'Tripp', backend: 'openclaw', device: 'laptop', status: 'waiting', conversation_id: null, approval: null, budget: null },
 ];
 
+test('native receipt reads only the exact send, retains rotation and never supplies writer release', async () => {
+  const calls = [];
+  const receipt = { agentId: 'echo', sendId: 'send-one', conversationId: 'original',
+    runId: 'run_one', nativeSessionId: 'rotated', observation: 'observed',
+    status: 'completed', terminal: true, writerQuiescence: false, output: 'private output' };
+  const link = await createRelayHttpLink({ baseUrl: 'http://127.0.0.1:9', token: 'synthetic',
+    fetchImpl: async (url, options) => {
+      calls.push({ url, method: options.method });
+      return Response.json({ ok: true, receipt });
+    } });
+  const observed = await link.nativeRunReceipt({ agentId: 'echo', sendId: 'send-one', conversationId: 'original', expectedRunId: 'run_one' });
+  assert.equal(observed.nativeSessionId, 'rotated');
+  assert.equal(observed.conversationId, 'original');
+  assert.equal(observed.writerQuiescence, false);
+  assert.equal('output' in observed, false);
+  assert.deepEqual(calls, [{ url: 'http://127.0.0.1:9/api/agents/echo/outbox/send-one/native-run', method: 'GET' }]);
+});
+
+test('native receipt rejects crossed identities and unsupported completion claims without dispatch', async () => {
+  const original = { agentId: 'echo', sendId: 'send', conversationId: 'original', runId: 'run_one',
+    nativeSessionId: 'rotated', observation: 'observed', status: 'completed', terminal: true, writerQuiescence: false };
+  for (const change of [{ agentId: 'other' }, { sendId: 'other' }, { conversationId: 'other' },
+    { runId: 'run_other' }, { writerQuiescence: true }, { status: 'unavailable' },
+    { nativeSessionId: null }, { terminal: false }, { observation: 'unknown' }]) {
+    const calls = [];
+    const link = await createRelayHttpLink({ baseUrl: 'http://127.0.0.1:9', token: 'synthetic',
+      fetchImpl: async (url, options) => { calls.push(options.method); return Response.json({ ok: true, receipt: { ...original, ...change } }); } });
+    await assert.rejects(link.nativeRunReceipt({ agentId: 'echo', sendId: 'send', conversationId: 'original', expectedRunId: 'run_one' }), e => e.status === 503);
+    assert.deepEqual(calls, ['GET']);
+  }
+});
+
+test('missing receipt remains unknown and invalid identifiers never reach Relay', async () => {
+  let count = 0;
+  const link = await createRelayHttpLink({ baseUrl: 'http://127.0.0.1:9', token: 'synthetic',
+    fetchImpl: async () => { count++; return Response.json({ ok: true, receipt: {
+      agentId: 'echo', sendId: 'send', conversationId: 'original', runId: null,
+      nativeSessionId: null, status: 'unknown', observation: 'unknown', terminal: false, writerQuiescence: false } }); } });
+  assert.equal((await link.nativeRunReceipt({ agentId: 'echo', sendId: 'send', conversationId: 'original' })).observation, 'unknown');
+  await assert.rejects(link.nativeRunReceipt({ agentId: '../echo', sendId: 'send', conversationId: 'original' }), e => e.status === 400);
+  assert.equal(count, 1);
+});
+
 async function fakeRelay(handler) {
   const server = createServer(handler);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
