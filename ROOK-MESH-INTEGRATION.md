@@ -367,3 +367,34 @@ that target once, saved intent5b821b1c-6f8c-4b9a-a743-24426e95da4e returned okqu
 this does not establish that the build has started or passed. No shared source
 writer, watcher activation, credentials, live dispatch or service restart authorized
 by this handoff; the already-approved isolated build scope is unchanged.
+
+
+## Manual Relay recovery package before rollout - 2026-11-08
+
+Verified recovery package:
+E:/App-Backups/ONOes-Relay/2026-11-08_18-26-12_UTC_pre-native-receipts_03df766d
+
+It contains a consistent read-only-source SQLite backup (15sessions,209messages,
+43outbox records,3385events), original server bytes, tested candidate server and
+receipt module, per-file hashes, manifest and plain-language recovery notes.
+Integrity=ok, foreign-key violations0, exact own handoff intent preserved. No
+credentials or native Hermes/Mind memory included. All14 current source dependency
+hashes and original/candidate server hashes matched the qualified candidate.
+Existing receipt module absent, so no unknown file is scheduled for replacement.
+
+This is a manual same-PC recovery package, not off-device protection, a backup
+schedule or an installed bridge. Code rollback must not overwrite a newer database;
+data restore is separately deliberate. Backup verification opened the copied store
+read-only; no private conversation contents were printed or served in a fixture.
+
+Existing8787 process42628 uses C:/Python314/pythonw.exe with parent45684 at
+D:/Dev/Onoes-Relay/.venv/Scripts/pythonw.exe. Read-only task inventory identified
+Onoes Deep Watchdog; it was left unchanged. Launcher/config/runtime-state identity
+still needs final verification at rollout; process path alone does not prove the
+running bytes or environment.
+
+Echo's exact build-handoff native run_276bc6b391514a23943a8fb1b2d454ff was observed
+running twice during preparation. No Relay restart or cancellation performed.
+The isolated checkout currently shows only its two deliberately added metadata
+files, with no delivered patch yet; this does not prove the native build stopped.
+Wait on that exact run/actual artifacts, not elapsed time or global process counts.
