@@ -22,6 +22,7 @@ test('scheduled claim requires original age, ownership and no saved claim or unc
 });
 test('cancelled and failed native receipts never turn an existing assignment into a fresh idea',()=>{
  for(const state of ['TASK_STATE_CANCELED','TASK_STATE_FAILED','TASK_STATE_REJECTED'])assert.equal(backlogEligibility({...idea(),flow:{state:'failed',sendId:'original'},messages:[{id:'original',phase:'work',state:'accepted',outcome:{state}}]},at).eligible,false);
+ assert.equal(backlogEligibility({...idea(),messages:[{id:'terminal',phase:'work',state:'accepted',outcome:{state:'TASK_STATE_COMPLETED'}}]},at).eligible,false,'terminal task status is not proof all writers ended');
 });
 test('atomic claim persists original basis and planned dispatch; second writer and restart cannot replace it',()=>{
  const path=join(mkdtempSync(join(tmpdir(),'mesh-claim-')),'tasks.sqlite');let a=openTaskStore(path),b;
@@ -98,5 +99,29 @@ test('automatic handoff cannot use the deliberate uncertain-send retry path',asy
   const args={workroom:s.workroom,taskId:task.id,body:{id:claim.sendId,agentId:'nims',conversationId:'nims',phase:'plan'},relay,admitted:()=>true,allowUncertainReplay:false};
   await assert.rejects(sendTaskHandoff(args),/response lost/);assert.equal(s.workroom.get(task.id).messages[0].state,'unknown');
   await assert.rejects(sendTaskHandoff(args),/Automatic replay refused/);assert.equal(sends,1);assert.equal(s.workroom.get(task.id).messages.length,1);
+ }finally{s.close();}
+});
+
+test('five-hour Rook sweep selects one oldest card, coalesces duplicate ticks and survives restart',()=>{
+ const path=join(mkdtempSync(join(tmpdir(),'mesh-rook-sweep-')),'tasks.sqlite');let a=openTaskStore(path),b;
+ try{
+  const older=a.create({title:'Oldest sweep fixture',description:'No live dispatch'}),newer=a.create({title:'Next sweep fixture',description:'No live dispatch'});
+  const db=new DatabaseSync(path);db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2020-01-01T00:00:00.000Z',older.id);db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2021-01-01T00:00:00.000Z',newer.id);db.close();
+  b=openTaskStore(path);const first=a.workroom.flow.scheduledSweep(at);assert.equal(first.status,'claimed');assert.equal(first.taskId,older.id);assert.equal(first.flow.claim.trigger,'aged');assert.equal(first.flow.claim.dispatchId,first.flow.sendId);
+  assert.equal(b.workroom.flow.scheduledSweep(at).status,'not_due');
+  a.close();a=openTaskStore(path);assert.equal(a.workroom.flow.sweepStatus().lastScheduledAt,new Date(at).toISOString());
+  const second=a.workroom.flow.scheduledSweep(at+5*60*60*1000);assert.equal(second.status,'claimed');assert.equal(second.taskId,newer.id);
+ }finally{b?.close();a.close();}
+});
+
+test('Rook sweep fails closed when a terminal native status lacks an all-writers-ended receipt',()=>{
+ const path=join(mkdtempSync(join(tmpdir(),'mesh-rook-quiescence-')),'tasks.sqlite');const s=openTaskStore(path);
+ try{
+  const candidate=s.create({title:'Eligible but gated',description:'No live dispatch'}),writer=s.create({title:'Terminal but not quiescent',description:'Saved native outcome only'});
+  const db=new DatabaseSync(path);db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2020-01-01T00:00:00.000Z',candidate.id);db.close();
+  const t=s.workroom.get(writer.id);s.workroom.saveProgress(writer.id,{goal:'Bounded source work',checklist:[{id:'build',text:'Build locally',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision});
+  s.workroom.reserve(writer.id,{id:'writer-send',agentId:'dsh',conversationId:'writer-conv',text:'Build the source'},'work');s.workroom.settle('writer-send','accepted');
+  s.workroom.recordSendOutcome(writer.id,'writer-send',{peerTaskId:'native-task',state:'TASK_STATE_COMPLETED',proofHash:'a'.repeat(64),verifiedAt:new Date(at).toISOString()});
+  const result=s.workroom.flow.scheduledSweep(at);assert.equal(result.status,'blocked');assert.equal(result.reason,'writer_quiescence_unproven');assert.equal(result.blockers[0].sendId,'writer-send');assert.equal(s.workroom.flow.read(candidate.id),undefined);
  }finally{s.close();}
 });

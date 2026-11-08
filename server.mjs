@@ -309,9 +309,16 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if (!current()) return;
         return send(200, await relay.reconnect());
       }
+      if(route==='/api/workroom/claim-next'){
+        if(req.method!=='POST')throw new TaskError(405,'Method not allowed.');
+        if(!store||executionPersistenceFailed)throw new TaskError(503,'Workroom unavailable.');
+        if(process.env.MESH_SIMPLE_FLOW!=='1')throw new TaskError(409,'Managed claims unavailable.');
+        if(!context.body||Object.keys(context.body).length)throw new TaskError(400,'Scheduled claim accepts no overrides.');
+        return send(200,{sweep:store.workroom.flow.scheduledSweep()});
+      }
       if(route==='/api/workroom/rook'&&req.method==='GET'){
         if(!store||executionPersistenceFailed)throw new TaskError(503,'Workroom unavailable.');
-        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',connection:{id:'rook',status:'not_configured',reason:'Rook runtime identity and health integration have not been qualified.'},cards:store.workroom.list().filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
+        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',sweep:store.workroom.flow.sweepStatus(),connection:{id:'rook',status:'not_configured',reason:'Rook runtime identity and health integration have not been qualified.'},cards:store.workroom.list().filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
       }
       const workroomRoute = /^\/api\/workroom(?:\/([0-9a-f-]{36})(?:\/(message|progress|sync|apply-update|handoff|apply-review|approval|reconcile|plan|automation|apply-assignment|owner-review|intake|claim))?)?$/.exec(route);
       if (workroomRoute) {
