@@ -7,6 +7,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {backlogEligibility} from '../lib/workroom-claim-policy.mjs';
 import {createIntakeRunner} from '../lib/workroom-flow.mjs';
+import {sendTaskHandoff,syncTaskReplies} from '../lib/workroom.mjs';
 
 const at=Date.parse('2026-11-08T18:00:00Z');
 const idea=()=>({id:'idea',createdAt:new Date(at-12*3600000).toISOString(),status:'open',workroom:{stage:'backlog',owner:''},progress:{decision:'pending'},messages:[],agentUpdates:[]});
@@ -63,5 +64,39 @@ test('uncertain planning delivery keeps its original claim and asks for reconcil
  try{const t=s.create({title:'Uncertain delivery fixture',description:''});const claim=s.workroom.flow.enqueue(t.id);s.workroom.flow.planning(t.id);let sends=0;
   const tick=createIntakeRunner({workroom:s.workroom,root:process.cwd(),relay:{agents:async()=>[]},sendTaskHandoff:async()=>{sends++;},syncTaskReplies:async()=>{throw Error('Must not sync a nonexistent receipt');}});
   await tick();await tick();const flow=s.workroom.flow.read(t.id);assert.equal(sends,0);assert.equal(flow.state,'clarification');assert.match(flow.question,/uncertain/);assert.equal(flow.claim.claimId,claim.claim.claimId);assert.equal(flow.claim.dispatchId,claim.sendId);assert.equal(flow.sendId,claim.sendId);
+ }finally{s.close();}
+});
+test('restart between accepted delivery and phase save resumes that receipt without another send',async()=>{
+ for(const state of ['accepted','unknown','prepared']){
+  const path=join(mkdtempSync(join(tmpdir(),'mesh-send-boundary-')),'tasks.sqlite');let s=openTaskStore(path);
+  try{const task=s.create({title:'Exact receipt restart',description:''});const claim=s.workroom.flow.enqueue(task.id);
+   s.workroom.reserve(task.id,{id:claim.sendId,agentId:'nims',conversationId:'nims',text:'Original saved planning attempt'},'plan');if(state!=='prepared')s.workroom.settle(claim.sendId,state);
+   s.close();s=openTaskStore(path);let sends=0;const tick=createIntakeRunner({workroom:s.workroom,root:process.cwd(),relay:{agents:async()=>[{id:'nims',conversation_id:'nims',status:'idle'}]},sendTaskHandoff:async()=>{sends++;},syncTaskReplies:async()=>{}});
+   await tick();await tick();assert.equal(sends,0,state);const flow=s.workroom.flow.read(task.id);assert.equal(flow.claim.claimId,claim.claim.claimId);assert.equal(flow.sendId,claim.sendId);assert.equal(flow.state,state==='accepted'?'planning':'clarification');
+  }finally{s.close();}
+ }
+});
+test('restart after claim but before send delivers only the persisted dispatch ID once',async()=>{
+ const path=join(mkdtempSync(join(tmpdir(),'mesh-before-send-')),'tasks.sqlite');let s=openTaskStore(path);
+ try{const task=s.create({title:'Claim before delivery',description:''});const claim=s.workroom.flow.enqueue(task.id);s.close();s=openTaskStore(path);const sends=[];
+  const relay={agents:async()=>[{id:'nims',backend:'codex',conversation_id:'nims',status:'idle'}],nativeRead:async p=>p.includes('capabilities')?{taskSessionBinding:1}:{messages:[]},taskMessage:async body=>{sends.push(body.id);}};
+  const tick=createIntakeRunner({workroom:s.workroom,root:process.cwd(),relay,sendTaskHandoff,syncTaskReplies});await tick();await tick();
+  assert.deepEqual(sends,[claim.sendId],s.workroom.flow.read(task.id).question);assert.equal(s.workroom.flow.read(task.id).claim.claimId,claim.claim.claimId);assert.equal(s.workroom.get(task.id).messages[0].state,'accepted');
+ }finally{s.close();}
+});
+test('a replaced claim while peer discovery is pending cannot dispatch or overwrite the replacement',async()=>{
+ const s=openTaskStore(join(mkdtempSync(join(tmpdir(),'mesh-claim-generation-')),'tasks.sqlite'));
+ try{const task=s.create({title:'Stale discovery',description:''});const old=s.workroom.flow.enqueue(task.id);let release;let sends=0;const peers=new Promise(r=>{release=r;});
+  const tick=createIntakeRunner({workroom:s.workroom,root:process.cwd(),relay:{agents:()=>peers},sendTaskHandoff:async()=>{sends++;},syncTaskReplies:async()=>{}});const pending=tick();
+  s.workroom.flow.question(task.id,'New input required',old.sendId);const next=s.workroom.flow.enqueue(task.id);release([{id:'nims',conversation_id:'nims',status:'idle'}]);await pending;
+  assert.equal(sends,0);assert.deepEqual(s.workroom.flow.read(task.id),next);
+ }finally{s.close();}
+});
+test('automatic handoff cannot use the deliberate uncertain-send retry path',async()=>{
+ const s=openTaskStore(join(mkdtempSync(join(tmpdir(),'mesh-auto-no-replay-')),'tasks.sqlite'));
+ try{const task=s.create({title:'No automatic uncertain replay',description:''});const claim=s.workroom.flow.enqueue(task.id);let sends=0;const relay={agents:async()=>[{id:'nims',backend:'codex',conversation_id:'nims',status:'idle'}],nativeRead:async()=>({taskSessionBinding:1}),taskMessage:async()=>{sends++;throw Error('Fixture response lost');}};
+  const args={workroom:s.workroom,taskId:task.id,body:{id:claim.sendId,agentId:'nims',conversationId:'nims',phase:'plan'},relay,admitted:()=>true,allowUncertainReplay:false};
+  await assert.rejects(sendTaskHandoff(args),/response lost/);assert.equal(s.workroom.get(task.id).messages[0].state,'unknown');
+  await assert.rejects(sendTaskHandoff(args),/Automatic replay refused/);assert.equal(sends,1);assert.equal(s.workroom.get(task.id).messages.length,1);
  }finally{s.close();}
 });
