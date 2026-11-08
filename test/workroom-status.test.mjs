@@ -1,7 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {handoffStatus,taskTimeline} from '../public/workroom-status.mjs';
+import {handoffStatus,taskTimeline,cardNextAction} from '../public/workroom-status.mjs';
 import {withNims} from '../lib/nims-link.mjs';
+
+test('card next action offers Done only after recorded approval, regardless of lane',()=>{
+  const t={workroom:{stage:'backlog'},progress:{decision:'pending',checklist:[{status:'done'}]},agentReviews:[{review:{verdict:'approved'},applied:false}]};
+  assert.equal(cardNextAction(t),'record');
+  t.agentReviews[0].applied=true;assert.equal(cardNextAction(t),'edit');
+  t.progress.decision='approved';assert.equal(cardNextAction(t),'finish');
+  t.workroom.stage='done';assert.equal(cardNextAction(t),'close');
+});
+
+test('requested changes, stale review and active team never offer premature Done',()=>{
+  for(const decision of ['pending','stale','changes_requested']){
+    const t={workroom:{stage:'working'},progress:{decision},automation:{state:'active'}};
+    assert.equal(cardNextAction(t),'progress');
+    t.agentReviews=[{applied:false,review:{verdict:'changes_requested'}}];assert.equal(cardNextAction(t),'record');
+    t.agentReviews[0].applied=true;t.automation.state='needs_review';assert.equal(cardNextAction(t),'edit');
+  }
+});
 
 test('Nims reply exposes its completion time under the field consumed by Workroom capture',async()=>{
   const at='2026-11-07T23:45:42.597Z',finishedAt='2026-11-07T23:47:04.000Z';

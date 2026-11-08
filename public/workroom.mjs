@@ -2,7 +2,7 @@ import {bindCardDrag} from './workroom-drag.mjs';
 import {captureBoardView,restoreBoardView} from './workroom-view.mjs';
 import {saveCardBrief} from './workroom-edit.mjs';
 import {createBoardLoader} from './workroom-load.mjs';
-import {handoffStatus,taskTimeline} from './workroom-status.mjs';
+import {handoffStatus,taskTimeline,cardNextAction} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
 import {createPlanEditor,scopedTeamStatus} from './workroom-plan.mjs';
 const root=document.getElementById('workroom-board');
@@ -49,7 +49,7 @@ if(root){
     ['A board is a visual to-do list','Each card is one task. The columns show where that task is in your workflow. Start with something small, such as “Fix the Relay send button.”'],
     ['The three columns','To do: work you have not started. In progress: work underway, including cards marked Needs you. Done: work with a saved approved review. Backlog and Ready both appear in To do.'],
     ['Create your first card','Tap + New task. Give it a short title, describe what you want, and choose Nims or Echo as project lead, then tap Create task. If asked, tap Start fresh local session first; your saved tasks are still there.'],
-    ['Tell the team what success looks like','Tap the card, then Edit card. Add a Project, a Goal and Acceptance criteria: how you will know it worked. Add a few checklist steps under Goal, checklist and review. Choose Nims or Echo as project lead before moving work into In progress. Save card saves your edits; Cancel edits discards unsaved changes.'],
+    ['Tell the team what success looks like','Tap the card, then Edit card. Add a Project, a Goal and Acceptance criteria: how you will know it worked. Add a few checklist steps under Goal, checklist and review. Choose Nims or Echo as project lead before moving work into In progress. Save changes saves your edits; Cancel edits discards unsaved changes.'],
     ['Move a card','On a PC, drag anywhere on the card into another column. On touch screens, hold anywhere on the card briefly, then drag. Swipe without holding to scroll. Tap the card itself to read its details. You can also change Board stage under Edit card, or focus the card and use the left/right arrow keys. When moving an unassigned card into In progress, choose Nims or Echo in the project-lead prompt. Moving a card updates the board; it does not start an agent.'],
     ['Ask an agent to work','Inside a card, Team handoffs lets you choose a worker and reviewer. Ask for a plan requests steps without editing. Prepare worker request shows the saved scope; Start this worker sends one bounded work request. An accepted message means delivered to Relay, not finished. Follow agent replies shows incoming reports while the card is open. Inspect a report before applying it to your checklist.'],
     ['Review, finish, or recover','Save a result and verification evidence, then have someone other than the worker check it. Record the review before moving the card to Done; ticking every step alone is not approval. Needs you means something needs attention. If an agent is waiting, read Handoff status and open Relay for details. If delivery is uncertain, retry the original message from Conversation and history instead of sending a new copy.'],
@@ -130,7 +130,7 @@ if(root){
     pendingMove=null;moveDialog.close();moveNote.textContent='';moveNotice.textContent='';moveOwner.replaceChildren();
     status.textContent='Start a session to view the board.';
   });
-  const act=async operation=>{if(busy)return;busy=true;refresh.disabled=true;try{await operation();}catch(error){status.textContent=error.message;if(moveDialog.open)moveNotice.textContent=error.message;const planNotice=details.querySelector('.workroom-plan [role=status]');if(planNotice)planNotice.textContent=error.message;const notice=details.querySelector('[role="status"]');if(notice)notice.textContent=error.message;}finally{busy=false;refresh.disabled=false;}};
+  const act=async operation=>{if(busy)return;busy=true;refresh.disabled=true;try{await operation();}catch(error){status.textContent=error.message;if(moveDialog.open)moveNotice.textContent=error.message;const planNotice=details.querySelector('.workroom-plan [role=status]');if(planNotice)planNotice.textContent=error.message;const notice=details.querySelector('[role="status"]');if(notice)notice.textContent=error.message;const dockNotice=details.querySelector('.workroom-sheet-footer [role=status]');if(dockNotice)dockNotice.textContent=error.message;}finally{busy=false;refresh.disabled=false;}};
   function draw(){
     const view=captureBoardView(board,document);
     board.replaceChildren();
@@ -171,26 +171,29 @@ if(root){
     const opened=await request('/api/workroom/'+id);selected=opened.task;teamPolicy=opened.teamPolicy||null;
     if(epoch!==viewEpoch)return;
     // Never carry an uncertain message into another task.
-    pending=null;details.replaceChildren();
+    pending=null;details.replaceChildren();details.classList.add('workroom-task-sheet');
+    const content=el('div');content.className='workroom-sheet-content';
+    const actionBar=el('section');actionBar.className='workroom-sheet-footer';actionBar.setAttribute('aria-label','Card actions');
+    let actionTask=selected,finishAction=null,recordAction=null,reviewAnchor=null,renderActions=()=>{};
     const toolbar=el('div');toolbar.className='workroom-sheet-toolbar';
     const stageName=stages.find(stage=>stage[0]===selected.workroom.stage)?.[1]||'Unknown';
     const stageBadge=el('span',(selected.workroom.stage==='done'?'✓ ':'')+stageName.toUpperCase());stageBadge.className='workroom-sheet-stage';stageBadge.setAttribute('aria-label','Card status: '+stageName);
     const close=el('button','Close card');close.type='button';close.addEventListener('click',()=>{if(!busy)closeDetails();});toolbar.append(stageBadge,close);details.append(toolbar);
-    const dialogStatus=el('p');dialogStatus.setAttribute('role','status');details.append(dialogStatus);
-    details.append(el('h2',selected.title),el('p',selected.description));
+    details.append(content,actionBar);
+    const dialogStatus=el('p');dialogStatus.setAttribute('role','status');content.append(dialogStatus);
+    content.append(el('h2',selected.title),el('p',selected.description));
     const summary=el('section');
     summary.append(el('p',`${selected.workroom.project||'No project'} · ${selected.workroom.owner||'Unassigned'} · ${stages.find(stage=>stage[0]===selected.workroom.stage)[1]}`),el('h3','Goal'),el('p',selected.progress.goal||'No goal saved yet.'));
     const checklist=el('ul');for(const step of selected.progress.checklist)checklist.append(el('li',`${step.status==='done'?'✓':step.status==='working'?'→':'○'} ${step.text} — ${step.status}`));summary.append(checklist);
     summary.append(el('h3','Result'),el('p',selected.progress.result||'No result recorded yet.'),el('p','Review: '+selected.progress.decision));
-    const edit=el('button','Edit card');edit.type='button';summary.append(edit);details.append(summary);
+    const edit=el('button','Edit card');edit.type='button';toolbar.insertBefore(edit,close);content.append(summary);
     if(selected.workroom.stage!=='done'){
-      const finish=el('button','Move to Done');finish.type='button';
+      const finish=el('button','Move to Done');finish.type='button';finishAction=finish;
       finish.disabled=selected.progress.decision!=='approved';
       if(finish.disabled)summary.append(el('p','Record an approved review before moving this card to Done.'));
-      finish.addEventListener('click',()=>act(async()=>{await move(selected,'done');closeDetails();}));
-      summary.append(finish);
+      finish.addEventListener('click',()=>act(async()=>{await move(actionTask,'done');closeDetails();}));
     }
-    const timeline=el('section');timeline.className='workroom-timeline';details.append(timeline);
+    const timeline=el('section');timeline.className='workroom-timeline';content.append(timeline);
     let timelineSignature='';
     function paintTimeline(task){
       const events=taskTimeline(task),signature=JSON.stringify(events);if(signature===timelineSignature)return;timelineSignature=signature;
@@ -199,15 +202,16 @@ if(root){
       const list=el('ol');for(const event of events){const item=el('li');const when=el('time',Number.isFinite(Date.parse(event.at))?new Date(event.at).toLocaleString():'Time unavailable');if(Number.isFinite(Date.parse(event.at)))when.dateTime=new Date(event.at).toISOString();item.append(el('b',event.label),when);if(event.evidence||event.detail.length>180){const evidence=el('details');evidence.append(el('summary','Details and verification evidence'),el('p',event.detail));if(event.evidence)evidence.append(el('p',event.evidence));item.append(evidence);}else item.append(el('p',event.detail));list.append(item);}timeline.append(list);
     }
     paintTimeline(selected);
-    const editor=el('section');editor.hidden=true;edit.addEventListener('click',()=>{summary.hidden=true;editor.hidden=false;editor.querySelector('input')?.focus();});
-    const cancel=el('button','Cancel edits');cancel.type='button';cancel.addEventListener('click',()=>{if(!busy)closeDetails();});editor.append(cancel);details.append(editor);
-    const reports=el('section');reports.className='agent-reports';details.append(reports);
+    const editor=el('section');editor.hidden=true;edit.addEventListener('click',()=>{summary.hidden=true;editor.hidden=false;renderActions(actionTask);editor.querySelector('input')?.focus();});
+    const cancel=el('button','Cancel edits');cancel.type='button';cancel.addEventListener('click',()=>{if(!busy)closeDetails();});content.append(editor);
+    const reports=el('section');reports.className='agent-reports';content.append(reports);
     let reportSignature=null;
     function paintReports(task){
       const latest=task.agentUpdates?.at(-1);
       const signature=JSON.stringify([latest?.hash,latest?.applied,task.progress.decision,task.agentReviews?.at(-1)?.hash,task.agentReviews?.at(-1)?.applied,task.assignments?.map(a=>a.hash)]);
       if(signature===reportSignature)return;
       reportSignature=signature;
+      recordAction=null;reviewAnchor=null;
       reports.replaceChildren(el('h3','Agent-reported updates'));
       for(const offer of task.assignments||[]){
         const p=offer.proposal,box=el('details');box.append(el('summary','Lead assignment proposal · '+offer.agentId),el('p',p.spec),el('p','Workspace: '+p.workspace),el('p','Allowed files: '+p.allowedFiles),el('p','Checks: '+p.checks),el('p','Builder: '+p.workerId+' · Reviewer: '+p.reviewerId));
@@ -231,14 +235,16 @@ if(root){
       }
       const review=task.agentReviews?.at(-1);
       if(review){
-        reports.append(el('h3','Independent review'),el('p',`${review.agentId} · ${review.review.verdict}${review.applied?' · recorded':''}`),el('p',review.review.summary),el('p','Review evidence: '+review.review.evidence));
-        if(!review.applied){const record=el('button','Record this review');record.type='button';record.addEventListener('click',()=>act(async()=>{
+        reviewAnchor=el('h3','Independent review');
+        reports.append(reviewAnchor,el('p',`${review.agentId} · ${review.review.verdict}${review.applied?' · recorded':''}`),el('p',review.review.summary),el('p','Review evidence: '+review.review.evidence));
+        if(!review.applied){const record=el('button','Record this review');recordAction=record;record.type='button';record.addEventListener('click',()=>act(async()=>{
           if(!editor.hidden)throw new Error('Save or cancel your edits before recording a review.');
           await request('/api/workroom/'+id+'/apply-review',{method:'POST',body:JSON.stringify({sendId:review.sendId,messageId:review.messageId,hash:review.hash,
-            revision:selected.progress.revision,taskRevision:selected.revision,briefRevision:selected.workroom.revision})});
+            revision:task.progress.revision,taskRevision:task.revision,briefRevision:task.workroom.revision})});
           await load();await open(id);status.textContent='Independent review recorded. Move to Done only when approved.';
         }));reports.append(record);}
       }
+      renderActions(task);
     }
     paintReports(selected);
     const form=el('form');
@@ -250,7 +256,7 @@ if(root){
     const stageLabel=el('label','Board stage');const stage=el('select');
     for(const [value,label] of stages){const option=el('option',label);option.value=value;stage.append(option);}stage.value=selected.workroom.stage;stageLabel.append(stage);form.append(stageLabel);
     form.append(el('p','Your lead plans and scopes the job, then recommends builders and an independent reviewer. Available workers depend on connected, qualified adapters. Choosing a lead does not launch work.'));
-    const save=el('button','Save card');save.type='submit';form.append(save);
+    const save=el('button','Save changes');save.type='button';save.addEventListener('click',()=>act(()=>saveCard()));
     form.addEventListener('submit',event=>{event.preventDefault();act(()=>saveCard());});editor.append(form);
     const plan=el('details');plan.open=true;
     plan.append(el('summary','Goal, checklist and review'));
@@ -297,12 +303,11 @@ if(root){
         taskRevision:selected.revision,briefRevision:selected.workroom.revision})});
       await load();closeDetails();status.textContent=decision==='approved'?'Review approved and saved. You can now move this task to Done.':decision==='changes_requested'?'Changes requested. The task remains open.':'Goal and checklist saved.';
     }
-    const saveProgress=el('button','Save changes');saveProgress.type='submit';progressForm.append(saveProgress);
     progressForm.addEventListener('submit',event=>{event.preventDefault();act(()=>saveCard());});
     const approve=el('button','Record approved review');approve.type='button';approve.addEventListener('click',()=>act(()=>persist('approved')));
     const changes=el('button','Request changes');changes.type='button';changes.addEventListener('click',()=>act(()=>persist('changes_requested')));
     progressForm.append(approve,changes);plan.append(progressForm);editor.append(plan);
-    const conversation=el('details');conversation.append(el('summary','Conversation and history'));details.append(conversation);
+    const conversation=el('details');conversation.append(el('summary','Conversation and history'));content.append(conversation);
     const messageForm=el('form');messageForm.append(el('h3','Task conversation'));
     const destination=el('select');destination.setAttribute('aria-label','Agent for this task message');
     try{agents=await request('/api/relay/native/api/agents');}catch{agents=[];}
@@ -417,9 +422,10 @@ if(root){
         buttons.get('pause').disabled=state!=='active';buttons.get('close').disabled=!['paused','needs_review'].includes(state);
         buttons.get('resume').disabled=!qualified.matches||changed||task.plan?.state!=='locked'||state!=='paused';
         buttons.get('start').disabled=!qualified.matches||changed||task.plan?.state!=='locked'||['active','paused','needs_review'].includes(state)||task.status==='done'||task.progress.decision==='approved';
+        renderActions(task);
       };paintAuto(selected);team.append(auto);
     }
-    details.insertBefore(team,conversation);
+    content.insertBefore(team,conversation);
     messageForm.append(destination);
     const compose=field(messageForm,'Message', '',true);
     const handoffs=el('div');handoffs.append(el('p','Local Build handoffs: prepare a message, choose an available agent, then send. You control each handoff.'));
@@ -480,6 +486,24 @@ if(root){
     replies.append(sync,replyStatus,replyList);conversation.append(replies);
     conversation.append(el('h3','Task history'));
     for(const entry of selected.history)conversation.append(el('p',`${entry.at} · ${entry.detail}`));
+    const inspectReview=el('button','Read review');inspectReview.type='button';inspectReview.addEventListener('click',()=>reviewAnchor?.scrollIntoView({block:'start'}));
+    const checkProgress=el('button','Check progress');checkProgress.type='button';checkProgress.addEventListener('click',()=>act(()=>refreshReplies()));
+    const back=el('button','Back to board');back.type='button';back.addEventListener('click',()=>{if(!busy)closeDetails();});
+    renderActions=task=>{
+      actionTask=task;actionBar.replaceChildren();toolbar.insertBefore(edit,close);edit.hidden=!editor.hidden;
+      let primary,secondary,note;
+      if(!editor.hidden){primary=save;secondary=cancel;note='Editing card';}
+      else{
+        const next=cardNextAction(task);
+        if(next==='close'){primary=back;note='Done · review recorded';}
+        else if(next==='finish'&&finishAction){primary=finishAction;primary.disabled=false;secondary=reviewAnchor?inspectReview:null;note='Review recorded · ready to finish';}
+        else if(next==='record'&&recordAction){primary=recordAction;secondary=inspectReview;note='Independent review: '+task.agentReviews.at(-1).review.verdict.replaceAll('_',' ');}
+        else if(next==='progress'){primary=checkProgress;note='Team working · completion still needs review';}
+        else{primary=edit;note=task.progress.decision==='changes_requested'?'Changes requested · update and review again':'Edit the task or use its team tools below';}
+      }
+      const actionNote=el('p',note);actionNote.setAttribute('role','status');actionBar.append(actionNote);const row=el('div');row.className='workroom-sheet-action-row';if(secondary)row.append(secondary);primary.classList.add('workroom-primary-action');row.append(primary);actionBar.append(row);
+    };
+    renderActions(selected);
     if(!details.open)details.showModal();
     followTimer=setTimeout(followReplies,1000);
   }

@@ -1,4 +1,12 @@
 // Agent state is live observation, never proof that a specific task ran.
+export function cardNextAction(task){
+  if(task.workroom?.stage==='done'||task.status==='done')return 'close';
+  if(task.progress?.decision==='approved')return 'finish';
+  if(task.agentReviews?.at(-1)&&!task.agentReviews.at(-1).applied)return 'record';
+  if(task.automation?.state==='active')return 'progress';
+  return 'edit';
+}
+
 export function handoffStatus(task,agents){
   const send=task.messages?.filter(m=>['plan','work','review'].includes(m.phase)).at(-1);
   if(!send)return null;
