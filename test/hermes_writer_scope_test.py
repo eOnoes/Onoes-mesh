@@ -1,12 +1,15 @@
 import concurrent.futures
 from contextvars import copy_context, ContextVar
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 import shutil
 import sys
+import tempfile
 import threading
 import types
 import unittest
 from unittest.mock import patch
+from urllib.request import urlopen
 from integrations import hermes_writer_scope as scope
 from integrations.windows_writer_fence import WindowsWriterFence
 
@@ -81,6 +84,55 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
     def tearDown(self):
         self.fence.terminate()
         self.fence.close()
+
+    def test_http_acceptance_and_later_external_write_never_imply_effect_settlement(self):
+        accepted, release, finished = threading.Event(), threading.Event(), threading.Event()
+        with tempfile.TemporaryDirectory(prefix='mesh-external-effect-') as folder:
+            marker = Path(folder) / 'synthetic-result.txt'
+            class Handler(BaseHTTPRequestHandler):
+                def do_POST(self):
+                    self.send_response(202)
+                    self.send_header('Content-Length', '0')
+                    self.end_headers()
+                    self.wfile.flush()
+                    accepted.set()
+                    if release.wait(timeout=5):
+                        marker.write_text('synthetic external effect', encoding='utf-8')
+                    finished.set()
+
+                def log_message(self, *args):
+                    pass
+
+            server = HTTPServer(('127.0.0.1', 0), Handler)
+            server.timeout = 3
+            worker = threading.Thread(target=server.handle_request, daemon=True)
+            worker.start()
+            try:
+                with scope.writer_foreground_scope(self.life):
+                    with scope.writer_tool_effect():
+                        with urlopen(f'http://127.0.0.1:{server.server_port}/', data=b'', timeout=3) as reply:
+                            self.assertEqual(reply.status, 202)
+                self.assertTrue(accepted.wait(timeout=3))
+                self.assertFalse(marker.exists())
+                before = self.life.wait(100)
+                self.assertTrue(before['managedWorkEnded'])
+                self.assertEqual(before['toolEffects']['activeCalls'], 0)
+                self.assertEqual(before['toolEffects']['unverifiedCalls'], 1)
+                self.assertFalse(before['toolEffects']['effectsSettled'])
+                self.assertFalse(before['writerQuiescence'])
+                release.set()
+                self.assertTrue(finished.wait(timeout=3))
+                worker.join(timeout=3)
+                self.assertFalse(worker.is_alive())
+                self.assertEqual(marker.read_text(encoding='utf-8'), 'synthetic external effect')
+                # Even actual external completion is not a trusted adapter receipt.
+                after = self.life.snapshot()
+                self.assertFalse(after['toolEffects']['effectsSettled'])
+                self.assertFalse(after['writerQuiescence'])
+            finally:
+                release.set()
+                worker.join(timeout=6)
+                server.server_close()
 
     def test_native_title_thread_holds_after_root_and_preserves_captured_profile(self):
         entered,release=threading.Event(),threading.Event();seen=[]

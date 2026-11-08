@@ -1305,3 +1305,21 @@ release. Live Mesh receipt persistence remains deployed from78cfee6. Next: tool
 external-effect completion contract plus canonical/session-authority/live-owner
 coverage and installed provider/profile qualification. A title callback finishing
 does not qualify whole-worker release. Full original goal active/incomplete.
+
+## 2026-11-08 - delayed external HTTP effect acceptance
+Previous goal turn: PROGRESS (77a5854 saved/pushed and restore-tested backup).
+Added actual loopback HTTP202 acceptance with a deliberately blocked external
+write to a temporary synthetic file. Native enrolled tool/root returned and
+managed work ended before that external file existed. The effect remained
+unverified, activeCalls=0/unverifiedCalls=1/effectsSettled=false and whole-worker
+release=false. After actual external write completed, no implicit settlement
+occurred. This proves local handler/process completion cannot replace an
+adapter-specific completion receipt; no positive external-effect adapter exists
+yet. Fixture has bounded request/wait/server timeout and cleanup; no live data,
+credentials or external website contacted. Focused acceptance PASS1; worker
+suite PASS40; full npm test PASS339 (299Node+40Python), evidence
+../external-effect-qualification.log and ../external-effect-full.log.
+No runtime behavior changed or live service restarted; automatic assignment
+still held. Next: qualify a trusted completion adapter for the actual bounded
+local tool path and production route/profile coverage. Mind/model deferrals
+unchanged. Full goal remains active/incomplete.
