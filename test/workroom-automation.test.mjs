@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomUUID} from 'node:crypto';
@@ -11,6 +11,8 @@ import {createTeamRunner} from '../lib/workroom-automation.mjs';
 import {withNims} from '../lib/nims-link.mjs';
 import {createCodexClient} from '../lib/codex-client.mjs';
 import {parseAssignment} from '../lib/workroom-assignment.mjs';
+import http from 'node:http';
+import {startApp,ROOT} from '../server.mjs';
 const file=()=>join(mkdtempSync(join(tmpdir(),'mesh-auto-')),'tasks.sqlite');
 const agents=[{id:'echo',backend:'hermes',status:'idle',conversation_id:'e'},{id:'dsh',backend:'a2a',status:'idle',conversation_id:'d'}];
 function ready(store){let t=store.create({title:'Automatic fixture',description:'Only one named fixture artifact',owner:'echo'});t=store.workroom.save(t.id,{project:'Fixture',criteria:'Independent checks pass',owner:'echo',team:'local_build',stage:'ready',revision:1});t=store.workroom.saveProgress(t.id,{goal:'Bounded artifact',checklist:[{id:'one',text:'Implement and verify fixture',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision});return store.workroom.savePlan(t.id,{lead:'echo',spec:'One artifact',workspace:process.cwd(),allowedFiles:'data/fixture-only.mjs',checks:'node --check data/fixture-only.mjs',boundaries:'No other changes or network',workerId:'echo',reviewerId:'dsh',state:'locked',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision}).task;}
@@ -71,6 +73,49 @@ test('team resume refuses an unresolved worker from another task, including afte
    assert.equal(store.workroom.get(b.id).automation.state,'paused');
    assert.equal(store.workroom.get(a.id).messages[0].id,id);
   }finally{store.close();}
+ }
+});
+
+test('real team endpoint refuses competing start/resume with admission intact and zero worker dispatch',async()=>{
+ const keys=['MESH_RELAY_MODE','MESH_RELAY_URL','MESH_RELAY_TOKEN_FILE','MESH_STANDALONE','MESH_NIMS','MESH_NEMOTRON_CONTROL','MESH_MODEL_OBSERVATION','MESH_DSH_APPROVAL_ORIGIN','MESH_DSH_TOKEN_FILE'],previous=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+ const token='fixture-'+randomUUID(),tokenPath=join(mkdtempSync(join(tmpdir(),'mesh-auto-http-')),'key');writeFileSync(tokenPath,token);
+ let posts=0,app;
+ const peers=http.createServer((req,res)=>{
+  res.setHeader('Content-Type','application/json');
+  if(req.method!=='GET')posts++;
+  if(req.headers.authorization!=='Bearer '+token){res.writeHead(401);res.end('{}');return;}
+  if(req.method==='GET'&&req.url==='/api/agents'){res.end(JSON.stringify(agents));return;}
+  res.writeHead(503);res.end('{}');
+ });
+ const dataDir='data/team-admission-http-'+randomUUID();mkdirSync(join(ROOT,dataDir));
+ let store=openTaskStore(join(ROOT,dataDir,'tasks.sqlite')),a,b,c;
+ try{
+  a=ready(store);b=ready(store);c=ready(store);
+  b=store.workroom.automation.action(b.id,action(b),agents,ROOT).task;
+  b=store.workroom.automation.action(b.id,action(b,'pause'),agents,ROOT).task;
+  const id=randomUUID();store.workroom.reserve(a.id,{id,agentId:'echo',conversationId:'e',text:'Original accepted fixture'},'work');store.workroom.settle(id,'accepted');
+ }finally{store.close();}
+ try{
+  await new Promise(r=>peers.listen(0,'127.0.0.1',r));
+  process.env.MESH_RELAY_MODE='http';process.env.MESH_RELAY_URL='http://127.0.0.1:'+peers.address().port;process.env.MESH_RELAY_TOKEN_FILE=tokenPath;process.env.MESH_STANDALONE='0';
+  process.env.MESH_NIMS='0';process.env.MESH_NEMOTRON_CONTROL='0';process.env.MESH_MODEL_OBSERVATION='0';
+  process.env.MESH_DSH_APPROVAL_ORIGIN=process.env.MESH_RELAY_URL;process.env.MESH_DSH_TOKEN_FILE=tokenPath;
+  app=await startApp({dataDir,relayEnabled:true});
+  const headers={Origin:app.url,'Content-Type':'application/json'},path=t=>'/api/workroom/'+t.id+'/automation';
+  const post=(t,kind,override={})=>fetch(app.url+path(t),{method:'POST',headers:{...headers,...override},body:JSON.stringify(action(t,kind))});
+  assert.equal((await post(c,'start')).status,401);
+  const boot=await fetch(app.url+'/api/trial-session/bootstrap',{method:'POST',headers,body:'{}'});assert.equal(boot.status,201);
+  const proof=await boot.json();headers.Cookie=boot.headers.get('set-cookie').split(';')[0];headers['X-Trial-CSRF']=proof.csrfToken;
+  assert.equal((await post(c,'start',{'X-Trial-CSRF':'wrong'})).status,403);
+  for(const [task,kind] of [[c,'start'],[b,'resume']]){
+   const response=await post(task,kind);assert.equal(response.status,409);assert.match((await response.json()).error,/Resolve the worker on/);
+  }
+  const read=async t=>{const response=await fetch(app.url+'/api/workroom/'+t.id,{headers});assert.equal(response.status,200);return (await response.json()).task;};
+  assert.equal((await read(b)).automation.state,'paused');assert.equal((await read(c)).automation,undefined);
+  assert.equal((await read(a)).messages.length,1);assert.equal(posts,0);
+ }finally{
+  if(app)await app.close();await new Promise(r=>peers.close(r));
+  for(const k of keys){if(previous[k]===undefined)delete process.env[k];else process.env[k]=previous[k];}
  }
 });
 test('assignment proposals require exact source/schema and apply only as an unlocked draft',()=>{
