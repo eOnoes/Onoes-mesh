@@ -1213,3 +1213,49 @@ is deployed; native Hermes and Relay lifecycle candidates remain NOT installed.
 Observations never release writers. Next: concrete tool-effect adapters/verified
 whole-worker completion and installed native/Relay qualification, then automatic
 assignment activation. Full original Mesh/Mind/inference/fleet goal active/incomplete.
+
+
+## 2026-11-08 - Actual isolated native runtime qualification
+
+Previous turn PROGRESS:78cfee6 live Mesh receipt persistence tested/deployed/pushed/
+backed up. Core tracked source baseline clean; live MeshPID37724 remains healthy.
+Added qualify_hermes_runtime.py: pins native HEADacc3cada0da86c81efc8aa6c5a291989549ca900,
+archives tracked source into a NEW data snapshot, applies exact10-file candidate
+and verifies all bytes. New snapshots exclude .github/workflows; no Actions runs.
+Native/Relay installed source, profiles, model services and credentials untouched.
+Child uses fresh HERMES_HOME/HOME/USERPROFILE/APPDATA/temp/workspace, whitelist-only
+environment and ephemeral test authentication. Local fake provider only; no paid
+model. Actual native APIServerAdapter, AIAgent, tool executor, terminal, Windows Job
+and native idempotency SQLite run; provider selection/config factory is a fixture.
+Memory/context/background-review loading disabled; no private store opened.
+
+Failed runs retained:5cc26f24 base3.14 lacked aiohttp after profile isolation hid
+user-site libraries. Existing venv25dba42d proved agent/tool/auth path but uses
+Python3.11.9/SQLite3.45.1 (native guard chose DELETE journal mode); broad upstream
+request-count assertion failed at restart. Actual live gateway1592 uses3.14.7.
+41649446 under3.14 failed on missing snowballstemmer; c981eb65 with isolated pure-
+Python dependency succeeded in native worker/tool/auth but revealed one extra
+non-tool provider request, not necessarily duplicate dispatch. Strengthened
+diagnostics and checked actual agent/fence creation plus task-model calls and
+active native run maps, rather than equating every provider request with a worker.
+No installed dependency changes; copied only existing pure-Python snowball source
+into test directory, rejecting compiled extensions and recording file hashes.
+
+Final data/hermes-runtime-2a9da8d5-b474-4d43-a47d-c93687f2384e PASS4 actual native
+HTTP/agent/tool/process/auth/restart checks on Python3.14.7. One real AIAgent, two
+tool-enabled model requests and one non-tool model callback observed. Exact saved
+idempotency replay after native adapter restart kept same run; no new agent/fence/
+active run, preserved completed status, returned new-owner unknown tracking and
+no release. Actual root/tool future/Job ended, with unverified tool effects retained.
+Independent evidence recheck PASS4 validates all candidate hashes, exact terminal
+output/exit0/errorNone and restart identities. Exact-proof judge positive and four
+misleading/error/bool-exit negative cases PASS5. Runtime trace/SQLite/failed evidence
+retained. New native model callbacks still need lifecycle coverage; whole-worker
+release explicitly false. The actual upstream config/profile selection is not
+qualified by this fixture. Sanitized record integrations/hermes-runtime-qualification.json.
+
+Syntax checks PASS for qualifier and backup script. App core unchanged from full
+334-test baseline; no redundant full suite rerun. Next: locate/bind non-tool native
+callback lifetime before further completion/release qualification. No live native
+or Relay installation, automatic dispatch activation or existing-hold release.
+Full original Mesh/Mind/inference/fleet objective active/incomplete.
