@@ -44,3 +44,18 @@ Workspace release qualification update: with managed flow enabled, Start/Resume 
 5. Deploy reviewed Mesh changes, then connect one Rook scheduler, test end-to-end with a disposable task, and separately approve activation. `MESH_SIMPLE_FLOW` remains off in the named live launcher. No real cards or running model services were changed for these checks.
 
 The obsolete `integrations/sweep-workroom-backlog.mjs` now exits with an error and queues nothing. Do not schedule it. Echo's Rook replaces that prototype.
+
+## Read-only Relay source audit and coordination
+
+On 2026-11-08 Nims inspected the indexed actual `D:/Dev/Onoes-Relay` source, not just Mesh's staged copies:
+
+- `relay_hermes.py`, `HermesRunsClient.run_status`: reads `/v1/runs/{run_id}`; a missing run is an error, not evidence of completion. `submit_run` advertises `{run_id,status,replayed}` admission.
+- `relay_server.py`, `hermes_send`: passes the original message ID as Hermes's idempotency key and the conversation as `session_id`; receives `run_id`, consumes events or polls status, and later removes the ID from `active_run_ids`. This establishes a potential live observation path, not a durable Mesh-send-to-native-run binding across restart.
+- `relay_server.py`, `_receipt` and `list_outbox`: explicitly document **admission only**. Their response fields (`state`, `attempts`, `transport_ref`, `error`, `created_at`, plus `idem_key` in the list) must not be interpreted as worker termination.
+- `_persist_hermes_reply` persists answer text once; it does not itself establish that subprocesses or source-writing tools have ended. That guarantee still needs the native runtime's authoritative contract.
+
+A single read-only question was sent to Echo through the existing Mesh Relay conversation, as authorized by Eddie's coordination request. Relay visibly accepted it; a later explicit refresh still showed no answer. Native run identity for this question is unverified, so this is **not a verified-running job or wait**. Do not resend it to manufacture progress. The question asks for the durable binding, exact native outcome lookup and child/tool completion guarantee, with source/schema only and no source edits, service changes, grants or worker dispatch.
+
+Evidence: `data/echo-terminal-question-2026-11-08/receipt.json` and `../mesh-echo-terminal-question.png`. The current live task count remains 14; no new Workroom question card was found, so no task ID is invented. The old generic `relay-http.message` linking path is not sufficient evidence that the current chat UI created a card.
+
+Relay's `rev-parse` reported `5cc0154`; its tracked-status check failed with a referenced worktree metadata path error. No Relay Git repair was attempted and no clean-working-tree assertion is made. This audit does not qualify the live Echo adapter or authorize activation.
