@@ -1342,3 +1342,33 @@ poll refreshed metadata; no dispatch/send/review/lane change. Static asset edit
 served immediately; no native/Relay/model restart or automation activation.
 Next: trusted tool completion and remaining production-route/profile qualification
 before auto-assignment. Full goal active/incomplete; Mind/model deferrals stand.
+
+## 2026-11-08 - canonical execution ownership traced
+Previous goal turn PROGRESS: c883faf visible worker observations, full regression
+PASS341, live browser acceptance, verified milestone backup. Current investigation
+extended native gateway index by309files;21295symbols now available. Native HEAD
+source routes /v1/runs via live Bot Chat owner first, canonical session authority
+second, direct executor only otherwise. _handle_health_detailed exposes readiness,
+metrics and PID but no authoritative execution-branch identity; health cannot
+establish deployed direct-route coverage. Current production-selected branch is
+NOT established by this source inspection; no live credential/config opened.
+
+Exact canonical chain: gateway/platforms/api_server_runs.py::_handle_runs calls
+_admit_run_to_authority -> gateway/session_api_turn.py::admit_api_turn_async.
+Its committed admission drives gateway/session_ingress.py::execute_admission,
+which binds owning-profile api_execution and awaits runner._handle_message.
+Actual synchronous work is gateway/run_turn_runner.py::TurnRunner.run_sync,
+including _run_sync_scoped plus captured result/finally behavior. API observer
+observe_api_turn explicitly asyncio.shield(waiter); its cancellation only removes
+its observer, and does not end canonical work. Therefore extending the direct
+HTTP lifetime wrapper around observation would be incorrect. Next native slice
+must enroll at the canonical claimed worker, preserve admission/owner identity,
+profile context and full TurnRunner cleanup. Live-owner routing stays separate;
+no duplicate/direct fallback and no historical hold clearance.
+
+Updated existing goal card to progress revision39, all6checklist objects preserved,
+decision pending; result now reflects341tests, visible saved worker status and
+actual outstanding original scope. First update with unsupported spread fields
+was rejected400 without mutation; explicit supported fields saved/read-back PASS.
+No new source/runtime changes, service restart, dispatch, Mind access or model
+operation. No new tests claimed this investigation turn. Full goal active.
