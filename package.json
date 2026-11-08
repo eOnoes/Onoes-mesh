@@ -10,7 +10,7 @@
     "start": "node test/m1-serve.mjs",
     "check": "node test/check.mjs",
     "test": "node test/check.mjs --test && node --test --test-timeout=20000 test/m1-serve.test.mjs && npm run test:models && npm run test:workspaces && npm run test:workroom",
-    "test:workspaces": "node --test --test-timeout=20000 test/agent-workspace.test.mjs test/admission-peers.test.mjs test/browser-assets.test.mjs test/overview-connections.test.mjs test/team-policy.test.mjs test/mind-workspace.test.mjs test/mind-recall.test.mjs test/host-telemetry.test.mjs test/gpu-metrics.test.mjs test/control-models.test.mjs test/workroom-progress-timeline.test.mjs test/relay-chat-scroll.test.mjs test/relay-task-progress.test.mjs test/m3-crash-compose-ui.test.mjs",
+    "test:workspaces": "node --test --test-timeout=20000 test/agent-workspace.test.mjs test/admission-peers.test.mjs test/browser-assets.test.mjs test/overview-connections.test.mjs test/owner-node-status-colors.test.mjs test/team-policy.test.mjs test/mind-workspace.test.mjs test/mind-recall.test.mjs test/host-telemetry.test.mjs test/gpu-metrics.test.mjs test/control-models.test.mjs test/workroom-progress-timeline.test.mjs test/relay-chat-scroll.test.mjs test/relay-task-progress.test.mjs test/m3-crash-compose-ui.test.mjs",
     "test:models": "node --test --test-timeout=20000 test/model-operation-store.test.mjs test/nemotron-client.test.mjs test/nemotron-runtime.test.mjs test/nemotron-qualification.test.mjs test/supervised-inference.test.mjs test/supervised-inference-http.test.mjs test/model-backup.test.mjs",
     "test:mind-integration": "node --test --test-timeout=20000 test/mind-canonical-http.test.mjs",
     "test:ui": "node test/check.mjs --ui",

@@ -37,6 +37,23 @@ async function ready() {
   const reader = createNodeProbeReader(tx.options);
   return { tx, reader, snapshot: await reader.refresh() };
 }
+test('never checked and unsuccessful first observation never imply Offline',async()=>{
+  const tx=controlledProbe(),reader=createNodeProbeReader(tx.options),view=ui();
+  const initial=reader.snapshot(),before=JSON.stringify(initial);
+  view.render(initial).forEach(row=>{
+    check(row,'Not checked','neutral');
+    assert.match(row.line.textContent,/no machine status result available/);
+    assert.doesNotMatch(row.card.textContent,/Offline|observation_expired/);
+  });
+  view.render(initial,initial.limits.staleGraceMs*10).forEach(row=>check(row,'Not checked','neutral'));
+  assert.equal(tx.calls.length,0);assert.equal(JSON.stringify(initial),before);
+  tx.fail();const failed=await reader.refresh();
+  assert.ok(failed.nodes.every(n=>n.tailscaleOnline===null));
+  view.render(failed).forEach(row=>{
+    check(row,'Unavailable','neutral');
+    assert.doesNotMatch(row.line.textContent,/cached status|Offline/);
+  });
+});
 function check(row, label, state) {
   assert.equal(row.word.tagName, 'span');
   assert.equal(row.word.textContent, label);
@@ -53,7 +70,7 @@ test('fresh ready is Online; cached Online and global UI busy cannot make stale/
     assert.match(row.line.textContent, /cached Tailscale Online: true/);
     assert.match(row.card.textContent, /observation_expired/);
   });
-  view.render(snapshot, snapshot.limits.staleGraceMs).forEach(row => check(row, 'Offline', 'offline'));
+  view.render(snapshot, snapshot.limits.staleGraceMs).forEach(row => check(row, 'Check expired', 'stale'));
   assert.equal(JSON.stringify(snapshot), original, 'renderer never changes cached fields, timestamps or provenance');
 });
 
@@ -94,10 +111,10 @@ test('explicit Busy presentation only; unknown/unavailable/not_configured stay n
   assert.equal(view.box.textContent, 'Node observation unavailable. No online or offline result established.');
 });
 
-test('status CSS has scoped lime/red/yellow/amber mappings without changing the global palette', async () => {
+test('status CSS uses scoped theme tokens without changing the global palette', async () => {
   const css = await readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
-  for (const [state, color] of [['online', '#39ff14'], ['offline', '#ff6b6b'], ['busy', '#ffd166'], ['stale', '#ffbf69']]) {
-    assert.ok(css.includes(`.node-observation .node-status--${state}{color:${color}}`));
+  for (const [state, token] of [['online', '--green'], ['offline', '--danger'], ['busy', '--amber'], ['stale', '--quiet']]) {
+    assert.ok(css.includes(`.node-observation .node-status--${state}{color:var(${token})}`));
   }
   assert.ok(!/\.node-status--neutral\s*\{[^}]*color:/i.test(css), 'neutral status inherits the existing paragraph color');
 });

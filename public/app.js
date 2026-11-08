@@ -124,6 +124,7 @@ function controls() {
   mindWorkspace.setAvailable(!busy && !lifecycleSuspended && admitted && navigator.onLine);
   document.querySelectorAll('form button, form input, form textarea, form select, #refresh, #agent-refresh, #node-probes-refresh').forEach(el => { el.disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine; });
   if (nodeProbeSnapshot?.status === 'not_configured') $('node-probes-refresh').disabled = true;
+  $('node-probes-refresh').textContent = nodeProbeSnapshot?.status === 'not_configured' ? 'Machine checks unavailable in this instance' : 'Check machine status';
   const executing = ['approved','running'].includes(selected?.proposalStatus);
   $('propose-command').disabled = busy || lifecycleSuspended || !admitted || !navigator.onLine || !selected || !commands.length || executing || staleSelection;
   $('proposal-command').disabled = $('propose-command').disabled;
@@ -607,26 +608,28 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
     // Local aging never refreshes the CLI or advances last-success timestamps.
     const successAge = n.lastSuccessAt === null ? Infinity :
       Math.max(0, Date.parse(snapshot.observedAt) - Date.parse(n.lastSuccessAt)) + elapsed;
-    const status = successAge >= snapshot.limits.staleGraceMs ? 'offline' :
+    const hasObservation = typeof n.tailscaleOnline === 'boolean' ||
+      (typeof n.lastSuccessAt === 'string' && Number.isFinite(Date.parse(n.lastSuccessAt)));
+    const status = !hasObservation ? (n.lastProbeAt === null ? 'not_checked' : 'unavailable') : n.tailscaleOnline === true && successAge >= snapshot.limits.staleGraceMs ? 'expired' : successAge >= snapshot.limits.staleGraceMs ? 'offline' :
       n.status === 'ready' && successAge >= snapshot.limits.freshMs ? 'stale' : n.status;
     // Busy is presentation-only unless the node status source explicitly supplies it.
     const presentations = { ready: ['Online', 'online'], offline: ['Offline', 'offline'],
-      busy: ['Busy', 'busy'], stale: ['Stale', 'stale'], unavailable: ['Unavailable', 'neutral'] };
+      busy: ['Busy', 'busy'], stale: ['Stale', 'stale'], expired: ['Check expired', 'stale'], unavailable: ['Unavailable', 'neutral'], not_checked: ['Not checked', 'neutral'] };
     const presentation = Object.hasOwn(presentations, status) ? presentations[status] : [status, 'neutral'];
     const statusLine = document.createElement('p');
     const statusWord = document.createElement('span');
     statusWord.textContent = presentation[0];
     statusWord.className = 'node-status node-status--' +
       (n.observationAvailability === 'available' ? presentation[1] : 'neutral');
-    statusLine.append(n.observationAvailability === 'unavailable'
+    statusLine.append(hasObservation && n.observationAvailability === 'unavailable'
       ? 'Observation unavailable · cached status: ' : 'Status: ', statusWord,
-      n.observationAvailability === 'unavailable'
+      !hasObservation ? ' · no machine status result available' : n.observationAvailability === 'unavailable'
       ? ' · offline not established by this read' : ' · cached Tailscale Online: ' + n.tailscaleOnline);
     card.append(statusLine);
     paragraph(card, 'Last probe: ' + (n.lastProbeAt ?? 'never') + ' · Last success (Online=true): ' + (n.lastSuccessAt ?? 'never'));
     paragraph(card, 'Observation: ' + n.observationAvailability + ' · source: ' + snapshot.source + ' · local probe completion timestamps');
     paragraph(card, 'Packet reachability: unknown · Inference readiness: unknown · Model readiness: unknown');
-    paragraph(card, 'Errors at last probe: ' + (n.errors.map(e => e.code).join(', ') || 'none') + (status !== n.status ? ' · observation_expired' : ''));
+    paragraph(card, 'Errors at last probe: ' + (n.errors.map(e => e.code).join(', ') || 'none') + (hasObservation && status !== n.status ? ' · observation_expired' : ''));
     if (snapshot.source === 'disposable_transport') paragraph(card, 'TEST ONLY: controlled transport; no native tailnet claim.');
     box.append(card);
   }

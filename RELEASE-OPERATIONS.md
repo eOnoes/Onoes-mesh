@@ -369,3 +369,13 @@ canonical store enrollment, approved recovery policy, access and live activation
 are not complete. Shared memory/writes/skills/MCP, external apps and the laptop/
 future AI-box fleet remain in the active overall objective. The running private
 checkpoint is authoritative for later evidence and changes to these gates.
+
+## Machine connection observations
+
+Inference -> Machines / read-only exposes the existing fixed PC/laptop Tailscale
+records. Check machine status performs an admitted local CLI read. These are
+cached connection observations, not packet probes, remote hardware measurements,
+model readiness or control permission. The future AI box has no configured identity.
+No check yet is Not checked; an unusable first result is Unavailable; an expired
+positive check is Check expired. Refresh deliberately to obtain current records.
+Native node-probe v1 compatibility and its separate provenance fields remain intact.
