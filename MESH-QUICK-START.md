@@ -4,7 +4,7 @@ Open the current private Workroom at https://emitchell.tail8c4a75.ts.net:8453/#w
 
 ## Make and shape a task
 
-1. Tap “+ New task.” Enter a short title and description, choose Nims or Echo as project lead, then tap “Create task.” If prompted, tap “Start fresh local session”; your saved tasks are still there. In the task card, use “Edit card” to set the Project, Goal, Acceptance criteria and Project lead. In “Goal, checklist and review,” add a few small checklist steps and tap “Save changes.” A checklist is a progress aid, not proof of approval.
+1. Tap “+ New task.” Enter a short title and description, choose Nims or Echo as project lead, then tap “Create task.” If prompted, tap “Start fresh local session”; previously saved tasks remain available, but an unsaved editor draft is not restored. In the task card, use “Edit card” to set the Project, Goal, Acceptance criteria and Project lead. In “Goal, checklist and review,” add a few small checklist steps and tap “Save changes.” A checklist is a progress aid, not proof of approval.
 2. To open a task, tap it once. On a phone, hold briefly on the card and drag to move it; swipe without holding to scroll. Dragging changes the board stage only—it does not start an agent. “Done” is both a board stage and a checklist status: marking a checklist step Done does not approve or finish the task; moving the board stage to Done requires a recorded approved review and your deliberate action.
 3. A project lead can ask for a plan without edits. Read the proposed workspace, allowed files and checks before using the proposed scope/team. Lock the plan only after the scope matches what you intend. For this task, verify the locked assignment names Echo as builder and Nims as the read-only independent reviewer. Available workers depend on connected, qualified adapters; if either assignment is missing or differs, do not start—report the mismatch rather than substitute. The lane is one build followed by one review; it does not automatically retry or rework. Starting it is an explicit action: tap “Start scoped team.” Planning, saving a card or locking scope does not start work.
 
@@ -20,11 +20,13 @@ If a DeepSeek handoff is waiting on permission, open “DeepSeek permissions,”
 
 Use “Refresh board” or reload the page, reopen the task and confirm saved changes, reports and review history are still there. Check the page’s available theme modes for readable text and controls; theme appearance does not verify task state.
 
+Confirmed recovery cases include switching to another phone app, then reopening the completed card successfully; keeping an unsaved draft and keyboard usable through landscape/back; and reconnecting after network loss without saving or sending offline. A separate isolated-browser expiry check rejected a stale save, cleared private page data, then restored the original saved task after fresh admission. Fresh admission restores saved state, not unsaved drafts. These checks do not establish offline-send support or what happens if radio loss interrupts a native agent run.
+
 If another edit makes the open editor stale, Save may be rejected with “Task changed.” The unsaved field stays visible. Copy any draft you want to keep before tapping “Cancel edits”; reopen the card to see the other saved changes. Some card details may already have saved before a later progress conflict. There is no silent merge.
 
 Backups are manual or milestone-based; no automatic schedule or off-device backup is enabled. The documented backup writes to E:\App-Backups\ONOes-Mesh; check LATEST.txt for the verified matching source/data snapshot. Keep labelled milestone copies. Do not merge the older 8446 store into the current Workroom store.
 
-Current limits: model controls are not qualified; do not use Workroom to load, unload or cancel a model. Mind is not live personal-memory recall: it can deliberately show a selected saved Workroom task, not shared conversation or personal-memory context. Telegram and shared context are not synchronized. Full physical-phone background/resume recovery and off-device backup remain open. The current scoped team flow pauses for owner review; it does not auto-approve or mark Done.
+Current limits: the listed phone recovery cases are accepted, but whole-app owner release acceptance remains open. Model controls are not qualified; do not use Workroom to load, unload or cancel a model. Mind is not live personal-memory recall: it can deliberately show a selected saved Workroom task, not shared conversation or personal-memory context. Telegram and shared context are not synchronized. Off-device backup remains deferred. The current scoped team flow pauses for owner review; it does not auto-approve or mark Done.
 
 ## Phone acceptance checklist
 
