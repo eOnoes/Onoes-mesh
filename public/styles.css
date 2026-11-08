@@ -1336,6 +1336,7 @@ footer{background:transparent}
 .workroom-sheet{width:min(640px,calc(100vw - 20px));max-width:calc(100vw - 20px);max-height:85dvh;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--ink)}
 .workroom-sheet::backdrop{background:var(--bg);opacity:.75}
 .workroom-sheet-toolbar{position:sticky;top:-16px;display:flex;justify-content:flex-end;background:var(--surface);padding:8px 0;z-index:1}
+.workroom-sheet-stage{margin-right:auto;align-self:center;min-width:0;padding-right:12px;color:var(--muted);font-size:clamp(14px,3.5vw,20px);font-weight:700;letter-spacing:.12em;overflow-wrap:anywhere}
 .workroom-sheet h2,.workroom-sheet p,.workroom-sheet li{overflow-wrap:anywhere}
 .workroom-sheet label{display:block;margin:10px 0}
 .workroom-sheet input,.workroom-sheet textarea,.workroom-sheet select{box-sizing:border-box;width:100%;max-width:100%}

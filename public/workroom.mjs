@@ -165,7 +165,10 @@ if(root){
     if(epoch!==viewEpoch)return;
     // Never carry an uncertain message into another task.
     pending=null;details.replaceChildren();
-    const toolbar=el('div');toolbar.className='workroom-sheet-toolbar';const close=el('button','Close card');close.type='button';close.addEventListener('click',()=>{if(!busy)closeDetails();});toolbar.append(close);details.append(toolbar);
+    const toolbar=el('div');toolbar.className='workroom-sheet-toolbar';
+    const stageName=stages.find(stage=>stage[0]===selected.workroom.stage)?.[1]||'Unknown';
+    const stageBadge=el('span',(selected.workroom.stage==='done'?'✓ ':'')+stageName.toUpperCase());stageBadge.className='workroom-sheet-stage';stageBadge.setAttribute('aria-label','Card status: '+stageName);
+    const close=el('button','Close card');close.type='button';close.addEventListener('click',()=>{if(!busy)closeDetails();});toolbar.append(stageBadge,close);details.append(toolbar);
     const dialogStatus=el('p');dialogStatus.setAttribute('role','status');details.append(dialogStatus);
     details.append(el('h2',selected.title),el('p',selected.description));
     const summary=el('section');
