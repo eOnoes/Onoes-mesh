@@ -25,6 +25,7 @@ from integrations import hermes_writer_scope as scope
 from integrations.windows_writer_fence import WindowsWriterFence
 
 BASELINE = '6491641456b51eb78c36a50a8508f145da328f7c70a432bced84b3b329e0046e'
+FOREGROUND_BASELINE = '723e8f0bc27c58c310f9530732c889e5f8480d74e12402656ed0033e08afc27c'
 LIFETIME_BASELINES = {
     'tools/async_delegation.py': '1bcff60c59c453f1e3d7d049bcf525b727df07c1d7e1eeb45ba0776598c3c2b6',
     'gateway/platforms/api_server_runs.py': '481b67c8cddd2dcca3a9b60d938d0cec5d621a4648784119873d60ffcd975138'}
@@ -70,6 +71,28 @@ def lifetime_candidates(native_root):
     return originals, changed
 
 
+def foreground_candidate(native_root):
+    path = 'tools/environments/local.py'
+    raw = (native_root / path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != FOREGROUND_BASELINE:
+        raise RuntimeError('Native foreground source changed: ' + path)
+    original = raw.decode('utf-8').replace('\r\n', '\n')
+    lines = original.splitlines(True)
+    cls = next(n for n in ast.parse(original).body if isinstance(n, ast.ClassDef) and n.name == 'LocalEnvironment')
+    fn = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == '_run_bash')
+    body = ''.join(lines[fn.lineno - 1:fn.end_lineno])
+    if body.count('proc = subprocess.Popen(') != 1:
+        raise RuntimeError('Unexpected native foreground launch shape')
+    body = body.replace('proc = subprocess.Popen(', 'proc = scoped_popen(')
+    method = body.splitlines(True)
+    method.insert(fn.body[0].lineno - fn.lineno,
+                  '        from tools.mesh_writer_scope import scoped_popen\n')
+    lines[fn.lineno - 1:fn.end_lineno] = [''.join(method)]
+    candidate = ''.join(lines)
+    ast.parse(candidate)
+    return {path: original}, {path: candidate}
+
+
 def prepare(source_path):
     raw = source_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != BASELINE:
@@ -104,6 +127,9 @@ def prepare(source_path):
                'tools/mesh_windows_writer_fence.py': (root / 'integrations/windows_writer_fence.py').read_text(encoding='utf-8')}
     lifetime_originals, lifetime_modules = lifetime_candidates(source_path.parent.parent)
     modules.update(lifetime_modules)
+    foreground_originals, foreground_modules = foreground_candidate(source_path.parent.parent)
+    lifetime_originals.update(foreground_originals)
+    modules.update(foreground_modules)
     patch_text = ''.join(difflib.unified_diff(original.splitlines(True), candidate.splitlines(True),
                                            fromfile='a/tools/process_registry.py', tofile='b/tools/process_registry.py'))
     for path, text in modules.items():
@@ -311,15 +337,85 @@ def qualify_lifetimes(modules):
     return checks
 
 
+def qualify_foreground(modules):
+    """Actual native launcher body, fixture shell selection, real Windows IO/tree."""
+    cls = next(n for n in ast.parse(modules['tools/environments/local.py']).body
+               if isinstance(n, ast.ClassDef) and n.name == 'LocalEnvironment')
+    fn = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == '_run_bash')
+    def pipe_stdin(proc, text):
+        proc.stdin.write(text)
+        proc.stdin.close()
+        proc.stdin = None
+    namespace = {'subprocess': subprocess, '_IS_WINDOWS': True,
+                 '_find_bash': lambda: sys.executable, '_make_run_env': lambda env: env,
+                 'windows_hide_flags': lambda: 0x08000000, '_pipe_stdin': pipe_stdin}
+    exec(compile(ast.Module(body=[fn], type_ignores=[]), '<pinned-native-foreground-fixture>', 'exec'), namespace)
+    fixture = types.SimpleNamespace(env=dict(__import__('os').environ), cwd=str(Path.cwd()), _recover_cwd=lambda: None)
+    tools = types.ModuleType('tools'); tools.__path__ = []
+    checks = []
+    with patch.dict(sys.modules, {'tools': tools, 'tools.mesh_writer_scope': scope}):
+        # Unbound legacy execution must remain usable without an enrolled lifetime.
+        with namespace['_run_bash'](fixture, 'print("legacy foreground")') as proc:
+            output, _ = proc.communicate(timeout=5)
+        if output.strip() != 'legacy foreground':
+            raise AssertionError('Legacy foreground IO changed')
+        checks.append('native_foreground_legacy_output')
+        fence = WindowsWriterFence('native-foreground-fixture', 'one')
+        lifetime = scope.WriterLifetime(fence)
+        try:
+            with scope.writer_foreground_scope(lifetime):
+                with namespace['_run_bash'](fixture, 'import sys; print(sys.stdin.read().upper())', stdin_data='fenced input') as proc:
+                    output, _ = proc.communicate(timeout=5)
+                if output.strip() != 'FENCED INPUT':
+                    raise AssertionError('Fenced foreground stdin/output mismatch')
+                checks.append('native_foreground_fenced_stdin_output')
+                child = 'import time; time.sleep(1.5)'
+                command = ('import subprocess,sys; subprocess.Popen([sys.executable,"-c",'
+                           + repr(child) + '], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); print("root returned")')
+                with namespace['_run_bash'](fixture, command) as proc:
+                    output, _ = proc.communicate(timeout=5)
+                if output.strip() != 'root returned':
+                    raise AssertionError('Foreground root output mismatch')
+            if lifetime.wait(20)['managedWorkEnded']:
+                raise AssertionError('Foreground root return released its live child')
+            checks.append('native_foreground_child_holds_after_root_return')
+            snapshot = lifetime.wait(5000)
+            if not snapshot['managedWorkEnded'] or snapshot['writerQuiescence']:
+                raise AssertionError('Foreground tree settlement or release boundary invalid')
+            checks.append('native_foreground_actual_tree_completion_without_release_grant')
+        finally:
+            fence.terminate(); fence.close()
+        bash = Path('C:/Program Files/Git/bin/bash.exe')
+        if not bash.is_file():
+            raise RuntimeError('Git Bash unavailable for foreground shell qualification')
+        namespace['_find_bash'] = lambda: str(bash)
+        fence = WindowsWriterFence('native-git-bash-fixture', 'one')
+        try:
+            with scope.bind_writer_fence(fence):
+                with namespace['_run_bash'](fixture, 'read -r line; printf "shell:%s\\n" "$line"; exit 7',
+                                            stdin_data='pipe input\n') as proc:
+                    output, _ = proc.communicate(timeout=5)
+                if output.strip() != 'shell:pipe input' or proc.returncode != 7:
+                    raise AssertionError('Git Bash stdin/output/exit status changed')
+            fence.seal()
+            if not fence.wait(5000)['processTreeEnded']:
+                raise AssertionError('Git Bash tree did not settle')
+            checks.append('native_foreground_real_git_bash_stdin_output_exit_status')
+        finally:
+            fence.terminate(); fence.close()
+    return checks
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
-              'nativeSourceBaselines': {'tools/process_registry.py': BASELINE, **LIFETIME_BASELINES},
+              'nativeSourceBaselines': {'tools/process_registry.py': BASELINE, **LIFETIME_BASELINES,
+                                        'tools/environments/local.py': FOREGROUND_BASELINE},
               'qualificationScope': 'patched native functions with fixture profiles/ledgers and real threads/processes',
               'files': {name: hashlib.sha256(text.encode()).hexdigest() for name, text in modules.items()},
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
     try:
-        report['checks'] = qualify(candidate) + qualify_lifetimes(modules)
+        report['checks'] = qualify(candidate) + qualify_lifetimes(modules) + qualify_foreground(modules)
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

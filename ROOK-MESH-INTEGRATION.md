@@ -945,3 +945,30 @@ factory, durable authenticated release publication and strict Mesh consumption;
 then installation qualification and separate owner activation. Existing eight holds
 must remain. Live07732e9cffb6 stays managedoff, and the full original Mesh/Mind/model/
 shared-context/MCP/fleet goal remains active and incomplete.
+
+
+## 2026-11-08 - Foreground local command candidate
+
+Verified native terminal_tool._run_foreground calls env.execute; the local backend
+selects LocalEnvironment, whose _run_bash starts a fresh process per command. Added
+an isolated pinned transformation of tools/environments/local.py to use scoped_popen
+without changing shell selection, environment, cwd, stdin or output/exit handling.
+Baseline SHA256 723e8f0bc27c58c310f9530732c889e5f8480d74e12402656ed0033e08afc27c.
+The candidate now contains six files and checks four installed source baselines.
+
+Qualification PASS16 native-function fixture checks on Python3.14.3 and gateway
+Python3.14.7, including legacy output, enrolled piped input/output, actual child
+lifetime after foreground/root return, and real Git Bash input/output/nonzero exit.
+Focused Windows process/scope/lifetime regression suite PASS19. These execute the
+actual edited launcher body with fixture environment helpers; not a full native
+agent/tool end-to-end test. Candidate data/hermes-writer-scope-b1c7737a-ff32-49b1-bf4e-0a98d4d774c7
+holds qualification.json and exact candidate byte hashes. No native source installation,
+service restart, model call, key/private memory access or automatic dispatch.
+
+Full worker release remains unqualified: trusted run enrollment, complete allowed
+tool coverage, durable authenticated completion evidence and strict Mesh consumption
+still required. Existing assignment holds stay intact. Next: native tool coverage
+and trusted exact-attempt enrollment. Full original goal remains active/incomplete.
+Index navigation initially stalled under restricted execution; bounded elevated
+local index calls succeeded. A malformed literal combined search proved nothing
+about code absence; precise outline/source inspection established the launcher.
