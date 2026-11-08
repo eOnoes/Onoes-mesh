@@ -57,6 +57,7 @@ staticFiles.set('/workroom-status.mjs', ['public/workroom-status.mjs', 'text/jav
 staticFiles.set('/workroom-drag.mjs', ['public/workroom-drag.mjs', 'text/javascript']);
 staticFiles.set('/workroom-view.mjs', ['public/workroom-view.mjs', 'text/javascript']);
 staticFiles.set('/workroom-edit.mjs', ['public/workroom-edit.mjs', 'text/javascript']);
+staticFiles.set('/workroom-load.mjs', ['public/workroom-load.mjs', 'text/javascript']);
 staticFiles.set('/session-entry.mjs', ['public/session-entry.mjs', 'text/javascript']);
 staticFiles.set('/workroom-columns-v2.mjs', ['public/workroom.mjs', 'text/javascript']);
 staticFiles.set('/workroom-columns-v2.css', ['public/styles.css', 'text/css']);

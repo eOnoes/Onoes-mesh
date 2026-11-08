@@ -1,6 +1,7 @@
 import {bindCardDrag} from './workroom-drag.mjs';
 import {captureBoardView,restoreBoardView} from './workroom-view.mjs';
 import {saveCardBrief} from './workroom-edit.mjs';
+import {createBoardLoader} from './workroom-load.mjs';
 import {handoffStatus,taskTimeline} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
 import {createPlanEditor,scopedTeamStatus} from './workroom-plan.mjs';
@@ -8,7 +9,7 @@ const root=document.getElementById('workroom-board');
 const request=(...args)=>window.meshWorkroom.request(...args);
 const stages=[['backlog','Backlog'],['ready','Ready'],['working','Working'],['needs_you','Needs you'],['done','Done']];
 const lanes=[{key:'ready',label:'To do',stages:['backlog','ready']},{key:'working',label:'In progress',stages:['working','needs_you']},{key:'done',label:'Done',stages:['done']}];
-let tasks=[], selected=null, agents=[], pending=null, busy=false,teamPolicy=null;
+let tasks=[], selected=null, agents=[], pending=null, busy=false,teamPolicy=null,agentsKnown=false;
 let followTimer=null,viewEpoch=0;
 const el=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
 if(root){
@@ -18,6 +19,14 @@ if(root){
   const projectFilter=el('input');projectFilter.placeholder='Filter by project';projectFilter.setAttribute('aria-label','Filter board by project');
   const status=el('p');status.setAttribute('role','status');
   const board=el('div');board.className='workroom-lanes';
+  let checkingStatus='';
+  const boardLoader=createBoardLoader({request,onBoard(result){
+    tasks=result.tasks;teamPolicy=result.teamPolicy||null;agentsKnown=false;draw();
+    checkingStatus=`${tasks.length} saved tasks · Checking agent connections…`;status.textContent=checkingStatus;
+  },onAgents(peers,available){
+    agents=peers;agentsKnown=available;draw();
+    if(status.textContent===checkingStatus)status.textContent=`${tasks.length} saved tasks · ${available?'Plan / build / review handoffs':'Agent connections unavailable; saved cards remain usable'}`;
+  }});
   const dragHelp=el('p','Drag anywhere on a card with your mouse. On your phone, hold briefly, then drag. Tap once for details; swipe without holding to scroll.');
   const details=el('dialog');details.className='workroom-sheet';details.setAttribute('aria-label','Task details');
   let returnFocus=null;
@@ -113,6 +122,7 @@ if(root){
     });
   }
   window.meshWorkroom.onClear(()=>{
+    boardLoader.clear();agentsKnown=false;
     viewEpoch++;clearTimeout(followTimer);
     tasks=[];selected=null;agents=[];pending=null;teamPolicy=null;
     details.close();details.replaceChildren();board.replaceChildren();
@@ -140,7 +150,7 @@ if(root){
         if(task.workroom.stage==='needs_you')button.append(el('small','Needs you'));
         const handoff=task.messages.filter(message=>['plan','work','review'].includes(message.phase)).at(-1);
         if(handoff)button.append(el('small',`${handoff.phase} → ${handoff.agentId} · ${handoff.state}`));
-        const signal=handoffStatus(task,agents);if(signal)button.append(el('small',signal.label));
+        const signal=agentsKnown?handoffStatus(task,agents):null;if(signal)button.append(el('small',signal.label));
         button.addEventListener('click',()=>{returnFocus=button;act(()=>open(task.id));});
         const card=el('div');card.className='workroom-card';
         button.setAttribute('aria-description','Tap to open. Hold and drag to move, or use left and right arrow keys.');
@@ -151,10 +161,7 @@ if(root){
     restoreBoardView(board,view);
   }
   async function load(){
-    const result=await request('/api/workroom');tasks=result.tasks;teamPolicy=result.teamPolicy||null;
-    try{agents=await request('/api/relay/native/api/agents');}catch{agents=[];}
-    draw();
-    status.textContent=`${tasks.length} saved tasks · Plan / build / review handoffs`;
+    return boardLoader.load();
   }
   function field(form,label,value,multiline=false){
     const wrapper=el('label',label);const input=el(multiline?'textarea':'input');input.value=value;wrapper.append(input);form.append(wrapper);return input;
