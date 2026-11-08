@@ -1,7 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {handoffStatus,taskTimeline,cardNextAction} from '../public/workroom-status.mjs';
+import {handoffStatus,taskTimeline,cardNextAction,nativeWorkerStatus} from '../public/workroom-status.mjs';
 import {withNims} from '../lib/nims-link.mjs';
+
+function nativeMessage(){
+  return {id:'send',agentId:'echo',conversationId:'chat',nativeReceipt:{runId:'run_one',ownerId:'owner',generation:'generation',observationState:'observed',
+    receipt:{agentId:'echo',sendId:'send',conversationId:'chat',runId:'run_one',observation:'observed',status:'completed',
+      writerLifecycle:{state:'observed',runId:'run_one',ownerId:'owner',generation:'generation',observationOnly:true,writerQuiescence:false,localWorkEnded:false}}}};
+}
+test('completed reply does not hide unfinished local work, and local end never implies Done',()=>{
+  const message=nativeMessage(),before=JSON.stringify(message);
+  assert.equal(nativeWorkerStatus(message).label,'Local worker not finished');
+  assert.equal(JSON.stringify(message),before);
+  message.nativeReceipt.receipt.writerLifecycle.localWorkEnded=true;
+  assert.match(nativeWorkerStatus(message).label,/confirmation pending/);
+  assert.match(nativeWorkerStatus(message).next,/does not mark the card Done/);
+});
+test('unavailable, legacy and crossed worker observations remain unconfirmed',()=>{
+  for(const change of [m=>m.nativeReceipt.observationState='unavailable',m=>delete m.nativeReceipt.receipt.writerLifecycle,
+    m=>m.nativeReceipt.receipt.sendId='other',m=>m.nativeReceipt.receipt.conversationId='other',
+    m=>m.nativeReceipt.receipt.writerLifecycle.ownerId='other',m=>m.nativeReceipt.receipt.writerLifecycle.generation='other']){
+    const message=nativeMessage();change(message);assert.equal(nativeWorkerStatus(message).label,'Worker status unconfirmed');
+  }
+  assert.equal(nativeWorkerStatus({agentId:'nims'}),null);
+  assert.equal(nativeWorkerStatus({agentId:'echo'}),null);
+});
 
 test('card next action offers Done only after recorded approval, regardless of lane',()=>{
   const t={workroom:{stage:'backlog'},progress:{decision:'pending',checklist:[{status:'done'}]},agentReviews:[{review:{verdict:'approved'},applied:false}]};

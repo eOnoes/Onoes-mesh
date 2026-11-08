@@ -1,4 +1,21 @@
 // Agent state is live observation, never proof that a specific task ran.
+export function nativeWorkerStatus(message){
+  const saved=message?.nativeReceipt;
+  if(message?.agentId!=='echo'||!saved)return null;
+  const pending={label:'Worker status unconfirmed',next:'Refresh agent replies to check this request. Do not resend it just because its worker status is unavailable.'};
+  const receipt=saved.receipt;
+  if(saved.observationState!=='observed'||receipt?.observation!=='observed'
+      ||receipt.agentId!==message.agentId||receipt.sendId!==message.id
+      ||receipt.conversationId!==message.conversationId||!saved.runId||receipt.runId!==saved.runId)return pending;
+  const writer=receipt.writerLifecycle;
+  if(writer?.state!=='observed'||writer.runId!==saved.runId||writer.observationOnly!==true
+      ||writer.writerQuiescence!==false||!saved.ownerId||!saved.generation
+      ||writer.ownerId!==saved.ownerId||writer.generation!==saved.generation
+      ||typeof writer.localWorkEnded!=='boolean')return pending;
+  if(!writer.localWorkEnded)return {label:'Local worker not finished',next:'At the last check, local work had not ended. A reply can arrive before all background work finishes.'};
+  return {label:'Local work ended · confirmation pending',next:'Local work ended at the last check. Tool effects and the task result still need verification; this does not mark the card Done.'};
+}
+
 export function cardNextAction(task,simpleFlow=false){
   if(simpleFlow){
     if(task.workroom?.stage==='done'||task.status==='done')return task.flow?.ownerDecision==='accepted'?'close':'owner_review';

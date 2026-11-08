@@ -1323,3 +1323,22 @@ No runtime behavior changed or live service restarted; automatic assignment
 still held. Next: qualify a trusted completion adapter for the actual bounded
 local tool path and production route/profile coverage. Mind/model deferrals
 unchanged. Full goal remains active/incomplete.
+
+## 2026-11-08 - visible saved worker observations
+Previous goal turn PROGRESS: real delayed external HTTP effect acceptance,
+commit7aee363 pushed and E:/App-Backups/ONOes-Mesh/2026-11-08_23-02-36-653_UTC_8a5485c8 restore verified.
+Workroom saved Echo messages now show persisted worker-observation status and
+last-checked time. Unavailable/legacy/crossed identity stays unconfirmed; local
+unfinished work remains distinct from a completed reply; local end explicitly
+keeps tool/result confirmation pending and never marks Done. Polling/explicit
+reply refresh repaint the saved message section without altering edit revisions.
+Focused status tests PASS14; npm test PASS341 (301Node+40Python), evidence
+../worker-status-ui-full.log. Browser verified actual live4320 Workroom card
+'Workroom live conversation check', expanded Conversation and history: its saved
+legacy Echo send displays Worker status unconfirmed and last-checked timestamp
+beside WORKROOM CONNECTION OK reply. Screenshot visually inspected: readable
+within existing scrolling sheet, sticky status/footer retained. Existing follow
+poll refreshed metadata; no dispatch/send/review/lane change. Static asset edit
+served immediately; no native/Relay/model restart or automation activation.
+Next: trusted tool completion and remaining production-route/profile qualification
+before auto-assignment. Full goal active/incomplete; Mind/model deferrals stand.

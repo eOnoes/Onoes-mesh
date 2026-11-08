@@ -2,7 +2,7 @@ import {bindCardDrag} from './workroom-drag.mjs';
 import {captureBoardView,restoreBoardView} from './workroom-view.mjs';
 import {saveCardBrief} from './workroom-edit.mjs';
 import {createBoardLoader} from './workroom-load.mjs';
-import {handoffStatus,taskTimeline,cardNextAction} from './workroom-status.mjs';
+import {handoffStatus,taskTimeline,cardNextAction,nativeWorkerStatus} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
 import {createPlanEditor,scopedTeamStatus} from './workroom-plan.mjs';
 const root=document.getElementById('workroom-board');
@@ -466,7 +466,19 @@ if(root){
       pending=null;await load();await open(id);status.textContent=result.duplicate?'Existing send confirmed; no new task created.':'Message accepted by Relay and attached to this task.';
     });});
     conversation.append(messageForm,el('h3','Saved messages'));
-    for(const message of selected.messages){conversation.append(el('p',`${message.agentId} · ${message.state} · ${message.text}`));}
+    const savedMessages=el('div');conversation.append(savedMessages);
+    function paintSavedMessages(task){
+      savedMessages.replaceChildren();
+      for(const message of task.messages||[]){
+        const item=el('article');item.append(el('p',`${message.agentId} · ${message.state} · ${message.text}`));
+        const worker=nativeWorkerStatus(message);
+        if(worker){item.append(el('strong',worker.label),el('p',worker.next));
+          const checked=message.nativeReceipt.lastCheckedAt;
+          if(typeof checked==='string'&&Number.isFinite(Date.parse(checked)))item.append(el('small','Last checked '+new Date(checked).toLocaleString()));}
+        savedMessages.append(item);
+      }
+    }
+    paintSavedMessages(selected);
     const replies=el('section');replies.append(el('h3','Agent replies'));
     const replyStatus=el('p');const replyList=el('div');const sync=el('button','Refresh agent replies');sync.type='button';
     function paintReplies(task){replyList.replaceChildren();for(const reply of task.replies||[]){const item=el('article');item.append(el('b',reply.agentId),el('p',reply.text));replyList.append(item);}if(!task.replies?.length)replyList.append(el('p','No saved replies yet.'));}
@@ -483,7 +495,7 @@ if(root){
       try{agents=await request('/api/relay/native/api/agents');}catch{agents=[];}
       if(epoch!==viewEpoch || !details.open)return;
       paintRecovery();
-      paintReplies(result.task);paintReports(result.task);paintTimeline(result.task);paintAuto(result.task);if(followLabel.parentElement!==reports)reports.append(followLabel,liveStatus);
+      paintSavedMessages(result.task);paintReplies(result.task);paintReports(result.task);paintTimeline(result.task);paintAuto(result.task);if(followLabel.parentElement!==reports)reports.append(followLabel,liveStatus);
       const index=tasks.findIndex(task=>task.id===id);if(index>=0){tasks[index]=result.task;draw();}
       liveStatus.textContent='Replies checked '+new Date().toLocaleTimeString()+'. New reports require explicit application and review.';
     }
