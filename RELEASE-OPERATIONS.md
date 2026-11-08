@@ -45,7 +45,9 @@ in WORKROOM-AB-CHECKPOINT.md. Agent lists and delivery receipts are not proof of
 coding tools, repository access or completion. Agent workspace opens those same
 saved Workroom cards; it introduces no scheduler or automatic dispatch.
 
-Physical-phone end-to-end acceptance remains required. Inference lifecycle
+Physical-phone recovery checks are accepted (see the case table below).
+Owner confirmed inspecting, recording review and moving the guide to Done;
+owner-started scoped-team execution and full end-to-end acceptance remain open. Inference lifecycle
 qualification is separate: Eddie selected the currently running Nemotron 3.5 Bolt
 lane first. Its prepared identity-bound bridge is not installed; Eddie explicitly
 deferred shared-model maintenance. Keep the model service running. Other engines
@@ -57,7 +59,7 @@ store or automatic writes. Additional workspaces/runtime profiles and
 push/Telegram synchronization remain unqualified/deferred. Review this record
 when the runtime lock or owner acceptance changes.
 
-Ordinary Relay acceptance and compatibility decisions are recorded in RELAY-INTEGRATION.md. The new conversation surface exposes one explicit selector and one ordinary submit path; legacy snapshot-era header/session choices are bypassed. Actual private history/lock/reconnect acceptance sent no real message. Phone hold/drag and typing/focus are owner-confirmed; physical background/resume recovery is a distinct remaining check.
+Ordinary Relay acceptance and compatibility decisions are recorded in RELAY-INTEGRATION.md. The new conversation surface exposes one explicit selector and one ordinary submit path; legacy snapshot-era header/session choices are bypassed. Actual private history/lock/reconnect acceptance sent no real message. Phone hold/drag and typing/focus are owner-confirmed. Workroom background/resume, rotation/draft and network reconnect are owner-confirmed in the recovery case table; these do not claim a new ordinary Relay send interrupted in flight.
 
 ## Local model supervisor observations
 
