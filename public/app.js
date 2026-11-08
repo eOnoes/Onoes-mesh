@@ -815,7 +815,9 @@ function startSession() { return action(async () => {
   if (session?.recoveryRequired === true) {
     const fresh = await api('/api/trial-session/recovery-challenge', { method: 'POST', body: '{}' });
     if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
-    if (typeof fresh?.challenge !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(fresh.challenge) || !Number.isSafeInteger(fresh.expiresAt) || fresh.expiresAt <= Date.now() || fresh.expiresAt > Date.now() + 30000) throw new Error('Invalid local recovery challenge.');
+    // This deadline uses the server clock, which may differ from the phone clock.
+    // Completion enforces the server's short lifetime, cookie binding and one-use nonce.
+    if (typeof fresh?.challenge !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(fresh.challenge) || !Number.isSafeInteger(fresh.expiresAt) || fresh.expiresAt <= 0) throw new Error('Invalid local recovery challenge.');
     session = await api('/api/trial-session/recovery-complete', { method: 'POST', body: '{}', headers: { 'X-Trial-CSRF': fresh.challenge } });
     if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
   }
