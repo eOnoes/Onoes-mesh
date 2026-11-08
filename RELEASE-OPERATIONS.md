@@ -471,3 +471,20 @@ The intentional test then adds two messages and one native-bound receipt.
 Manual verified E post-deployment backup contains15/212/44 and active source.
 No credentials/native memory included, model service restarted or schedule enabled.
 See ROOK-MESH-INTEGRATION.md and private checkpoint for exact evidence and limits.
+
+
+## 2026-11-08 merged Rook foundation readiness
+
+The private Mesh instance on8453 now runs tested coreccdfed0/buildc2b70d20799e
+(started19:14:32Z). Complete local suite272/272/staticPASS; stronger recovery/writer
+and large-document guards retained. All14saved cards/original user-data tables
+preserved across restart. New durable sweep state is idle, not a running schedule.
+Live admitted Rook status is not_configured/managedoff/schedulerfalse; claim-next
+POST409 confirms no automatic intake. Parent progress22 retains sixoriginalstages
+and the whole goal. Latest verified manual Ebackup includes that intentional update.
+
+Rook runtime/identity/health/Relay reporting, affirmative child-writer completion,
+full automatic workflow and owner activation acceptance remain unfinished. Mind,
+model maintenance, external apps and other machine qualification remain separate
+original requirements. Relay's live receipt observation is complete but never
+substitutes for positive writer quiescence. No auto assignment or watcher enabled.

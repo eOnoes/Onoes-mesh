@@ -505,3 +505,44 @@ The main Mesh process was not restarted; its source reader was exercised via the
 actual Node adapter against live services. Managed flow stays off. Rook's partial
 foundation still needs reconciliation against current Mesh and its missing runtime,
 identity, positive writer release and end-to-end acceptance completed separately.
+
+
+## Rook foundation integrated and deployed - 2026-11-08
+
+Core source commit ccdfed0 integrates the six-file partial patch as a three-way
+delta. Only test/workroom-claims.test.mjs conflicted; both existing restart/send
+identity/generation/uncertain-replay tests and new sweep tests were retained.
+Existing stronger recovery, managed writer admission and body-size changes remain.
+Focused15/15 are included in complete Mesh272/272 (40+1+29+67+135), static/diffPASS.
+Logs ../rook-integrated-{focused,full,check}.log. Frozen contract absent/skipped.
+
+Named Mesh-only launcher restarted verified38648 ->43584, healthy; Tailscale8453
+mapping unchanged, Relay39624/model/native gateway untouched. Running build
+c2b70d20799e, source digest
+c2b70d20799e0a608803bf242d7c4bb810f6bedd679280bff5b94f1fcfed24dc,
+started2026-11-08T19:14:32.563Z, selected data/workroom-preview/tasks.sqlite.
+All14original task/claim/worker table hashes and14cards preserved across restart.
+Additive sweep row is id1/lastScheduledAtnull/lastResultnever. No sweep dispatched.
+
+Actual local owner admission GET /api/workroom/rook=200 reports managedfalse,
+not_configured, schedulerInstalledfalse and schedulerEnabledfalse. POST claim-next
+with empty body returns409 while managedoff, with no card or send mutation.
+Private proofs data/rook-foundation-rollout-2026-11-08/{preservation,live-status}.json.
+
+Parent goal card c2a77ea9-05bb-4b63-85c7-c2d8e9fb2547 progress21->22 now describes
+current272tests/livefoundation/realRelaybinding and the remaining original model,
+Mind/context/skills/MCP/external/fleet scope. All six checklist IDs/text/statuses,
+goal, pendingdecision and open card preserved. This deliberate later evidence
+update changes its progress data; do not claim pre-restart hashes remain identical
+after that intentional save. No worker or claim dispatched by the update.
+
+Verified manual E source/data backups (all integrity/FK/isolated data restore,
+source extraction/hash/syntax/restoredHTTP checks PASS,14cards/242sourcefiles):
+- pre-rollout2026-11-08_19-14-05-717_UTC_166c9b69
+- post-rollout2026-11-08_19-18-08-875_UTC_bb859bfe
+- latest with parent22:2026-11-08_19-19-45-690_UTC_3c94a311
+under E:/App-Backups/ONOes-Mesh. No schedule/pruning/off-device change.
+
+Next is Rook runtime/health/Relay reporting and a qualified positive writer-release
+contract, followed by real end-to-end/owner activation acceptance. No Rook identity,
+watcher scheduler or automatic assignments enabled by this foundation rollout.
