@@ -461,3 +461,47 @@ acceptance granted. Dry-run apply against current Mesh found overlap in
 preserving current recovery/writer/body-size guards, never replace whole files.
 Next is controlled Relay restart/readback now the tracked build returned, followed
 by reviewed foundation integration and completion of the missing Rook runtime.
+
+
+## Live Relay receipt bridge activated and preservation corrected - 2026-11-08
+
+Relay-only restart activated revision2 on PID20464 after matching config/roster,
+zero active runs/approvals/pending sends, hidden existing launcher and a fresh E
+snapshot. The new exact-send route worked and all agent/conversation IDs survived.
+The preservation audit found existing startup retention removed one accepted
+outbox row (id9,2026-10-08); sessions/messages were byte-equivalent by row hashes.
+This was an observed failure, not a passing preservation claim. A guarded insert
+restored only that row from the fresh backup; no current row/database was replaced.
+
+The candidate now explicitly retains durable outbox receipts before constructor
+pruning (no automatic count/age pruning; deliberate cleanup only). Other retention
+policies unchanged. Full isolated10/10 PASS includes a genuinely expired accepted
+receipt surviving complete startup and explicit prune. Revision3 then activated
+on PID39624 with the same hidden launcher/config/auth/state, no active Relay work.
+Final exact data hashes match the original15sessions/210messages/43outbox receipts,
+including recovered id9. Original failure, difference, recovery and final proofs
+are all retained under data/relay-runtime-rollout-2026-11-08. No model/native gateway
+service, credential or grant was changed. The OpenClaw startup setting was kept
+consistent with the previously reported connecting adapter; no remote work sent.
+
+One subsequent no-tools Echo verification send9d5be969-6c2c-4c82-bab6-450d8765b9a6
+was persisted before submission and admitted once. Actual Mesh reader -> live Relay
+-> real Hermes GET proves run_b73b60a34efb428284ff67b4edcede64 completed, with exact
+original conversation/native session and literal expected reply. A fresh client
+read the same pinned run; legacy missing bindings still remain unknown. This is
+live receipt binding/readback acceptance, NOT all-tools/child-writer quiescence:
+writerQuiescence remains false, no automatic writer release or Rook activation.
+
+Active server raw SHA070076dd0d1ae059d88993ae047e093e9abf150b858c2e25526ccf6a63f8dadb;
+helper SHAad0444ac043dcdb5aa6baa008c4b58b47144f56925b39759a44dbbeafac2fafd.
+Manual post-deployment backup verified integrity/FK, recovered receipt and new
+native binding at E:/App-Backups/ONOes-Relay/
+2026-11-08_19-06-31_UTC_post-native-receipts-activation_75a97601.
+It contains15sessions/212messages/44outbox records (the intentional check adds two
+messages and one receipt). Original pre-rollout backup remains intact. No keys,
+native memory, schedules, pruning of backups or off-device claims.
+
+The main Mesh process was not restarted; its source reader was exercised via the
+actual Node adapter against live services. Managed flow stays off. Rook's partial
+foundation still needs reconciliation against current Mesh and its missing runtime,
+identity, positive writer release and end-to-end acceptance completed separately.

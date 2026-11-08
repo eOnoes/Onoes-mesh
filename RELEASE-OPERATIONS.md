@@ -453,3 +453,21 @@ Shared context/skills/MCP, external apps and three-machine hardware integration
 remain in scope and incomplete. Current source test totals do not close those
 stages. Manual/milestone E backups continue; no scheduled/off-device protection
 or automatic pruning is claimed.
+
+
+## 2026-11-08 Relay receipt activation update
+
+Live Relay now preserves exact send-to-native-run bindings and exposes the
+owner-authenticated read-only receipt endpoint. Actual Node Mesh adapter/live
+Relay/real Hermes acceptance passed with a completed no-tools Echo check and
+stable pinned run readback. No automatic worker retry or writer release enabled.
+Main Mesh runtime/managed mode unchanged; Rook remains unqualified and off.
+
+Deployment caught an existing30-day accepted-outbox cleanup removing one old
+receipt. It was recovered from the fresh backup by guarded insert only. Durable
+outbox receipts now remain until deliberate cleanup; other retention unchanged.
+Final pre-check data hashes prove all15sessions/210messages/43receipts preserved.
+The intentional test then adds two messages and one native-bound receipt.
+Manual verified E post-deployment backup contains15/212/44 and active source.
+No credentials/native memory included, model service restarted or schedule enabled.
+See ROOK-MESH-INTEGRATION.md and private checkpoint for exact evidence and limits.

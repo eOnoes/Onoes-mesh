@@ -8,7 +8,26 @@
  import relay_inbox
  import relay_mcp
  import relay_notify
-@@ -1198,7 +1199,7 @@
+@@ -49,7 +50,7 @@
+ from relay_config import agent_api_key, warn_weak_keys
+ from relay_hermes import HermesError, HermesRunsClient
+ from relay_openclaw import OpenClawAdapter
+-from relay_sessions import SessionStore
++from relay_sessions import SessionStore, RETENTION as RELAY_RETENTION
+ 
+ ROOT = Path(__file__).parent
+ CONFIG_PATH = Path(os.environ.get("RELAY_CONFIG_PATH", ROOT / "config.json"))
+@@ -160,6 +161,9 @@
+ 
+ 
+ AGENTS = {aid: Agent(aid, cfg) for aid, cfg in config["agents"].items()}
++# Send receipts are recovery evidence; cleanup requires deliberate operator action.
++RELAY_RETENTION["outbox"].update(max_rows=None, max_days=None,
++    note="Durable send receipts retained for recovery; no automatic pruning")
+ SESSIONS = SessionStore(SESSION_DB_PATH)
+ OPENCLAW_ADAPTERS: dict[str, OpenClawAdapter] = {}
+ WATCHDOG_TASK: asyncio.Task | None = None
+@@ -1198,7 +1202,7 @@
          say(a, "ag", text)
  
  
@@ -17,7 +36,7 @@
      """Run one turn through Hermes' native Runs API.
  
      The conversation id is handed to Hermes as ``session_id``, so Hermes owns the
-@@ -1221,17 +1222,32 @@
+@@ -1221,17 +1225,32 @@
      await client.require_runs_api()
      session_id = a.conversation_id or str(uuid.uuid4())
      a.conversation_id = session_id
@@ -56,7 +75,7 @@
      a.active_run_ids = [run_id]
      publish(a, {"type": "status", "status": a.status, "runId": run_id})
      if admitted.get("replayed"):
-@@ -1424,7 +1440,7 @@
+@@ -1424,7 +1443,7 @@
          if a.is_a2a:
              await a2a_send(a, text, message_id, attachments)
          else:
@@ -65,7 +84,7 @@
      except Exception as exc:
          if claim:
              try:
-@@ -1450,7 +1466,7 @@
+@@ -1450,7 +1469,7 @@
                  await run_turn(a, text, message_id, attachments)
              except (HermesError, A2AError, asyncio.TimeoutError) as exc:
                  _dbg(a.id, f"turn failed: {type(exc).__name__}: {exc}")
@@ -74,7 +93,7 @@
                      await demo_run(a, text, attachments)
                  else:
                      feed(a, f"!! {a.name} unavailable: {exc}", "wr")
-@@ -2390,6 +2406,21 @@
+@@ -2390,6 +2409,21 @@
      })
  
  

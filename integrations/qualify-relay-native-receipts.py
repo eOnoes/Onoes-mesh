@@ -60,6 +60,13 @@ def main():
     original = (source / 'relay_server.py').read_text(encoding='utf-8')
     candidate = replace_once(original, 'import relay_hermes\n',
                              'import relay_hermes\nimport relay_native_receipts\n')
+    candidate = replace_once(candidate, 'from relay_sessions import SessionStore\n',
+                             'from relay_sessions import SessionStore, RETENTION as RELAY_RETENTION\n')
+    candidate = replace_once(candidate, 'SESSIONS = SessionStore(SESSION_DB_PATH)\n',
+        '# Send receipts are recovery evidence; cleanup requires deliberate operator action.\n'
+        'RELAY_RETENTION["outbox"].update(max_rows=None, max_days=None,\n'
+        '    note="Durable send receipts retained for recovery; no automatic pruning")\n'
+        'SESSIONS = SessionStore(SESSION_DB_PATH)\n')
     candidate = replace_once(candidate,
         'async def hermes_send(a: Agent, text: str, message_id: str = "", attachments: list | None = None):',
         'async def hermes_send(a: Agent, text: str, message_id: str = "", attachments: list | None = None, *, admission_claimed=False):')
@@ -377,11 +384,25 @@ def main():
             native_posts = []
             native_reads = []
             try:
+                # Seed a real expired accepted receipt before the complete server
+                # initializes its store. Startup and later prune must retain it.
+                seed = sessions.SessionStore(output / 'synthetic-full-server.sqlite')
+                receipt_session = seed.ensure_agent('echo')['id']
+                expired = seed.outbox_enqueue('echo', receipt_session, 'synthetic historical send',
+                                              idem_key='historical-send')
+                seed.outbox_settle(expired['id'], 'accepted')
+                with seed.db:
+                    seed.db.execute("UPDATE outbox SET created_at='2000-01-01T00:00:00+00:00', "
+                                    "updated_at='2000-01-01T00:00:00+00:00' WHERE id=?", (expired['id'],))
+                seed.close()
                 server = load('synthetic_complete_relay_server', output / 'relay_server.py')
                 self.assertTrue(server.AUTH_ENABLED)
                 self.assertEqual(Path(server.SESSION_DB_PATH).resolve().parent, output)
                 self.assertEqual(set(server.AGENTS), {'echo'})
                 self.assertEqual(server.NOTIFIER.channels, {})
+                self.assertIsNotNone(server.SESSIONS.outbox_get('historical-send'))
+                server.SESSIONS.prune()
+                self.assertIsNotNone(server.SESSIONS.outbox_get('historical-send'))
                 agent = server.AGENTS['echo']
                 original_session = agent.conversation_id
                 def native_http(request):
