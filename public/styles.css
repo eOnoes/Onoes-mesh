@@ -1351,6 +1351,9 @@ footer{background:transparent}
 .workroom-sheet-action-row button{flex:1 1 130px}
 .workroom-sheet-action-row .workroom-primary-action{border-color:var(--accent);color:var(--accent-text);font-weight:700}
 .workroom-task-sheet:has(textarea:focus,input:not([type=checkbox]):not([type=radio]):focus,[contenteditable=true]:focus) .workroom-sheet-footer{display:none}
+.workroom-simple-flow .agent-reports>button,.workroom-simple-flow .agent-reports>label{display:none}
+.workroom-simple-flow .workroom-advanced-controls{margin-block:16px;border-top:1px solid var(--border);padding-top:12px}
+.workroom-simple-flow .workroom-advanced-controls>summary{color:var(--muted);font-size:12px}
 @media(max-width:759px){
   .workroom-lane{padding:8px 4px}
   .workroom-card-open{padding:7px 5px;font-size:11px}

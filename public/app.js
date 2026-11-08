@@ -381,7 +381,7 @@ async function action(operation) {
   finally { busy = false; controls(); automaticEntry?.recover(); }
 }
 $('create-form').addEventListener('submit', e => { e.preventDefault(); action(async () => {
-  const { task } = await api('/api/tasks', { method: 'POST', body: JSON.stringify({...taskFields('create', 'open'),owner:$('create-owner').value}) });
+  const { task } = await api('/api/tasks', { method: 'POST', body: JSON.stringify({...taskFields('create', 'open'),...(window.meshWorkroom?.simpleFlow?{}:{owner:$('create-owner').value})}) });
   $('create-form').reset(); selectTask(task); await loadTasks(); message('Task created and saved to SQLite.');
   if ($('workroom-create-status')?.closest('dialog')?.open) window.dispatchEvent(new CustomEvent('mesh-task-created', { detail: { id: task.id } }));
   else $('inspection-heading').focus();

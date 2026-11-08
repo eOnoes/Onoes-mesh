@@ -1,5 +1,11 @@
 // Agent state is live observation, never proof that a specific task ran.
-export function cardNextAction(task){
+export function cardNextAction(task,simpleFlow=false){
+  if(simpleFlow){
+    if(task.workroom?.stage==='done'||task.status==='done')return task.flow?.ownerDecision==='accepted'?'close':'owner_review';
+    if(task.flow?.state==='clarification')return 'clarify';
+    if(['working','needs_you'].includes(task.workroom?.stage))return 'progress';
+    return 'idea';
+  }
   if(task.workroom?.stage==='done'||task.status==='done')return 'close';
   if(task.progress?.decision==='approved')return 'finish';
   if(task.agentReviews?.at(-1)&&!task.agentReviews.at(-1).applied)return 'record';

@@ -172,7 +172,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     })
     : await createRelayLink({ root: ROOT, directory, confine: confinedPath, store, enabled: relayEnabled });
   const relay=relayEnabled&&!standalone&&process.env.MESH_NIMS==='1'?withNims(baseRelay,{root:ROOT,workroom:store.workroom}):baseRelay;
-  const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:ROOT}):null;
+  const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:ROOT,simpleFlow:process.env.MESH_SIMPLE_FLOW==='1'}):null;
   // Only hashes of fixed source code/CSS authorize the existing native HTML.
   // srcdoc receives that HTML via an admitted API read, never a public route.
   let relayScriptHashes = '', relayStyleHashes = '';
@@ -309,12 +309,20 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if (!current()) return;
         return send(200, await relay.reconnect());
       }
-      const workroomRoute = /^\/api\/workroom(?:\/([0-9a-f-]{36})(?:\/(message|progress|sync|apply-update|handoff|apply-review|approval|reconcile|plan|automation|apply-assignment))?)?$/.exec(route);
+      if(route==='/api/workroom/rook'&&req.method==='GET'){
+        if(!store||executionPersistenceFailed)throw new TaskError(503,'Workroom unavailable.');
+        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',connection:{id:'rook',status:'not_configured',reason:'Rook runtime identity and health integration have not been qualified.'},cards:store.workroom.list().filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
+      }
+      const workroomRoute = /^\/api\/workroom(?:\/([0-9a-f-]{36})(?:\/(message|progress|sync|apply-update|handoff|apply-review|approval|reconcile|plan|automation|apply-assignment|owner-review|intake|claim))?)?$/.exec(route);
       if (workroomRoute) {
         if (!store || executionPersistenceFailed) throw new TaskError(503, 'Workroom unavailable.');
         const id=workroomRoute[1];
-        if(req.method==='GET' && !workroomRoute[2]) return send(200,id?{task:store.workroom.get(id),teamPolicy:automationPolicy(ROOT)}:{tasks:store.workroom.list(),teamPolicy:automationPolicy(ROOT)});
+        if(req.method==='GET' && !workroomRoute[2]) return send(200,id?{task:store.workroom.get(id),teamPolicy:{...automationPolicy(ROOT),...(process.env.MESH_SIMPLE_FLOW==='1'?{simpleFlow:true}:{})}}:{tasks:store.workroom.list(),teamPolicy:{...automationPolicy(ROOT),...(process.env.MESH_SIMPLE_FLOW==='1'?{simpleFlow:true}:{})}});
         if(!id) throw new TaskError(405,'Method not allowed.');
+        if(workroomRoute[2]==='claim'&&req.method==='GET')return send(200,{flow:store.workroom.get(id).flow??null});
+        if(workroomRoute[2]==='owner-review'&&req.method==='POST')return send(200,store.workroom.ownerReview(id,context.body));
+        if(workroomRoute[2]==='claim'&&req.method==='POST'){if(process.env.MESH_SIMPLE_FLOW!=='1')throw new TaskError(409,'Managed claims unavailable.');return send(200,{flow:store.workroom.flow.claim(id,context.body)});}
+        if(workroomRoute[2]==='intake'&&req.method==='POST'){if(process.env.MESH_SIMPLE_FLOW!=='1')throw new TaskError(409,'Managed intake unavailable.');if(JSON.stringify(context.body)!=='{}')throw new TaskError(400,'No intake overrides allowed.');return send(200,{flow:store.workroom.flow.enqueue(id)});}
         if(workroomRoute[2]==='apply-assignment'&&req.method==='POST')return send(200,store.workroom.applyAssignment(id,context.body));
         if(workroomRoute[2]==='automation'&&req.method==='POST'){if(!teamRunner)throw new TaskError(503,'Connected team runner unavailable.');const agents=['pause','close'].includes(context.body?.action)?[]:await relay.agents();if(!current())return;return send(200,teamRunner.action(id,context.body,agents));}
         if(workroomRoute[2]==='plan' && req.method==='PATCH'){
