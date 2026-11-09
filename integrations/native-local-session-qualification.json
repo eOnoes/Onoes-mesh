@@ -2,8 +2,8 @@
   "schema": "mesh-native-local-session-qualification/v1",
   "qualification": "PASS",
   "nativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
-  "scope": "Current native dedicated LOCAL worker and Mesh durable work-send binding; team-runner observation-only restart recovery, isolated private bootstrap/WS, synthetic provider, no live transport enrollment.",
-  "evidenceDirectory": "hermes-local-session-abf7b203-8be5-4382-a754-360402ac5cde",
+  "scope": "Current native dedicated LOCAL worker; exact saved automatic team stage dispatch, observation-only restart recovery, isolated private bootstrap/WS and synthetic provider. No live service enrollment.",
+  "evidenceDirectory": "hermes-local-session-ef816dfe-ccbc-4edf-babe-93e8428b354e",
   "candidateFiles": {
     "gateway/session_controls.py": "6172dc0eb4f63f0348538df813ab78620291092ec77319ba341059adeca58a01",
     "tui_gateway/contracts/canonical.py": "f9f7a8932faa35de3c69865a412cbf457696f79d3561726c45764cd7e0026901",
@@ -28,29 +28,30 @@
   ],
   "meshBinding": {
     "qualification": "PASS",
-    "taskId": "46577443-6b1b-4ebb-b7b3-c301912f19a1",
-    "sendId": "fb722970-8446-4bc2-97fb-1dd8f7c5db02",
-    "createRequestId": "mesh-local-create-1ec1de2b6603f6a50e04ea6377a068c77f2e10d5b4d58bd730f8198a722aff55",
-    "submissionId": "mesh-local-submit-1ec1de2b6603f6a50e04ea6377a068c77f2e10d5b4d58bd730f8198a722aff55",
-    "sessionId": "local-6366b368309dee9da2b0805b00cd7ad6aa7dbb2b9299c22a5e43f13fcda432f3",
-    "admissionId": "5d8fe1fb210246bb9e0c2452c11b63a2",
-    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-abf7b203-8be5-4382-a754-360402ac5cde\\fixture-home",
+    "taskId": "9c4241b6-4181-4518-b887-083593d0187c",
+    "sendId": "12c88035-bc25-461c-97b9-a096356ba1b8",
+    "createRequestId": "mesh-local-create-928b3991219188e4cb036798c10e71067404409188afd6800c0955a4851cdd9b",
+    "submissionId": "mesh-local-submit-928b3991219188e4cb036798c10e71067404409188afd6800c0955a4851cdd9b",
+    "sessionId": "local-d5f41c2a37c848b0b0768edff324fa65300030b7b0d7e3a2c5f82a23429f9128",
+    "admissionId": "8581af46a5b6421cae6ce6f7030492c0",
+    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-ef816dfe-ccbc-4edf-babe-93e8428b354e\\fixture-home",
     "nativeEpoch": 1,
     "nativeGeneration": 1,
     "nativeStatus": "terminal",
     "rpcCounts": {
       "session.create": 1,
       "prompt.submit": 1,
-      "prompt.lookup": 188
+      "prompt.lookup": 196
     },
     "restartedBeforeReadback": true,
     "observationOnlyRecovery": true,
     "teamRunnerObservation": true,
+    "automaticTeamDispatch": true,
     "workspaceStillHeld": true,
     "writerQuiescence": false,
     "liveActivation": false
   },
-  "fullLocalRegressionTests": 393,
+  "fullLocalRegressionTests": 397,
   "nativeOwnerSettled": true,
   "fixtureTreeEndedNaturally": true,
   "wholeWorkerReleaseQualified": false,
@@ -58,7 +59,7 @@
   "producerRefactor": "Qualified RPC bytes reproduced from pristine pinned archive",
   "remaining": [
     "Production Rook service identity and verified Echo transport/profile mapping are not enrolled.",
-    "New automatic team/claim-stage dispatch selection and production transport enrollment remain disabled; optional read-only runner recovery is implemented and qualified.",
+    "Optional automatic team worker-stage selection is implemented and qualified locally; production identity/profile transport and claim-stage enrollment remain disabled.",
     "Worker result import, supported build/test tools, per-assignment retirement proof and trusted positive clearance consumer remain incomplete.",
     "Rook reporting transport, scheduler ownership and deployed acceptance/activation still required."
   ]

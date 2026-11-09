@@ -15,7 +15,7 @@ import http from 'node:http';
 import {startApp,ROOT} from '../server.mjs';
 const file=()=>join(mkdtempSync(join(tmpdir(),'mesh-auto-')),'tasks.sqlite');
 const agents=[{id:'echo',backend:'hermes',status:'idle',conversation_id:'e'},{id:'dsh',backend:'a2a',status:'idle',conversation_id:'d'}];
-function ready(store){let t=store.create({title:'Automatic fixture',description:'Only one named fixture artifact',owner:'echo'});t=store.workroom.save(t.id,{project:'Fixture',criteria:'Independent checks pass',owner:'echo',team:'local_build',stage:'ready',revision:1});t=store.workroom.saveProgress(t.id,{goal:'Bounded artifact',checklist:[{id:'one',text:'Implement and verify fixture',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision});return store.workroom.savePlan(t.id,{lead:'echo',spec:'One artifact',workspace:process.cwd(),allowedFiles:'data/fixture-only.mjs',checks:'node --check data/fixture-only.mjs',boundaries:'No other changes or network',workerId:'echo',reviewerId:'dsh',state:'locked',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision}).task;}
+function ready(store,reviewerId='dsh'){let t=store.create({title:'Automatic fixture',description:'Only one named fixture artifact',owner:'echo'});t=store.workroom.save(t.id,{project:'Fixture',criteria:'Independent checks pass',owner:'echo',team:'local_build',stage:'ready',revision:1});t=store.workroom.saveProgress(t.id,{goal:'Bounded artifact',checklist:[{id:'one',text:'Implement and verify fixture',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision});return store.workroom.savePlan(t.id,{lead:'echo',spec:'One artifact',workspace:process.cwd(),allowedFiles:'data/fixture-only.mjs',checks:'node --check data/fixture-only.mjs',boundaries:'No other changes or network',workerId:'echo',reviewerId,state:'locked',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision}).task;}
 const action=(t,kind='start')=>({action:kind,revision:t.automation?.revision??0,planRevision:t.plan.revision,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision});
 function fakeRelay(store,{lost=false,incomplete=false}={}){const sends=[];return {sends,agents:async()=>agents,nativeRead:async route=>{
  if(route==='/api/mesh-capabilities')return {taskSessionBinding:1};const messages=[];
@@ -151,4 +151,89 @@ test('closing a paused attempt preserves its identifiers and cannot replay uncer
   t=store.workroom.automation.action(t.id,action(t,'close'),[],process.cwd()).task;assert.equal(t.automation.state,'closed');assert.ok(t.history.some(h=>h.kind==='team_attempt_closed'&&h.detail.includes(original)));
   assert.throws(()=>store.workroom.automation.action(t.id,action(t),agents,process.cwd()),/Resolve the existing worker/);assert.equal(relay.sends.length,1);
  }finally{await runner.close();store.close();}
+});
+
+const nativeAgents=[agents[0],{id:'nims',backend:'codex',status:'idle',conversation_id:'n'}];
+function nativeFixture(store,{lost=false,onCreate=()=>{}}={}){
+ const methods=[];
+ const profile={profileRef:'test-echo',identityRef:'test-native',model:'synthetic',baseUrl:'http://127.0.0.1:9/v1',workspace:process.cwd()};
+ return {methods,profile,profileFor:()=>profile,credential:async()=>'fixture-only',authorized:()=>true,
+  rpc:async(method,params)=>{
+   methods.push([method,params]);
+   if(method==='session.create'){await onCreate();return{session_id:'local-'+'a'.repeat(64)};}
+   if(method==='prompt.submit'){if(lost)throw new Error('lost after commit');return{};}
+   assert.equal(method,'prompt.lookup');return{found:true,session_id:params.session_id,submission_id:params.submission_id,
+    receipt:{admission_id:'b'.repeat(32),ref:{profile_id:'synthetic-native',session_id:params.session_id},
+     authority_epoch:1,execution_generation:1,status:'terminal'}};
+  }};
+}
+
+test('automatic native worker uses the saved stage once; restart observes without Relay or reviewer fallback',async()=>{
+ const name=file();let store=openTaskStore(name),runner;const native=nativeFixture(store,{lost:true});let legacy=0;
+ const relay={agents:async()=>nativeAgents,taskMessage:async()=>{legacy++;},nativeRead:async()=>{legacy++;}};
+ try{
+  let t=ready(store,'nims');store.workroom.automation.action(t.id,action(t),nativeAgents,process.cwd());
+  const stage=store.workroom.automation.read(t.id);
+  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,nativeWorker:native});
+  await runner.tick();t=store.workroom.get(t.id);
+  assert.equal(t.messages.length,1);assert.equal(t.messages[0].id,stage.workerSendId);
+  assert.equal(t.messages[0].nativeLocal.teamBound,1);assert.equal(t.messages[0].nativeLocal.state,'submit_unknown');
+  assert.equal(t.automation.operations,1);
+  await runner.close();store.close();store=openTaskStore(name);
+  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,nativeWorker:native});
+  await runner.tick();await runner.tick();t=store.workroom.get(t.id);
+  assert.equal(t.automation.state,'paused');assert.equal(t.automation.phase,'worker');
+  assert.equal(t.messages[0].nativeLocal.nativeStatus,'terminal');assert.equal(t.messages[0].nativeLocal.writerQuiescence,false);
+  assert.equal(native.methods.filter(([method])=>method==='session.create').length,1);
+  assert.equal(native.methods.filter(([method])=>method==='prompt.submit').length,1);
+  assert.equal(legacy,0);assert.equal(t.progress.decision,'pending');assert.notEqual(t.status,'done');
+ }finally{if(runner)await runner.close();store.close();}
+});
+
+test('native team pause during asynchronous session creation prevents submission',async()=>{
+ const store=openTaskStore(file());let runner;try{
+  let t=ready(store,'nims');store.workroom.automation.action(t.id,action(t),nativeAgents,process.cwd());
+  const native=nativeFixture(store,{onCreate:()=>{const current=store.workroom.get(t.id);store.workroom.automation.action(t.id,action(current,'pause'),nativeAgents,process.cwd());}});
+  runner=createTeamRunner({workroom:store.workroom,relay:{agents:async()=>nativeAgents},root:process.cwd(),intervalMs:600000,nativeWorker:native});
+  await runner.tick();await runner.tick();t=store.workroom.get(t.id);
+  assert.equal(t.automation.state,'paused');assert.equal(native.methods.filter(([method])=>method==='prompt.submit').length,0);
+  assert.equal(t.messages[0].nativeLocal.state,'create_unknown');
+ }finally{if(runner)await runner.close();store.close();}
+});
+
+test('native selection refuses other review routes and cannot replace an existing Relay send',async()=>{
+ const store=openTaskStore(file());let runner;try{
+  let t=ready(store);store.workroom.automation.action(t.id,action(t),agents,process.cwd());
+  const native=nativeFixture(store);const relay=fakeRelay(store);
+  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,nativeWorker:native});
+  await runner.tick();assert.equal(store.workroom.get(t.id).automation.state,'paused');assert.equal(native.methods.length,0);
+  assert.equal(store.workroom.get(t.id).messages.length,0);await runner.close();
+  // Existing Relay receipt must stay on its original route when configuration changes.
+  store.workroom.automation.action(t.id,action(store.workroom.get(t.id),'resume'),agents,process.cwd());
+  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000});await runner.tick();await runner.close();
+  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,nativeWorker:native});
+  await runner.tick();assert.equal(native.methods.length,0);assert.equal(relay.sends.length,1);
+ }finally{if(runner)await runner.close();store.close();}
+});
+
+test('native reservation exempts only its exact active stage and submission rechecks a paused team',()=>{
+ const store=openTaskStore(file());try{
+  let t=ready(store,'nims');store.workroom.automation.action(t.id,action(t),nativeAgents,process.cwd());
+  const stage=store.workroom.automation.read(t.id),local=store.workroom.localSessions,profile=nativeFixture(store).profile;
+  const body={id:stage.workerSendId,agentId:'echo',conversationId:stage.workerConversation,text:'Fixed worker instruction'};
+  const team={revision:stage.revision,planRevision:stage.planRevision};
+  assert.throws(()=>local.reserve(t.id,body,profile),/existing workspace writer/);
+  for(const [request,binding] of [[body,{...team,revision:team.revision+1}],
+   [{...body,id:randomUUID()},team],[{...body,conversationId:'other'},team]]){
+   assert.throws(()=>local.reserve(t.id,request,profile,binding),/exact saved native team stage/);
+  }
+  assert.equal(store.workroom.get(t.id).messages.length,0);
+  let row=local.reserve(t.id,body,profile,team).nativeLocal;
+  assert.equal(row.teamBound,1);
+  assert.throws(()=>local.reserve(t.id,body,profile),/different message/);
+  row=local.startCreate(t.id,body.id,row.revision);row=local.bindSession(t.id,body.id,row.revision,{session_id:'local-'+'a'.repeat(64)});
+  t=store.workroom.get(t.id);store.workroom.automation.action(t.id,action(t,'pause'),nativeAgents,process.cwd());
+  assert.throws(()=>local.startSubmit(t.id,body.id,row.revision),/paused or changed/);
+  assert.equal(local.read(t.id,body.id).state,'session_bound');
+ }finally{store.close();}
 });

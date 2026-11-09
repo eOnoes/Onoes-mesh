@@ -1,11 +1,10 @@
 // Invoked only by the disposable native owner qualifier; stdout carries RPC frames.
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {createInterface} from 'node:readline';
 import {openTaskStore} from '../../lib/task-store.mjs';
-import {dispatchLocalSession,reconcileLocalSession} from '../../lib/workroom-local-sessions.mjs';
+import {reconcileLocalSession} from '../../lib/workroom-local-sessions.mjs';
 import {createTeamRunner} from '../../lib/workroom-automation.mjs';
 import {writerQuiescenceBlockers} from '../../lib/workroom-claim-policy.mjs';
 
@@ -25,12 +24,18 @@ try{
     checks:'Read back exact bytes',boundaries:'Synthetic fixture only',workerId:'echo',reviewerId:'nims',state:'locked',
     revision:task.plan?.revision??0,taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision});
   task=store.workroom.get(task.id);
-  const body={id:randomUUID(),agentId:'echo',conversationId:'native-local',text:'Implement only the locked synthetic file edit.'};
+  const agents=[{id:'echo',backend:'hermes',status:'idle',conversation_id:'native-local'},
+    {id:'nims',backend:'codex',status:'idle',conversation_id:'fixture-nims'}];
+  store.workroom.automation.action(task.id,{action:'start',revision:0,planRevision:task.plan.revision,
+    taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision},agents,config.workspace);
+  const stage=store.workroom.automation.read(task.id),body={id:stage.workerSendId};
   const profile={profileRef:'fixture-echo-builder',identityRef:'fixture-native-principal',model:'mesh-local-fixture',baseUrl:config.endpoint,workspace:config.workspace};
-  const options={taskId:task.id,body,profile,rpc,credential:async()=>'synthetic-local-provider',admitted:()=>true};
+  const initialRunner=createTeamRunner({workroom:store.workroom,root:config.workspace,
+    relay:{agents:async()=>agents},intervalMs:600000,nativeWorker:{rpc,profileFor:()=>profile,
+      credential:async()=>'synthetic-local-provider',authorized:()=>true}});
   // Parent commits the first native submission, then deliberately drops its reply.
-  await assert.rejects(dispatchLocalSession({...options,workroom:store.workroom}),/uncertain/);
-  const before=store.workroom.localSessions.read(task.id,body.id);assert.equal(before.state,'submit_unknown');
+  try{await initialRunner.tick();}finally{await initialRunner.close();}
+  const before=store.workroom.localSessions.read(task.id,body.id);assert.equal(before.state,'submit_unknown');assert.equal(before.teamBound,1);
   store.close();store=openTaskStore(file);
   // Recover through the observation-only entry, without credentials or send payload.
   const recovery={workroom:store.workroom,taskId:task.id,sendId:body.id,rpc,
@@ -52,7 +57,7 @@ try{
   assert.equal(JSON.stringify(store.workroom.get(task.id)).includes('synthetic-local-provider'),false);
   const report={qualification:'PASS',taskId:task.id,sendId:body.id,createRequestId:row.createRequestId,submissionId:row.submissionId,
     sessionId:row.sessionId,admissionId:row.admissionId,nativeProfileId:row.nativeProfileId,nativeEpoch:row.nativeEpoch,
-    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,
+    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,
     workspaceStillHeld:true,writerQuiescence:false,liveActivation:false};
   writeFileSync(join(root,'mesh-local-binding-evidence.json'),JSON.stringify(report,null,2));
   await new Promise(resolve=>process.stdout.write(JSON.stringify({done:true,admissionId:row.admissionId})+'\n',resolve));
