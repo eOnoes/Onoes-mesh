@@ -4,6 +4,8 @@ from contextvars import ContextVar, copy_context
 from concurrent.futures import Future
 from pathlib import Path
 import shutil
+import os
+from dataclasses import dataclass
 import re
 import subprocess
 import threading
@@ -19,15 +21,50 @@ _tool_ticket = ContextVar('mesh_writer_tool_ticket', default=None)
 _unspecified_environment = object()
 
 
+@dataclass(frozen=True, init=False)
+class FileCompletionPolicy:
+    """Trusted in-process exact file list; never loaded from model/request fields."""
+    root: Path
+    files: frozenset
+
+    def __init__(self, root, files):
+        root = Path(root)
+        if not root.is_absolute() or not root.is_dir() or root.resolve() != root:
+            raise ValueError('An existing canonical workspace is required')
+        if type(files) not in (list,tuple) or not 1 <= len(files) <= 32:
+            raise ValueError('A bounded explicit file list is required')
+        selected = set()
+        for name in files:
+            if type(name) is not str or not name or Path(name).is_absolute() or '..' in Path(name).parts:
+                raise ValueError('Only workspace-relative files are supported')
+            path = root / name
+            if path.resolve() != path or not path.is_relative_to(root) or path == root or path.is_dir():
+                raise ValueError('Aliased or non-file paths are unsupported')
+            selected.add(path)
+        object.__setattr__(self, 'root', root)
+        object.__setattr__(self, 'files', frozenset(selected))
+
+    def require(self, args):
+        if type(args) is not dict or type(args.get('path')) is not str or args.get('cross_profile', False) is not False:
+            raise RuntimeError('Unsupported bounded file arguments')
+        path = Path(args['path'])
+        if not path.is_absolute() or '..' in path.parts or path not in self.files or path.resolve() != path:
+            raise RuntimeError('File is outside the approved completion scope')
+        return path
+
+
 class WriterRunRegistry:
     """In-process direct-run enrollment; no HTTP/config activation or release grant.
 
     Entries survive delivery completion/cancellation. A later durable consumer must
     acknowledge retirement; this candidate deliberately provides no forget/retry API.
     """
-    def __init__(self, fence_factory, *, max_entries=256):
+    def __init__(self, fence_factory, *, max_entries=256, file_policy=None):
         if not callable(fence_factory) or type(max_entries) is not int or not 1 <= max_entries <= 4096:
             raise ValueError('A trusted fence factory and bounded capacity are required')
+        if file_policy is not None and type(file_policy) is not FileCompletionPolicy:
+            raise TypeError('A trusted file-completion policy is required')
+        self._file_policy = file_policy
         self._factory, self._limit = fence_factory, max_entries
         self._lock, self._entries = threading.RLock(), {}
         self._owner_id = str(uuid4())
@@ -57,7 +94,7 @@ class WriterRunRegistry:
                 if (getattr(fence, 'run_id', None) != run_id or getattr(fence, 'generation', None) != generation
                         or not callable(getattr(fence, 'popen', None))):
                     raise RuntimeError('Factory returned a mismatched native process fence')
-                lifetime = entry['lifetime'] = WriterLifetime(fence)
+                lifetime = entry['lifetime'] = WriterLifetime(fence, file_policy=self._file_policy)
                 run.writer_lifetime, run.writer_generation = lifetime, generation
                 entry['state'] = 'enrolled'
                 return lifetime
@@ -117,7 +154,11 @@ class WriterLifetime:
     later actually returns. A forced delivery/finalization record cannot settle a
     ticket; only its observed callable/future lifecycle can do so.
     """
-    def __init__(self, fence):
+    def __init__(self, fence, *, file_policy=None):
+        if file_policy is not None and type(file_policy) is not FileCompletionPolicy:
+            raise TypeError('A trusted file-completion policy is required')
+        self._file_policy = file_policy
+        self._file_completed = 0
         self.fence = fence
         self._lock = threading.RLock()
         self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
@@ -136,7 +177,7 @@ class WriterLifetime:
             ticket = str(uuid4())
             self._tool_calls += 1
             self._tool_active.add(ticket)
-            self._tool_pipeline[ticket] = {'stages': set(), 'plain': True, 'blockers': set()}
+            self._tool_pipeline[ticket] = {'stages': set(), 'plain': True, 'blockers': set(), 'fileCompleted': False, 'fileStarted': False}
             return ticket
 
     def _observe_tool_pipeline(self, ticket, stage, plain, blockers=()):
@@ -168,7 +209,10 @@ class WriterLifetime:
                 self._pipeline_other += 1
             # A returned handler/middleware is not proof that an external service
             # stopped. Only a separately qualified adapter may ever settle effects.
-            self._tool_uncertain += 1
+            if full and pipeline['plain'] and pipeline['fileCompleted']:
+                self._file_completed += 1
+            else:
+                self._tool_uncertain += 1
             self._maybe_seal()
 
     def assert_current_worker(self):
@@ -256,12 +300,13 @@ class WriterLifetime:
                     'writerQuiescence': False, 'reason': self._fault,
                     'toolEffects': {'observedCalls': self._tool_calls, 'activeCalls': len(self._tool_active),
                                     'unverifiedCalls': self._tool_uncertain,
-                                    'effectsSettled': self._tool_calls == 0,
+                                    'effectsSettled': not self._tool_active and self._tool_uncertain == 0,
+                                    'qualifiedFileCalls': self._file_completed,
                                     'pipeline': {'fullyObservedCalls': self._pipeline_full,
                                         'plainNativeCalls': self._pipeline_plain, 'otherOrMissingCalls': self._pipeline_other,
                                         'lateStages': self._pipeline_late, 'completionQualified': False,
                                         'blockerCalls': dict(sorted(self._pipeline_blockers.items()))},
-                                    'policy': 'no_external_effect_adapter_qualified'},
+                                    'policy': 'bounded_native_write_file_v1' if self._file_policy is not None else 'no_external_effect_adapter_qualified'},
                     'coverage': 'instrumented_foreground_delegate_and_job_members_only'}
 
     def wait(self, timeout_ms=5000):
@@ -289,6 +334,37 @@ def writer_tool_effect():
     finally:
         _tool_ticket.reset(token)
         lifetime._end_tool(ticket)
+
+
+def call_writer_file_handler(args, callback):
+    """Bound the whole native write handler; errors and foreign effects stay unknown."""
+    lifetime = _lifetime.get()
+    if lifetime is None or lifetime._file_policy is None:
+        return callback()  # No behavior/config/import changes for ordinary native sessions.
+    lifetime.assert_current_worker()
+    owner = _tool_ticket.get()
+    if owner is None or owner[0] is not lifetime or os.environ.get('HERMES_SAFE_MODE') != '1':
+        raise RuntimeError('Bounded file completion requires the native safe-mode lane')
+    path = lifetime._file_policy.require(args)
+    from hermes_cli.observability.shared_metrics_harness import _enabled
+    if _enabled() is not False:
+        raise RuntimeError('Bounded file completion does not support shared metrics effects')
+    with lifetime._lock:
+        record = lifetime._tool_pipeline.get(owner[1])
+        if record is None or record['fileStarted']:
+            raise RuntimeError('File completion ticket is missing or already used')
+        record['fileStarted'] = True
+    result = callback()  # Entire native handler, including metrics wrapper and file bookkeeping.
+    if type(result) is not str:
+        raise RuntimeError('Native file handler returned an unsupported completion type')
+    if _enabled() is not False or lifetime._file_policy.require(args) != path:
+        raise RuntimeError('File completion environment changed during execution')
+    with lifetime._lock:
+        record = lifetime._tool_pipeline.get(owner[1])
+        if record is None or owner[1] not in lifetime._tool_active:
+            raise RuntimeError('File completion ticket is no longer active')
+        record['fileCompleted'] = True
+    return result
 
 
 # Fixed categories only: never retain plugin names, callback names, arguments or exceptions.

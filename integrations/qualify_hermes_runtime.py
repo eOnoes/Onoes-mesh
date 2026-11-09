@@ -117,7 +117,8 @@ def verify_evidence(root):
         status=file_evidence['status'];life=status['writer_lifecycle']['enrollment']['lifetime']
         if (proof!=b'Mesh native file proof.\n' or hashlib.sha256(proof).hexdigest()!=file_evidence['sha256']
                 or status['status']!='completed' or not life['managedWorkEnded']
-                or status['writer_lifecycle']['writerQuiescence'] or life['toolEffects']['effectsSettled']):
+                or status['writer_lifecycle']['writerQuiescence']
+                or life['toolEffects']['effectsSettled'] != bool(report.get('boundedFileCompletion'))):
             raise RuntimeError('Native file worker evidence is incomplete or incorrectly releases ownership')
         result['checks'].append('actual_native_file_write_bytes_and_held_ownership')
     if 'actual_file_bytes_do_not_settle_held_native_bookkeeping' in report['checks']:
@@ -140,6 +141,15 @@ def verify_evidence(root):
                     or pipeline['blockerCalls'] or pipeline['otherOrMissingCalls'] or pipeline['lateStages']):
                 raise RuntimeError('Safe-mode pipeline evidence is incomplete')
         result['checks'].append('native_safe_mode_has_plain_terminal_and_file_pipeline')
+    if report.get('boundedFileCompletion'):
+        f=json.loads((root/'file-worker-evidence.json').read_text(encoding='utf-8'))
+        effects=f['status']['writer_lifecycle']['enrollment']['lifetime']['toolEffects']
+        held=f['heldAfterBytes']['writer_lifecycle']['enrollment']['lifetime']['toolEffects']
+        if (not report.get('nativeSafeMode') or effects['qualifiedFileCalls']!=1 or effects['unverifiedCalls']
+                or not effects['effectsSettled'] or effects['policy']!='bounded_native_write_file_v1'
+                or held['effectsSettled'] or held['qualifiedFileCalls'] or held['activeCalls']!=1):
+            raise RuntimeError('Bounded file-handler completion evidence is incomplete')
+        result['checks'].append('bounded_file_handler_settles_after_bookkeeping_only')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -422,7 +432,7 @@ async def child(root):
     os.chdir(source)
     from gateway.config import PlatformConfig
     from gateway.platforms.api_server import APIServerAdapter
-    from tools.mesh_writer_scope import WriterRunRegistry
+    from tools.mesh_writer_scope import WriterRunRegistry, FileCompletionPolicy
     from tools.mesh_windows_writer_fence import WindowsWriterFence
     from run_agent import AIAgent
     from hermes_constants import get_hermes_home
@@ -483,7 +493,9 @@ async def child(root):
             free.bind(('127.0.0.1', 0)); port = free.getsockname()[1]
         adapter = APIServerAdapter(PlatformConfig(enabled=True, extra={'host': '127.0.0.1', 'port': port,
                                                                       'key': key, 'model_name': 'mesh-runtime-fixture'}))
-        adapter._mesh_writer_runs = WriterRunRegistry(factory)
+        adapter._mesh_writer_runs = WriterRunRegistry(factory, file_policy=(
+            FileCompletionPolicy((root/'workspace').resolve(), ['mesh-file-proof.md'])
+            if os.environ.get('HERMES_SAFE_MODE')=='1' else None))
         # Only provider selection is a fixture. The actual agent, tools, API
         # admission/executor, ownership checks and persistence run unchanged.
         def create_agent(**kwargs):
@@ -635,7 +647,8 @@ async def child(root):
                     proof = proof_path.read_bytes() if proof_path.is_file() else b''
                     if file_status['status']!='completed' or proof!=b'Mesh native file proof.\n':
                         raise RuntimeError('Native file worker did not produce exact expected bytes')
-                    if file_status['writer_lifecycle']['writerQuiescence'] or file_life['toolEffects']['effectsSettled']:
+                    if (file_status['writer_lifecycle']['writerQuiescence']
+                            or file_life['toolEffects']['effectsSettled'] != (os.environ.get('HERMES_SAFE_MODE')=='1')):
                         raise RuntimeError('File success incorrectly granted unqualified writer release')
                     (root/'file-worker-evidence.json').write_text(json.dumps({
                         'relativePath':'workspace/mesh-file-proof.md','sha256':hashlib.sha256(proof).hexdigest(),
@@ -811,6 +824,7 @@ async def child(root):
                 'nonToolProviderRequests': sum('terminal' not in item['tools'] for item in requests),
                 'agentsCreated': len(agents_created), 'pythonVersion': sys.version.split()[0],
                 'nativeSafeMode': os.environ.get('HERMES_SAFE_MODE')=='1',
+                'boundedFileCompletion': os.environ.get('HERMES_SAFE_MODE')=='1',
                 'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
     finally:
         title_release.set()

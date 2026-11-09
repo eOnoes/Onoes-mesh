@@ -1,5 +1,6 @@
 import concurrent.futures
 import asyncio
+import os
 from contextvars import copy_context, ContextVar
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -104,6 +105,79 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
         values.update({name:[] for name in ['_registration_order','_persistent_carryover','_plugin_loaded_listeners']})
         return types.SimpleNamespace(**values,_discovered=True,_context_engine=None,_event_worker=None,
             _event_pending_by_generation={0:0},discover_and_load=lambda: self.fail('Observation must not discover plugins'))
+
+    def file_policy_fixture(self):
+        folder=tempfile.TemporaryDirectory(prefix='mesh-file-adapter-',dir=Path.cwd()/'data')
+        self.addCleanup(folder.cleanup)
+        root=Path(folder.name).resolve()
+        self.life=scope.WriterLifetime(self.fence,file_policy=scope.FileCompletionPolicy(root,['allowed.md']))
+        metrics=types.ModuleType('hermes_cli.observability.shared_metrics_harness');metrics._enabled=lambda:False
+        return root,metrics
+
+    def record_plain_stages(self):
+        manager=self.plain_manager()
+        scope.record_writer_middleware('tool_request',manager)
+        scope.record_writer_middleware('tool_execution',manager)
+        scope.record_writer_relay(False)
+
+    def test_approved_file_handler_qualifies_only_after_entire_tool_returns(self):
+        root,metrics=self.file_policy_fixture()
+        def handler():
+            self.assertFalse(self.life.snapshot()['toolEffects']['effectsSettled'])
+            (root/'allowed.md').write_text('fixture')
+            return 'native result'
+        with patch.dict(os.environ,{'HERMES_SAFE_MODE':'1'}),patch.dict(sys.modules,{metrics.__name__:metrics}):
+            with scope.writer_foreground_scope(self.life),scope.writer_tool_effect():
+                self.record_plain_stages()
+                self.assertEqual(scope.call_writer_file_handler({'path':str(root/'allowed.md')},handler),'native result')
+                self.assertFalse(self.life.snapshot()['toolEffects']['effectsSettled'])
+        effects=self.life.snapshot()['toolEffects']
+        self.assertTrue(effects['effectsSettled']);self.assertEqual(effects['qualifiedFileCalls'],1)
+        self.assertEqual(effects['unverifiedCalls'],0);self.assertFalse(self.life.snapshot()['writerQuiescence'])
+
+    def test_file_adapter_refuses_scope_metrics_and_wrong_mode_before_callback(self):
+        root,metrics=self.file_policy_fixture()
+        for change in ['scope','metrics','mode']:
+            metrics._enabled=lambda:change=='metrics'
+            with patch.dict(os.environ,{'HERMES_SAFE_MODE':'0' if change=='mode' else '1'}),patch.dict(sys.modules,{metrics.__name__:metrics}):
+                with scope.writer_foreground_scope(self.life),scope.writer_tool_effect():
+                    callback=unittest.mock.Mock()
+                    path=root/('other.md' if change=='scope' else 'allowed.md')
+                    with self.assertRaises(RuntimeError):scope.call_writer_file_handler({'path':str(path)},callback)
+                    callback.assert_not_called()
+            # A foreground lifetime is single-use; make a fresh one for each rejected attempt.
+            self.life=scope.WriterLifetime(self.fence,file_policy=scope.FileCompletionPolicy(root,['allowed.md']))
+
+    def test_completed_file_with_custom_pipeline_still_cannot_settle_effects(self):
+        root,metrics=self.file_policy_fixture()
+        with patch.dict(os.environ,{'HERMES_SAFE_MODE':'1'}),patch.dict(sys.modules,{metrics.__name__:metrics}):
+            with scope.writer_foreground_scope(self.life),scope.writer_tool_effect():
+                manager=self.plain_manager();manager._plugins={'fixture':object()}
+                scope.record_writer_middleware('tool_request',manager)
+                scope.record_writer_middleware('tool_execution',manager)
+                scope.record_writer_relay(False)
+                scope.call_writer_file_handler({'path':str(root/'allowed.md')},lambda:'native result')
+        effects=self.life.snapshot()['toolEffects']
+        self.assertFalse(effects['effectsSettled']);self.assertEqual(effects['qualifiedFileCalls'],0)
+        self.assertEqual(effects['unverifiedCalls'],1)
+
+    def test_file_adapter_unbound_preserves_original_behavior(self):
+        callback=unittest.mock.Mock(return_value='legacy result')
+        self.assertEqual(scope.call_writer_file_handler({'path':'legacy relative path'},callback),'legacy result')
+        callback.assert_called_once_with()
+
+    def test_file_handler_failure_or_other_tool_keeps_effects_unverified(self):
+        root,metrics=self.file_policy_fixture()
+        with patch.dict(os.environ,{'HERMES_SAFE_MODE':'1'}),patch.dict(sys.modules,{metrics.__name__:metrics}):
+            with scope.writer_foreground_scope(self.life):
+                with scope.writer_tool_effect():
+                    self.record_plain_stages()
+                    with self.assertRaises(ValueError):
+                        scope.call_writer_file_handler({'path':str(root/'allowed.md')},lambda:(_ for _ in ()).throw(ValueError('fixture')))
+                with scope.writer_tool_effect():self.record_plain_stages()
+        effects=self.life.snapshot()['toolEffects']
+        self.assertFalse(effects['effectsSettled']);self.assertEqual(effects['unverifiedCalls'],2)
+        self.assertEqual(effects['qualifiedFileCalls'],0)
 
     def test_plain_pipeline_observation_never_settles_tool_effects(self):
         with scope.writer_foreground_scope(self.life),scope.writer_tool_effect():

@@ -1755,3 +1755,39 @@ or historical hold changes. Full goal active/incomplete.
 Next: implement trusted bounded file-handler completion adapter for this supported
 native safe-mode lane, then carry pinned closure through Relay to Mesh assignment
 consumer. Terminal success/plain pipeline alone must never grant whole release.
+
+
+## Bounded native write_file completion adapter — 2026-11-09T01:15:38.541786+00:00
+Prior goal turn progressed:659b3fb pushed; safe profile PASS15/verify14;
+backup E:/App-Backups/ONOes-Mesh/2026-11-09_01-05-00-201_UTC_e65d3f4a verified.
+Added frozen trusted in-process FileCompletionPolicy: existing canonical root and
+1..32 explicit workspace-relative files. Args require exact absolute approved path,
+no traversal/alias/cross_profile; path revalidated after handler return. No model,
+HTTP, config or saved message can create this policy. Direct registry opt-in only;
+canonical enrollment remains conservative and does not get this component proof.
+Native _handle_write_file wraps entire original body including record_file_edit,
+authorization/backend/stale-write checks and post-write bookkeeping. Ordinary native
+sessions delegate unchanged with no metrics/config lookup. Opt-in requires native
+safe-mode env and shared metrics disabled both before and after; duplicate/missing
+tickets, exceptions or non-string completion cannot mark the file operation ended.
+Outer tool ticket qualifies only after complete plain request/execution/Relay stages
+and actual native handler return. Any other/custom/missing tool remains unverified.
+No whole-worker release: writerQuiescence=false always. This proves component
+completion, not task success, independent review, assignment release or Done.
+Tests: focused PASS53; full npm PASS364 before final two regression cases; final
+Python integration PASS65 (301Node unchanged,65Python verified). Function fixtures
+PASS50. Full safe native runtime3240ac9a-f8af-4ee8-a325-c21d51f839ae PASS15/verify15:
+held active1/qualified0/effectsSettledfalse; after native bookkeeping active0,
+qualifiedFileCalls1/unverified0/effectsSettledtrue. All17candidate source hashes.
+Initial runtime5995a59f stopped before agent creation due missing test-harness
+FileCompletionPolicy import; retained failure and corrected import, then reran
+only after terminal exit1. Negative evidence b53ac452 rejects early settlement and
+missing qualified file call. Default native runtime fd4d2269-34e7-4a6f-9b44-db96e072444c
+PASS14/verify13: unconfigured native file and terminal remain unverified1,
+qualified0/effectsSettledfalse. Same17source hashes as safe candidate. Native patch
+git apply --check PASS without install; syntax/diff PASS. Goal revision49/evidence3706
+readback verified, checklist unchanged. Archive evidence before another large append.
+No live native/Relay/model/Mind change, automation enable or old hold release.
+Full goal active/incomplete. Next: trusted whole-worker closure contract for this
+bounded lane, pinned owner/run/generation transport through Relay, then assignment
+consumer. Other tools and live conversation owners remain unsupported for release.

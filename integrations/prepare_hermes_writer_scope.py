@@ -214,6 +214,15 @@ def file_tool_candidate(native_root):
         if candidate.count(before) != 1:
             raise RuntimeError('Unexpected file-tool backend selection shape')
         candidate = candidate.replace(before, after)
+    tree = ast.parse(candidate)
+    handler = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == '_handle_write_file')
+    lines = candidate.splitlines(keepends=True)
+    lines[handler.lineno-1] = lines[handler.lineno-1].replace('def _handle_write_file(', 'def _mesh_native_handle_write_file(')
+    wrapper = ("\n\ndef _handle_write_file(args, **kw):\n"
+        "    from tools.mesh_writer_scope import call_writer_file_handler\n"
+        "    return call_writer_file_handler(args, lambda: _mesh_native_handle_write_file(args, **kw))\n")
+    lines.insert(handler.end_lineno, wrapper)
+    candidate = ''.join(lines)
     ast.parse(candidate)
     return {path: original}, {path: candidate}
 

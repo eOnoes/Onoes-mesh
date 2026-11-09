@@ -25,17 +25,17 @@
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual native safe-mode no-plugin discovery profile: real terminal and file tools, held post-write bookkeeping, canonical FIFO and recovery. Isolated profile/local synthetic provider; no production install or whole-worker release.",
+  "scope": "Opt-in trusted exact-file policy in supported native safe mode. Full actual native write_file handler incl. metrics wrapper/bookkeeping; held while active, component effects settle after return. Canonical recovery tested conservatively; no whole-worker release or live install.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "790a6c60dde93c66d61c96f614b67672ca14f205dcb0aa29bd9f25005a949c3e",
+    "tools/mesh_writer_scope.py": "7c14016298d2e1f32af9d56c41669cbaecd8899978cd7ca9254f0406e2e7b848",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
     "gateway/platforms/api_server_runs.py": "da68f5e791d525544e259edd1d292fb4f45972572901300ad24a5e5ec5216913",
     "tools/environments/local.py": "c6637d76eaa64bded45a894a102bcbac3dba2646818751ddbde520b7f15fe1aa",
     "agent/tool_executor.py": "49cd5ed69966a6513bf4990ae957e7c0f400f1709e03cb178bada5dc0c34f80b",
     "agent/terminal_approval_batch.py": "5eb4c30429777b217720a67b301f445f8fb171cf3f6171113a4ce669da1512d6",
-    "tools/file_tools.py": "af4fcea5046db65657ede46e280dc5f2725d360dd3529e0a1af38ea401e1ea9e",
+    "tools/file_tools.py": "5b2e7166ffd86b57407ad1278f68d713eab7862bad408a118af9cce373c32496",
     "tools/terminal_tool.py": "382f70e0d1af91aabf55059531bfe798b31d570603254fe4db48161aeef754b1",
     "agent/title_generator.py": "6c51388525a8ccf5fceb2b828c7be4c70869cd144091572f1e423539269064f8",
     "gateway/run_turn_runner.py": "9a8afcf3400bad7930c40811cd325ed0dd36514f800c08b4e8e2ba341aa75d49",
@@ -59,11 +59,12 @@
     "actual_native_pipeline_stages_remain_observation_only",
     "actual_native_file_write_bytes_and_held_ownership",
     "file_bytes_precede_handler_completion_without_ownership_release",
-    "native_safe_mode_has_plain_terminal_and_file_pipeline"
+    "native_safe_mode_has_plain_terminal_and_file_pipeline",
+    "bounded_file_handler_settles_after_bookkeeping_only"
   ],
-  "evidenceDirectory": "hermes-runtime-c5231704-e136-4bc7-ae33-f9f9f0b92240",
+  "evidenceDirectory": "hermes-runtime-3240ac9a-f8af-4ee8-a325-c21d51f839ae",
   "remaining": [
-    "Tool external effects and whole-worker release remain unqualified.",
+    "Bounded write_file component qualified in isolated direct safe-mode lane only; other tool/external effects and whole-worker release remain unqualified.",
     "Other uninstrumented background paths and positive live-chat-owner lifetime proof remain unqualified.",
     "Trusted positive completion consumption in assignment policy remains unimplemented; current receipts cannot clear work holds.",
     "Installed native/Relay deployment, dedicated worker-lane selection and production provider/profile configuration remain unverified."
@@ -107,7 +108,7 @@
     "qualification": "PASS",
     "supportedNativeSetting": "HERMES_SAFE_MODE=1",
     "runtimeChecks": 15,
-    "independentChecks": 14,
+    "independentChecks": 15,
     "terminalPipeline": {
       "fullyObservedCalls": 1,
       "plainNativeCalls": 1,
@@ -132,5 +133,12 @@
     "predeclared_modules": 1,
     "registration": 1
   },
-  "defaultEvidenceDirectory": "hermes-runtime-2cea414e-5d3f-4bff-9d2d-ebcfa61ca761"
+  "defaultEvidenceDirectory": "hermes-runtime-fd4d2269-34e7-4a6f-9b44-db96e072444c",
+  "boundedFileCompletion": true,
+  "boundedFileAdapter": {
+    "qualification": "PASS",
+    "scope": "Direct API worker only; exact approved absolute file paths, native safe mode, metrics disabled, complete native handler and plain outer pipeline. Native authorization/backend checks retained. Error/missing/custom/unrelated tool effects remain unverified. Not task success or whole-worker closure.",
+    "qualifiedFileCalls": 1,
+    "liveActivation": false
+  }
 }
