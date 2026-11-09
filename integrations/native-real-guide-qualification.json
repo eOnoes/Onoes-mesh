@@ -1,0 +1,47 @@
+{
+  "schema": "mesh-native-real-guide-qualification/v1",
+  "qualification": "NOT_QUALIFIED",
+  "scope": "One disposable guide-copy append through actual installed native worker; file tools only, four turns, no production enrollment",
+  "sessionId": "local-eaa06a752c25b0e0d9dc5cfb2932a9e50181d56f688121f0eb50905909b72ed7",
+  "admissionId": "6591336b6e3640f99fff281f3da5a360",
+  "profileVerifiedBeforeSubmit": true,
+  "model": "gpt-6-luna",
+  "provider": "openai-codex",
+  "submissions": 1,
+  "replacementSubmissions": 0,
+  "observation": {
+    "found": true,
+    "status": "terminal",
+    "outcome": "interrupted",
+    "receiptOutcome": "interrupted",
+    "processScope": null,
+    "finalResponse": "Stopped before this turn started. Your message was not processed."
+  },
+  "cancelRequested": true,
+  "trialWorkerExited": true,
+  "originalGuideUnchanged": true,
+  "trialGuideUnchanged": true,
+  "gatewayHealth": "ok",
+  "meshPidStillRunning": true,
+  "modelPidStillRunning": true,
+  "diagnosis": {
+    "workerRegistered": true,
+    "runtimeExecutionStatusDuringWait": "running",
+    "runtimeLastSequence": 0,
+    "retryJournalNextSequence": 1,
+    "retryJournalPendingOperations": 0,
+    "workerLoopbackConnectionObserved": true,
+    "rootCause": "Unproven: stalled before usable result or guide edit; model generation remains unqualified"
+  },
+  "rejectedDiagnostic": {
+    "action": "Python remote_exec stack snapshot inside live worker",
+    "performed": false,
+    "reason": "Automatic approval review rejected invasive process-control side effect without explicit authorization",
+    "bypassed": false
+  },
+  "remaining": [
+    "Diagnose/fix native worker startup using safe diagnostics or a disposable instrumented fixture",
+    "Requalify real build and independent review before production enrollment",
+    "Rook/Mind remain off; model service restart remains declined"
+  ]
+}
