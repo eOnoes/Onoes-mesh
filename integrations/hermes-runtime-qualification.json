@@ -1,6 +1,7 @@
 {
   "qualification": "PASS",
   "checks": [
+    "actual_native_HTTP_unmanaged_owner_refused_before_reservation",
     "actual_native_HTTP_agent_tool_roundtrip",
     "actual_native_title_callback_keeps_completed_reply_worker_held",
     "actual_native_title_thread_exit_observed_before_local_settlement",
@@ -20,13 +21,13 @@
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual native direct/canonical API, FIFO/cancellation/replay, graceful retirement/recovery and abrupt owner loss across two separate isolated processes. Native locks and SQLite; synthetic profiles, fake local provider/runtime route and bounded fixture tools.",
+  "scope": "Actual managed native HTTP target refusal before handoff/reservation, direct/canonical API/FIFO/cancellation/replay, graceful retirement and abrupt process loss. Isolated synthetic profiles and local provider; live Desktop owner execution is not instrumented.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "c58e711cddfd25e18ed314113b8df8b85e135001ce482a4b8fae5407bbc81ca3",
+    "tools/mesh_writer_scope.py": "c14de1e7606999a5204c811d16c9ebb935350a77f1213970e70c0d1961afdf57",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
-    "gateway/platforms/api_server_runs.py": "6daad3369059781305e05d26b3fe516a991246ecac526c8ebc342f034b5cf941",
+    "gateway/platforms/api_server_runs.py": "da68f5e791d525544e259edd1d292fb4f45972572901300ad24a5e5ec5216913",
     "tools/environments/local.py": "c6637d76eaa64bded45a894a102bcbac3dba2646818751ddbde520b7f15fe1aa",
     "agent/tool_executor.py": "49cd5ed69966a6513bf4990ae957e7c0f400f1709e03cb178bada5dc0c34f80b",
     "agent/terminal_approval_batch.py": "5eb4c30429777b217720a67b301f445f8fb171cf3f6171113a4ce669da1512d6",
@@ -45,13 +46,14 @@
     "native_SQLite_canonical_claim_binding_without_release",
     "actual_canonical_FIFO_results_cancellation_ordering_and_replay",
     "actual_retirement_keeps_ownership_then_recovers_queue_once",
-    "separate_process_loss_preserves_unknown_and_blocks_duplicate_work"
+    "separate_process_loss_preserves_unknown_and_blocks_duplicate_work",
+    "unmanaged_owner_refused_without_handoff_or_reservation"
   ],
-  "evidenceDirectory": "hermes-runtime-7a66870f-d086-4d4e-bb8b-d34203cf6d06",
+  "evidenceDirectory": "hermes-runtime-54aabbf2-f49a-4a9e-9c7a-7bc72328ab8b",
   "remaining": [
     "Tool external effects and whole-worker release remain unqualified.",
-    "Other background workers and live-chat-owner execution remain unqualified.",
-    "Installed native/Relay deployment and production provider/profile selection remain unverified."
+    "Other background workers and positive live-chat-owner lifetime proof remain unqualified; configured managed admission refuses unsupported conversation targets.",
+    "Installed native/Relay deployment, dedicated worker-lane selection and production provider/profile configuration remain unverified."
   ],
   "liveServicesChanged": false,
   "canonicalWorkerSeam": {
@@ -70,6 +72,11 @@
   "abruptOwnerLoss": {
     "qualification": "PASS",
     "scope": "Separate actual owner process exits73 without cleanup; fresh process exits0 with active admission unknown, successor queued, new claims blocked and retry creating no worker. No automatic resolution or replay.",
+    "liveActivation": false
+  },
+  "managedOwnerGuard": {
+    "qualification": "PASS",
+    "scope": "Real authenticated HTTP rejects a non-API conversation twice before handoff/reservation/worker. Fixture native canonical/legacy owner identities also refused. Unconfigured native chats unchanged; managed mode limited to new or API-owned non-Bot conversations.",
     "liveActivation": false
   }
 }

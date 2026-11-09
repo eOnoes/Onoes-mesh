@@ -87,6 +87,18 @@ def lifetime_candidates(native_root):
             lines = current.splitlines(True)
             lines[execute.lineno - 1:execute.end_lineno] = [body]
             current = ''.join(lines)
+            before = '    session_id = selected_session_id or run_id\n'
+            if current.count(before) != 1:
+                raise RuntimeError('Unexpected native selected-session admission shape')
+            current = current.replace(before,
+                '    from tools.mesh_writer_scope import require_managed_session_owner\n'
+                '    try:\n'
+                '        await require_managed_session_owner(self, selected_session_id)\n'
+                '    except Exception:\n'
+                '        self._run_owners.pop(run_id, None)\n'
+                '        return _json_error(_openai_error,\n'
+                '            "Managed work needs a new or API-owned conversation without a live chat owner. No work was queued.",\n'
+                '            code="unsupported_writer_owner", status=409)\n' + before)
             before = '    current.update(fields)\n'
             if current.count(before) != 1:
                 raise RuntimeError('Unexpected native status update shape')

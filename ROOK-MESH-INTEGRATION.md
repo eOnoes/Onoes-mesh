@@ -1545,3 +1545,40 @@ activation or historical8writer hold clearance. Next: live-chat-owner execution
 coverage and external-tool completion/production provider-profile qualification.
 Full original goal active/incomplete. Abrupt-loss acceptance is refusal/preservation,
 not proof old external effects ended or permission to reassign uncertain work.
+
+## 2026-11-09 UTC - managed conversation-owner admission guard
+Previous goal turn PROGRESS:29c767f abrupt owner loss qualification saved/pushed;
+backup E:/App-Backups/ONOes-Mesh/2026-11-08_23-54-38-263_UTC_f239192f verified.
+Inspected native _execute_run_via_live_owner: stop cannot reach the owner after
+mailbox claim, and settled receipt is delivery/result, not tracked writer lifetime.
+_admit_to_live_bot_chat also routes canonical LOCAL Bot Chat FIFO through this
+receipt lane. Current candidate cannot prove that owner's whole-worker lifetime;
+no positive coverage or automatic clearance claimed for it.
+
+Added candidate require_managed_session_owner before history load, stream/status
+creation, idempotency reserve and live-owner handoff. Only explicitly configured
+in-process managed registry invokes checks. New or existing API-owned conversations
+may proceed after native canonical Bot identity/legacy live-owner checks. Non-API
+sources, native Bot identity, matching legacy owner or unavailable ownership are
+refused409 unsupported_writer_owner. Exact newly minted _run_owners memory entry
+removed on refusal; no queue/handoff or retry record reserved. Existing exact
+idempotency replay still resolves before this new-admission guard. Unconfigured
+native behavior unchanged. No silent second writer or redirect into another chat.
+
+Four focused async tests PASS: unconfigured/invalid registry, non-API/missingDB,
+new/API/canonical Bot, legacy matching owner vs different API chat. Actual native
+HTTP against synthetic Bot-room target returns409 twice; dispatcher and reserve
+spies never called; no agent/fence/status/owner/stream. Tests use fixture owner
+identities for specific canonical/legacy selectors; no actual Desktop worker
+lifetime proof asserted. Real direct and canonical FIFO/retirement/process-loss
+checks still pass. Runtime PASS11, independent evidence PASS10/all13candidate
+hashes in data/hermes-runtime-54aabbf2-f49a-4a9e-9c7a-7bc72328ab8b.
+Full npm test PASS351 (301Node+50Python), ../managed-owner-guard-full.log.
+Pinned native-function fixture PASS47; review patch regenerated; native source
+remains untouched. Deployment must select a dedicated managed-worker lane; do
+not enable this registry globally on existing ordinary Echo chats. Positive
+live-owner instrumentation remains an explicit gap, not redefined as complete.
+Next: external-tool completion and dedicated production worker connection, while
+retaining the original live-owner/shared-context and wider application scope.
+No live gateway/Relay/model restart/install, automation activation, memory access
+or historical hold clearance. Full original goal active/incomplete.

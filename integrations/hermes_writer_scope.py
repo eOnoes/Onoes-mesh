@@ -259,6 +259,41 @@ def writer_tool_effect():
         lifetime._end_tool(ticket)
 
 
+async def require_managed_session_owner(adapter, session_id):
+    """Refuse unmanaged/live-chat targets before native run reservation or handoff.
+
+    A configured registry is for a bounded managed-worker lane. Existing personal
+    conversations are not silently moved to a second writer or a different chat.
+    """
+    registry = getattr(adapter, '_mesh_writer_runs', None)
+    if registry is None:
+        return
+    if not isinstance(registry, WriterRunRegistry):
+        raise RuntimeError('Managed worker registry is unverified')
+    if not session_id:
+        return
+    import asyncio
+    db = await adapter._ensure_session_db_async()
+    if db is None:
+        raise RuntimeError('Managed conversation ownership is unavailable')
+    session = await asyncio.to_thread(db.get_session, session_id)
+    if session is None:
+        return  # New API target; no existing conversation is being taken over.
+    if session.get('source') != 'api_server':
+        raise RuntimeError('Managed work requires an API-owned conversation')
+    from gateway.session_authorities import active_authority
+    authority = active_authority(adapter.gateway_runner)
+    if authority is not None:
+        from gateway.platforms.api_server_bot_chat import bot_chat_tip
+        if await asyncio.to_thread(bot_chat_tip, authority, session_id) is not None:
+            raise RuntimeError('Live Bot Chat execution is not a managed worker')
+    else:
+        from tools.bot_live_delivery import find_canonical_live_owner
+        owner = await asyncio.to_thread(find_canonical_live_owner, Path(db.db_path).parent)
+        if owner is not None and await asyncio.to_thread(db.get_compression_tip, session_id) == owner['session_id']:
+            raise RuntimeError('A live chat owner already holds this conversation')
+
+
 @contextmanager
 def canonical_admission_writer_scope(authority, ref, row, adapter):
     """Enroll only the currently claimed, durable native API-run admission.

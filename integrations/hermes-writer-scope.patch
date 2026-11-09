@@ -29,7 +29,7 @@
          temp_dir = self._env_temp_dir(env)
 --- /dev/null
 +++ b/tools/mesh_writer_scope.py
-@@ -0,0 +1,472 @@
+@@ -0,0 +1,507 @@
 +"""Candidate native tools.mesh_writer_scope; no HTTP/config enrollment or release grant."""
 +from contextlib import contextmanager
 +from contextvars import ContextVar, copy_context
@@ -289,6 +289,41 @@
 +        yield
 +    finally:
 +        lifetime._end_tool(ticket)
++
++
++async def require_managed_session_owner(adapter, session_id):
++    """Refuse unmanaged/live-chat targets before native run reservation or handoff.
++
++    A configured registry is for a bounded managed-worker lane. Existing personal
++    conversations are not silently moved to a second writer or a different chat.
++    """
++    registry = getattr(adapter, '_mesh_writer_runs', None)
++    if registry is None:
++        return
++    if not isinstance(registry, WriterRunRegistry):
++        raise RuntimeError('Managed worker registry is unverified')
++    if not session_id:
++        return
++    import asyncio
++    db = await adapter._ensure_session_db_async()
++    if db is None:
++        raise RuntimeError('Managed conversation ownership is unavailable')
++    session = await asyncio.to_thread(db.get_session, session_id)
++    if session is None:
++        return  # New API target; no existing conversation is being taken over.
++    if session.get('source') != 'api_server':
++        raise RuntimeError('Managed work requires an API-owned conversation')
++    from gateway.session_authorities import active_authority
++    authority = active_authority(adapter.gateway_runner)
++    if authority is not None:
++        from gateway.platforms.api_server_bot_chat import bot_chat_tip
++        if await asyncio.to_thread(bot_chat_tip, authority, session_id) is not None:
++            raise RuntimeError('Live Bot Chat execution is not a managed worker')
++    else:
++        from tools.bot_live_delivery import find_canonical_live_owner
++        owner = await asyncio.to_thread(find_canonical_live_owner, Path(db.db_path).parent)
++        if owner is not None and await asyncio.to_thread(db.get_compression_tip, session_id) == owner['session_id']:
++            raise RuntimeError('A live chat owner already holds this conversation')
 +
 +
 +@contextmanager
@@ -871,7 +906,22 @@
  
      @property
      def approval_session_key(self) -> str:
-@@ -862,71 +866,73 @@
+@@ -774,6 +778,14 @@
+     # is what the next same-id run consumes below.
+     if selected_session_id:
+         selected_session_id = await _resolve_live_session_id(self, str(selected_session_id))
++    from tools.mesh_writer_scope import require_managed_session_owner
++    try:
++        await require_managed_session_owner(self, selected_session_id)
++    except Exception:
++        self._run_owners.pop(run_id, None)
++        return _json_error(_openai_error,
++            "Managed work needs a new or API-owned conversation without a live chat owner. No work was queued.",
++            code="unsupported_writer_owner", status=409)
+     session_id = selected_session_id or run_id
+     # History loads for the session the request actually selected — including one resolved from
+     # a declared X-Hermes-Session-Key, whose persisted delivery rows must reach the next
+@@ -862,71 +874,73 @@
  
  def _run_agent_sync(self, run: _RunLaunch, agent, approval_notify, *, _api_server):
      """Executor-thread body of one run; returns ``(result, usage, served_runtime)``."""
@@ -1008,7 +1058,7 @@
  
  
  def _make_approval_notify(self, run: _RunLaunch, *, _api_server) -> Callable[[dict[str, Any]], None]:
-@@ -1067,6 +1073,8 @@
+@@ -1067,6 +1081,8 @@
              served_runtime = ((usage or {}).get("runtime") if isinstance(usage, dict) else None) or (
                  result.get("runtime") if isinstance(result, dict) else None) or {}
          else:
@@ -1017,7 +1067,7 @@
              with self._profile_scope(run.request_profile):
                  agent = self._create_agent(
                      stream_delta_callback=_text_cb, tool_progress_callback=self._make_run_event_callback(run_id, loop),
-@@ -1178,9 +1186,13 @@
+@@ -1178,9 +1194,13 @@
  
  async def _handle_get_run(self, request: web.Request, *, _api_server) -> web.Response:
      """GET /v1/runs/{run_id} — return pollable run status for external UIs."""

@@ -392,6 +392,48 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
                 next_step.set(); release.set()
 
 
+class ManagedSessionOwnerTests(unittest.IsolatedAsyncioTestCase):
+    def adapter(self, row):
+        db=types.SimpleNamespace(get_session=lambda sid:row,db_path='fixture/state.db',get_compression_tip=lambda sid:'tip')
+        async def database():return db
+        return types.SimpleNamespace(_mesh_writer_runs=scope.WriterRunRegistry(lambda *args:None),
+            _ensure_session_db_async=database,gateway_runner=None),db
+
+    async def test_unconfigured_is_unchanged_and_invalid_registry_is_refused(self):
+        await scope.require_managed_session_owner(types.SimpleNamespace(),'existing')
+        with self.assertRaises(RuntimeError):
+            await scope.require_managed_session_owner(types.SimpleNamespace(_mesh_writer_runs=object()),'existing')
+
+    async def test_non_api_target_and_unavailable_database_are_refused(self):
+        for source in ['bot_room','local','telegram','cli']:
+            adapter,db=self.adapter({'source':source})
+            with self.assertRaises(RuntimeError):await scope.require_managed_session_owner(adapter,'existing')
+        adapter,db=self.adapter(None)
+        async def missing():return None
+        adapter._ensure_session_db_async=missing
+        with self.assertRaises(RuntimeError):await scope.require_managed_session_owner(adapter,'existing')
+
+    async def test_new_api_target_allowed_but_native_bot_identity_is_refused(self):
+        adapter,db=self.adapter(None)
+        await scope.require_managed_session_owner(adapter,'new')
+        db.get_session=lambda sid:{'source':'api_server'}
+        authorities=types.ModuleType('gateway.session_authorities');authorities.active_authority=lambda runner:object()
+        bot=types.ModuleType('gateway.platforms.api_server_bot_chat');bot.bot_chat_tip=lambda *args:None
+        with patch.dict(sys.modules,{'gateway.session_authorities':authorities,'gateway.platforms.api_server_bot_chat':bot}):
+            await scope.require_managed_session_owner(adapter,'existing-api')
+            bot.bot_chat_tip=lambda *args:{'session_id':'tip'}
+            with self.assertRaises(RuntimeError):await scope.require_managed_session_owner(adapter,'existing-api')
+
+    async def test_legacy_live_owner_refused_without_redirecting_another_api_chat(self):
+        adapter,db=self.adapter({'source':'api_server'})
+        authorities=types.ModuleType('gateway.session_authorities');authorities.active_authority=lambda runner:None
+        live=types.ModuleType('tools.bot_live_delivery');live.find_canonical_live_owner=lambda home:{'session_id':'tip'}
+        with patch.dict(sys.modules,{'gateway.session_authorities':authorities,'tools.bot_live_delivery':live}):
+            with self.assertRaises(RuntimeError):await scope.require_managed_session_owner(adapter,'existing')
+            db.get_compression_tip=lambda sid:'other-api-chat'
+            await scope.require_managed_session_owner(adapter,'other')
+
+
 class WriterRunEnrollmentTests(unittest.TestCase):
     def canonical_fixture(self):
         run_id='run_'+'a'*32

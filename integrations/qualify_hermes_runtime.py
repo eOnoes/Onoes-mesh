@@ -97,6 +97,12 @@ def verify_evidence(root):
                 or writer['ownerId']==before['ownerId'] or writer['writerQuiescence']):
             raise RuntimeError('Abrupt process-loss recovery evidence is incomplete')
         result['checks'].append('separate_process_loss_preserves_unknown_and_blocks_duplicate_work')
+    if 'actual_native_HTTP_unmanaged_owner_refused_before_reservation' in report['checks']:
+        guard=json.loads((root/'owner-guard-evidence.json').read_text(encoding='utf-8'))
+        if (guard['statuses']!=[409,409] or guard['codes']!=['unsupported_writer_owner']*2
+                or not guard['noHandoff'] or not guard['noReservation'] or not guard['noWorker']):
+            raise RuntimeError('Unmanaged owner refusal evidence is incomplete')
+        result['checks'].append('unmanaged_owner_refused_without_handoff_or_reservation')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -456,6 +462,25 @@ async def child(root):
             raise RuntimeError('Isolated native server did not start')
         async with ClientSession() as client:
             headers = {'Authorization': 'Bearer ' + key, 'Idempotency-Key': 'mesh-runtime-fixture-one'}
+            unmanaged_sid='fixture-unmanaged-chat'
+            adapter._ensure_session_db().create_session(unmanaged_sid,'bot_room')
+            from unittest.mock import patch
+            rejected_statuses,rejected_codes=[],[]
+            with patch.object(adapter,'_admit_to_live_bot_chat',side_effect=AssertionError('Unmanaged handoff reached')) as handoff, \
+                    patch.object(adapter._run_idempotency_store,'reserve',wraps=adapter._run_idempotency_store.reserve) as reservation:
+                for _ in range(2):
+                    async with client.post(origin+'/v1/runs',headers={**headers,'Idempotency-Key':'mesh-unmanaged-refusal'},
+                            json={'input':'Synthetic unmanaged target refusal.','session_id':unmanaged_sid}) as response:
+                        rejected=await response.json();rejected_statuses.append(response.status)
+                        rejected_codes.append(rejected.get('error',{}).get('code'))
+                if rejected_statuses!=[409,409] or rejected_codes!=['unsupported_writer_owner']*2:
+                    raise RuntimeError('Unmanaged owner was not explicitly refused before admission')
+                handoff.assert_not_called();reservation.assert_not_called()
+            if agents_created or fences or adapter._run_statuses or adapter._run_owners or adapter._run_streams:
+                raise RuntimeError('Refused owner retained a worker/run reservation')
+            (root/'owner-guard-evidence.json').write_text(json.dumps({'statuses':rejected_statuses,'codes':rejected_codes,
+                'noHandoff':True,'noReservation':True,'noWorker':True},indent=2),encoding='utf-8')
+            checks.append('actual_native_HTTP_unmanaged_owner_refused_before_reservation')
             body = {'input': 'Synthetic fixture: run the provided terminal proof, then finish.'}
             async with client.post(origin + '/v1/runs', headers=headers, json=body) as response:
                 admitted = await response.json()
