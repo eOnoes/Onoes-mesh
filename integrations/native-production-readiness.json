@@ -299,6 +299,16 @@
       "evidence": "integrations/native-tool-policy-qualification.json",
       "finding": "Pinned selector with synthetic X credential presence adds x_search only for empty tools; explicit file and file+terminal remain exact. Empty live probe mismatch is not evidence that Mesh builder toolsets fail.",
       "next": "Verify the actual live explicit file/terminal policy before any prompt; retain the existing exact-profile guard. No native selector patch justified by this evidence."
+    },
+    "liveExplicitPolicy": {
+      "evidence": "integrations/native-live-policy-qualification.json",
+      "state": "policy_verified_no_prompt",
+      "sessionId": "local-6f1ebbba1031d275569e5eb116415678955ac534f21019dfa99c9afb6eec8eba",
+      "policyMatches": true,
+      "admissionCount": 0,
+      "credentialAbsenceQualified": false,
+      "generationQualified": false,
+      "next": "Install the reviewed native closed-profile bridge in an authorized maintenance window, then obtain exact key-presence/closed-policy readback before any generation or production enrollment."
     }
   },
   "positiveAcceptanceEvidence": {

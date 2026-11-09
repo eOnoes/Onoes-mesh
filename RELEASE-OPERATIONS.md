@@ -532,3 +532,18 @@ substitutes for positive writer quiescence. No auto assignment or watcher enable
 healthy, private Tailscale page HTTP200; all22 prior data tables and14 cards
 unchanged, SQLite integrity ok. New empty local-session table is migration only.
 No native route enrollment or Rook activation. See the integration checkpoint.
+
+
+## 2026-11-09 — current native bridge maintenance proposal (not executed)
+
+Verified candidate: integrations/native-live-policy-qualification.json records the actual unsubmitted Codex session's exact public file/terminal policy and zero admissions. Full application regression remains434 (337Node/97Python); the new operator checker was exercised on the real saved session, including reopen with matching request receipt. These facts do not qualify private credential absence or Codex generation.
+
+Prepared seven-file bridge package: data/native-bridge-rollout-fb4d589d-0904-4282-bd67-5be857252ebe. Current candidate hashes, five rollback originals and installed before-hashes all rechecked PASS (../native-bridge-maintenance-precheck.json). No live file changed. Native CLI status independently recognizes Windows Scheduled Task Hermes_Gateway and runningPID9804. This gateway is shared by Echo, Relay and Telegram.
+
+Maintenance scope, pending launcher/import-root verification and Eddie's permission:
+1. Revalidate exact runtime owner, launch root and manifest baselines. Use the supported native gateway stop WITHOUT --yes/--interrupt/--all. Its current help says active turns/jobs/delegations require confirmation and noninteractive execution refuses; do not override that refusal.
+2. Only after authoritative stop/quiescence confirmation, install the seven manifest-listed source files. Never replace source under a live owner. Preserve all settings, keys, sessions, conversations and task data.
+3. Start through the existing registered launcher with hidden windows; verify one owner, health, exact installed hashes and original shared clients. On failure, stop safely, restore the five exact original sources and remove only the two introduced helpers if they still match this manifest. Never remove data or unrelated files.
+4. Read back the original test session through the installed closed-profile bridge; require exact tools/model/workspace and key-presence=false before any separate generation qualification. Private references alone are not proof either way.
+
+This proposal does not enroll Rook, grant a production worker principal, activate automatic work, change model credentials, restart the shared local-model service, or connect Mind. Those existing gates remain independent. No maintenance permission has yet been assumed.

@@ -1,0 +1,36 @@
+{
+  "schema": "mesh-native-live-policy/v1",
+  "requestId": "mesh-live-policy-c333835e11334919b189d5ecdaa17ab3",
+  "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-live-policy-965f634e97df4409a87b90f4ed72d959",
+  "model": "gpt-6-luna",
+  "provider": "openai-codex",
+  "tools": [
+    "file",
+    "terminal"
+  ],
+  "promptsSubmitted": 0,
+  "productionBuilderEnabled": false,
+  "servicesRestarted": false,
+  "credentialsCopied": false,
+  "state": "policy_verified_no_prompt",
+  "sessionId": "local-6f1ebbba1031d275569e5eb116415678955ac534f21019dfa99c9afb6eec8eba",
+  "policy": {
+    "model": "gpt-6-luna",
+    "provider": "openai-codex",
+    "base_url": null,
+    "cwd": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-live-policy-965f634e97df4409a87b90f4ed72d959",
+    "toolsets": [
+      "file",
+      "terminal"
+    ],
+    "safe_mode": true,
+    "ignore_user_config": true,
+    "source": "tool",
+    "max_turns": 50,
+    "follow_profile": false
+  },
+  "admissionCount": 0,
+  "policyMatches": true,
+  "credentialAbsenceQualified": false,
+  "credentialBoundary": "Private provider credential presence requires the native closed-profile bridge; this public-policy probe cannot qualify it."
+}
