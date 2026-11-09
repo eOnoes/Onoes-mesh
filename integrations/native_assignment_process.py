@@ -94,7 +94,7 @@ def make_assignment_scope(authority, ref, row, policy=None):
     if row['admission_id'] in scopes:
         raise RuntimeError('The native admission already owns a process scope')
     scope = AssignmentProcessScope(authority, ref, row)
-    scope.profile_contract = describe_profile(policy)
+    scope.profile_contract = describe_profile(policy,authority)
     scopes[row['admission_id']] = scope
     return scope
 
@@ -155,7 +155,7 @@ async def observe_retirement(authority, scope, *, runtime_status=None, read_clos
         return base
 
 
-def describe_profile(policy):
+def describe_profile(policy,authority=None):
     """Export only fixed public launch fields; never config, keys or environment."""
     if policy is None:
         return None
@@ -164,7 +164,7 @@ def describe_profile(policy):
             value=getattr(policy,name)
             return value() if callable(value) else value
         base=read('base_url')
-        url=urlsplit(base)
+        url=urlsplit(base or "")
         if url.username or url.password or url.query or url.fragment:
             return None
         terminal=json.loads(policy.terminal_json)
@@ -174,9 +174,17 @@ def describe_profile(policy):
             and not policy.editor_mcp_json and not policy.kanban_json and not policy.client_env_remote
             and not policy.skills_prompt and set(tools) in ({'file'},{'file','terminal'})
             and terminal.get('backend','local')=='local')
-        return dict(model=policy.model,provider=read('provider'),base_url=base,workspace=policy.cwd,
+        out=dict(model=policy.model,provider=read('provider'),base_url=base,workspace=policy.cwd,
             toolsets=tools,safe_mode=policy.safe_mode,ignore_user_config=policy.ignore_user_config,
             follow_profile=read('follows_profile'),source=policy.source,max_turns=read('max_turns'),
             terminal_backend=terminal.get('backend','local'),closed=closed)
+        if out['provider']=='openai-codex':
+            # Report presence only. Private values never leave the native owner.
+            if getattr(policy,'config_secret_ref',None) and authority is None:
+                out['api_key_configured']=None
+            else:
+                model=policy.config(authority).get('model') or {}
+                out['api_key_configured']=bool(getattr(policy,'credential_ref',None) or model.get('api_key') or model.get('api_key_from'))
+        return out
     except Exception:
         return None

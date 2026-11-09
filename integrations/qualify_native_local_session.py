@@ -200,6 +200,27 @@ def verify(root):
     if manifest.get('realNimsReview'):
         result['checks'].append('real_nims_review_saved_under_original_dispatch_without_source_changes')
         result['realNimsReviewCompleted']=True
+    if (root/'codex-preflight-evidence.json').is_file():
+        codex=json.loads((root/'codex-preflight-evidence.json').read_text())
+        expected_cases={'native-signin','explicit-key','endpoint-override'}|({'profile-key-ignored'} if codex.get('schema')=='mesh-codex-preflight/v2' else set())
+        if codex.get('qualification')!='PASS' or codex.get('providerRequestsAdded')!=0 or codex.get('promptsSubmitted')!=0 or set(codex.get('cases',{}))!=expected_cases:
+            raise RuntimeError('Codex preflight created work or has incomplete cases')
+        ids=set()
+        for case,snapshot in codex['cases'].items():
+            c=snapshot.get('profile_contract') or {};ids.add(snapshot.get('session_id'))
+            if (snapshot.get('found') is not False or snapshot.get('submission_id')!='codex-never-submitted'
+                    or c.get('provider')!='openai-codex' or c.get('model')!='synthetic-codex-no-generation'
+                    or c.get('closed') is not True or c.get('follow_profile') is not False
+                    or c.get('safe_mode') is not True or c.get('ignore_user_config') is not True
+                    or c.get('source')!='tool' or c.get('max_turns')!=50 or c.get('toolsets')!=['file']
+                    or c.get('api_key_configured') is not (case=='explicit-key')
+                    or c.get('base_url')!=('http://127.0.0.1:9/v1' if case=='endpoint-override' else None)):
+                raise RuntimeError('Codex preflight provider/key/endpoint evidence mismatch')
+        if len(ids)!=len(expected_cases) or None in ids or any(marker in json.dumps(codex) for marker in ('MESH_POISON_NOT_EXPORT','MESH_INHERITED_POISON')):
+            raise RuntimeError('Codex preflight session identity or key privacy failed')
+        result['checks'].append('native_codex_policy_preflight_without_key_export_or_provider_work')
+        if 'profile-key-ignored' in expected_cases:result['checks'].append('native_codex_safe_policy_excludes_owner_config_keys_before_provider_work')
+        result['codexGenerationQualified']=False
     (root/'local-session-verified.json').write_text(json.dumps(result,indent=2))
     return result
 
@@ -340,6 +361,42 @@ async def child(root):
                             error=response['error'];raise RuntimeError('Fixture RPC '+method+' refused: '+str(error.get('message')))
                         if expect_error:raise RuntimeError('Native RPC accepted conflicting request ID')
                         return response['result']
+                stage='codex_preflight'
+                codex_checks={};before_codex=len(requests)
+                for case,extra in [('native-signin',{}),('explicit-key',{'api_key':'MESH_POISON_NOT_EXPORT'}),('endpoint-override',{'base_url':'http://127.0.0.1:9/v1'})]:
+                    selected={'request_id':'mesh-codex-preflight-'+case,'source':'tool','model':'synthetic-codex-no-generation',
+                        'provider':'openai-codex','toolsets':['file'],'safe_mode':True,'ignore_rules':True,
+                        'cwd':str(root/'workspace'),'max_turns':50,**extra}
+                    created_codex=await rpc('session.create',selected)
+                    observed_codex=await rpc('prompt.lookup',{'session_id':created_codex['session_id'],'submission_id':'codex-never-submitted'})
+                    contract=observed_codex.get('profile_contract')
+                    if (observed_codex.get('found') is not False or not contract or contract['provider']!='openai-codex'
+                            or contract['model']!='synthetic-codex-no-generation' or contract['closed'] is not True
+                            or contract.get('api_key_configured') is not (case=='explicit-key')
+                            or (case!='endpoint-override' and contract['base_url'] not in (None,''))
+                            or (case=='endpoint-override' and contract['base_url']!='http://127.0.0.1:9/v1')):
+                        raise RuntimeError('Explicit Codex preflight policy was not preserved: '+case)
+                    codex_checks[case]=observed_codex
+                config_path=root/'fixture-home'/'config.yaml'
+                if config_path.is_symlink():raise RuntimeError('Unexpected fixture config link')
+                original_config=config_path.read_bytes() if config_path.is_file() else None
+                try:
+                    config_path.write_text('model:\n  default: synthetic-codex-no-generation\n  provider: openai-codex\n  api_key: MESH_INHERITED_POISON\n')
+                    inherited_params={'request_id':'mesh-codex-preflight-inherited','source':'tool','model':'synthetic-codex-no-generation',
+                        'provider':'openai-codex','toolsets':['file'],'safe_mode':True,'ignore_rules':True,'cwd':str(root/'workspace'),'max_turns':50}
+                    inherited=await rpc('session.create',inherited_params)
+                    observed=await rpc('prompt.lookup',{'session_id':inherited['session_id'],'submission_id':'codex-never-submitted'})
+                    if observed.get('found') is not False or observed.get('profile_contract',{}).get('api_key_configured') is not False:
+                        raise RuntimeError('Safe Codex policy inherited an owner profile key')
+                    codex_checks['profile-key-ignored']=observed
+                finally:
+                    if original_config is not None:config_path.write_bytes(original_config)
+                    else:
+                        if config_path.parent!=root/'fixture-home':raise RuntimeError('Fixture config restoration escaped root')
+                        config_path.unlink()
+                if len(requests)!=before_codex or any(marker in json.dumps(codex_checks) for marker in ('MESH_POISON_NOT_EXPORT','MESH_INHERITED_POISON')):
+                    raise RuntimeError('Codex preflight created provider work or exported a key')
+                (root/'codex-preflight-evidence.json').write_text(json.dumps({'schema':'mesh-codex-preflight/v2','qualification':'PASS','cases':codex_checks,'providerRequestsAdded':0,'promptsSubmitted':0},indent=2))
                 stage='create'
                 params={'request_id':'mesh-local-create-fixture','source':'tool','model':'mesh-local-fixture',
                     'provider':'custom','base_url':endpoint,'api_key':'synthetic-local-provider',

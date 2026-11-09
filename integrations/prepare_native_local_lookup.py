@@ -28,6 +28,13 @@ def local_receipt_candidate(native_root, *, baselines):
             principal_id=self.actor.subject, session_id=ref.session_id, request_id=params['submission_id'])
         out = {'found': saved is not None, 'session_id': ref.session_id, 'submission_id': params['submission_id'],
             'outcome': saved.get('outcome') if saved is not None else None}
+        # Read the already committed policy, never refresh it or resolve a new provider.
+        from hermes_state_local import local_receipt
+        from gateway.session_policy import restore_policy
+        from gateway.mesh_assignment_process import describe_profile
+        local = await asyncio.to_thread(local_receipt, self.authority.db, ref.session_id)
+        if local is not None:
+            out['profile_contract'] = describe_profile(restore_policy(local['policy']), self.authority)
         if saved is not None:
             out['receipt'] = await self.receipt(ref, {'admission_id': saved['admission_id'],
                 'include_result': params.get('include_result') is True})
@@ -89,7 +96,7 @@ class AssignmentProcessObservation(Result):
 class ClosedWorkerProfile(Result):
     model: str
     provider: str
-    base_url: str
+    base_url: str | None
     workspace: str
     toolsets: list[str]
     safe_mode: bool
@@ -99,6 +106,7 @@ class ClosedWorkerProfile(Result):
     max_turns: int
     terminal_backend: str
     closed: bool
+    api_key_configured: bool | None = None
 
 
 class PromptLookupResult(Result):

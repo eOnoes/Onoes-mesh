@@ -18,7 +18,7 @@
                      'prompt.resolve_unknown': self.resolve_unknown,
                      'session.interrupt': self.interrupt, 'session.events.since': self.events_since,
                      'approval.respond': self.respond, 'clarify.respond': self.respond_clarify}
-@@ -875,6 +875,44 @@
+@@ -875,6 +875,51 @@
                  out['usage'] = saved.get('usage') or {}
          return out
  
@@ -33,6 +33,13 @@
 +            principal_id=self.actor.subject, session_id=ref.session_id, request_id=params['submission_id'])
 +        out = {'found': saved is not None, 'session_id': ref.session_id, 'submission_id': params['submission_id'],
 +            'outcome': saved.get('outcome') if saved is not None else None}
++        # Read the already committed policy, never refresh it or resolve a new provider.
++        from hermes_state_local import local_receipt
++        from gateway.session_policy import restore_policy
++        from gateway.mesh_assignment_process import describe_profile
++        local = await asyncio.to_thread(local_receipt, self.authority.db, ref.session_id)
++        if local is not None:
++            out['profile_contract'] = describe_profile(restore_policy(local['policy']), self.authority)
 +        if saved is not None:
 +            out['receipt'] = await self.receipt(ref, {'admission_id': saved['admission_id'],
 +                'include_result': params.get('include_result') is True})
@@ -65,7 +72,7 @@
          receipt = await self.authority.receipt(self.actor, ref, admission_id)
 --- a/tui_gateway/contracts/canonical.py
 +++ b/tui_gateway/contracts/canonical.py
-@@ -54,6 +54,60 @@
+@@ -54,6 +54,61 @@
  
  canonical_method("prompt.receipt", params=PromptReceiptParams, result=PromptReceiptResult,
                   doc="Current receipt of one admission the caller submitted (or controls).")
@@ -99,7 +106,7 @@
 +class ClosedWorkerProfile(Result):
 +    model: str
 +    provider: str
-+    base_url: str
++    base_url: str | None
 +    workspace: str
 +    toolsets: list[str]
 +    safe_mode: bool
@@ -109,6 +116,7 @@
 +    max_turns: int
 +    terminal_backend: str
 +    closed: bool
++    api_key_configured: bool | None = None
 +
 +
 +class PromptLookupResult(Result):
@@ -375,7 +383,7 @@
 +            await asyncio.to_thread(assignment_scope.retire)
 --- /dev/null
 +++ b/gateway/mesh_assignment_process.py
-@@ -0,0 +1,182 @@
+@@ -0,0 +1,190 @@
 +"""Assignment-owned process observation; never a whole-writer clearance receipt."""
 +import asyncio
 +import json
@@ -472,7 +480,7 @@
 +    if row['admission_id'] in scopes:
 +        raise RuntimeError('The native admission already owns a process scope')
 +    scope = AssignmentProcessScope(authority, ref, row)
-+    scope.profile_contract = describe_profile(policy)
++    scope.profile_contract = describe_profile(policy,authority)
 +    scopes[row['admission_id']] = scope
 +    return scope
 +
@@ -533,7 +541,7 @@
 +        return base
 +
 +
-+def describe_profile(policy):
++def describe_profile(policy,authority=None):
 +    """Export only fixed public launch fields; never config, keys or environment."""
 +    if policy is None:
 +        return None
@@ -542,7 +550,7 @@
 +            value=getattr(policy,name)
 +            return value() if callable(value) else value
 +        base=read('base_url')
-+        url=urlsplit(base)
++        url=urlsplit(base or "")
 +        if url.username or url.password or url.query or url.fragment:
 +            return None
 +        terminal=json.loads(policy.terminal_json)
@@ -552,10 +560,18 @@
 +            and not policy.editor_mcp_json and not policy.kanban_json and not policy.client_env_remote
 +            and not policy.skills_prompt and set(tools) in ({'file'},{'file','terminal'})
 +            and terminal.get('backend','local')=='local')
-+        return dict(model=policy.model,provider=read('provider'),base_url=base,workspace=policy.cwd,
++        out=dict(model=policy.model,provider=read('provider'),base_url=base,workspace=policy.cwd,
 +            toolsets=tools,safe_mode=policy.safe_mode,ignore_user_config=policy.ignore_user_config,
 +            follow_profile=read('follows_profile'),source=policy.source,max_turns=read('max_turns'),
 +            terminal_backend=terminal.get('backend','local'),closed=closed)
++        if out['provider']=='openai-codex':
++            # Report presence only. Private values never leave the native owner.
++            if getattr(policy,'config_secret_ref',None) and authority is None:
++                out['api_key_configured']=None
++            else:
++                model=policy.config(authority).get('model') or {}
++                out['api_key_configured']=bool(getattr(policy,'credential_ref',None) or model.get('api_key') or model.get('api_key_from'))
++        return out
 +    except Exception:
 +        return None
 --- /dev/null

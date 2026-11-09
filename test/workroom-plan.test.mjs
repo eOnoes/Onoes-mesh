@@ -422,3 +422,33 @@ test('editing a card workspace cannot hide an unretired native writer in its ori
   assert.throws(()=>local.reserve(peer.t.id,peer.send,peer.profile),/existing workspace writer|native writer/);
  }finally{store.close();}
 });
+
+function codexLocalProfile(profile){const {baseUrl,...rest}=profile;return {...rest,provider:'openai-codex'};}
+function codexContract(profile){return {model:profile.model,provider:'openai-codex',base_url:null,workspace:profile.workspace,toolsets:['file'],safe_mode:true,ignore_user_config:true,follow_profile:false,source:'tool',max_turns:50,terminal_backend:'local',closed:true,api_key_configured:false};}
+test('explicit Codex profile has no endpoint or API-key metadata and cannot replace a saved custom route',()=>{
+ const store=openTaskStore(filename());try{const {t,send,profile}=localReady(store),codex=codexLocalProfile(profile);assert.equal(localSessionProfile(codex).provider,'openai-codex');for(const provider of [null,'auto','openai',''])assert.throws(()=>localSessionProfile({...codex,provider}),/profile/);assert.equal(Object.hasOwn(localSessionProfile(codex),'baseUrl'),false);assert.throws(()=>localSessionProfile({...codex,baseUrl:profile.baseUrl}),/profile/);assert.throws(()=>localSessionProfile({...codex,api_key:'not-allowed'}),/profile/);store.workroom.localSessions.reserve(t.id,send,profile);assert.throws(()=>store.workroom.localSessions.reserve(t.id,send,codex),/different message/);}finally{store.close();}
+});
+test('Codex dispatch verifies a frozen key-free native policy before its first prompt and never requests an API key',async()=>{
+ const store=openTaskStore(filename());try{const {t,send,profile}=localReady(store),codex=codexLocalProfile(profile),methods=[];let keys=0;
+ const rpc=async(method,params)=>{methods.push(method);if(method==='session.create'){assert.equal(params.provider,'openai-codex');assert.equal(Object.hasOwn(params,'api_key'),false);assert.equal(Object.hasOwn(params,'base_url'),false);return {session_id:nativeSid};}const row=store.workroom.localSessions.read(t.id,send.id);if(method==='prompt.lookup'&&methods.length===2)return {found:false,session_id:row.sessionId,submission_id:row.submissionId,profile_contract:codexContract(codex)};if(method==='prompt.submit')return {};return {...localReceipt(row),profile_contract:codexContract(codex)};};
+ await dispatchLocalSession({workroom:store.workroom,taskId:t.id,body:send,profile:codex,rpc,credential:async()=>{keys++;throw Error('No key lookup allowed');},admitted:()=>true});assert.equal(keys,0);assert.deepEqual(methods,['session.create','prompt.lookup','prompt.submit','prompt.lookup']);assert.equal(store.workroom.localSessions.read(t.id,send.id).profileContract.api_key_configured,false);
+ }finally{store.close();}
+});
+test('Codex pre-submit policy mismatch or inherited key refuses generation',async()=>{
+ for(const patch of [{api_key_configured:true},{api_key_configured:null},{base_url:'https://unapproved.example/v1'},{provider:'custom'},{model:'different'}, {follow_profile:true},{closed:false}]){const store=openTaskStore(filename());try{const {t,send,profile}=localReady(store),codex=codexLocalProfile(profile);let submitted=0;
+ const rpc=async(method)=>{if(method==='session.create')return {session_id:nativeSid};if(method==='prompt.submit'){submitted++;return {};}const row=store.workroom.localSessions.read(t.id,send.id);return {found:false,session_id:row.sessionId,submission_id:row.submissionId,profile_contract:{...codexContract(codex),...patch}};};
+ await assert.rejects(dispatchLocalSession({workroom:store.workroom,taskId:t.id,body:send,profile:codex,rpc,admitted:()=>true}),/sign-in policy/);assert.equal(submitted,0);
+ }finally{store.close();}}
+});
+
+test('Codex completed result retires only with fresh key-free provider evidence',async()=>{
+ const store=openTaskStore(filename());try{const {t,send,profile}=localReady(store),codex=codexLocalProfile(profile);let lookups=0;
+ const rpc=async(method)=>{if(method==='session.create')return {session_id:nativeSid};if(method==='prompt.submit')return {};const row=store.workroom.localSessions.read(t.id,send.id);if(++lookups===1)return {found:false,session_id:row.sessionId,submission_id:row.submissionId,profile_contract:codexContract(codex)};return {...localReceipt(row,'terminal'),outcome:'completed',profile_contract:codexContract(codex)};};
+ const row=await dispatchLocalSession({workroom:store.workroom,taskId:t.id,body:send,profile:codex,rpc,admitted:()=>true});assert.equal(localRetirementReady(row),true);assert.equal(localRetirementReady({...row,profileContract:{...row.profileContract,api_key_configured:true}}),false);const retired=await retireLocalSession({workroom:store.workroom,taskId:t.id,sendId:send.id,rpc,authorized:()=>true,admitted:()=>true});assert.equal(retired.writerQuiescence,true);assert.equal(retired.retirementEvidence[6].api_key_configured,false);
+ }finally{store.close();}
+});
+test('team runner supports an explicitly authorized Codex profile without an API-key callback',async()=>{
+ const store=openTaskStore(filename());let runner;try{const {t,profile}=localReady(store),codex=codexLocalProfile(profile),actors=[{id:'echo',backend:'hermes',status:'idle',conversation_id:'native-local'},{id:'nims',backend:'codex',status:'idle',conversation_id:'mesh-nims'}];store.workroom.automation.action(t.id,{action:'start',revision:0,planRevision:t.plan.revision,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision},actors,profile.workspace);
+ let reads=0,submits=0;const rpc=async method=>{if(method==='session.create')return {session_id:nativeSid};if(method==='prompt.submit'){submits++;return {};}const stage=store.workroom.automation.read(t.id),row=store.workroom.localSessions.read(t.id,stage.workerSendId);if(++reads===1)return {found:false,session_id:row.sessionId,submission_id:row.submissionId,profile_contract:codexContract(codex)};return {...localReceipt(row),profile_contract:codexContract(codex)};};runner=createTeamRunner({workroom:store.workroom,root:profile.workspace,relay:{agents:async()=>actors},intervalMs:600000,nativeWorker:{rpc,profileFor:()=>codex,authorized:()=>true}});await runner.tick();assert.equal(submits,1);assert.equal(store.workroom.automation.read(t.id).state,'active');
+ }finally{if(runner)await runner.close();store.close();}
+});

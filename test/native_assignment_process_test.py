@@ -187,5 +187,20 @@ class FrozenProfileTests(unittest.TestCase):
         self.assertIsNone(describe_profile(policy))
 
 
+class CodexFrozenProfileTests(unittest.TestCase):
+    def policy(self,model=None):
+        return SimpleNamespace(model='synthetic-codex',provider='openai-codex',base_url=None,cwd='D:/fixture',
+            toolsets=('file',),terminal_json='{"backend":"local"}',safe_mode=True,ignore_user_config=True,
+            follows_profile=False,source='tool',max_turns=50,editor_mcp_json=None,kanban_json=None,
+            client_env_remote=False,skills_prompt=None,credential_ref=None,config_secret_ref=None,
+            config=lambda authority=None:{'model':model or {}})
+    def test_native_signin_contract_reports_no_key_without_exporting_secrets(self):
+        p=self.policy();c=describe_profile(p);self.assertTrue(c['closed']);self.assertIsNone(c['base_url']);self.assertIs(c['api_key_configured'],False)
+        p.credential_ref='private-reference';self.assertIs(describe_profile(p)['api_key_configured'],True)
+        p=self.policy({'api_key':'NEVER_EXPORT_CODEX_KEY'});c=describe_profile(p);self.assertIs(c['api_key_configured'],True);self.assertNotIn('NEVER_EXPORT_CODEX_KEY',str(c))
+    def test_private_key_presence_without_owner_context_is_unproved(self):
+        p=self.policy({'api_key':'NEVER_EXPORT_PRIVATE_KEY'});p.config_secret_ref='private-config';self.assertIsNone(describe_profile(p)['api_key_configured']);c=describe_profile(p,object());self.assertIs(c['api_key_configured'],True);self.assertNotIn('NEVER_EXPORT_PRIVATE_KEY',str(c))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -2,13 +2,13 @@
   "schema": "mesh-native-local-session-qualification/v1",
   "qualification": "PASS",
   "nativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
-  "scope": "Disposable actual native builder/file/terminal/retirement to real signed-in Nims read-only review. Builder provider remains synthetic; production enrollment and watcher activation remain off.",
-  "evidenceDirectory": "hermes-local-session-a709fb14-44ff-45eb-9082-38962fdb3a14",
+  "scope": "Disposable actual native custom-provider builder/file/terminal/retirement to real signed-in Nims read-only review; explicit Codex key-free policy preflight only. No Codex generation or production enrollment qualified.",
+  "evidenceDirectory": "hermes-local-session-c2b0d373-0647-4772-a96d-b41e29b45b93",
   "candidateFiles": {
-    "gateway/session_controls.py": "1e3ed1b9c5442ecc176a542a9c9d88f4e23851e1434a6868fc3c69ea6a653516",
-    "tui_gateway/contracts/canonical.py": "1c25f27e18e0a6f7ddf4ecf98c857a3555ef9848b31980423480c5a664ca5e14",
+    "gateway/session_controls.py": "a242ba17ac0105fac760812b322236e744ccc63bb19f48d2da0fa24932d214a8",
+    "tui_gateway/contracts/canonical.py": "3dc5c762256ccc9d357c20f627797c232265ce4c8fbe2f4afbd00d8ef1f6e880",
     "gateway/session_managed_worker.py": "47a2df49a34f45de16db3309588e920b5cd5b1a5c3d315b0de4b91ef75b25712",
-    "gateway/mesh_assignment_process.py": "dffa654552c0c1f1b7399d2fe216766cb2e2b7f4e630aae1d0b47a4bc7fe637a",
+    "gateway/mesh_assignment_process.py": "16a62f3e2cfa99d15bcab33358bfac59212c1fa4502b9614fac7fe65f64bfe76",
     "gateway/mesh_windows_process.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/file_tools_read_tracking.py": "c2ca50e625178fb663faa46677713ba915946294dc19fbef849ea40342977e4d",
     "tools/file_tools.py": "1bc8b91716d6fac41861f706f4024381484d6fbdfb64fa3381688ab1cf5aa85e"
@@ -17,8 +17,7 @@
     "gateway/session_controls.py": "3e6797de16ee375f21221a5da1c589756c6d0c31f21cd342a16a020eba891b71",
     "tui_gateway/contracts/canonical.py": "ecccf8d09673b5d5401a3ecd30adb70cb7a9be1ee7d221dec23cd34a3feaa853",
     "tools/file_tools_read_tracking.py": "fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb",
-    "tools/file_tools.py": "925ebccc2a70b5a1b55541242cb19ed6614a18e82df1d6bc29474dc22c4f0dee",
-    "gateway/session_managed_worker.py": "4d51ca8d605ee3facc20e3ef6b8d9f3aeebe5ac14c849a7a4174937f9a5198f4"
+    "tools/file_tools.py": "925ebccc2a70b5a1b55541242cb19ed6614a18e82df1d6bc29474dc22c4f0dee"
   },
   "checks": [
     "pinned_candidate_hashes",
@@ -36,24 +35,26 @@
     "passive_retirement_stays_held_during_write_and_terminal_execution_refuses_new_mutation",
     "frozen_profile_and_native_outcome_feed_one_saved_nims_read_only_review",
     "real_nims_review_saved_under_original_dispatch_without_source_changes",
+    "native_codex_policy_preflight_without_key_export_or_provider_work",
+    "native_codex_safe_policy_excludes_owner_config_keys_before_provider_work",
     "native_approved_review_matches_actual_readonly_tool_output"
   ],
   "meshBinding": {
     "qualification": "PASS",
-    "taskId": "cf620a34-d28a-4ad9-9f54-06e897a8d55f",
-    "sendId": "9ebf96c8-ec79-4a56-8d5d-2076c9a7dc49",
-    "createRequestId": "mesh-local-create-31160970642ec599d9db4dc7bb410845dc00db326d2324b60a1a440b7f8ccf04",
-    "submissionId": "mesh-local-submit-31160970642ec599d9db4dc7bb410845dc00db326d2324b60a1a440b7f8ccf04",
-    "sessionId": "local-73cf652ae7d7326309a002c31224b97075077de702659cc25d98f04659bb8e6c",
-    "admissionId": "4bc34993de7740e491e2366061a77238",
-    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-a709fb14-44ff-45eb-9082-38962fdb3a14\\fixture-home",
+    "taskId": "774bb930-90bf-4c86-a8cf-339897341769",
+    "sendId": "a8f35c36-b061-44c2-b5de-2d6225347c5f",
+    "createRequestId": "mesh-local-create-78f19535d3aad6dccb2c058b06a42ec59dbd32b65e42c10d36f0ddb19fd086d9",
+    "submissionId": "mesh-local-submit-78f19535d3aad6dccb2c058b06a42ec59dbd32b65e42c10d36f0ddb19fd086d9",
+    "sessionId": "local-7deb376552bacfa38c30c5b5b5806b294d944944dff6aff62ee9a803f80f6947",
+    "admissionId": "71e44d3f00d9426fa9935f93f3b0ea1f",
+    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-c2b0d373-0647-4772-a96d-b41e29b45b93\\fixture-home",
     "nativeEpoch": 1,
     "nativeGeneration": 1,
     "nativeStatus": "terminal",
     "rpcCounts": {
       "session.create": 1,
       "prompt.submit": 1,
-      "prompt.lookup": 277,
+      "prompt.lookup": 265,
       "mesh.fixture.release-child": 1,
       "mesh.fixture.release-write": 1
     },
@@ -66,24 +67,24 @@
     "processReadbackPersisted": true,
     "authorityDrainObserved": true,
     "executionClosedObserved": true,
-    "resultHash": "c17f2e1aef98ccf08cdb3f3a8c1b365423fd443164d79395015b33d5a1909200",
-    "resultMessageId": "native-2bc82590a7729a19a5d783d5a2249149eea1557417f7dfd90f70bbefd3a79eeb",
+    "resultHash": "fc4414a834fc9adb430f3aaed5d3d19f79ad23748bb64fe22d17c687253eff38",
+    "resultMessageId": "native-2a563989ecb6e4ccfe1ba90869e7beadbb0fe5c39bdb29ae37acbd8567f5711f",
     "workspaceStillHeld": false,
     "writerQuiescence": true,
-    "retirementHash": "a169f1eaa9776f73eff26e8ba13ca7774166ecabbf6762552d5d47c596d69c37",
+    "retirementHash": "3c82ac557614a19268ac8f345c3683c330fa38e68d8b320cd870c767305b4cf9",
     "reviewSentToNims": true,
     "reviewTransportSynthetic": false,
     "realNimsReviewCompleted": true,
     "liveActivation": false
   },
-  "fullLocalRegressionTests": 427,
+  "fullLocalRegressionTests": 434,
   "nativeOwnerSettled": true,
   "fixtureTreeEndedNaturally": true,
   "wholeWorkerReleaseQualified": true,
   "liveInstallation": false,
   "producerRefactor": "Qualified RPC bytes reproduced from pristine pinned archive",
   "remaining": [
-    "Production native principal/profile is not enrolled. Current custom-provider lane does not support the configured openai-codex default; prepare the selected route before live binding.",
+    "Explicit openai-codex candidate preflight passes; live gateway adds x_search outside requested tools. Honor an isolated exact tool policy and qualify real generation before production binding.",
     "Real automatic builder-to-Nims delivery is qualified in a disposable board; uncertain in-flight reviewer recovery and production acceptance still need qualification.",
     "Rook own identity/report transport/single scheduler/deployed acceptance and explicit activation remain outstanding.",
     "Mind live access, shared model-service maintenance and external-machine integration remain deferred/open."
@@ -126,9 +127,9 @@
     "reviewVerdict": "approved"
   },
   "realNimsReview": {
-    "threadId": "01a1bf39-cd7f-71f1-8cb6-c6aee69601fb",
-    "turnId": "01a1bf39-d66d-72c0-a625-dac6d80cb8bb",
-    "sendId": "d2cbfe84-1011-4dd0-b813-b7861a00c993",
+    "threadId": "01a1bf5e-9eaa-7522-b472-7b4b2fbf168c",
+    "turnId": "01a1bf5e-a883-7911-8fee-f788d4babd5a",
+    "sendId": "9803455f-6655-4aed-ad64-f74f13ea0ce8",
     "status": "completed",
     "verdict": "approved",
     "filesUnchanged": true,
@@ -146,11 +147,11 @@
   "positiveReviewVerification": {
     "qualification": "PASS",
     "check": "native_approved_review_matches_actual_readonly_tool_output",
-    "directory": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-a709fb14-44ff-45eb-9082-38962fdb3a14",
-    "taskId": "cf620a34-d28a-4ad9-9f54-06e897a8d55f",
-    "sendId": "d2cbfe84-1011-4dd0-b813-b7861a00c993",
-    "threadId": "01a1bf39-cd7f-71f1-8cb6-c6aee69601fb",
-    "turnId": "01a1bf39-d66d-72c0-a625-dac6d80cb8bb",
+    "directory": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-c2b0d373-0647-4772-a96d-b41e29b45b93",
+    "taskId": "774bb930-90bf-4c86-a8cf-339897341769",
+    "sendId": "9803455f-6655-4aed-ad64-f74f13ea0ce8",
+    "threadId": "01a1bf5e-9eaa-7522-b472-7b4b2fbf168c",
+    "turnId": "01a1bf5e-a883-7911-8fee-f788d4babd5a",
     "verdict": "approved",
     "artifactCount": 5,
     "proofHex": "4d657368206c6f63616c2073657373696f6e2070726f6f662e0a",
@@ -161,5 +162,106 @@
     "teamState": "needs_review",
     "decision": "pending",
     "modelTurnsStarted": 0
+  },
+  "codexGenerationQualified": false,
+  "codexPolicyPreflight": {
+    "schema": "mesh-codex-preflight/v2",
+    "qualification": "PASS",
+    "cases": {
+      "native-signin": {
+        "found": false,
+        "session_id": "local-64364603a40ce6078c74d9b3d44946fc4107a56db74639ed93af659f1af5a1e1",
+        "submission_id": "codex-never-submitted",
+        "outcome": null,
+        "profile_contract": {
+          "model": "synthetic-codex-no-generation",
+          "provider": "openai-codex",
+          "base_url": null,
+          "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-c2b0d373-0647-4772-a96d-b41e29b45b93\\workspace",
+          "toolsets": [
+            "file"
+          ],
+          "safe_mode": true,
+          "ignore_user_config": true,
+          "follow_profile": false,
+          "source": "tool",
+          "max_turns": 50,
+          "terminal_backend": "local",
+          "closed": true,
+          "api_key_configured": false
+        }
+      },
+      "explicit-key": {
+        "found": false,
+        "session_id": "local-780f538b5c60d977e760eba790d0f18f22af57d71ba4d205a5ffb99285726aa3",
+        "submission_id": "codex-never-submitted",
+        "outcome": null,
+        "profile_contract": {
+          "model": "synthetic-codex-no-generation",
+          "provider": "openai-codex",
+          "base_url": null,
+          "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-c2b0d373-0647-4772-a96d-b41e29b45b93\\workspace",
+          "toolsets": [
+            "file"
+          ],
+          "safe_mode": true,
+          "ignore_user_config": true,
+          "follow_profile": false,
+          "source": "tool",
+          "max_turns": 50,
+          "terminal_backend": "local",
+          "closed": true,
+          "api_key_configured": true
+        }
+      },
+      "endpoint-override": {
+        "found": false,
+        "session_id": "local-3e8ed8a53c8fe1f202f74ce290f087d5a9d0d6a9fef6203e8ca3fdd605a58964",
+        "submission_id": "codex-never-submitted",
+        "outcome": null,
+        "profile_contract": {
+          "model": "synthetic-codex-no-generation",
+          "provider": "openai-codex",
+          "base_url": "http://127.0.0.1:9/v1",
+          "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-c2b0d373-0647-4772-a96d-b41e29b45b93\\workspace",
+          "toolsets": [
+            "file"
+          ],
+          "safe_mode": true,
+          "ignore_user_config": true,
+          "follow_profile": false,
+          "source": "tool",
+          "max_turns": 50,
+          "terminal_backend": "local",
+          "closed": true,
+          "api_key_configured": false
+        }
+      },
+      "profile-key-ignored": {
+        "found": false,
+        "session_id": "local-70befe3d18ee1830a78cf5105030202d803c1bfc553a924895b9c6e7d8074209",
+        "submission_id": "codex-never-submitted",
+        "outcome": null,
+        "profile_contract": {
+          "model": "synthetic-codex-no-generation",
+          "provider": "openai-codex",
+          "base_url": null,
+          "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-c2b0d373-0647-4772-a96d-b41e29b45b93\\workspace",
+          "toolsets": [
+            "file"
+          ],
+          "safe_mode": true,
+          "ignore_user_config": true,
+          "follow_profile": false,
+          "source": "tool",
+          "max_turns": 50,
+          "terminal_backend": "local",
+          "closed": true,
+          "api_key_configured": false
+        }
+      }
+    },
+    "providerRequestsAdded": 0,
+    "promptsSubmitted": 0
   }
 }
