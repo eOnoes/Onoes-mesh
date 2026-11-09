@@ -6,8 +6,9 @@ import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {sendTaskHandoff,syncTaskReplies} from '../lib/workroom.mjs';
-import {dispatchLocalSession} from '../lib/workroom-local-sessions.mjs';
+import {dispatchLocalSession,reconcileLocalSession} from '../lib/workroom-local-sessions.mjs';
 import {TaskError} from '../lib/task-store.mjs';
+import {createTeamRunner} from '../lib/workroom-automation.mjs';
 const filename=()=>join(mkdtempSync(join(tmpdir(),'mesh-plan-')),'tasks.sqlite');
 function ready(store){let t=store.create({title:'Scoped build',description:'One bounded artifact',owner:'echo'});t=store.workroom.save(t.id,{...meta(t),criteria:'Artifact meets acceptance',revision:t.workroom?.revision??1});return store.workroom.saveProgress(t.id,{goal:'Bounded build',checklist:[{id:'one',text:'Implement and verify',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision});}
 function meta(t){return{project:t.workroom?.project||'',criteria:t.workroom?.criteria||'',owner:t.workroom?.owner||'echo',team:'local_build',stage:'ready'};}
@@ -184,4 +185,76 @@ test('native unsent work refuses a changed scope while already attempted work re
   assert.throws(()=>local.startSubmit(t.id,send.id,row.revision),/changed before native submission/);
   assert.equal(local.read(t.id,send.id).state,'session_bound');
  }finally{store.close();}
+});
+
+test('read-only native recovery cannot create or submit work, including unsent and revoked bindings',async()=>{
+ const store=openTaskStore(filename());try{
+  const {t,send,profile}=localReady(store),local=store.workroom.localSessions;
+  const prepared=local.reserve(t.id,send,profile).nativeLocal;
+  let calls=0;const rpc=async(method)=>{calls++;assert.equal(method,'prompt.lookup');return localReceipt(local.read(t.id,send.id),'terminal');};
+  const options={workroom:store.workroom,taskId:t.id,sendId:send.id,rpc,authorized:p=>p.identityRef===profile.identityRef};
+  assert.deepEqual(await reconcileLocalSession(options),prepared);assert.equal(calls,0);
+  let row=local.startCreate(t.id,send.id,prepared.revision);
+  row=local.bindSession(t.id,send.id,row.revision,{session_id:nativeSid});
+  assert.deepEqual(await reconcileLocalSession(options),row);assert.equal(calls,0);
+  row=local.startSubmit(t.id,send.id,row.revision);
+  for(const authorized of [()=>false,()=>Promise.resolve(true),()=>1]){
+   await assert.rejects(reconcileLocalSession({...options,authorized}),/not authorized/);
+  }
+  assert.equal(calls,0);
+  const observed=await reconcileLocalSession(options);assert.equal(observed.nativeStatus,'terminal');
+  assert.equal(calls,1);assert.equal(observed.writerQuiescence,false);
+  assert.equal(store.workroom.get(t.id).messages[0].state,'accepted');
+  await assert.rejects(reconcileLocalSession({...options,authorized:()=>false}),/not authorized/);
+  assert.equal(calls,1);
+ }finally{store.close();}
+});
+
+test('native observation checks authorization after awaiting and rejects stale concurrent readback',async()=>{
+ const store=openTaskStore(filename());try{
+  const {t,send,profile}=localReady(store),local=store.workroom.localSessions;
+  let row=local.reserve(t.id,send,profile).nativeLocal;
+  row=local.startCreate(t.id,send.id,row.revision);row=local.bindSession(t.id,send.id,row.revision,{session_id:nativeSid});
+  row=local.startSubmit(t.id,send.id,row.revision);
+  let allowed=true;
+  const options={workroom:store.workroom,taskId:t.id,sendId:send.id,authorized:()=>allowed};
+  await assert.rejects(reconcileLocalSession({...options,rpc:async()=>{allowed=false;return localReceipt(row);}}),/not authorized/);
+  assert.equal(local.read(t.id,send.id).admissionId,null);
+  allowed=true;row=local.read(t.id,send.id);
+  await assert.rejects(reconcileLocalSession({...options,rpc:async()=>{local.unavailable(t.id,send.id,row.revision);return localReceipt(row);}}),/binding changed/);
+  assert.equal(local.read(t.id,send.id).admissionId,null);
+ }finally{store.close();}
+});
+
+test('native dispatch requires explicit synchronous authorization before any saved intent or credential read',async()=>{
+ const store=openTaskStore(filename());try{
+  const {t,send,profile}=localReady(store);let calls=0;
+  for(const admitted of [()=>false,()=>Promise.resolve(true),()=>1]){
+   await assert.rejects(dispatchLocalSession({workroom:store.workroom,taskId:t.id,body:send,profile,
+    admitted,rpc:async()=>{calls++;},credential:async()=>{calls++;}}),/active dedicated/);
+  }
+  assert.equal(calls,0);assert.equal(store.workroom.get(t.id).messages.length,0);
+ }finally{store.close();}
+});
+
+test('team runner observes persisted native attempts after restart without dispatch or active orchestration',async()=>{
+ const file=filename();let store=openTaskStore(file),runner;try{
+  const {t,send,profile}=localReady(store),local=store.workroom.localSessions;
+  let row=local.reserve(t.id,send,profile).nativeLocal;
+  row=local.startCreate(t.id,send.id,row.revision);row=local.bindSession(t.id,send.id,row.revision,{session_id:nativeSid});
+  row=local.startSubmit(t.id,send.id,row.revision);local.unavailable(t.id,send.id,row.revision);
+  store.close();store=openTaskStore(file);
+  let reads=0,legacy=0;
+  const relay={agents:async()=>{legacy++;return[];},nativeRead:async()=>{legacy++;},taskMessage:async()=>{legacy++;}};
+  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,
+   nativeObserver:{authorized:p=>p.identityRef===profile.identityRef,rpc:async(method,params)=>{
+    reads++;assert.equal(method,'prompt.lookup');const saved=store.workroom.localSessions.read(t.id,send.id);
+    assert.equal(params.submission_id,saved.submissionId);return localReceipt(saved,'terminal');
+   }}});
+  await runner.tick();await runner.tick();
+  const observed=store.workroom.localSessions.read(t.id,send.id);
+  assert.equal(reads,1);assert.equal(legacy,0);assert.equal(observed.nativeStatus,'terminal');
+  assert.equal(observed.writerQuiescence,false);assert.equal(store.workroom.get(t.id).messages[0].state,'accepted');
+  assert.equal(store.workroom.get(t.id).automation,undefined);
+ }finally{if(runner)await runner.close();store.close();}
 });

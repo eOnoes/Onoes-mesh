@@ -5,7 +5,8 @@ import {readFileSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {createInterface} from 'node:readline';
 import {openTaskStore} from '../../lib/task-store.mjs';
-import {dispatchLocalSession} from '../../lib/workroom-local-sessions.mjs';
+import {dispatchLocalSession,reconcileLocalSession} from '../../lib/workroom-local-sessions.mjs';
+import {createTeamRunner} from '../../lib/workroom-automation.mjs';
 import {writerQuiescenceBlockers} from '../../lib/workroom-claim-policy.mjs';
 
 const root=process.argv[2],config=JSON.parse(readFileSync(join(root,'node-binding-config.json'),'utf8'));
@@ -31,19 +32,27 @@ try{
   await assert.rejects(dispatchLocalSession({...options,workroom:store.workroom}),/uncertain/);
   const before=store.workroom.localSessions.read(task.id,body.id);assert.equal(before.state,'submit_unknown');
   store.close();store=openTaskStore(file);
-  let row=await dispatchLocalSession({...options,workroom:store.workroom});
+  // Recover through the observation-only entry, without credentials or send payload.
+  const recovery={workroom:store.workroom,taskId:task.id,sendId:body.id,rpc,
+    authorized:saved=>saved.identityRef===profile.identityRef&&saved.profileRef===profile.profileRef};
+  const observer=createTeamRunner({workroom:store.workroom,root:config.workspace,relay:{},intervalMs:600000,
+    nativeObserver:{rpc,authorized:recovery.authorized}});
+  let row;
+  try{
+   await observer.tick();row=store.workroom.localSessions.read(task.id,body.id);
   const deadline=Date.now()+60000;
   while(row.nativeStatus!=='terminal'){
     if(Date.now()>deadline)throw new Error('Native binding receipt did not settle');
-    await new Promise(resolve=>setTimeout(resolve,30));row=await dispatchLocalSession({...options,workroom:store.workroom});
+    await new Promise(resolve=>setTimeout(resolve,30));await observer.tick();row=store.workroom.localSessions.read(task.id,body.id);
   }
-  const repeated=await dispatchLocalSession({...options,workroom:store.workroom});
+  }finally{await observer.close();}
+  const repeated=await reconcileLocalSession(recovery);
   assert.equal(repeated.admissionId,row.admissionId);assert.equal(counts['session.create'],1);assert.equal(counts['prompt.submit'],1);
   assert.equal(row.writerQuiescence,false);assert.ok(writerQuiescenceBlockers(store.workroom.list()).length>0);
   assert.equal(JSON.stringify(store.workroom.get(task.id)).includes('synthetic-local-provider'),false);
   const report={qualification:'PASS',taskId:task.id,sendId:body.id,createRequestId:row.createRequestId,submissionId:row.submissionId,
     sessionId:row.sessionId,admissionId:row.admissionId,nativeProfileId:row.nativeProfileId,nativeEpoch:row.nativeEpoch,
-    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,
+    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,
     workspaceStillHeld:true,writerQuiescence:false,liveActivation:false};
   writeFileSync(join(root,'mesh-local-binding-evidence.json'),JSON.stringify(report,null,2));
   await new Promise(resolve=>process.stdout.write(JSON.stringify({done:true,admissionId:row.admissionId})+'\n',resolve));
