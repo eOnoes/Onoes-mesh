@@ -122,7 +122,7 @@ function localReady(store,workspace='D:/example-only'){
   profile:{profileRef:'echo-builder-v1',identityRef:'approved-fixture',model:'synthetic',baseUrl:'http://127.0.0.1:9/v1',workspace}};
 }
 const nativeSid='local-'+'a'.repeat(64),nativeAid='b'.repeat(32);
-function localReceipt(row,status='started',generation=1){return {found:true,session_id:row.sessionId,submission_id:row.submissionId,receipt:{admission_id:nativeAid,status,execution_generation:generation,authority_epoch:1,ref:{profile_id:'fixture-native-home',session_id:row.sessionId}}};}
+function localReceipt(row,status='started',generation=1){return {found:true,session_id:row.sessionId,submission_id:row.submissionId,receipt:{...(status==='terminal'?{result:{final_response:'Synthetic terminal result'}}:{}),admission_id:nativeAid,status,execution_generation:generation,authority_epoch:1,ref:{profile_id:'fixture-native-home',session_id:row.sessionId}}};}
 
 test('native intent shares saved build identity, survives restart, and cannot switch profile or Relay transport',async()=>{
  const file=filename();let store=openTaskStore(file);try{
@@ -257,4 +257,52 @@ test('team runner observes persisted native attempts after restart without dispa
   assert.equal(observed.writerQuiescence,false);assert.equal(store.workroom.get(t.id).messages[0].state,'accepted');
   assert.equal(store.workroom.get(t.id).automation,undefined);
  }finally{if(runner)await runner.close();store.close();}
+});
+
+test('native terminal response imports once with immutable exact receipt provenance and survives restore',async()=>{
+ const file=filename();let store=openTaskStore(file);try{
+  const {t,send,profile}=localReady(store),local=store.workroom.localSessions;
+  let row=local.reserve(t.id,send,profile).nativeLocal;row=local.startCreate(t.id,send.id,row.revision);
+  row=local.bindSession(t.id,send.id,row.revision,{session_id:nativeSid});row=local.startSubmit(t.id,send.id,row.revision);
+  const update={schema:'workroom-update/v1',taskId:t.id,sendId:send.id,goal:t.progress.goal,
+   checklist:t.progress.checklist.map(step=>({...step,status:'done'})),result:'One fixture artifact',evidence:'Synthetic result only'};
+  const result={success:true,final_response:'```workroom-update\n'+JSON.stringify(update)+'\n```'};
+  const value={...localReceipt(row,'terminal'),receipt:{...localReceipt(row,'terminal').receipt,result}};
+  // A wrong admission must not partially import the result.
+  assert.throws(()=>local.observe(t.id,send.id,row.revision,{...value,session_id:'local-'+'c'.repeat(64)}),/saved submission/);
+  assert.equal(store.workroom.get(t.id).replies.length,0);
+  row=local.observe(t.id,send.id,row.revision,value);assert.match(row.resultHash,/^[a-f0-9]{64}$/);
+  const captured=store.workroom.get(t.id),offer=captured.agentUpdates[0];
+  assert.equal(captured.replies.length,1);assert.equal(offer.messageId,row.resultMessageId);assert.equal(offer.sendId,send.id);
+  assert.equal(offer.applied,false);assert.equal(row.writerQuiescence,false);
+  assert.throws(()=>store.workroom.captureReplies(t.id,send.id,[{id:send.id,k:'you',t:''},{id:row.resultMessageId,k:'ag',t:'overwritten'}]),/exact saved receipt/);
+  assert.throws(()=>store.workroom.applyAgentUpdate(t.id,{sendId:send.id,messageId:offer.messageId,hash:offer.hash,
+   revision:captured.progress.revision,taskRevision:captured.revision,briefRevision:captured.workroom.revision}),/retirement verification/);
+  row=local.observe(t.id,send.id,row.revision,value);assert.equal(store.workroom.get(t.id).replies.length,1);
+  assert.throws(()=>local.observe(t.id,send.id,row.revision,{...value,receipt:{...value.receipt,result:{...result,final_response:'changed'}}}),/result changed/);
+  assert.equal(local.read(t.id,send.id).resultHash,row.resultHash);
+  const {execFileSync}=await import('node:child_process');
+  const backup=JSON.parse(execFileSync(process.execPath,['integrations/workroom-backup.mjs',file,join(mkdtempSync(join(tmpdir(),'mesh-native-result-backup-')),'snapshot')],{encoding:'utf8'}));
+  const restored=openTaskStore(backup.restored);try{
+   assert.deepEqual(restored.workroom.localSessions.read(t.id,send.id),row);
+   assert.deepEqual(restored.workroom.get(t.id).replies,captured.replies);
+  }finally{restored.close();}
+  store.close();store=openTaskStore(file);assert.equal(store.workroom.get(t.id).agentUpdates.length,1);
+ }finally{store.close();}
+});
+
+test('terminal result absent stays eligible for read-only recovery; malformed and nonterminal results never import',()=>{
+ const store=openTaskStore(filename());try{
+  const {t,send,profile}=localReady(store),local=store.workroom.localSessions;
+  let row=local.reserve(t.id,send,profile).nativeLocal;row=local.startCreate(t.id,send.id,row.revision);
+  row=local.bindSession(t.id,send.id,row.revision,{session_id:nativeSid});row=local.startSubmit(t.id,send.id,row.revision);
+  const missing=localReceipt(row,'terminal');delete missing.receipt.result;
+  row=local.observe(t.id,send.id,row.revision,missing);assert.equal(local.pendingReads().length,1);
+  for(const result of [{final_response:1},{final_response:'x'.repeat(64001)},{final_response:'bad\0text'},[]]){
+   assert.throws(()=>local.observe(t.id,send.id,row.revision,{...missing,receipt:{...missing.receipt,result}}),/invalid/);
+  }
+  assert.throws(()=>local.observe(t.id,send.id,row.revision,{...missing,receipt:{...missing.receipt,status:'started',result:{final_response:'premature'}}}),/invalid/);
+  assert.equal(store.workroom.get(t.id).replies.length,0);
+  row=local.observe(t.id,send.id,row.revision,localReceipt(row,'terminal'));assert.equal(local.pendingReads().length,0);
+ }finally{store.close();}
 });

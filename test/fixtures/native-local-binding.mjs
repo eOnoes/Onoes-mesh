@@ -46,18 +46,24 @@ try{
   try{
    await observer.tick();row=store.workroom.localSessions.read(task.id,body.id);
   const deadline=Date.now()+60000;
-  while(row.nativeStatus!=='terminal'){
+  while(row.nativeStatus!=='terminal'||!row.resultHash){
     if(Date.now()>deadline)throw new Error('Native binding receipt did not settle');
     await new Promise(resolve=>setTimeout(resolve,30));await observer.tick();row=store.workroom.localSessions.read(task.id,body.id);
   }
   }finally{await observer.close();}
   const repeated=await reconcileLocalSession(recovery);
+  assert.equal(repeated.resultHash,row.resultHash);
+  const imported=store.workroom.get(task.id);assert.equal(imported.agentUpdates.length,1);
+  const offer=imported.agentUpdates[0];assert.equal(offer.sendId,body.id);assert.equal(offer.messageId,row.resultMessageId);
+  assert.equal(offer.applied,false);assert.equal(imported.replies.length,1);
+  assert.throws(()=>store.workroom.applyAgentUpdate(task.id,{sendId:offer.sendId,messageId:offer.messageId,hash:offer.hash,
+    revision:imported.progress.revision,taskRevision:imported.revision,briefRevision:imported.workroom.revision}),/retirement verification/);
   assert.equal(repeated.admissionId,row.admissionId);assert.equal(counts['session.create'],1);assert.equal(counts['prompt.submit'],1);
   assert.equal(row.writerQuiescence,false);assert.ok(writerQuiescenceBlockers(store.workroom.list()).length>0);
   assert.equal(JSON.stringify(store.workroom.get(task.id)).includes('synthetic-local-provider'),false);
   const report={qualification:'PASS',taskId:task.id,sendId:body.id,createRequestId:row.createRequestId,submissionId:row.submissionId,
     sessionId:row.sessionId,admissionId:row.admissionId,nativeProfileId:row.nativeProfileId,nativeEpoch:row.nativeEpoch,
-    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,
+    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,terminalResultImported:true,resultHash:row.resultHash,resultMessageId:row.resultMessageId,
     workspaceStillHeld:true,writerQuiescence:false,liveActivation:false};
   writeFileSync(join(root,'mesh-local-binding-evidence.json'),JSON.stringify(report,null,2));
   await new Promise(resolve=>process.stdout.write(JSON.stringify({done:true,admissionId:row.admissionId})+'\n',resolve));

@@ -85,6 +85,28 @@ def verify(root):
             or binding['rpcCounts'].get('session.create')!=1 or binding['rpcCounts'].get('prompt.lookup',0)<1
             or not binding['restartedBeforeReadback'] or not binding['workspaceStillHeld'] or binding['writerQuiescence']):
         raise RuntimeError('Mesh task/native dispatch binding evidence is incomplete')
+    import sqlite3
+    with sqlite3.connect('file:'+(root/'mesh-local-binding.sqlite').as_posix()+'?mode=ro',uri=True) as saved:
+        saved.row_factory=sqlite3.Row
+        saved.execute('PRAGMA query_only=ON')
+        row=saved.execute('SELECT * FROM workroom_local_sessions WHERE taskId=? AND sendId=?',
+            (binding['taskId'],binding['sendId'])).fetchone()
+        replies=saved.execute('SELECT * FROM workroom_replies WHERE taskId=? AND sendId=?',
+            (binding['taskId'],binding['sendId'])).fetchall()
+        team=saved.execute('SELECT * FROM workroom_automation WHERE taskId=?',(binding['taskId'],)).fetchone()
+        if (binding.get('terminalResultImported') is not True or binding.get('automaticTeamDispatch') is not True
+                or row is None or row['resultHash']!=binding['resultHash'] or row['teamBound']!=1
+                or row['sessionId']!=binding['sessionId'] or row['admissionId']!=binding['admissionId']
+                or len(replies)!=1 or replies[0]['messageId']!=row['resultMessageId']
+                or replies[0]['agentId']!='echo' or team['workerSendId']!=binding['sendId']
+                or team['phase']!='worker' or team['state']!='paused'):
+            raise RuntimeError('Native result/card provenance or paused review boundary is incomplete')
+        text=replies[0]['text']
+        if not text.startswith('```workroom-update\n') or not text.endswith('\n```'):
+            raise RuntimeError('Native result is not the expected structured update')
+        update=json.loads(text[len('```workroom-update\n'):-len('\n```')])
+        if update['taskId']!=binding['taskId'] or update['sendId']!=binding['sendId']:
+            raise RuntimeError('Native structured update belongs to another task or dispatch')
     processes=json.loads((root/'local-session-fixture-processes.json').read_text())
     if not processes['processTreeEnded'] or processes['activeProcesses'] or processes['terminationRequested']:
         raise RuntimeError('Disposable owner/process tree did not end naturally')
@@ -92,7 +114,8 @@ def verify(root):
         'native_session_and_submission_identity_replay','verified_separate_worker_and_observed_exit',
         'private_auth_and_conflict_refusals','owner_settled_and_fixture_tree_ended_naturally',
         'exact_read_only_submission_lookup_without_cross_session_access_or_dispatch',
-        'actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit'],
+        'actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit',
+        'native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review'],
         'wholeWorkerReleaseQualified':False,'liveInstallation':False}
     (root/'local-session-verified.json').write_text(json.dumps(result,indent=2))
     return result
@@ -126,9 +149,20 @@ async def child(root):
         call=is_worker and len(previous)<2
         name='read_file' if not previous else 'write_file';args={'path':str(proof)}
         if name=='write_file':args['content']='Mesh local session proof.\n'
+        final='mesh local fixture completed'
+        if is_worker:
+            import re
+            frozen='\n'.join(m.get('content','') for m in body.get('messages',[]) if m.get('role')=='user' and isinstance(m.get('content'),str))
+            task_match=re.search(r'Workroom task ([a-f0-9-]+):',frozen)
+            send_match=re.search(r'Workroom message ([a-f0-9-]+)',frozen)
+            if task_match and send_match:
+                update={'schema':'workroom-update/v1','taskId':task_match.group(1),'sendId':send_match.group(1),
+                    'goal':'Edit the single synthetic proof file','checklist':[{'id':'proof','text':'Edit and verify the proof','status':'done'}],
+                    'result':'Updated local-session-proof.md','evidence':'Native file tool wrote Mesh local session proof.; external qualifier checks exact bytes.'}
+                final='```workroom-update\n'+json.dumps(update)+'\n```'
         message=({'role':'assistant','content':None,'tool_calls':[{'id':'local-proof-'+str(len(previous)),
             'type':'function','function':{'name':name,'arguments':json.dumps(args)}}]} if call else
-            {'role':'assistant','content':'mesh local fixture completed' if is_worker else '{"title":"Local worker proof"}'})
+            {'role':'assistant','content':final if is_worker else '{"title":"Local worker proof"}'})
         finish='tool_calls' if call else 'stop'
         if body.get('stream'):
             delta=dict(message);delta.pop('role',None)
