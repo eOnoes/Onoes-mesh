@@ -24,9 +24,13 @@ Evidence: `integrations/live-source-custody-qualification.json`.
 - Explicit openai-codex closed-profile preflight is implemented and tested.
   One live unsubmitted session's public policy matched the requested file/terminal
   toolsets and workspace, with zero admissions. This is not generation or private
-  credential-absence proof. The shared gateway still has its baseline source;
-  the tested seven-file bridge installer/rollback is prepared but not applied.
-  Gateway maintenance approval remains pending.
+  credential-absence proof. Eddie approved bridge maintenance on 2026-11-09;
+  all seven reviewed files are installed and the gateway drained/restarted safely.
+  Health, installed hashes, unchanged Mesh/model processes and zero-prompt public
+  policy readback passed. Initial cold startup exceeded its first health window;
+  configured MCP startup errors remain a separate finding. Production worker
+  enrollment/generation and Rook activation are still unqualified. See
+  `integrations/native-bridge-maintenance-qualification.json`.
 - Rook candidate ede8e4ae is already included in this checkout. Its local tests
   are not deployed acceptance. Rook remains OFF pending its own approved identity,
   reporting transport, one scheduler owner and deployed integration checks.

@@ -1,6 +1,6 @@
 {
   "schema": "mesh-native-bridge-maintenance/v1",
-  "state": "prepared_not_applied",
+  "state": "installed_gateway_restarted_verified",
   "focusedTests": {
     "command": "python -m unittest test.native_bridge_maintenance_test -v",
     "passed": 7
@@ -83,8 +83,8 @@
       "sh.Run \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\tools\\python-3.14.9+20261021-win32-x64\\python.exe -m hermes_cli.main gateway run\", 0, False"
     ]
   },
-  "maintenanceApproval": "pending",
-  "liveInstallation": false,
+  "maintenanceApproval": "Eddie explicitly approved installation and brief shared-gateway restart in this chat on 2026-11-09",
+  "liveInstallation": true,
   "activationAuthorized": false,
   "pythonRegression": {
     "command": "python -m unittest discover -s test -p '*_test.py' -v",
@@ -100,5 +100,71 @@
     "sourceOnly": true,
     "fileSetVerified": true,
     "totalFiles": 15
+  },
+  "activationBoundary": "Approval covered bridge installation and gateway restart only; no production worker enrollment, prompt, Rook or Mind activation",
+  "installation": {
+    "gatewayHealth": "ok",
+    "version": "0.23.0",
+    "gatewayListeners": [
+      6080
+    ],
+    "installedFiles": [
+      {
+        "path": "gateway/session_controls.py",
+        "matches": true
+      },
+      {
+        "path": "tui_gateway/contracts/canonical.py",
+        "matches": true
+      },
+      {
+        "path": "gateway/session_managed_worker.py",
+        "matches": true
+      },
+      {
+        "path": "gateway/mesh_assignment_process.py",
+        "matches": true
+      },
+      {
+        "path": "gateway/mesh_windows_process.py",
+        "matches": true
+      },
+      {
+        "path": "tools/file_tools_read_tracking.py",
+        "matches": true
+      },
+      {
+        "path": "tools/file_tools.py",
+        "matches": true
+      }
+    ],
+    "unrelatedProcessesUnchanged": {
+      "7196": true,
+      "58292": true
+    },
+    "credentialsChanged": false,
+    "liveWorkerDispatched": false,
+    "initialHealthDeadlineExceeded": true,
+    "recoveredWithoutSecondStart": true,
+    "stopResult": "Native gateway stop drained cleanly; no interrupt/force flags",
+    "startup": "Existing Hermes_Gateway scheduled task and unchanged hidden VBS launcher",
+    "meshBoardPreserved": true,
+    "taskCount": 14,
+    "meshRelayObservation": "fresh/live_relay_http via admitted /api/service-connections",
+    "existingPublicPolicyReadback": "PASS; zero prompts",
+    "startupFindings": [
+      "Initial health deadline exceeded; original startup recovered without duplicate start",
+      "Configured dsh/tripp-telegram/t3 MCP startup errors observed; no environment or unrelated connector repair attempted"
+    ]
+  },
+  "installedSourceBackup": {
+    "directory": "E:\\App-Backups\\Onoes-Mesh-Native-Bridge\\2026-11-09_14-13-43_UTC_installed_de2589e0",
+    "verified": true,
+    "files": 7,
+    "credentialsIncluded": false
+  },
+  "postInstallMaintenanceTests": {
+    "passed": 7,
+    "command": "python -m unittest test.native_bridge_maintenance_test -v"
   }
 }
