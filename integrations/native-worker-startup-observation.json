@@ -22,12 +22,13 @@
     "platform": "hermes-agent",
     "version": "0.23.0"
   },
-  "trialState": "prepared_awaiting_owner_approval",
-  "sessionCreated": false,
-  "promptSent": false,
+  "trialState": "terminal_interrupted",
+  "sessionCreated": true,
+  "promptSent": true,
   "approvalGuardVerified": true,
   "constructorEvidence": "integrations/native-constructor-startup-qualification.json",
   "qualification": "NOT_QUALIFIED_FOR_REAL_WORKER",
-  "blocker": "Automatic approval review rejected new real-provider trial; awaiting explicit owner approval",
-  "liveWorkerRootCause": "UNPROVEN"
+  "blocker": "Approved single trial showed construction-stage delay; final log reached ready, but guide task interrupted. Root cause unproven.",
+  "liveWorkerRootCause": "UNPROVEN",
+  "trialEvidence": "integrations/native-worker-construction-trial.json"
 }

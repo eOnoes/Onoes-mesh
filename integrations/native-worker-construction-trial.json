@@ -1,0 +1,142 @@
+{
+  "schema": "mesh-native-worker-construction-trial/v1",
+  "sessionId": "local-85fccea404754fa641e5c0d6b83282ca9fa3a641a6d0488a3b97e42db76f88e7",
+  "admissionId": "258a5e35899148058a342f6ddab329bc",
+  "approval": "Eddie explicitly approved this one diagnostic task in current chat",
+  "profileVerified": true,
+  "model": "gpt-6-luna",
+  "provider": "openai-codex",
+  "maxTurns": 4,
+  "tools": [
+    "file"
+  ],
+  "receipt": {
+    "found": true,
+    "status": "terminal",
+    "outcome": "interrupted",
+    "receiptOutcome": "interrupted",
+    "processScope": null,
+    "finalResponse": "Stopped before this turn started. Your message was not processed."
+  },
+  "startupPhases": [
+    "policy_bound",
+    "owner_adopt_begin",
+    "owner_adopt_returned",
+    "store_created",
+    "process_recovery_complete",
+    "mcp_discovery_begin",
+    "mcp_discovery_complete",
+    "agent_import_complete",
+    "agent_construct_begin",
+    "agent_construct_complete",
+    "ready_sent"
+  ],
+  "intermediateObservation": "Two observations ended at agent_construct_begin; final log includes agent_construct_complete and ready_sent",
+  "timingLimitation": "Phase labels have no timestamps; completion relative to cancellation cannot be established from log alone",
+  "workerPid": 23872,
+  "workerExitVerified": true,
+  "guideUnchanged": true,
+  "guideSha256": "ea34b8cab4e4a625b7e92e595a4f4d627c0e33eac3f03b19069eca2e5c0e71c4",
+  "journalMetadata": {
+    "nextSequence": 16,
+    "pendingCount": 0
+  },
+  "qualified": false,
+  "rootCause": "UNPROVEN; startup delay observed around construction, permanent deadlock not established",
+  "boundContextProbe": {
+    "folder": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-constructor-bound-startup-ea70523b5e74470e9e88c4e317ed57df",
+    "exitCode": 1,
+    "ownedProcessObservation": {
+      "schema": "mesh-writer-process-tree/v1",
+      "runId": "native-constructor-startup-probe",
+      "generation": "46e996c65515424fb424d4fbdacb10f1",
+      "coverage": "windows_job_members",
+      "sealed": true,
+      "terminationRequested": false,
+      "writerQuiescence": false,
+      "processTreeEnded": true,
+      "state": "ended",
+      "activeProcesses": 0,
+      "allRootsEnded": true
+    },
+    "status": {
+      "stage": "constructed_no_prompt",
+      "pid": 55584,
+      "elapsedSeconds": 4.001,
+      "existingCredentialUsable": true,
+      "apiMode": "codex_responses",
+      "promptsSubmitted": 0,
+      "credentialsExported": false,
+      "defaultStateOpened": false,
+      "constructorCombinedWithRealRoute": true,
+      "storageProbe": true,
+      "storeCalls": [],
+      "rpcCalls": [
+        "worker.persist"
+      ],
+      "computeContextBound": true
+    },
+    "rpcStack": {
+      "method": "worker.persist",
+      "frames": [
+        {
+          "file": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-constructor-bound-startup-ea70523b5e74470e9e88c4e317ed57df\\probe.py",
+          "line": 83,
+          "function": "<module>"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\run_agent.py",
+          "line": 288,
+          "function": "__init__"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\agent_init.py",
+          "line": 2251,
+          "function": "init_agent"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\agent_init.py",
+          "line": 1918,
+          "function": "_build_context_engine"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\context_compressor.py",
+          "line": 2327,
+          "function": "bind_session_state"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\context_compressor.py",
+          "line": 2562,
+          "function": "get_active_compression_failure_cooldown"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\runtime_session_store.py",
+          "line": 436,
+          "function": "get_compression_failure_cooldown"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\runtime_session_store.py",
+          "line": 429,
+          "function": "get_compression_failure_cooldown_row"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\runtime_session_compression.py",
+          "line": 34,
+          "function": "get_session"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\runtime_session_store.py",
+          "line": 331,
+          "function": "_apply"
+        },
+        {
+          "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\runtime_session_store.py",
+          "line": 339,
+          "function": "retry_pending"
+        }
+      ]
+    },
+    "interpretation": "Constructor reached in4.001s; refusal RPC poisoned adapter and close failed. Diagnostic partial evidence, not clean worker acceptance."
+  },
+  "nextStep": "Add route-versus-factory timing in disposable diagnostic source and qualify it without model generation before proposing another finite live trial."
+}
