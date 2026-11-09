@@ -2,8 +2,8 @@
   "schema": "mesh-native-local-session-qualification/v1",
   "qualification": "PASS",
   "nativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
-  "scope": "Local supported-profile qualification: actual pinned native owner, managed interpreter, file and terminal tools, fresh authenticated retirement consumption, exact report application and one original Nims read-only review dispatch. Provider and review transport are synthetic; no deployed connection or activation.",
-  "evidenceDirectory": "hermes-local-session-6de26750-be74-46f6-8c1e-1dfbd5f64cbb",
+  "scope": "Disposable actual native builder/file/terminal/retirement to real signed-in Nims read-only review. Builder provider remains synthetic; production enrollment and watcher activation remain off.",
+  "evidenceDirectory": "hermes-local-session-b88415f6-3be0-420e-888a-288ee2646949",
   "candidateFiles": {
     "gateway/session_controls.py": "1e3ed1b9c5442ecc176a542a9c9d88f4e23851e1434a6868fc3c69ea6a653516",
     "tui_gateway/contracts/canonical.py": "1c25f27e18e0a6f7ddf4ecf98c857a3555ef9848b31980423480c5a664ca5e14",
@@ -34,24 +34,25 @@
     "exact_assignment_job_remains_held_after_root_exit_until_late_child_ends",
     "authenticated_process_observation_persists_before_explicit_retirement_consumption",
     "passive_retirement_stays_held_during_write_and_terminal_execution_refuses_new_mutation",
-    "frozen_profile_and_native_outcome_feed_one_saved_nims_read_only_review"
+    "frozen_profile_and_native_outcome_feed_one_saved_nims_read_only_review",
+    "real_nims_review_saved_under_original_dispatch_without_source_changes"
   ],
   "meshBinding": {
     "qualification": "PASS",
-    "taskId": "2011f808-3ff7-48a0-900f-bf25dff8b331",
-    "sendId": "4f37cd75-1d22-45ef-b598-78a86bc1c77a",
-    "createRequestId": "mesh-local-create-9e8c2559274691229bd0cd0a9ed95c9bdc8a3544d3da31798ccc6062b41b297c",
-    "submissionId": "mesh-local-submit-9e8c2559274691229bd0cd0a9ed95c9bdc8a3544d3da31798ccc6062b41b297c",
-    "sessionId": "local-ddc3c0d0751c0dc558b1a60dbb6247bee8cf8be8b627e881cf9a59846f5e4f13",
-    "admissionId": "0c9b77a8065c41c08cf0333fa28b5548",
-    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-6de26750-be74-46f6-8c1e-1dfbd5f64cbb\\fixture-home",
+    "taskId": "d7cf9ea3-a214-43fa-a2ac-b23601dfd660",
+    "sendId": "b443bfdf-9427-42d3-bc07-072a640805d1",
+    "createRequestId": "mesh-local-create-8f57a4daed2c550d88418b0240329f8fcbdc4c25f251fc066c706252926ac3e4",
+    "submissionId": "mesh-local-submit-8f57a4daed2c550d88418b0240329f8fcbdc4c25f251fc066c706252926ac3e4",
+    "sessionId": "local-15a81b8e18812479a38a3a07e295fbd9b7907b8d4b18369c9cc5d66cd87190dd",
+    "admissionId": "bb80b1c4b63e4ea8af7c2fefbe06a84e",
+    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-b88415f6-3be0-420e-888a-288ee2646949\\fixture-home",
     "nativeEpoch": 1,
     "nativeGeneration": 1,
     "nativeStatus": "terminal",
     "rpcCounts": {
       "session.create": 1,
       "prompt.submit": 1,
-      "prompt.lookup": 224,
+      "prompt.lookup": 272,
       "mesh.fixture.release-child": 1,
       "mesh.fixture.release-write": 1
     },
@@ -64,26 +65,27 @@
     "processReadbackPersisted": true,
     "authorityDrainObserved": true,
     "executionClosedObserved": true,
-    "resultHash": "a392b12e7cddfbf7fd4bc98f6ab3786026a65e7a8492ca39a82cf2a6f2b88fcf",
-    "resultMessageId": "native-ae5b1fb0106a44fc4d95c7c26340c644dc9eb1d041c2b719f016be1c1b32ce31",
-    "workspaceStillHeld": true,
+    "resultHash": "0315ffb57a932c9ba6dad922f8d17b818ab71f8b9d75742059a06f9bbfcd7425",
+    "resultMessageId": "native-9ee0e199a48c51e9932a5f2d537fc5ce25e7687d07b41fdd15002371438f4bde",
+    "workspaceStillHeld": false,
     "writerQuiescence": true,
-    "retirementHash": "f8e146406469ba96d3b3e6536ac3f9d60fe74721b3dc3a7ee6bd165ef73d4f39",
+    "retirementHash": "2c8092317edde8a0c71fe2fb3eddc63ff21def681ebc66240759a245794d613c",
     "reviewSentToNims": true,
-    "reviewTransportSynthetic": true,
+    "reviewTransportSynthetic": false,
+    "realNimsReviewCompleted": true,
     "liveActivation": false
   },
-  "fullLocalRegressionTests": 416,
+  "fullLocalRegressionTests": 419,
   "nativeOwnerSettled": true,
   "fixtureTreeEndedNaturally": true,
   "wholeWorkerReleaseQualified": true,
   "liveInstallation": false,
   "producerRefactor": "Qualified RPC bytes reproduced from pristine pinned archive",
   "remaining": [
-    "Approve and qualify production service identity, native profile/model mapping and live Nims read-only review delivery/recovery before enrollment.",
-    "Qualify broader command profiles separately; frozen configuration/toolsets are not an operating-system sandbox.",
-    "Rook reporting transport, exactly one scheduler owner, deployed acceptance and explicit activation remain outstanding; watcher stays off.",
-    "Mind live access and shared model-service maintenance remain deferred."
+    "Production native worker service identity and profile/model binding are not enrolled; builder provider in qualification is synthetic.",
+    "Real automatic builder-to-Nims delivery is qualified in a disposable board; uncertain in-flight reviewer recovery and production acceptance still need qualification.",
+    "Rook own identity/report transport/single scheduler/deployed acceptance and explicit activation remain outstanding.",
+    "Mind live access, shared model-service maintenance and external-machine integration remain deferred/open."
   ],
   "nativeBuildChecks": {
     "terminalExitCode": 0,
@@ -117,7 +119,19 @@
     "originalEvidencePersistsAcrossRestore": true,
     "nativeOutcome": "completed",
     "nimsReviewDispatches": 1,
-    "reviewTransportSynthetic": true,
-    "liveDeliveryVerified": false
+    "reviewTransportSynthetic": false,
+    "liveDeliveryVerified": true,
+    "liveDeliveryScope": "Real Nims transport in disposable local board; not production enrollment",
+    "reviewVerdict": "changes_requested"
+  },
+  "realNimsReview": {
+    "threadId": "01a1bf16-6500-71a2-b17f-3a7d74962c46",
+    "turnId": "01a1bf16-6668-7e50-ba3e-98eb48539222",
+    "sendId": "bf4903c5-ada5-4d5f-9c77-af1175d352e1",
+    "status": "completed",
+    "verdict": "changes_requested",
+    "filesUnchanged": true,
+    "sourceReadVerified": true,
+    "automaticDone": false
   }
 }

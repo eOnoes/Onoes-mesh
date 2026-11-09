@@ -2,6 +2,9 @@
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
+import {createHash} from 'node:crypto';
+import {withNims} from '../../lib/nims-link.mjs';
+import {createCodexClient} from '../../lib/codex-client.mjs';
 import {createInterface} from 'node:readline';
 import {openTaskStore} from '../../lib/task-store.mjs';
 import {reconcileLocalSession,retireLocalSession} from '../../lib/workroom-local-sessions.mjs';
@@ -14,7 +17,7 @@ input.on('line',line=>{const frame=JSON.parse(line),pending=waiting.get(frame.id
   if(frame.error)pending.reject(new Error(frame.error));else pending.resolve(frame.result);});
 const rpc=(method,params)=>new Promise((resolve,reject)=>{const id=++serial;counts[method]=(counts[method]||0)+1;
   waiting.set(id,{resolve,reject});process.stdout.write(JSON.stringify({id,method,params})+'\n');});
-const file=join(root,'mesh-local-binding.sqlite');let store=openTaskStore(file);
+const file=join(root,'mesh-local-binding.sqlite');let store=openTaskStore(file),liveReviewRelay;
 try{
   let task=store.create({title:'Dedicated native binding fixture',description:'Edit only local-session-proof.md.',owner:'echo'});
   task=store.workroom.save(task.id,{project:'synthetic',criteria:'Exact proof bytes',owner:'echo',team:'local_build',stage:'ready',revision:task.workroom?.revision??1});
@@ -25,7 +28,7 @@ try{
     revision:task.plan?.revision??0,taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision});
   task=store.workroom.get(task.id);
   const agents=[{id:'echo',backend:'hermes',status:'idle',conversation_id:'native-local'},
-    {id:'nims',backend:'codex',status:'idle',conversation_id:'fixture-nims'}];
+    {id:'nims',backend:'codex',status:'idle',conversation_id:config.realNimsReview?'mesh-nims':'fixture-nims'}];
   store.workroom.automation.action(task.id,{action:'start',revision:0,planRevision:task.plan.revision,
     taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision},agents,config.workspace);
   const stage=store.workroom.automation.read(task.id),body={id:stage.workerSendId};
@@ -86,19 +89,50 @@ try{
     planRevision:resumed.plan.revision,taskRevision:resumed.revision,briefRevision:resumed.workroom.revision,
     progressRevision:resumed.progress.revision},agents,config.workspace);
   const reviewSends=[];
-  const reviewRelay={agents:async()=>agents,nativeRead:async()=>({taskSessionBinding:1,messages:[]}),
+  let reviewRelay;
+  let reviewEvidence;
+  if(config.realNimsReview){
+    const client=createCodexClient({root:config.workspace});
+    liveReviewRelay=withNims({agents:async()=>[agents[0]],snapshot:async()=>({}),nativeRead:async()=>{throw Error('Unexpected non-Nims read');},close:async()=>{}},{root:config.workspace,workroom:store.workroom,client});
+    writeFileSync(join(root,'nims-connection-evidence.json'),JSON.stringify(await liveReviewRelay.snapshot(),null,2));
+    reviewRelay={...liveReviewRelay,taskMessage:async(message,admitted)=>{reviewSends.push(message);return liveReviewRelay.taskMessage(message,admitted);}};
+    reviewEvidence={client};
+  }else reviewRelay={agents:async()=>agents,nativeRead:async()=>({taskSessionBinding:1,messages:[]}),
     taskMessage:async message=>{assert.equal(message.agentId,'nims');assert.match(message.text,/Phase: review/);assert.match(message.text,/Read-only tools only/);reviewSends.push(message);}};
+  const checkedFiles=['local-session-proof.md','local-build-proof.mjs','verify-local-build.mjs','local-build-check.json'];
+  const fileHashes=()=>Object.fromEntries(checkedFiles.map(name=>[name,createHash('sha256').update(readFileSync(join(config.workspace,name))).digest('hex')]));
+  const beforeReview=fileHashes();
   const handoff=createTeamRunner({workroom:store.workroom,root:config.workspace,relay:reviewRelay,intervalMs:600000});
-  try{await handoff.tick();await handoff.tick();}finally{await handoff.close();}
+  try{
+    await handoff.tick();await handoff.tick();
+    if(config.realNimsReview){
+      const deadline=Date.now()+75000;
+      while(store.workroom.get(task.id).automation.state==='active'){
+        if(Date.now()>deadline)throw Error('Real Nims review did not reach a confirmed result');
+        await new Promise(resolve=>setTimeout(resolve,250));await handoff.tick();
+      }
+      const reviewed=store.workroom.get(task.id),run=store.workroom.nims.get(stage.reviewerSendId);
+      assert.equal(reviewed.automation.state,'needs_review');assert.equal(run.state,'completed');
+      assert.equal(reviewed.agentReviews.length,1);assert.equal(reviewed.agentReviews[0].sendId,stage.reviewerSendId);
+      const native=await reviewEvidence.client.readThread(run.threadId),turn=native.thread.turns.find(item=>item.id===run.turnId);
+      assert.equal(turn.status,'completed');assert.deepEqual(fileHashes(),beforeReview);
+      const commands=turn.items.filter(item=>item.type==='commandExecution').map(item=>({command:item.command,status:item.status,exitCode:item.exitCode,sourceReadInOutput:typeof item.aggregatedOutput==='string'&&item.aggregatedOutput.includes('export const localProof = true;')}));
+      assert.ok(commands.some(item=>item.sourceReadInOutput&&item.exitCode===0));
+      const itemTypes=turn.items.map(item=>item.type);assert.equal(itemTypes.some(type=>/mcp|fileChange/i.test(type)),false);
+      reviewEvidence={qualification:'PASS',taskId:task.id,sendId:stage.reviewerSendId,threadId:run.threadId,turnId:run.turnId,
+        status:turn.status,itemTypes,commands,review:reviewed.agentReviews[0],before:beforeReview,after:fileHashes(),realNimsTransport:true};
+      writeFileSync(join(root,'nims-review-evidence.json'),JSON.stringify(reviewEvidence,null,2));
+    }
+  }finally{await handoff.close();if(liveReviewRelay){await liveReviewRelay.close();liveReviewRelay=null;}}
   assert.equal(reviewSends.length,1);assert.equal(reviewSends[0].id,stage.reviewerSendId);
   assert.equal(store.workroom.get(task.id).automation.phase,'reviewer');
   assert.equal(repeated.admissionId,row.admissionId);assert.equal(counts['session.create'],1);assert.equal(counts['prompt.submit'],1);
-  assert.equal(row.writerQuiescence,true);assert.ok(writerQuiescenceBlockers(store.workroom.list()).length>0);
+  assert.equal(row.writerQuiescence,true);assert.equal(writerQuiescenceBlockers(store.workroom.list()).length>0,!config.realNimsReview);
   assert.equal(JSON.stringify(store.workroom.get(task.id)).includes('synthetic-local-provider'),false);
   const report={qualification:'PASS',taskId:task.id,sendId:body.id,createRequestId:row.createRequestId,submissionId:row.submissionId,
     sessionId:row.sessionId,admissionId:row.admissionId,nativeProfileId:row.nativeProfileId,nativeEpoch:row.nativeEpoch,
     nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,terminalResultImported:true,buildCheckVerified:true,processReadbackPersisted:true,authorityDrainObserved:true,executionClosedObserved:true,resultHash:row.resultHash,resultMessageId:row.resultMessageId,
-    workspaceStillHeld:true,writerQuiescence:true,retirementHash:row.retirementHash,reviewSentToNims:true,reviewTransportSynthetic:true,liveActivation:false};
+    workspaceStillHeld:!config.realNimsReview,writerQuiescence:true,retirementHash:row.retirementHash,reviewSentToNims:true,reviewTransportSynthetic:!config.realNimsReview,realNimsReviewCompleted:!!config.realNimsReview,liveActivation:false};
   writeFileSync(join(root,'mesh-local-binding-evidence.json'),JSON.stringify(report,null,2));
   await new Promise(resolve=>process.stdout.write(JSON.stringify({done:true,admissionId:row.admissionId})+'\n',resolve));
-}finally{store.close();input.close();process.stdin.pause();}
+}finally{if(liveReviewRelay)await liveReviewRelay.close();store.close();input.close();process.stdin.pause();}

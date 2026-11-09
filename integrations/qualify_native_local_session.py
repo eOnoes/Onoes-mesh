@@ -86,7 +86,7 @@ def verify(root):
     if (report.get('meshBindingVerified') is not True or report.get('meshBindingDroppedReply') is not True
             or binding['qualification']!='PASS' or binding['rpcCounts'].get('prompt.submit')!=1
             or binding['rpcCounts'].get('session.create')!=1 or binding['rpcCounts'].get('prompt.lookup',0)<1
-            or not binding['restartedBeforeReadback'] or not binding['workspaceStillHeld'] or binding['writerQuiescence'] is not True):
+            or not binding['restartedBeforeReadback'] or binding['workspaceStillHeld'] is not (not manifest.get('realNimsReview',False)) or binding['writerQuiescence'] is not True):
         raise RuntimeError('Mesh task/native dispatch binding evidence is incomplete')
     import sqlite3
     with sqlite3.connect('file:'+(root/'mesh-local-binding.sqlite').as_posix()+'?mode=ro',uri=True) as saved:
@@ -102,10 +102,22 @@ def verify(root):
                 or row['sessionId']!=binding['sessionId'] or row['admissionId']!=binding['admissionId']
                 or len(replies)!=1 or replies[0]['messageId']!=row['resultMessageId']
                 or replies[0]['agentId']!='echo' or team['workerSendId']!=binding['sendId']
-                or team['phase']!='reviewer' or team['state']!='active'
+                or team['phase']!='reviewer' or team['state']!=('needs_review' if manifest.get('realNimsReview') else 'active')
                 or not row['retiredAt'] or row['retirementHash']!=binding['retirementHash']
-                or binding.get('reviewSentToNims') is not True or binding.get('reviewTransportSynthetic') is not True):
+                or binding.get('reviewSentToNims') is not True or binding.get('reviewTransportSynthetic') is not (not manifest.get('realNimsReview',False))):
             raise RuntimeError('Native result/card provenance or paused review boundary is incomplete')
+        if manifest.get('realNimsReview'):
+            review=json.loads((root/'nims-review-evidence.json').read_text())
+            run=saved.execute('SELECT * FROM nims_runs WHERE sendId=?',(team['reviewerSendId'],)).fetchone()
+            review_reply=saved.execute('SELECT * FROM workroom_replies WHERE taskId=? AND sendId=?',(binding['taskId'],team['reviewerSendId'])).fetchall()
+            if (run is None or run['state']!='completed' or run['threadId']!=review['threadId'] or run['turnId']!=review['turnId']
+                    or review['sendId']!=team['reviewerSendId'] or review['taskId']!=binding['taskId']
+                    or review['status']!='completed' or review['before']!=review['after'] or review['realNimsTransport'] is not True
+                    or len(review_reply)!=1 or review_reply[0]['agentId']!='nims' or '```workroom-review' not in review_reply[0]['text']
+                    or binding.get('realNimsReviewCompleted') is not True
+                    or not any(item.get('sourceReadInOutput') is True and item.get('exitCode')==0 for item in review.get('commands',[]))
+                    or any('mcp' in kind.lower() or kind=='fileChange' for kind in review['itemTypes'])):
+                raise RuntimeError('Actual Nims review identity, saved report or unchanged files not established')
         text=replies[0]['text']
         if not text.startswith('```workroom-update\n') or not text.endswith('\n```'):
             raise RuntimeError('Native result is not the expected structured update')
@@ -185,6 +197,9 @@ def verify(root):
         'passive_retirement_stays_held_during_write_and_terminal_execution_refuses_new_mutation',
         'frozen_profile_and_native_outcome_feed_one_saved_nims_read_only_review'],
         'wholeWorkerReleaseQualified':True,'liveInstallation':False}
+    if manifest.get('realNimsReview'):
+        result['checks'].append('real_nims_review_saved_under_original_dispatch_without_source_changes')
+        result['realNimsReviewCompleted']=True
     (root/'local-session-verified.json').write_text(json.dumps(result,indent=2))
     return result
 
@@ -377,7 +392,7 @@ async def child(root):
                 import shutil
                 node=shutil.which('node')
                 if node is None:raise RuntimeError('Existing Node is required for Mesh binding qualification')
-                (root/'node-binding-config.json').write_text(json.dumps({'endpoint':endpoint,'workspace':str(root/'workspace')}))
+                (root/'node-binding-config.json').write_text(json.dumps({'endpoint':endpoint,'workspace':str(root/'workspace'),'realNimsReview':json.loads((root/'manifest.json').read_text()).get('realNimsReview',False)}))
                 script=Path(__file__).resolve().parents[1]/'test'/'fixtures'/'native-local-binding.mjs'
                 dropped=False;native_submitted=None;node_calls={};native_session=None;native_request=None
                 released=False
@@ -470,8 +485,19 @@ async def child(root):
                     (root/'assignment-process-evidence.json').write_text(json.dumps(evidence,indent=2))
                     return {'writesDrained':True}
 
+                node_environment=dict(os.environ)
+                review_manifest=json.loads((root/'manifest.json').read_text())
+                if review_manifest.get('realNimsReview'):
+                    # Only the reviewer process receives existing owner runtime paths.
+                    # The native worker retains isolated roots and no provider secrets.
+                    paths=review_manifest['reviewerRuntimePaths']
+                    if set(paths)!={'APPDATA','LOCALAPPDATA','USERPROFILE','HOME','CODEX_HOME'}:
+                        raise RuntimeError('Unexpected reviewer runtime-path fields')
+                    for key,value in paths.items():
+                        if value is None:node_environment.pop(key,None)
+                        else:node_environment[key]=value
                 with (root/'node-binding.log').open('wb') as node_log:
-                    node_process=subprocess.Popen([node,str(script),str(root)],cwd=root/'source',
+                    node_process=subprocess.Popen([node,str(script),str(root)],cwd=root/'source',env=node_environment,
                         stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=node_log,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
                     try:
                         while True:
@@ -545,10 +571,14 @@ if __name__=='__main__':
     elif len(sys.argv)==3 and sys.argv[1]=='--verify':
         print(json.dumps(verify(Path(sys.argv[2]).resolve())))
     else:
-        if len(sys.argv)!=3:raise SystemExit('Usage: native_root python_executable | --verify directory')
+        if len(sys.argv) not in (3,4) or (len(sys.argv)==4 and sys.argv[3]!='--real-nims'):raise SystemExit('Usage: native_root python_executable [--real-nims] | --verify directory')
         from integrations.qualify_hermes_runtime import runtime_environment
         from integrations.windows_writer_fence import WindowsWriterFence
-        native,executable=sys.argv[1:];root=prepare_local(native)
+        native,executable=sys.argv[1:3];root=prepare_local(native)
+        if len(sys.argv)==4:
+            manifest=json.loads((root/'manifest.json').read_text());manifest['realNimsReview']=True
+            manifest['reviewerRuntimePaths']={key:os.environ.get(key) for key in ('APPDATA','LOCALAPPDATA','USERPROFILE','HOME','CODEX_HOME')}
+            (root/'manifest.json').write_text(json.dumps(manifest,indent=2))
         environment=runtime_environment(root,native,executable,('--safe-mode',))
         print(json.dumps({'directory':str(root),'state':'running_isolated_local_session'}),flush=True)
         fence=WindowsWriterFence('local-session-fixture',str(uuid.uuid4()))
