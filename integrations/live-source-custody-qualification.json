@@ -1,0 +1,43 @@
+{
+  "schema": "mesh-live-source-custody/v1",
+  "qualification": "PASS",
+  "sourceCommit": "14969cccdbbe0af4508c8ee50208de18aa595e23",
+  "beforeBuild": "8150562fb328",
+  "beforeMatchedDisk": false,
+  "afterRelease": {
+    "schemaVersion": "mesh-release/v1",
+    "version": "0.1.0",
+    "build": "114cf18da16a",
+    "sourceSha256": "114cf18da16a97db31d46d729215216ed958b0d5c756617203b9da93f34333b3",
+    "startedAt": "2026-11-09T10:44:03.729Z",
+    "database": "data/workroom-preview/tasks.sqlite",
+    "qualification": "candidate",
+    "note": "Private release candidate. Physical-phone acceptance and inference qualification remain open."
+  },
+  "afterMatchesDisk": true,
+  "dataVerification": {
+    "tablesPreserved": true,
+    "servicesUnchanged": true,
+    "tableCount": 23,
+    "integrity": "ok",
+    "foreignKeys": []
+  },
+  "taskCount": 14,
+  "boardSha256Preserved": true,
+  "method": "Existing admitted release verifier; named Mesh-only launcher; read-only all-table fingerprints and service PID/birth/executable comparison",
+  "meshPid": 58292,
+  "sharedServicesRestarted": false,
+  "workerDispatches": 0,
+  "activation": {
+    "rook": false,
+    "mind": false,
+    "productionWorkerEnrollment": false
+  },
+  "remaining": [
+    "Shared gateway bridge installation approval pending",
+    "Real production builder and independent reviewer acceptance",
+    "Rook identity/reporting/single scheduler/deployed qualification",
+    "Canonical Mind store and shared memory/tools",
+    "Model lifecycle controls and other two machines"
+  ]
+}

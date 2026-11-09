@@ -2,6 +2,10 @@
 
 ## Current readiness - 2026-11-09
 
+Running Mesh build `114cf18da16a` was reconciled with saved source on 2026-11-09.
+All 23 data tables and 14 cards were preserved; shared services were unchanged.
+Evidence: `integrations/live-source-custody-qualification.json`.
+
 - Local/phone: Eddie confirmed card creation, editing, movement, saved review/Done,
   both themes, background/resume, rotation with an unsaved draft and network recovery.
   The full end-to-end production worker workflow still requires acceptance.
