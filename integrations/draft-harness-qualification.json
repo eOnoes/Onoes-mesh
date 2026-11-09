@@ -38,5 +38,34 @@
   "remaining": [
     "Shared native bridge maintenance approval pending",
     "Production worker/Rook/Mind/model-control and external-machine gates remain open"
-  ]
+  ],
+  "inAppGoalSync": {
+    "goalId": "c2a77ea9-05bb-4b63-85c7-c2d8e9fb2547",
+    "taskRevision": 1,
+    "progressRevision": 53,
+    "steps": 6,
+    "statuses": [
+      "done",
+      "done",
+      "working",
+      "blocked",
+      "working",
+      "working"
+    ],
+    "review": "pending",
+    "summaryUpdated": true,
+    "goalIdentityAndScopeUnchanged": true,
+    "other13CardsUnchanged": true,
+    "changedTables": [
+      "workroom_events",
+      "workroom_progress"
+    ],
+    "taskCount": 14,
+    "integrity": "ok",
+    "method": "Normal authorized Workroom UI; save and reload/reopen verified",
+    "priorContentArchive": "../goal-progress-before-sync-20261109.json",
+    "priorArchiveSha256": "bf4507fccb5466948ffe07528cef4f824145bc2bf3f00b8b370b46e77e8d1f9f",
+    "proofImage": "C:/Users/eMitchell109/.codex/visualizations/2026/11/01/01a19832-dbf0-7ca2-a60f-239b5ec006e6/mesh-goal-checklist-synced-20261109.png",
+    "agentWorkDispatched": false
+  }
 }
