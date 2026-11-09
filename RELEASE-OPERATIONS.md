@@ -23,8 +23,12 @@ Evidence: `integrations/live-source-custody-qualification.json`.
   and real Codex generation remain unqualified.
 - Explicit openai-codex closed-profile preflight is implemented and tested.
   One live unsubmitted session's public policy matched the requested file/terminal
-  toolsets and workspace, with zero admissions. This is not generation or private
-  credential-absence proof. Eddie approved bridge maintenance on 2026-11-09;
+  toolsets and workspace, with zero admissions. After bridge installation, its
+  authenticated closed-profile lookup also verified no API key configured for
+  that exact session; repeated reads left admissions at zero. Real generation
+  and production enrollment remain unqualified. See
+  `integrations/native-installed-profile-qualification.json`.
+  Eddie approved bridge maintenance on 2026-11-09;
   all seven reviewed files are installed and the gateway drained/restarted safely.
   Health, installed hashes, unchanged Mesh/model processes and zero-prompt public
   policy readback passed. Initial cold startup exceeded its first health window;

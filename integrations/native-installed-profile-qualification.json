@@ -1,0 +1,37 @@
+{
+  "schema": "mesh-installed-native-profile-qualification/v1",
+  "qualification": "PASS",
+  "scope": "Authenticated read-only lookup of existing unsubmitted fixed Codex session through installed bridge",
+  "model": "gpt-6-luna",
+  "provider": "openai-codex",
+  "tools": [
+    "file",
+    "terminal"
+  ],
+  "closed": true,
+  "apiKeyConfigured": false,
+  "requestBoundToSavedIntent": true,
+  "admissionCount": 0,
+  "promptsSubmitted": 0,
+  "productionEnrollment": false,
+  "credentialsExported": false,
+  "repeatedLookup": true,
+  "focusedChecks": {
+    "command": "python -m unittest test.native_installed_profile_test -v",
+    "testsPassed": 2,
+    "mismatchCasesRejected": 13,
+    "missingPublicFieldsRejected": 13,
+    "unexpectedPrivateFieldNotExported": true
+  },
+  "remaining": [
+    "Real Codex generation not qualified",
+    "Production worker enrollment and useful task acceptance not qualified",
+    "Rook/Mind stay off; model restart remains declined"
+  ],
+  "backup": {
+    "directory": "E:/App-Backups/ONOes-Mesh/2026-11-09_14-36-48-818_UTC_1a1d0c6c",
+    "verified": true,
+    "sourceFiles": 271,
+    "restoredFocusedChecksPassed": 2
+  }
+}

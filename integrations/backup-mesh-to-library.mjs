@@ -23,6 +23,7 @@ for(const name of ['.gitattributes','package.json','package-lock.json','VERSION'
 for(const item of readdirSync(join(root,'test'),{withFileTypes:true}))if(item.isFile()&&/\.(mjs|js|py)$/.test(item.name))entries.push('test/'+item.name);
 for(const name of ['integrations/relay_writer_observation.py','integrations/prepare_relay_writer_observation.py','integrations/relay-writer-observation.patch'])entries.push(name);
 for(const name of ['integrations/qualify_hermes_runtime.py','integrations/hermes-runtime-qualification.json'])entries.push(name);
+entries.push('integrations/verify-native-installed-profile.py');
 entries.sort();
 // Keep the operational contracts with the UI/code they describe.
 for(const name of ['MIND-CONTRACT.md','RELAY-INTEGRATION.md','MESH-QUICK-START.md'])if(existsSync(join(root,name)))entries.push(name);
