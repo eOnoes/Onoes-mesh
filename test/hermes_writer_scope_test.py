@@ -75,6 +75,14 @@ class HermesWriterScopeTests(unittest.TestCase):
         scope.start_writer_observed_thread(thread);thread.join(timeout=3)
         self.assertEqual(result,['legacy']);self.assertEqual(thread.name,'legacy-title')
 
+    def test_unbound_context_factory_keeps_standard_thread_and_arguments(self):
+        results=[]
+        thread=scope.make_writer_context_thread(lambda value,*,suffix:results.append(value+suffix),
+            bind_context=lambda target:target,name='legacy-context',args=('old',),kwargs={'suffix':' path'})
+        self.assertIs(type(thread),threading.Thread)
+        thread.start();thread.join(timeout=3)
+        self.assertEqual(results,['old path'])
+
 
 @unittest.skipUnless(sys.platform == 'win32', 'Real Windows job accounting required')
 class ManagedWriterLifetimeTests(unittest.TestCase):
@@ -85,6 +93,60 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
     def tearDown(self):
         self.fence.terminate()
         self.fence.close()
+
+    def bind_context(self,target):
+        context=copy_context()
+        return lambda *args,**kwargs:context.run(target,*args,**kwargs)
+
+    def test_context_thread_retains_nested_work_and_final_cleanup_after_root(self):
+        entered,release,cleanup,finish=threading.Event(),threading.Event(),threading.Event(),threading.Event()
+        seen=[];profile=ContextVar('owned_callback_profile',default='wrong')
+        with tempfile.TemporaryDirectory() as folder,concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            marker=Path(folder)/'effect.txt'
+            def callback():
+                try:
+                    seen.append(profile.get());entered.set();release.wait(timeout=5)
+                    scope.submit_writer_work(pool,lambda:marker.write_text('owned effect',encoding='utf-8')).result(timeout=3)
+                finally:
+                    cleanup.set();finish.wait(timeout=5)
+            thread=None
+            try:
+                with scope.writer_foreground_scope(self.life):
+                    token=profile.set('captured-profile')
+                    thread=scope.make_writer_context_thread(callback,bind_context=self.bind_context,name='owned-effect')
+                    profile.reset(token);thread.start();self.assertTrue(entered.wait(timeout=3))
+                self.assertFalse(self.life.wait(20)['managedWorkEnded'])
+                release.set();self.assertTrue(cleanup.wait(timeout=3))
+                self.assertEqual(marker.read_text(encoding='utf-8'),'owned effect')
+                self.assertFalse(self.life.wait(20)['managedWorkEnded'])
+                finish.set();thread.join(timeout=3)
+                self.assertTrue(self.life.wait()['managedWorkEnded']);self.assertEqual(seen,['captured-profile'])
+                self.assertFalse(self.life.snapshot()['writerQuiescence'])
+            finally:
+                release.set();finish.set()
+                if thread is not None and thread.ident is not None:thread.join(timeout=3)
+
+    def test_unstarted_context_thread_cannot_be_started_after_its_owner_returned(self):
+        effects=[]
+        with scope.writer_foreground_scope(self.life):
+            thread=scope.make_writer_context_thread(lambda:effects.append('late'),bind_context=self.bind_context,name='late-effect')
+        with self.assertRaises(RuntimeError):thread.start()
+        self.assertIsNone(thread.ident);self.assertEqual(effects,[])
+        self.assertTrue(self.life.snapshot()['managedWorkEnded'])
+
+    def test_title_start_helper_does_not_double_enroll_context_thread(self):
+        release=threading.Event()
+        thread=None
+        try:
+            with scope.writer_foreground_scope(self.life):
+                thread=scope.make_writer_context_thread(lambda:release.wait(timeout=5),bind_context=self.bind_context,name='owned-title')
+                scope.start_writer_observed_thread(thread)
+                self.assertEqual(len(self.life.snapshot()['pendingWorkers']),2) # root plus one callback
+            self.assertEqual(len(self.life.snapshot()['pendingWorkers']),1)
+            release.set();thread.join(timeout=3);self.assertTrue(self.life.wait()['managedWorkEnded'])
+        finally:
+            release.set()
+            if thread is not None and thread.ident is not None:thread.join(timeout=3)
 
     def test_cancelled_canonical_observer_cannot_settle_actual_thread(self):
         entered,release=threading.Event(),threading.Event()

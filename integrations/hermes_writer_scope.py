@@ -416,19 +416,66 @@ def submit_writer_work(executor, fn, propagate=None, *args, **kwargs):
     return future
 
 
+class WriterContextThread(threading.Thread):
+    """Native context-thread with an owned background ticket and real join observer."""
+    def __init__(self, lifetime, target, bind_context, *, name, daemon=True, args=(), kwargs=None):
+        self._mesh_lifetime = lifetime
+        self._mesh_origin = copy_context()
+        self._mesh_ticket = None
+        def owned_target(*call_args, **call_kwargs):
+            if _lifetime.get() is not lifetime:
+                raise RuntimeError('Background context lost its writer lifetime')
+            token = _worker.set((lifetime, self._mesh_ticket))
+            try:
+                lifetime.assert_current_worker()
+                return target(*call_args, **call_kwargs)
+            finally:
+                _worker.reset(token)
+        super().__init__(target=bind_context(owned_target), name=name, daemon=daemon, args=args, kwargs=kwargs)
+
+    def start(self):
+        # The original admitting context must still be active at start. Another
+        # task cannot adopt this thread or start an unadmitted late writer.
+        return self._mesh_origin.run(_start_observed_writer_thread, self, super().start)
+
+
+def make_writer_context_thread(target, *, bind_context, name, daemon=True, args=(), kwargs=None):
+    lifetime = _lifetime.get()
+    if lifetime is None:
+        return threading.Thread(target=bind_context(target), name=name, daemon=daemon, args=args, kwargs=kwargs)
+    lifetime.assert_current_worker()
+    return WriterContextThread(lifetime, target, bind_context, name=name, daemon=daemon, args=args, kwargs=kwargs)
+
+
 def start_writer_observed_thread(thread):
     """Observe a native title thread through join; preserve its target/profile context.
 
     This observes an existing dedicated callback, not a new managed tool context.
     External side effects are not settled by a successful thread join.
     """
-    lifetime = _lifetime.get()
-    if lifetime is None:
+    if type(thread) is WriterContextThread:
+        thread.start()  # Shared factory already owns its start/join; no double ticket.
+        return
+    if _lifetime.get() is None:
         thread.start()
         return
     if type(thread) is not threading.Thread or thread.ident is not None:
         raise RuntimeError('An unstarted native thread is required')
+    return _start_observed_writer_thread(thread, thread.start)
+
+
+def _start_observed_writer_thread(thread, native_start):
+    lifetime = _lifetime.get()
+    if lifetime is None:
+        native_start()
+        return
+    if thread.ident is not None:
+        raise RuntimeError('An unstarted native thread is required')
+    if type(thread) is WriterContextThread and lifetime is not thread._mesh_lifetime:
+        raise RuntimeError('Background thread belongs to another writer lifetime')
     ticket = lifetime._reserve('background')
+    if type(thread) is WriterContextThread:
+        thread._mesh_ticket = ticket
     future = Future()
     lifetime._attach(ticket, future)
     lifetime._start(ticket)
@@ -444,7 +491,7 @@ def start_writer_observed_thread(thread):
         lifetime._returned(ticket)
         future.set_result(None)
     try:
-        thread.start()
+        native_start()
         threading.Thread(target=observe, daemon=True, name='mesh-background-observer').start()
     except BaseException:
         with lifetime._lock:

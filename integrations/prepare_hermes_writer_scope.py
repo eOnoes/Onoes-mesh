@@ -31,6 +31,7 @@ TERMINAL_TOOL_BASELINE = 'a09910c7c61a93d89e8b9e83efd3abcb5eff4b58a3cb53e3bd0162
 TITLE_BASELINE = 'e5beaa6185f91e887d27a35a5acdde613c0144c156e63ed053566127ff25ce0f'
 CANONICAL_WORKER_BASELINE = 'efc702798fcb827b77ad485c7559643d5ecf407b06b5f115c8e3047752054c8a'
 CANONICAL_INGRESS_BASELINE = '9b308b2ddf9cac9223361663c16eed1665feb4087fc0b58e0e3245e9708ce9a0'
+CONTEXT_THREAD_BASELINE = '240a2b45898e6a3a2fe3a2ee7d3ddb09a4c9053c1a163ccfd32707260a6ab341'
 TOOL_WORKER_BASELINES = {
     'agent/tool_executor.py': '3fb81cd7ec8946df1f6e50b0879b4be4499223b4236450da0581ac7c0a1727e6',
     'agent/terminal_approval_batch.py': '3ac8420c2cdbbaf8d6f8241be5154a75aff4da54fd090492e9ce9ce9396e71dc'}
@@ -293,6 +294,22 @@ def canonical_ingress_candidate(native_root):
     return {path: original}, {path: candidate}
 
 
+def context_thread_candidate(native_root):
+    path = 'agent/memory_provider.py'
+    raw = (native_root / path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != CONTEXT_THREAD_BASELINE:
+        raise RuntimeError('Native context-thread factory source changed')
+    original = raw.decode('utf-8').replace('\r\n', '\n')
+    before = '    return threading.Thread(target=ctx_bound(target), args=args, kwargs=kwargs, name=name, daemon=daemon)\n'
+    if original.count(before) != 1:
+        raise RuntimeError('Unexpected native context-thread factory shape')
+    candidate = original.replace(before,
+        '    from tools.mesh_writer_scope import make_writer_context_thread\n'
+        '    return make_writer_context_thread(target, bind_context=ctx_bound, args=args, kwargs=kwargs, name=name, daemon=daemon)\n')
+    ast.parse(candidate)
+    return {path: original}, {path: candidate}
+
+
 def prepare(source_path):
     raw = source_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != BASELINE:
@@ -348,6 +365,9 @@ def prepare(source_path):
     ingress_originals, ingress_modules = canonical_ingress_candidate(source_path.parent.parent)
     lifetime_originals.update(ingress_originals)
     modules.update(ingress_modules)
+    context_originals, context_modules = context_thread_candidate(source_path.parent.parent)
+    lifetime_originals.update(context_originals)
+    modules.update(context_modules)
     patch_text = ''.join(difflib.unified_diff(original.splitlines(True), candidate.splitlines(True),
                                            fromfile='a/tools/process_registry.py', tofile='b/tools/process_registry.py'))
     for path, text in modules.items():
@@ -1085,6 +1105,40 @@ def qualify_title_thread(modules):
         fence.terminate(); fence.close()
 
 
+def qualify_context_thread_factory(modules):
+    """Actual native factory with a fixture context binder and real owned thread."""
+    fn = next(n for n in ast.parse(modules['agent/memory_provider.py']).body
+              if isinstance(n, ast.FunctionDef) and n.name == 'spawn_context_thread')
+    def bind(target):
+        context=copy_context()
+        return lambda *args,**kwargs:context.run(target,*args,**kwargs)
+    namespace={'Callable':typing.Callable,'Any':typing.Any,'Optional':typing.Optional,
+               'threading':threading,'ctx_bound':bind}
+    exec(compile(ast.Module(body=[fn],type_ignores=[]),'<native-context-thread-factory>','exec'),namespace)
+    entered,release=threading.Event(),threading.Event();seen=[]
+    fence=WindowsWriterFence('native-context-factory','one');lifetime=scope.WriterLifetime(fence)
+    tools=types.ModuleType('tools');tools.__path__=[]
+    try:
+        with patch.dict(sys.modules,{'tools':tools,'tools.mesh_writer_scope':scope}):
+            legacy=namespace['spawn_context_thread'](lambda value:seen.append(value),name='legacy-factory',args=('legacy',))
+            if type(legacy) is not threading.Thread:raise AssertionError('Unbound native thread type changed')
+            legacy.start();legacy.join(timeout=3)
+            if seen!=['legacy']:raise AssertionError('Unbound native callback arguments changed')
+            with scope.writer_foreground_scope(lifetime):
+                owned=namespace['spawn_context_thread'](lambda:(entered.set(),release.wait(timeout=5)),name='owned-native-factory')
+                owned.start()
+                if not entered.wait(timeout=3):raise AssertionError('Native owned callback did not start')
+            if lifetime.wait(20)['managedWorkEnded']:raise AssertionError('Native callback lost after root returned')
+            release.set();owned.join(timeout=3)
+            if not lifetime.wait()['managedWorkEnded'] or lifetime.snapshot()['writerQuiescence']:
+                raise AssertionError('Native callback join failed or granted whole-worker release')
+        return ['native_context_factory_unbound_type_and_arguments_preserved',
+                'native_context_factory_callback_held_until_actual_join']
+    finally:
+        release.set()
+        fence.terminate();fence.close()
+
+
 def qualify_canonical_worker_seam(modules):
     """Actual native run_sync method; fixture policy/context and reserved claim only."""
     from contextlib import contextmanager
@@ -1140,7 +1194,8 @@ if __name__ == '__main__':
                                         'tools/terminal_tool.py': TERMINAL_TOOL_BASELINE,
                                         'agent/title_generator.py': TITLE_BASELINE,
                                         'gateway/run_turn_runner.py': CANONICAL_WORKER_BASELINE,
-                                        'gateway/session_ingress.py': CANONICAL_INGRESS_BASELINE},
+                                        'gateway/session_ingress.py': CANONICAL_INGRESS_BASELINE,
+                                        'agent/memory_provider.py': CONTEXT_THREAD_BASELINE},
               'qualificationScope': 'patched native functions with fixture profiles/ledgers and real threads/processes',
               'files': {name: hashlib.sha256(text.encode()).hexdigest() for name, text in modules.items()},
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
@@ -1149,7 +1204,8 @@ if __name__ == '__main__':
                             + qualify_enrollment(modules) + qualify_tool_worker_submissions(modules)
                             + qualify_tool_effect_boundary(modules) + qualify_file_tool_routes(modules)
                             + qualify_terminal_routes(modules) + qualify_status_observation(modules)
-                            + qualify_title_thread(modules) + qualify_canonical_worker_seam(modules))
+                            + qualify_title_thread(modules) + qualify_canonical_worker_seam(modules)
+                            + qualify_context_thread_factory(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

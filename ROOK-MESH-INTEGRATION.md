@@ -1582,3 +1582,49 @@ Next: external-tool completion and dedicated production worker connection, while
 retaining the original live-owner/shared-context and wider application scope.
 No live gateway/Relay/model restart/install, automation activation, memory access
 or historical hold clearance. Full original goal active/incomplete.
+
+## 2026-11-09 UTC - shared native context-thread ownership
+Previous goal turn PROGRESS:313b3ae managed-owner guard saved/pushed; backup
+E:/App-Backups/ONOes-Mesh/2026-11-09_00-05-02-687_UTC_7b59fe8b verified.
+Tool middleware inspection confirms Relay rewrites, request/execution middleware
+and authorization all surround handler dispatch; a returned local handler is not
+whole-pipeline/external-effect completion. Did not add an unqualified blanket
+clearance adapter. Existing model supervisor lib/supervisor_mesh_control.py is
+Nemotron lifecycle machinery, not a worker supervisor; inspected only, untouched.
+
+Extended existing native context-thread factory rather than adding another
+supervisor. Pinned agent/memory_provider.py baseline
+240a2b45898e6a3a2fe3a2ee7d3ddb09a4c9053c1a163ccfd32707260a6ab341.
+Unenrolled factory returns ordinary threading.Thread with original context binder,
+args/kwargs/name/daemon. Enrolled factory returns Thread-compatible owned callback.
+Start runs under original admitting context, reserves background ticket before
+native start; target runs native captured profile/context with its own admitted
+worker ticket. Background callback may fork tracked work after foreground returns.
+Observer joins real Thread including target/finally cleanup before settlement.
+Never-started callbacks reserve nothing, and late start after origin returned is
+refused before target/effects. Title helper delegates shared thread start without
+double enrollment. Existing uncertain-start/observer failure behavior stays held.
+Long-running provider jobs initiated under managed context remain held until they
+really end; do not silently exempt them or imply memory-service activation.
+
+Focused Python scope PASS42. Four new checks include stock unbound compatibility,
+real delayed file write/nested executor plus final-cleanup hold/profile preservation,
+late-start refusal and no double title ticket. Actual pinned factory fixture adds2
+checks: total native-function qualification PASS49. Full npm test PASS355
+(301Node+54Python), ../context-thread-full.log. Actual isolated native runtime
+PASS11, independent evidence PASS10/all14candidate hashes verified, retained
+ data/hermes-runtime-2a54444e-ec02-4b03-9bba-8cc687e0a4d0.
+Real title callback now traverses shared factory; direct/canonical FIFO, owner
+refusal, graceful retirement and separate-process crash checks still pass.
+Candidate now12native baselines/14target files; review patch regenerated.
+
+Important discovered consumer gap: refreshed lib index (6changed+4new files) and
+read lib/workroom-claim-policy.mjs::writerQuiescenceBlockers. It unconditionally
+blocks prepared/unknown/accepted work sends, with no trusted positive completion
+consumption. Producer evidence alone therefore cannot enable correct reassignment;
+that consumer must be implemented alongside qualified producer proof. No holds
+were cleared; all receipts and whole-worker release remain conservatively false.
+Next: qualify bounded tool-effect completion and wire its trusted assignment
+consumer, then dedicated production worker connection. Positive live-owner
+support and original wider application scope remain unfinished. No live native,
+Relay/model or Mind changes; automation OFF; full goal active/incomplete.

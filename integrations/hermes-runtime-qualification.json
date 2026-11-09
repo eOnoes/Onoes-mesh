@@ -21,10 +21,10 @@
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual managed native HTTP target refusal before handoff/reservation, direct/canonical API/FIFO/cancellation/replay, graceful retirement and abrupt process loss. Isolated synthetic profiles and local provider; live Desktop owner execution is not instrumented.",
+  "scope": "Actual native direct/canonical API and recovery with shared context-thread factory installed, including title-thread join; isolated profile/local fake provider. Shared factory fixture and real nested-thread cleanup tests separately qualify context ownership. No opaque external-effect clearance.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "c14de1e7606999a5204c811d16c9ebb935350a77f1213970e70c0d1961afdf57",
+    "tools/mesh_writer_scope.py": "8439122d4255a8d5a5f6599c405112e086bf818637c3a01fe768295921f5bdc0",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
     "gateway/platforms/api_server_runs.py": "da68f5e791d525544e259edd1d292fb4f45972572901300ad24a5e5ec5216913",
@@ -35,7 +35,8 @@
     "tools/terminal_tool.py": "382f70e0d1af91aabf55059531bfe798b31d570603254fe4db48161aeef754b1",
     "agent/title_generator.py": "6c51388525a8ccf5fceb2b828c7be4c70869cd144091572f1e423539269064f8",
     "gateway/run_turn_runner.py": "9a8afcf3400bad7930c40811cd325ed0dd36514f800c08b4e8e2ba341aa75d49",
-    "gateway/session_ingress.py": "1bc738f0297c3b24323b48889427f1f589e8de504a5df56b92d81324fdd20cbc"
+    "gateway/session_ingress.py": "1bc738f0297c3b24323b48889427f1f589e8de504a5df56b92d81324fdd20cbc",
+    "agent/memory_provider.py": "76951da0915f45509033e6909d3e9890c8abdcd6ed68502a558d955250a682f8"
   },
   "evidenceChecks": [
     "exact_exit_zero_tool_output_without_error",
@@ -49,10 +50,11 @@
     "separate_process_loss_preserves_unknown_and_blocks_duplicate_work",
     "unmanaged_owner_refused_without_handoff_or_reservation"
   ],
-  "evidenceDirectory": "hermes-runtime-54aabbf2-f49a-4a9e-9c7a-7bc72328ab8b",
+  "evidenceDirectory": "hermes-runtime-2a54444e-ec02-4b03-9bba-8cc687e0a4d0",
   "remaining": [
     "Tool external effects and whole-worker release remain unqualified.",
-    "Other background workers and positive live-chat-owner lifetime proof remain unqualified; configured managed admission refuses unsupported conversation targets.",
+    "Other uninstrumented background paths and positive live-chat-owner lifetime proof remain unqualified.",
+    "Trusted positive completion consumption in assignment policy remains unimplemented; current receipts cannot clear work holds.",
     "Installed native/Relay deployment, dedicated worker-lane selection and production provider/profile configuration remain unverified."
   ],
   "liveServicesChanged": false,
@@ -77,6 +79,11 @@
   "managedOwnerGuard": {
     "qualification": "PASS",
     "scope": "Real authenticated HTTP rejects a non-API conversation twice before handoff/reservation/worker. Fixture native canonical/legacy owner identities also refused. Unconfigured native chats unchanged; managed mode limited to new or API-owned non-Bot conversations.",
+    "liveActivation": false
+  },
+  "contextThreadFactory": {
+    "qualification": "PASS",
+    "scope": "Pinned native spawn_context_thread factory, standard unbound behavior, owned callback join, captured origin/profile, nested admitted work and late-start refusal. External tool/middleware effects remain unverified.",
     "liveActivation": false
   }
 }
