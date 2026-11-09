@@ -113,6 +113,40 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
         return types.SimpleNamespace(**values,_discovered=True,_context_engine=None,_event_worker=None,
             _event_pending_by_generation={0:0},discover_and_load=lambda: self.fail('Observation must not discover plugins'))
 
+    def test_construction_process_remains_held_through_foreground_return(self):
+        with scope.writer_construction_scope(self.life):
+            proc=scope.scoped_popen([sys.executable,'-c','import time;time.sleep(1)'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            self.assertTrue(self.life.snapshot()['construction']['started'])
+            self.assertFalse(self.life.snapshot()['construction']['returned'])
+        with scope.writer_foreground_scope(self.life): pass
+        self.assertFalse(self.life.wait(30)['managedWorkEnded'])
+        proc.wait(timeout=5)
+        self.assertTrue(self.life.wait(5000)['managedWorkEnded'])
+        self.assertEqual(self.life.snapshot()['construction'],{'started':True,'returned':True})
+        with self.assertRaises(RuntimeError):
+            with scope.writer_construction_scope(self.life): pass
+
+    def test_construction_failure_retains_root_and_rejects_foreground(self):
+        with self.assertRaises(ValueError):
+            with scope.writer_construction_scope(self.life):
+                raise ValueError('fixture')
+        self.assertFalse(self.life.snapshot()['managedWorkEnded'])
+        self.assertEqual(self.life.snapshot()['reason'],'agent_construction_unconfirmed')
+        with self.assertRaises(RuntimeError):
+            with scope.writer_foreground_scope(self.life): pass
+
+    def test_construction_identity_and_stale_context_cannot_be_reused(self):
+        with self.assertRaises(RuntimeError):
+            with scope.writer_construction_scope(self.life,expected_generation='wrong'): pass
+        self.assertFalse(self.life.snapshot()['construction']['started'])
+        with scope.writer_construction_scope(self.life):
+            old=copy_context()
+            with self.assertRaises(RuntimeError):
+                with scope.writer_foreground_scope(self.life): pass
+        with self.assertRaises(RuntimeError): old.run(self.life.assert_current_worker)
+        with scope.writer_foreground_scope(self.life): pass
+        self.assertTrue(self.life.wait()['managedWorkEnded'])
+
     def test_scoped_run_return_keeps_live_descendant_held(self):
         child="import time; time.sleep(2)"
         parent="import subprocess,sys; subprocess.Popen([sys.executable,'-c',%r],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); print('started')" % child

@@ -188,6 +188,7 @@ class WriterLifetime:
         self._file_completed = 0
         self._tool_refused = 0
         self._postwrite_started = self._postwrite_returned = 0
+        self._construction_started = self._construction_returned = False
         self.fence = fence
         self._lock = threading.RLock()
         self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
@@ -325,6 +326,7 @@ class WriterLifetime:
                     'generation': self.fence.generation, 'rootEnded': self._root_ended,
                     'pendingWorkers': [{'id': key, 'kind': value['kind'], 'state': value['state']}
                                        for key, value in self._pending.items()],
+                    'construction': {'started': self._construction_started, 'returned': self._construction_returned},
                     'processTree': process, 'managedWorkEnded': managed,
                     'writerQuiescence': False, 'reason': self._fault,
                     'toolEffects': {'observedCalls': self._tool_calls, 'activeCalls': len(self._tool_active),
@@ -562,6 +564,44 @@ def canonical_writer_foreground_scope():
 
 
 @contextmanager
+def writer_construction_scope(lifetime, *, expected_run_id=None, expected_generation=None):
+    """Track native construction before foreground admission; failure stays held."""
+    if lifetime is None:
+        yield
+        return
+    if type(lifetime) is not WriterLifetime or _lifetime.get() is not None:
+        raise RuntimeError('Invalid native writer construction binding')
+    if (expected_run_id is not None and expected_run_id != lifetime.fence.run_id
+            or expected_generation is not None and expected_generation != lifetime.fence.generation):
+        raise RuntimeError('Native construction run/generation mismatch')
+    with lifetime._lock:
+        if lifetime._construction_started or lifetime._root_started or lifetime._fault:
+            raise RuntimeError('Native construction already consumed or unavailable')
+        lifetime._construction_started = True
+        ticket = str(uuid4())
+        lifetime._pending[ticket] = {'kind': 'construction', 'state': 'running', 'started': True}
+    try:
+        with bind_writer_fence(lifetime.fence):
+            owner, worker = _lifetime.set(lifetime), _worker.set((lifetime, ticket))
+            try:
+                yield
+            finally:
+                _worker.reset(worker)
+                _lifetime.reset(owner)
+    except BaseException:
+        with lifetime._lock:
+            lifetime._fault = 'agent_construction_unconfirmed'
+        raise
+    else:
+        with lifetime._lock:
+            lifetime._construction_returned = True
+    finally:
+        with lifetime._lock:
+            lifetime._pending.pop(ticket)
+            lifetime._maybe_seal()
+
+
+@contextmanager
 def writer_foreground_scope(lifetime, *, expected_run_id=None, expected_generation=None):
     if lifetime is None:
         yield
@@ -572,8 +612,11 @@ def writer_foreground_scope(lifetime, *, expected_run_id=None, expected_generati
             or expected_generation is not None and (not expected_generation or expected_generation != lifetime.fence.generation)):
         raise RuntimeError('Native run/generation does not match its writer lifetime')
     with bind_writer_fence(lifetime.fence):
-        lifetime._start('root')
-        lifetime._root_started = True
+        with lifetime._lock:
+            if lifetime._fault or lifetime._construction_started and not lifetime._construction_returned:
+                raise RuntimeError('Native agent construction has not completed')
+            lifetime._start('root')
+            lifetime._root_started = True
         owner, ticket = _lifetime.set(lifetime), _worker.set((lifetime, 'root'))
         try:
             yield

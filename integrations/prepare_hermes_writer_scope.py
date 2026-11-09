@@ -88,9 +88,9 @@ def lifetime_candidates(native_root):
             if body.count(old) != 1:
                 raise RuntimeError('Unexpected native direct-executor admission shape')
             body = body.replace(old, '        else:\n'
-                '            from tools.mesh_writer_scope import enroll_direct_writer_run\n'
+                '            from tools.mesh_writer_scope import enroll_direct_writer_run, writer_construction_scope\n'
                 "            enroll_direct_writer_run(getattr(self, '_mesh_writer_runs', None), run)\n"
-                '            with self._profile_scope(run.request_profile):\n')
+                "            with self._profile_scope(run.request_profile), writer_construction_scope(getattr(run, 'writer_lifetime', None), expected_run_id=run.run_id, expected_generation=getattr(run, 'writer_generation', '')):\n")
             lines = current.splitlines(True)
             lines[execute.lineno - 1:execute.end_lineno] = [body]
             current = ''.join(lines)
@@ -216,6 +216,11 @@ def file_tool_candidate(native_root):
         if candidate.count(before) != 1:
             raise RuntimeError('Unexpected file-tool backend selection shape')
         candidate = candidate.replace(before, after)
+    before='    stable = version is not None and version[:-1] == version_before == _file_metadata(resolved_str)\n'
+    if candidate.count(before)!=1: raise RuntimeError('Unexpected native full-read stability guard')
+    candidate=candidate.replace(before,
+        '    stable = (version is not None and version[:-1] == version_before == _file_metadata(resolved_str)\n'
+        '              and version == _file_version(resolved_str))\n')
     for operation in ('read_file','write_file'):
         name = '_handle_' + operation
         tree = ast.parse(candidate)
@@ -1367,12 +1372,15 @@ def qualify_read_metadata(modules):
         os.utime(file,ns=(old_stat.st_atime_ns,old_stat.st_mtime_ns))
         if namespace['_file_version'](str(file))==version:
             raise AssertionError('Same-size changed bytes with restored mtime were accepted')
-        stale=data();namespace['_record_successful_read'](stale,'fixture',str(file),str(file),1,2000,(str(file),1,2000),
-            partial=False,version_before=metadata,snapshot=version)
+        stale=data()
+        with patch.dict(namespace,{'_file_metadata':lambda _:metadata}):
+            namespace['_record_successful_read'](stale,'fixture',str(file),str(file),1,2000,(str(file),1,2000),
+                partial=False,version_before=metadata,snapshot=version)
         if stale['full_write_baselines'] or marks[-1] is not True:
             raise AssertionError('Changed bytes revived a stale full-read baseline')
         checks += ['native_'+label+'_full_read_baseline_and_partial_read_refusal',
-                   'native_'+label+'_changed_bytes_with_preserved_mtime_detected']
+                   'native_'+label+'_changed_bytes_with_preserved_mtime_detected',
+                   'native_'+label+'_equal_metadata_stale_snapshot_refused']
     return checks
 
 

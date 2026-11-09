@@ -4,6 +4,7 @@
     "actual_native_HTTP_unmanaged_owner_refused_before_reservation",
     "actual_native_HTTP_agent_tool_roundtrip",
     "actual_native_title_callback_keeps_completed_reply_worker_held",
+    "actual_native_constructor_child_keeps_completed_run_held",
     "actual_native_title_thread_exit_observed_before_local_settlement",
     "actual_native_tool_pipeline_stages_observed_without_clearance",
     "actual_native_tool_thread_and_Windows_job_observed_without_release",
@@ -28,17 +29,17 @@
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Isolated native JavaScript read/edit with real owned Node post-write syntax check (LF/CRLF), strict refusal and real owner recovery. Default Markdown compatibility. Whole-worker retirement remains unqualified; no live install.",
+  "scope": "Actual native direct agent construction bound before initialization; owned constructor child remains held after root/title return until actual exit. JavaScript LF/CRLF read/edit and owned Node check; default Markdown compatibility. Whole-worker retirement and production profile remain unqualified.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "3c9f2e2b4bf9d2af17ca31d3c100f1d83d08de627b8617f6f3191a837c7ce355",
+    "tools/mesh_writer_scope.py": "60f5d3de3c55e5f2b9d909e2af5a2658fea0a8e8f0c06f6ed96a01d6ff8da914",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
-    "gateway/platforms/api_server_runs.py": "da68f5e791d525544e259edd1d292fb4f45972572901300ad24a5e5ec5216913",
+    "gateway/platforms/api_server_runs.py": "c9c89f948c57fc22428f560b815a529c1c582d083f4de75cc1370e11d580cbe5",
     "tools/environments/local.py": "c6637d76eaa64bded45a894a102bcbac3dba2646818751ddbde520b7f15fe1aa",
     "agent/tool_executor.py": "47a6e5446b33ce94407efc8d60924a44c634814e1174746ec797b4f842c03ecc",
     "agent/terminal_approval_batch.py": "5eb4c30429777b217720a67b301f445f8fb171cf3f6171113a4ce669da1512d6",
-    "tools/file_tools.py": "1ccd2b466e46bfa5e5e70eb88fad011c4b45c5f4f6ad549ef5e9ceba9ae41b16",
+    "tools/file_tools.py": "6c224f385878a73aa350231f59ff3b6ebc0b13d927e968e21446db1ed9298afa",
     "tools/file_tools_read_tracking.py": "c2ca50e625178fb663faa46677713ba915946294dc19fbef849ea40342977e4d",
     "tools/file_operations_lint.py": "6ffe2be5ca7cd6afaf6ffccb7714881b268218915669cb53a248c0e38273f1a1",
     "tools/terminal_tool.py": "382f70e0d1af91aabf55059531bfe798b31d570603254fe4db48161aeef754b1",
@@ -56,6 +57,7 @@
     "restart_without_new_agent_or_fence",
     "no_writer_release",
     "native_title_pending_then_actual_thread_exit",
+    "native_constructor_child_held_until_actual_process_exit",
     "native_SQLite_canonical_claim_binding_without_release",
     "actual_canonical_FIFO_results_cancellation_ordering_and_replay",
     "actual_retirement_keeps_ownership_then_recovers_queue_once",
@@ -70,7 +72,7 @@
     "bounded_file_handler_settles_after_bookkeeping_only",
     "strict_native_dispatch_refused_without_effects_or_release"
   ],
-  "evidenceDirectory": "hermes-runtime-15930918-c636-4c41-8c0b-fdac83d3e5ad",
+  "evidenceDirectory": "hermes-runtime-1cc32dd4-a996-4100-b66e-b36637f2888d",
   "remaining": [
     "Plain-text read_file/write_file components qualified in isolated direct lane; patch/search/delegation, other external effects and whole-worker release remain unqualified.",
     "Other uninstrumented background paths and positive live-chat-owner lifetime proof remain unqualified.",
@@ -142,7 +144,7 @@
     "predeclared_modules": 1,
     "registration": 1
   },
-  "defaultEvidenceDirectory": "hermes-runtime-9accf5ec-907b-4250-a9bd-a686bf612ca2",
+  "defaultEvidenceDirectory": "hermes-runtime-f1b12375-2b96-499a-a490-3111d7e06796",
   "boundedFileCompletion": true,
   "boundedFileAdapter": {
     "qualification": "PASS",
@@ -154,10 +156,10 @@
   "readWriteVariants": [
     {
       "lane": "safe-JavaScript-LF",
-      "directory": "hermes-runtime-12921a94-32e2-454c-bea3-8756ae7d2b23",
+      "directory": "hermes-runtime-051164da-6537-41b8-824f-0d20dd2b41de",
       "qualification": "PASS",
-      "runtimeChecks": 18,
-      "independentChecks": 18,
+      "runtimeChecks": 19,
+      "independentChecks": 19,
       "fileEffects": {
         "observedCalls": 2,
         "activeCalls": 0,
@@ -185,10 +187,10 @@
     },
     {
       "lane": "safe-JavaScript-CRLF",
-      "directory": "hermes-runtime-15930918-c636-4c41-8c0b-fdac83d3e5ad",
+      "directory": "hermes-runtime-1cc32dd4-a996-4100-b66e-b36637f2888d",
       "qualification": "PASS",
-      "runtimeChecks": 18,
-      "independentChecks": 18,
+      "runtimeChecks": 19,
+      "independentChecks": 19,
       "fileEffects": {
         "observedCalls": 2,
         "activeCalls": 0,
@@ -216,10 +218,10 @@
     },
     {
       "lane": "default-Markdown-LF",
-      "directory": "hermes-runtime-9accf5ec-907b-4250-a9bd-a686bf612ca2",
+      "directory": "hermes-runtime-f1b12375-2b96-499a-a490-3111d7e06796",
       "qualification": "PASS",
-      "runtimeChecks": 15,
-      "independentChecks": 14,
+      "runtimeChecks": 16,
+      "independentChecks": 15,
       "fileEffects": {
         "observedCalls": 2,
         "activeCalls": 0,
@@ -254,8 +256,8 @@
   "readTrackingRepair": {
     "qualification": "PASS",
     "sourceBaseline": "fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb",
-    "scope": "On Windows obtain path metadata using read-only descriptor/fstat consistently with byte snapshot. Keep device/inode/size/mtime/ctime and digest; compare current reopened path to original handle. No baseline created for partial/stale reads. POSIX metadata stays stat-based.",
-    "nativeFunctionChecks": 57,
+    "scope": "On Windows obtain path metadata using read-only descriptor/fstat consistently with byte snapshot. Keep device/inode/size/mtime/ctime and digest; compare current reopened path to original handle. No baseline created for partial/stale reads. POSIX metadata stays stat-based. Full-read baseline additionally requires a fresh complete version/digest match; LF/CRLF stale snapshots refused even under equal metadata.",
+    "nativeFunctionChecks": 59,
     "liveActivation": false
   },
   "strictToolGate": {
@@ -265,8 +267,13 @@
   },
   "postWriteQualification": {
     "qualification": "PASS",
-    "nativeFunctionChecks": 57,
+    "nativeFunctionChecks": 59,
     "scope": "Managed Node subprocess.run routed through Windows Job; descendant hold after return/timeout. File-policy workers skip shared persistent LSP; ordinary LSP unchanged. Fixture-only existing Node discovery, no package install. Full worker retirement not proven.",
+    "liveActivation": false
+  },
+  "constructionQualification": {
+    "qualification": "PASS",
+    "scope": "Direct native _create_agent runs inside one-use construction context before root. Process/managed work inherits existing run Job. Failure retains reserved root; identity mismatch, reentry and premature foreground refused. Actual synthetic constructor child persists after native result and title return, keeping managedWorkEnded false until process exit. No complete initialization coverage or positive release claim.",
     "liveActivation": false
   }
 }

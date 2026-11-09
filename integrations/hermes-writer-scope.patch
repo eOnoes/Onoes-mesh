@@ -29,7 +29,7 @@
          temp_dir = self._env_temp_dir(env)
 --- /dev/null
 +++ b/tools/mesh_writer_scope.py
-@@ -0,0 +1,788 @@
+@@ -0,0 +1,831 @@
 +"""Candidate native tools.mesh_writer_scope; no HTTP/config enrollment or release grant."""
 +from contextlib import contextmanager
 +from contextvars import ContextVar, copy_context
@@ -220,6 +220,7 @@
 +        self._file_completed = 0
 +        self._tool_refused = 0
 +        self._postwrite_started = self._postwrite_returned = 0
++        self._construction_started = self._construction_returned = False
 +        self.fence = fence
 +        self._lock = threading.RLock()
 +        self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
@@ -357,6 +358,7 @@
 +                    'generation': self.fence.generation, 'rootEnded': self._root_ended,
 +                    'pendingWorkers': [{'id': key, 'kind': value['kind'], 'state': value['state']}
 +                                       for key, value in self._pending.items()],
++                    'construction': {'started': self._construction_started, 'returned': self._construction_returned},
 +                    'processTree': process, 'managedWorkEnded': managed,
 +                    'writerQuiescence': False, 'reason': self._fault,
 +                    'toolEffects': {'observedCalls': self._tool_calls, 'activeCalls': len(self._tool_active),
@@ -594,6 +596,44 @@
 +
 +
 +@contextmanager
++def writer_construction_scope(lifetime, *, expected_run_id=None, expected_generation=None):
++    """Track native construction before foreground admission; failure stays held."""
++    if lifetime is None:
++        yield
++        return
++    if type(lifetime) is not WriterLifetime or _lifetime.get() is not None:
++        raise RuntimeError('Invalid native writer construction binding')
++    if (expected_run_id is not None and expected_run_id != lifetime.fence.run_id
++            or expected_generation is not None and expected_generation != lifetime.fence.generation):
++        raise RuntimeError('Native construction run/generation mismatch')
++    with lifetime._lock:
++        if lifetime._construction_started or lifetime._root_started or lifetime._fault:
++            raise RuntimeError('Native construction already consumed or unavailable')
++        lifetime._construction_started = True
++        ticket = str(uuid4())
++        lifetime._pending[ticket] = {'kind': 'construction', 'state': 'running', 'started': True}
++    try:
++        with bind_writer_fence(lifetime.fence):
++            owner, worker = _lifetime.set(lifetime), _worker.set((lifetime, ticket))
++            try:
++                yield
++            finally:
++                _worker.reset(worker)
++                _lifetime.reset(owner)
++    except BaseException:
++        with lifetime._lock:
++            lifetime._fault = 'agent_construction_unconfirmed'
++        raise
++    else:
++        with lifetime._lock:
++            lifetime._construction_returned = True
++    finally:
++        with lifetime._lock:
++            lifetime._pending.pop(ticket)
++            lifetime._maybe_seal()
++
++
++@contextmanager
 +def writer_foreground_scope(lifetime, *, expected_run_id=None, expected_generation=None):
 +    if lifetime is None:
 +        yield
@@ -604,8 +644,11 @@
 +            or expected_generation is not None and (not expected_generation or expected_generation != lifetime.fence.generation)):
 +        raise RuntimeError('Native run/generation does not match its writer lifetime')
 +    with bind_writer_fence(lifetime.fence):
-+        lifetime._start('root')
-+        lifetime._root_started = True
++        with lifetime._lock:
++            if lifetime._fault or lifetime._construction_started and not lifetime._construction_returned:
++                raise RuntimeError('Native agent construction has not completed')
++            lifetime._start('root')
++            lifetime._root_started = True
 +        owner, ticket = _lifetime.set(lifetime), _worker.set((lifetime, 'root'))
 +        try:
 +            yield
@@ -1339,15 +1382,17 @@
  
  
  def _make_approval_notify(self, run: _RunLaunch, *, _api_server) -> Callable[[dict[str, Any]], None]:
-@@ -1067,6 +1081,8 @@
+@@ -1067,7 +1081,9 @@
              served_runtime = ((usage or {}).get("runtime") if isinstance(usage, dict) else None) or (
                  result.get("runtime") if isinstance(result, dict) else None) or {}
          else:
-+            from tools.mesh_writer_scope import enroll_direct_writer_run
+-            with self._profile_scope(run.request_profile):
++            from tools.mesh_writer_scope import enroll_direct_writer_run, writer_construction_scope
 +            enroll_direct_writer_run(getattr(self, '_mesh_writer_runs', None), run)
-             with self._profile_scope(run.request_profile):
++            with self._profile_scope(run.request_profile), writer_construction_scope(getattr(run, 'writer_lifetime', None), expected_run_id=run.run_id, expected_generation=getattr(run, 'writer_generation', '')):
                  agent = self._create_agent(
                      stream_delta_callback=_text_cb, tool_progress_callback=self._make_run_event_callback(run_id, loop),
+                     interim_assistant_callback=_interim_cb, **run.agent_kwargs)
 @@ -1178,9 +1194,13 @@
  
  async def _handle_get_run(self, request: web.Request, *, _api_server) -> web.Response:
@@ -1577,7 +1622,17 @@
      file_ops = ShellFileOperations(terminal_env)
      with _file_ops_lock:
          _file_ops_cache[task_id] = file_ops
-@@ -1306,12 +1312,17 @@
+@@ -549,7 +555,8 @@
+     skill_view so a follow-up skill_manage(patch) is accepted).
+     """
+     version = (snapshot or _file_version(resolved_str)) if version_before is not None else None
+-    stable = version is not None and version[:-1] == version_before == _file_metadata(resolved_str)
++    stable = (version is not None and version[:-1] == version_before == _file_metadata(resolved_str)
++              and version == _file_version(resolved_str))
+     complete = False
+     with _read_tracker_lock:
+         task_data["dedup_hits"].pop(dedup_key, None)
+@@ -1306,12 +1313,17 @@
  }
  
  
@@ -1597,7 +1652,7 @@
      tid = kw.get("task_id") or "default"
      if not args.get("path") or not isinstance(args.get("path"), str):
          return tool_error(
-@@ -1340,6 +1351,11 @@
+@@ -1340,6 +1352,11 @@
      ))
  
  

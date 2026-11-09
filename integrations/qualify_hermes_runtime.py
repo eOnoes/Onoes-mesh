@@ -54,6 +54,15 @@ def verify_evidence(root):
                 or not after['managedWorkEnded'] or after['pendingWorkers']):
             raise RuntimeError('Native title callback lifetime evidence is incomplete')
         result['checks'].append('native_title_pending_then_actual_thread_exit')
+    if 'actual_native_constructor_child_keeps_completed_run_held' in report['checks']:
+        pending=json.loads((root/'construction-held-status.json').read_text())
+        held=pending['writer_lifecycle']['enrollment']['lifetime']
+        after=json.loads((root/'final-status.json').read_text())['writer_lifecycle']['enrollment']['lifetime']
+        if (held['construction']!={'started':True,'returned':True} or not held['rootEnded']
+                or held['pendingWorkers'] or held['managedWorkEnded'] or held['processTree']['activeProcesses']<1
+                or not after['managedWorkEnded'] or after['writerQuiescence']):
+            raise RuntimeError('Construction process ownership evidence is incomplete')
+        result['checks'].append('native_constructor_child_held_until_actual_process_exit')
     if 'native_SQLite_canonical_claim_lookup_and_worker_binding' in report['checks']:
         claim = json.loads((root / 'canonical-claim-evidence.json').read_text(encoding='utf-8'))
         if (not claim['durableClaimMatched'] or not claim['duplicateRefused']
@@ -482,6 +491,8 @@ async def child(root):
         raise RuntimeError('Native home is not isolated')
     requests, tools_seen, fences, agents_created = [], [], [], []
     title_started, title_release = asyncio.Event(), asyncio.Event()
+    construction_release=root/'construction-child-release'
+    construction_proc=None
     canonical_started, canonical_release = asyncio.Event(), asyncio.Event()
     canonical_mode = False
     file_mode = False
@@ -577,7 +588,12 @@ async def child(root):
         # Only provider selection is a fixture. The actual agent, tools, API
         # admission/executor, ownership checks and persistence run unchanged.
         def create_agent(**kwargs):
+            nonlocal construction_proc
             agents_created.append(True)
+            if len(agents_created)==1:
+                from tools.mesh_writer_scope import scoped_popen
+                code="import time;from pathlib import Path;p=Path("+repr(str(construction_release))+");end=time.monotonic()+60\nwhile not p.exists() and time.monotonic()<end:time.sleep(.02)"
+                construction_proc=scoped_popen([sys.executable,'-c',code],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
             callbacks = {name: value for name, value in kwargs.items() if name.endswith('_callback')
                          or name in ('session_id', 'gateway_session_key', 'ephemeral_system_prompt')}
             return AIAgent(base_url=endpoint, api_key='synthetic-local-provider', provider='custom',
@@ -646,6 +662,20 @@ async def child(root):
                 raise RuntimeError('Native reply completion lost its running title callback')
             checks.append('actual_native_title_callback_keeps_completed_reply_worker_held')
             title_release.set()
+            deadline = time.monotonic()+10
+            while True:
+                async with client.get(origin+'/v1/runs/'+run_id,headers={'Authorization':'Bearer '+key}) as response:
+                    construction_held=await response.json()
+                held=construction_held['writer_lifecycle']['enrollment']['lifetime']
+                if held['rootEnded'] and not held['pendingWorkers']: break
+                if time.monotonic()>deadline: raise RuntimeError('Title did not return before constructor-child check')
+                await asyncio.sleep(.02)
+            if (held['construction']!={'started':True,'returned':True} or held['managedWorkEnded']
+                    or held['processTree']['activeProcesses']<1 or construction_proc.poll() is not None):
+                raise RuntimeError('Construction child escaped native run ownership')
+            (root/'construction-held-status.json').write_text(json.dumps(construction_held,indent=2),encoding='utf-8')
+            construction_release.write_bytes(b'release')
+            checks.append('actual_native_constructor_child_keeps_completed_run_held')
             deadline = time.monotonic() + 10
             while True:
                 async with client.get(origin + '/v1/runs/' + run_id, headers={'Authorization': 'Bearer ' + key}) as response:
@@ -950,7 +980,7 @@ async def child(root):
             'heldFileStatus':locals().get('file_held'),'attackMode':attack_mode,'lastAttackStatus':locals().get('attack_status')},indent=2),encoding='utf-8')
         # Retain the responder while the released fixture worker finishes; closing
         # it first would replace the original assertion with connection retry noise.
-        title_release.set(); canonical_release.set()
+        title_release.set(); canonical_release.set(); construction_release.write_bytes(b'release')
         release = locals().get('file_write_release')
         if release is not None: release.set()
         ident = locals().get('active_fixture_run_id',locals().get('file_id'))
@@ -964,6 +994,7 @@ async def child(root):
         raise
     finally:
         title_release.set()
+        construction_release.write_bytes(b'release')
         canonical_release.set()
         if adapter is not None:
             await adapter.disconnect()
