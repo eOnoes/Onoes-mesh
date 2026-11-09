@@ -84,7 +84,7 @@
   "liveInstallation": false,
   "producerRefactor": "Qualified RPC bytes reproduced from pristine pinned archive",
   "remaining": [
-    "Explicit openai-codex candidate preflight passes; live gateway adds x_search outside requested tools. Honor an isolated exact tool policy and qualify real generation before production binding.",
+    "Explicit Codex candidate preflight passes. Empty live no-tools probe added x_search, but pinned native selection preserves explicit file/file+terminal even with synthetic X credential presence. Next verify actual live builder policy and qualify generation before production binding.",
     "Real automatic builder-to-Nims delivery is qualified in a disposable board; uncertain in-flight reviewer recovery and production acceptance still need qualification.",
     "Rook own identity/report transport/single scheduler/deployed acceptance and explicit activation remain outstanding.",
     "Mind live access, shared model-service maintenance and external-machine integration remain deferred/open."

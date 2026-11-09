@@ -1,0 +1,33 @@
+{
+  "schema": "mesh-native-explicit-tools-probe/v1",
+  "scope": "Pinned native tool selection with synthetic credential-presence boolean; no session, provider request, credential read or service change",
+  "cases": [
+    {
+      "requested": [],
+      "effective": [
+        "x_search"
+      ],
+      "exact": false
+    },
+    {
+      "requested": [
+        "file"
+      ],
+      "effective": [
+        "file"
+      ],
+      "exact": true
+    },
+    {
+      "requested": [
+        "file",
+        "terminal"
+      ],
+      "effective": [
+        "file",
+        "terminal"
+      ],
+      "exact": true
+    }
+  ]
+}

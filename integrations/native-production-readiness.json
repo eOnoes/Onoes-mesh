@@ -294,7 +294,12 @@
       },
       "promptsSubmitted": 0
     },
-    "boundary": "One empty native local session created; no prompt submitted, services restarted, credential copied or worker enrolled. Shared gateway unexpectedly adds x_search; keep live dispatch disabled."
+    "boundary": "One empty native local session created; no prompt submitted, services restarted, credential copied or worker enrolled. Shared gateway unexpectedly adds x_search; keep live dispatch disabled.",
+    "toolSelectionFollowup": {
+      "evidence": "integrations/native-tool-policy-qualification.json",
+      "finding": "Pinned selector with synthetic X credential presence adds x_search only for empty tools; explicit file and file+terminal remain exact. Empty live probe mismatch is not evidence that Mesh builder toolsets fail.",
+      "next": "Verify the actual live explicit file/terminal policy before any prompt; retain the existing exact-profile guard. No native selector patch justified by this evidence."
+    }
   },
   "positiveAcceptanceEvidence": {
     "qualification": "PASS",
