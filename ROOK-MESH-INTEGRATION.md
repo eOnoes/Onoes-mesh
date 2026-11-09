@@ -2047,3 +2047,12 @@ Next qualify the closed supported worker profile and explicit native success/out
 - Fixed a reproduced workspace-edit hole: changing a card workspace cannot hide its original unretired native writer. Other active writers and review-stage holds remain protected. Saved consumed proof survives backup/reopen; an old unconsumed observation cannot authorize release.
 - Profile closure fixes configuration/tool availability; it is not an OS sandbox or qualification of arbitrary terminal commands. Process observation alone still reports no writer clearance.
 - Next: approved production identity/profile/model binding and real Nims review delivery/recovery, then Rook transport/single scheduler/deployed acceptance. Rook stays OFF. Mind live binding and model-service restart remain deferred.
+
+
+## 2026-11-09 — tested native safeguards loaded in private Mesh
+
+- Previous goal turn classified as progress: e0892f9 qualified supported-profile retirement/report-to-review locally. This turn loaded those safeguards through the existing named Mesh launcher after verifying no active team or Nims turn. Existing teams: one closed reviewer, one needs_review reviewer; all five Nims runs completed.
+- Pre-deployment verified backup: E:/App-Backups/ONOes-Mesh/2026-11-09_06-34-12-214_UTC_298804e0. Only Mesh restarted, PID37724 ->34896. Model service/Relay/native code unchanged.
+- Actual private Tailscale GET / returned HTTP200 (20768 bytes); launcher Running/Healthy true. Read-only before/after comparison proves all22 prior SQLite tables exactly unchanged,14 tasks retained, integrity ok. One new empty workroom_local_sessions table is the intended migration. Evidence ../mesh-native-handoff-deploy-before.json and ../mesh-native-handoff-deploy-after.json.
+- Corrected stale release guidance: owner-started phone team and confirmed recovery checks no longer listed as unperformed. Earlier real Nims no-tools planning result is historical proof only, not repository review.
+- No automatic native worker enrollment, Rook identity/transport/scheduler activation or Mind/model maintenance performed. Next real dependency is approved production native profile/identity and read-only Nims repository-review delivery qualification.

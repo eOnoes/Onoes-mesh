@@ -1,5 +1,21 @@
 # Mesh private release candidate
 
+## Current readiness - 2026-11-09
+
+- Local/phone: owner-confirmed card editing, movement, persistence and recovery.
+  Private page and named process checked healthy on 2026-11-09.
+- Native automatic build-to-review: supported-profile local qualification passed
+  416 regression tests and 14 real-native checks at e0892f9. Provider and Nims
+  review transport were synthetic; that run does not prove live delivery.
+- Nims: earlier no-tools planning connection passed on 2026-11-06; current
+  read-only repository review delivery still needs qualification.
+- Rook remains OFF pending production identity, reporting transport, a single
+  scheduler owner and deployed acceptance.
+- Mind live store/keys/access not activated; model-service maintenance deferred
+  by Eddie. Other machines and shared memory/tools remain in scope and open.
+
+Historical records below describe their dated baselines, not today's loaded code.
+
 The canonical current Workroom installation is this `mesh-workroom-ab` checkout,
 served at https://emitchell.tail8c4a75.ts.net:8453/#workroom through Tailscale Serve
 to loopback port 4320. The selected store is `data/workroom-preview/tasks.sqlite`.
@@ -46,8 +62,11 @@ coding tools, repository access or completion. Agent workspace opens those same
 saved Workroom cards; it introduces no scheduler or automatic dispatch.
 
 Physical-phone recovery checks are accepted (see the case table below).
-Owner confirmed inspecting, recording review and moving the guide to Done;
-owner-started scoped-team execution and full end-to-end acceptance remain open. Inference lifecycle
+Eddie confirmed creating/editing cards, touch-dragging with a lead, reload/theme
+persistence, background/resume, rotation with an unsaved draft and network
+reconnection. He also confirmed starting the recovery-notes scoped team from
+his phone. These checks do not qualify the newer native automatic worker-to-review
+route or Rook activation. Inference lifecycle
 qualification is separate: Eddie selected the currently running Nemotron 3.5 Bolt
 lane first. Its prepared identity-bound bridge is not installed; Eddie explicitly
 deferred shared-model maintenance. Keep the model service running. Other engines
@@ -494,3 +513,9 @@ substitutes for positive writer quiescence. No auto assignment or watcher enable
 
 
 2026-11-08: live07732e9cffb6 installs read-only Rook assignment holds and d02a178 handoff guards, all14cards/21tables preserved. Full290testsPASS. Managedflow/Rookscheduler remainoff; nativequiescence/identity/reporttransport notqualified. Parentprogress24 intentionallyupdates evidence.
+
+
+2026-11-09: private Mesh restarted with tested e0892f9 safeguards. Named process
+healthy, private Tailscale page HTTP200; all22 prior data tables and14 cards
+unchanged, SQLite integrity ok. New empty local-session table is migration only.
+No native route enrollment or Rook activation. See the integration checkpoint.
