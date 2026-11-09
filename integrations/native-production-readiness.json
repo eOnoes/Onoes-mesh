@@ -1,0 +1,126 @@
+{
+  "schema": "mesh-native-production-readiness/v1",
+  "state": "qualified_candidate_not_enrolled",
+  "nativeHealth": {
+    "port": 8642,
+    "status": "ok",
+    "version": "0.23.0",
+    "pid": 9804,
+    "module": "hermes_cli.main",
+    "cwd": "C:/Users/eMitchell109/AppData/Local/hermes",
+    "launcherCustody": "unconfirmed; recorded parent PID no longer exists"
+  },
+  "installedPython": "C:/Users/eMitchell109/AppData/Local/hermes/tools/python-3.14.9+20261021-win32-x64/python.exe",
+  "qualifiedPython": "3.14.9+20261021",
+  "qualificationDirectory": "hermes-local-session-ce81b23d-284a-4600-80a1-06933495f1cf",
+  "qualification": {
+    "qualification": "PASS",
+    "checks": [
+      "pinned_candidate_hashes",
+      "actual_file_bytes",
+      "native_session_and_submission_identity_replay",
+      "verified_separate_worker_and_observed_exit",
+      "private_auth_and_conflict_refusals",
+      "owner_settled_and_fixture_tree_ended_naturally",
+      "exact_read_only_submission_lookup_without_cross_session_access_or_dispatch",
+      "actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit",
+      "native_result_applies_only_after_qualified_retirement",
+      "native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export",
+      "exact_assignment_job_remains_held_after_root_exit_until_late_child_ends",
+      "authenticated_process_observation_persists_before_explicit_retirement_consumption",
+      "passive_retirement_stays_held_during_write_and_terminal_execution_refuses_new_mutation",
+      "frozen_profile_and_native_outcome_feed_one_saved_nims_read_only_review",
+      "real_nims_review_saved_under_original_dispatch_without_source_changes"
+    ],
+    "wholeWorkerReleaseQualified": true,
+    "liveInstallation": false,
+    "realNimsReviewCompleted": true
+  },
+  "installedSourceAudit": [
+    {
+      "file": "gateway/session_controls.py",
+      "installed": true,
+      "matchesCandidate": false,
+      "matchesPinnedBaseline": true,
+      "sha256": "3e6797de16ee375f21221a5da1c589756c6d0c31f21cd342a16a020eba891b71"
+    },
+    {
+      "file": "tui_gateway/contracts/canonical.py",
+      "installed": true,
+      "matchesCandidate": false,
+      "matchesPinnedBaseline": true,
+      "sha256": "ecccf8d09673b5d5401a3ecd30adb70cb7a9be1ee7d221dec23cd34a3feaa853"
+    },
+    {
+      "file": "gateway/session_managed_worker.py",
+      "installed": true,
+      "matchesCandidate": false,
+      "matchesPinnedBaseline": true,
+      "sha256": "4d51ca8d605ee3facc20e3ef6b8d9f3aeebe5ac14c849a7a4174937f9a5198f4"
+    },
+    {
+      "file": "gateway/mesh_assignment_process.py",
+      "installed": false,
+      "matchesCandidate": false,
+      "sha256": null,
+      "expectedNewFile": true
+    },
+    {
+      "file": "gateway/mesh_windows_process.py",
+      "installed": false,
+      "matchesCandidate": false,
+      "sha256": null,
+      "expectedNewFile": true
+    },
+    {
+      "file": "tools/file_tools_read_tracking.py",
+      "installed": true,
+      "matchesCandidate": false,
+      "matchesPinnedBaseline": true,
+      "sha256": "fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb"
+    },
+    {
+      "file": "tools/file_tools.py",
+      "installed": true,
+      "matchesCandidate": false,
+      "matchesPinnedBaseline": true,
+      "sha256": "925ebccc2a70b5a1b55541242cb19ed6614a18e82df1d6bc29474dc22c4f0dee"
+    }
+  ],
+  "patchAppliesToInstalledSourceCopy": true,
+  "liveFilesModified": false,
+  "sharedServicesRestarted": false,
+  "enrollment": {
+    "enabled": false,
+    "nativePrincipalRef": null,
+    "builderProfileRef": null,
+    "modelBinding": null,
+    "restartProcedureVerified": false
+  },
+  "remaining": [
+    "Confirm running import-root/launcher custody before replacing shared native files",
+    "Confirm dedicated or existing explicitly approved native principal and least-privilege binding; no credentials copied",
+    "Confirm builder model/provider/profile and allowed Mesh workspace",
+    "Wire production transport and readback into server-side runner only after reviewed binding",
+    "Qualify live managed lane and Rook identity/report transport/single scheduler before activation"
+  ],
+  "preparedPackage": {
+    "directory": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-bridge-rollout-66a4101e-4f6a-4160-abfd-2207216c892e",
+    "manifest": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-bridge-rollout-66a4101e-4f6a-4160-abfd-2207216c892e\\manifest.json",
+    "candidateFiles": 7,
+    "baselineFiles": 5,
+    "installed": false
+  },
+  "pythonIdentity": {
+    "version": "Python 3.14.9",
+    "sha256": "ee82dfc67da9339850a0e89b618f1b04437837ed3e39ca36c7e7d33a3a7900b7"
+  },
+  "coordination": {
+    "agent": "echo",
+    "sendId": "ea58b52b-3e6d-4e33-b163-d6f7f42eaa0d",
+    "runId": "run_a43b28319f2943feb289a70fd1a76295",
+    "status": "running",
+    "readOnly": true,
+    "deploymentAuthorizedByQuestion": false
+  }
+}

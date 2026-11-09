@@ -3,7 +3,7 @@
   "qualification": "PASS",
   "nativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
   "scope": "Disposable actual native builder/file/terminal/retirement to real signed-in Nims read-only review. Builder provider remains synthetic; production enrollment and watcher activation remain off.",
-  "evidenceDirectory": "hermes-local-session-b88415f6-3be0-420e-888a-288ee2646949",
+  "evidenceDirectory": "hermes-local-session-ce81b23d-284a-4600-80a1-06933495f1cf",
   "candidateFiles": {
     "gateway/session_controls.py": "1e3ed1b9c5442ecc176a542a9c9d88f4e23851e1434a6868fc3c69ea6a653516",
     "tui_gateway/contracts/canonical.py": "1c25f27e18e0a6f7ddf4ecf98c857a3555ef9848b31980423480c5a664ca5e14",
@@ -39,20 +39,20 @@
   ],
   "meshBinding": {
     "qualification": "PASS",
-    "taskId": "d7cf9ea3-a214-43fa-a2ac-b23601dfd660",
-    "sendId": "b443bfdf-9427-42d3-bc07-072a640805d1",
-    "createRequestId": "mesh-local-create-8f57a4daed2c550d88418b0240329f8fcbdc4c25f251fc066c706252926ac3e4",
-    "submissionId": "mesh-local-submit-8f57a4daed2c550d88418b0240329f8fcbdc4c25f251fc066c706252926ac3e4",
-    "sessionId": "local-15a81b8e18812479a38a3a07e295fbd9b7907b8d4b18369c9cc5d66cd87190dd",
-    "admissionId": "bb80b1c4b63e4ea8af7c2fefbe06a84e",
-    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-b88415f6-3be0-420e-888a-288ee2646949\\fixture-home",
+    "taskId": "3e53f04c-811e-460b-be1c-01cac8b46c13",
+    "sendId": "01fd96c4-b595-49b4-b15b-63c947af9dd1",
+    "createRequestId": "mesh-local-create-806ab33e260bea8d848cc09fb8b293075d214c15337f4c6a9907adff391a6918",
+    "submissionId": "mesh-local-submit-806ab33e260bea8d848cc09fb8b293075d214c15337f4c6a9907adff391a6918",
+    "sessionId": "local-2623e87697b42116a73fc63d2da5ffed0ec037b80969a0520bc01489031edabf",
+    "admissionId": "d5db7f05e0a448bcae87c2c7f29e3725",
+    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-ce81b23d-284a-4600-80a1-06933495f1cf\\fixture-home",
     "nativeEpoch": 1,
     "nativeGeneration": 1,
     "nativeStatus": "terminal",
     "rpcCounts": {
       "session.create": 1,
       "prompt.submit": 1,
-      "prompt.lookup": 272,
+      "prompt.lookup": 267,
       "mesh.fixture.release-child": 1,
       "mesh.fixture.release-write": 1
     },
@@ -65,17 +65,17 @@
     "processReadbackPersisted": true,
     "authorityDrainObserved": true,
     "executionClosedObserved": true,
-    "resultHash": "0315ffb57a932c9ba6dad922f8d17b818ab71f8b9d75742059a06f9bbfcd7425",
-    "resultMessageId": "native-9ee0e199a48c51e9932a5f2d537fc5ce25e7687d07b41fdd15002371438f4bde",
+    "resultHash": "48f56a29a42c5ef1384ed4174a9c4d11a74060599e00b5c1e53c749336129006",
+    "resultMessageId": "native-ebb952d377c85b4c23c93b78f99eec11b6b9008a46b974772b1f2e9ebbd70abf",
     "workspaceStillHeld": false,
     "writerQuiescence": true,
-    "retirementHash": "2c8092317edde8a0c71fe2fb3eddc63ff21def681ebc66240759a245794d613c",
+    "retirementHash": "f268020197e7d0a766b320d1ae42764cba5f1f127b770e815b39d6717d442a18",
     "reviewSentToNims": true,
     "reviewTransportSynthetic": false,
     "realNimsReviewCompleted": true,
     "liveActivation": false
   },
-  "fullLocalRegressionTests": 419,
+  "fullLocalRegressionTests": 427,
   "nativeOwnerSettled": true,
   "fixtureTreeEndedNaturally": true,
   "wholeWorkerReleaseQualified": true,
@@ -125,13 +125,20 @@
     "reviewVerdict": "changes_requested"
   },
   "realNimsReview": {
-    "threadId": "01a1bf16-6500-71a2-b17f-3a7d74962c46",
-    "turnId": "01a1bf16-6668-7e50-ba3e-98eb48539222",
-    "sendId": "bf4903c5-ada5-4d5f-9c77-af1175d352e1",
+    "threadId": "01a1bf26-816a-7593-9ae6-8a208e739b75",
+    "turnId": "01a1bf26-888c-7d12-8009-48d6854c1d66",
+    "sendId": "a464984d-7498-4ce8-9e5d-439bb56364a5",
     "status": "completed",
     "verdict": "changes_requested",
     "filesUnchanged": true,
     "sourceReadVerified": true,
     "automaticDone": false
+  },
+  "nativeRuntime": {
+    "version": "Python 3.14.9",
+    "executable": "C:/Users/eMitchell109/AppData/Local/hermes/tools/python-3.14.9+20261021-win32-x64/python.exe",
+    "sha256": "ee82dfc67da9339850a0e89b618f1b04437837ed3e39ca36c7e7d33a3a7900b7",
+    "matchesLiveServiceInterpreter": true,
+    "liveBridgeInstalled": false
   }
 }

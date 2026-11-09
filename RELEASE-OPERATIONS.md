@@ -8,7 +8,9 @@
   416 regression tests and 14 real-native checks at e0892f9. Provider and Nims
   review transport were synthetic in that earlier run. A later disposable
   native-builder-to-real-Nims handoff passed 15 checks; builder provider remains
-  synthetic, production identity/profile enrollment remains off.
+  synthetic, production identity/profile enrollment remains off. The same
+  15-check path also passed on the live service interpreter, Python3.14.9;
+  installed source still has the original five files and lacks two new helpers.
 - Nims: real read-only file review and completed-turn readback/resume passed
   on 2026-11-09 using a disposable file and existing ChatGPT sign-in. Runtime
   policy/identity is checked before a turn. Automatic native-builder handoff
