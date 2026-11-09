@@ -7,8 +7,10 @@
 - Native automatic build-to-review: supported-profile local qualification passed
   416 regression tests and 14 real-native checks at e0892f9. Provider and Nims
   review transport were synthetic; that run does not prove live delivery.
-- Nims: earlier no-tools planning connection passed on 2026-11-06; current
-  read-only repository review delivery still needs qualification.
+- Nims: real read-only file review and completed-turn readback/resume passed
+  on 2026-11-09 using a disposable file and existing ChatGPT sign-in. Runtime
+  policy/identity is checked before a turn. Automatic native-builder handoff
+  and uncertain in-flight review recovery remain unqualified.
 - Rook remains OFF pending production identity, reporting transport, a single
   scheduler owner and deployed acceptance.
 - Mind live store/keys/access not activated; model-service maintenance deferred

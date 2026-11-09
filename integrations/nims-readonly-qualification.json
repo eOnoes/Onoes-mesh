@@ -1,0 +1,102 @@
+{
+  "schema": "mesh-nims-readonly-qualification/v1",
+  "qualification": "PASS",
+  "runtime": "codex-cli 0.166.0",
+  "sourceSha256": "1230d4de3090f85a3970cc021f6331999b1b42144991e7858cce4d7545ba59cc",
+  "fullLocalRegressionTests": 419,
+  "nativePolicyPreflight": {
+    "at": "2026-11-09T06:40:16.779Z",
+    "qualification": "PASS",
+    "runtime": "codex-cli 0.166.0",
+    "auth": {
+      "connected": true,
+      "auth": "chatgpt",
+      "mode": "read-only"
+    },
+    "prepared": {
+      "threadId": "01a1bf09-38c4-7000-81b6-06566ff49a25",
+      "turnCount": 0,
+      "policy": {
+        "cwd": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab",
+        "modelProvider": "openai",
+        "approvalPolicy": "on-request",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        }
+      }
+    },
+    "noAgentTurnSent": true,
+    "liveReviewCompleted": false,
+    "limitation": "Policy readback only; no repository tools, model response or restart recovery tested."
+  },
+  "realReview": {
+    "directory": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\nims-review-87ad615a-3cdf-429c-970c-1cfe807486ef",
+    "before": "42a9ae61f5b26c435116488a6956affe08664310b1ad9243452312e73cb720be",
+    "at": "2026-11-09T06:41:10.972Z",
+    "qualification": "PASS",
+    "syntheticFile": true,
+    "realModelReview": true,
+    "threadId": "01a1bf0a-14d5-7122-a1aa-d9a73e2fb95a",
+    "turnId": "01a1bf0a-1b9b-7ac0-bbc1-028ad1244a3b",
+    "result": {
+      "threadId": "01a1bf0a-14d5-7122-a1aa-d9a73e2fb95a",
+      "turnId": "01a1bf0a-1b9b-7ac0-bbc1-028ad1244a3b",
+      "status": "completed",
+      "text": "{\"file\":\"clamp.mjs\",\"verdict\":\"changes_requested\",\"actual\":0,\"expected\":5,\"finding\":\"The bounds are reversed in the nested operations. Use Math.min(max, Math.max(min, value)); clamp(5,0,10) should return 5.\"}",
+      "permissionBlocked": false
+    },
+    "after": "42a9ae61f5b26c435116488a6956affe08664310b1ad9243452312e73cb720be",
+    "nativeTurnIds": [
+      "01a1bf0a-1b9b-7ac0-bbc1-028ad1244a3b"
+    ],
+    "itemTypes": [
+      "userMessage",
+      "reasoning",
+      "agentMessage",
+      "commandExecution",
+      "reasoning",
+      "agentMessage"
+    ],
+    "report": {
+      "file": "clamp.mjs",
+      "verdict": "changes_requested",
+      "actual": 0,
+      "expected": 5,
+      "finding": "The bounds are reversed in the nested operations. Use Math.min(max, Math.max(min, value)); clamp(5,0,10) should return 5."
+    },
+    "limitations": "Real native model read/review only; automatic builder handoff, reviewer recovery and owner approval not established by this check.",
+    "savedTurnStatus": "completed",
+    "savedReadCommands": [
+      {
+        "command": "\"C:\\\\Program Files\\\\WindowsApps\\\\OpenAI.CodexPrimaryRuntime.v26-1030-493-0_26.1030.493.0_x64__3k8sg7r9htsxt\\\\dependencies\\\\native\\\\powershell\\\\pwsh.exe\" -Command \"Get-Content -LiteralPath '.\\\\clamp.mjs'\"",
+        "status": "completed",
+        "exitCode": 0,
+        "sourceReadInOutput": true
+      }
+    ],
+    "resumedPolicy": {
+      "threadId": "01a1bf0a-14d5-7122-a1aa-d9a73e2fb95a",
+      "turnCount": 1,
+      "policy": {
+        "cwd": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\nims-review-87ad615a-3cdf-429c-970c-1cfe807486ef",
+        "modelProvider": "openai",
+        "approvalPolicy": "on-request",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        }
+      }
+    }
+  },
+  "automaticNativeBuilderHandoffQualified": false,
+  "liveCardsTouched": false,
+  "watcherActivated": false,
+  "remaining": [
+    "Production native worker identity/profile enrollment",
+    "Real automatic worker-result to Nims handoff and uncertain/restart recovery",
+    "Rook identity/report transport/single scheduler/deployed acceptance and explicit activation"
+  ]
+}
