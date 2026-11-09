@@ -113,17 +113,25 @@ def verify_evidence(root):
         result['checks'].append('actual_native_pipeline_stages_remain_observation_only')
     if 'actual_native_HTTP_agent_file_write_exact_bytes_without_release' in report['checks']:
         file_evidence=json.loads((root/'file-worker-evidence.json').read_text(encoding='utf-8'))
-        proof=(root/'workspace'/'mesh-file-proof.md').read_bytes()
+        kind=file_evidence.get('fileKind','markdown')
+        if kind not in ('markdown','javascript'): raise RuntimeError('Unknown file fixture kind')
+        file_name='mesh-file-proof.js' if kind=='javascript' else 'mesh-file-proof.md'
+        if file_evidence['relativePath']!='workspace/'+file_name: raise RuntimeError('File fixture path mismatch')
+        proof=(root/'workspace'/file_name).read_bytes()
         status=file_evidence['status'];life=status['writer_lifecycle']['enrollment']['lifetime']
         newline = file_evidence.get('newlineStyle','LF')
         if newline not in ('LF','CRLF'): raise RuntimeError('Unknown file fixture newline style')
-        expected_file_bytes = b'Mesh native file proof.' + (b'\r\n' if newline=='CRLF' else b'\n')
+        expected_file_bytes = (b'const meshProof = true;' if kind=='javascript' else b'Mesh native file proof.') + (b'\r\n' if newline=='CRLF' else b'\n')
         if (proof!=expected_file_bytes or hashlib.sha256(proof).hexdigest()!=file_evidence['sha256']
                 or status['status']!='completed' or not life['managedWorkEnded']
                 or status['writer_lifecycle']['writerQuiescence']
                 or life['toolEffects']['effectsSettled'] != bool(report.get('boundedFileCompletion'))):
             raise RuntimeError('Native file worker evidence is incomplete or incorrectly releases ownership')
         result['checks'].append('actual_native_file_write_bytes_and_held_ownership')
+    if 'actual_native_javascript_postwrite_process_owned_and_returned' in report['checks']:
+        if kind!='javascript' or life['toolEffects']['postWriteRuns']!={'startedCalls':1,'returnedCalls':1}:
+            raise RuntimeError('Native JavaScript post-write process evidence is incomplete')
+        result['checks'].append('actual_javascript_syntax_process_completed_in_owned_job')
     if 'actual_file_bytes_do_not_settle_held_native_bookkeeping' in report['checks']:
         file_evidence=json.loads((root/'file-worker-evidence.json').read_text(encoding='utf-8'))
         held=file_evidence['heldAfterBytes']['writer_lifecycle'];final=file_evidence['status']['writer_lifecycle']
@@ -150,10 +158,13 @@ def verify_evidence(root):
         for row in rows:
             try: decoded.append(json.loads(row))
             except (ValueError,TypeError): decoded.append(None)
-        reads=[i for i,row in enumerate(decoded) if isinstance(row,dict) and 'Before Mesh edit.' in str(row.get('content',''))]
+        original='const meshProof = false;' if kind=='javascript' else 'Before Mesh edit.'
+        reads=[i for i,row in enumerate(decoded) if isinstance(row,dict) and original in str(row.get('content',''))]
         writes=[i for i,row in enumerate(decoded) if isinstance(row,dict) and row.get('bytes_written')==len(expected_file_bytes) and row.get('verified') is True]
         if not reads or not writes or min(reads)>=max(writes):
             raise RuntimeError('Actual read/write tool results are not proven')
+        if kind=='javascript' and not any(decoded[i].get('lint',{}).get('status')=='ok' for i in writes):
+            raise RuntimeError('Actual JavaScript syntax check did not succeed')
         result['checks'].append('actual_original_content_read_then_verified_native_edit')
     if report.get('boundedFileCompletion'):
         f=json.loads((root/'file-worker-evidence.json').read_text(encoding='utf-8'))
@@ -477,7 +488,27 @@ async def child(root):
     file_steps = []
     attack_mode = None
     file_newline = b'\r\n' if os.environ.get('MESH_FIXTURE_NEWLINE')=='CRLF' else b'\n'
-    file_expected = b'Mesh native file proof.' + file_newline
+    file_kind='javascript' if os.environ.get('MESH_FIXTURE_KIND')=='javascript' else 'markdown'
+    file_name='mesh-file-proof.js' if file_kind=='javascript' else 'mesh-file-proof.md'
+    file_original='const meshProof = false;' if file_kind=='javascript' else 'Before Mesh edit.'
+    file_final='const meshProof = true;' if file_kind=='javascript' else 'Mesh native file proof.'
+    file_expected = file_final.encode() + file_newline
+    node_discovery=None
+    if file_kind=='javascript':
+        from unittest.mock import patch as fixture_patch
+        node=shutil.which('node')
+        if node is None: raise RuntimeError('JavaScript fixture requires existing Node installation')
+        original_which=shutil.which
+        def fixture_which(cmd, mode=os.F_OK|os.X_OK, path=None):
+            # Fixture-only managed-tool discovery; the real Node syntax process
+            # and native linter still run. No managed package is installed.
+            if cmd=='node' and path is not None: return node
+            return original_which(cmd,mode=mode,path=path)
+        node_discovery=fixture_patch.object(shutil,'which',side_effect=fixture_which)
+        node_discovery.start()
+        (root/'node-discovery-fixture.json').write_text(json.dumps({
+            'scope':'fixture-only explicit managed Node lookup; no installation',
+            'executable':node,'sha256':hashlib.sha256(Path(node).read_bytes()).hexdigest()}),encoding='utf-8')
     async def provider(request):
         body = await request.json()
         requests.append({'path': request.path, 'tools': [item.get('function', {}).get('name') or item.get('name')
@@ -499,8 +530,8 @@ async def child(root):
         tool = worker_allowed and len(tool_results) < (2 if file_turn else 1)
         tool_name = ('read_file' if not tool_results else 'write_file') if file_turn else 'terminal'
         if file_turn:
-            tool_args = {'path':str(root/'workspace'/'mesh-file-proof.md')}
-            if tool_name == 'write_file':tool_args['content']='Mesh native file proof.\n'
+            tool_args = {'path':str(root/'workspace'/file_name)}
+            if tool_name == 'write_file':tool_args['content']=file_final+'\n'
             if tool:file_steps.append(tool_name)
         else:tool_args={'command':"printf 'mesh-runtime-proof'",'timeout':5}
         if attack_mode is not None and file_allowed:
@@ -540,7 +571,7 @@ async def child(root):
         adapter = APIServerAdapter(PlatformConfig(enabled=True, extra={'host': '127.0.0.1', 'port': port,
                                                                       'key': key, 'model_name': 'mesh-runtime-fixture'}))
         def policy_for_run(run_id):
-            return (FileCompletionPolicy((root/'workspace').resolve(), ['mesh-file-proof.md'],
+            return (FileCompletionPolicy((root/'workspace').resolve(), [file_name],
                 text_reads=True,strict_tools=True) if file_mode and os.environ.get('HERMES_SAFE_MODE')=='1' else None)
         adapter._mesh_writer_runs = WriterRunRegistry(factory,file_policy_factory=policy_for_run)
         # Only provider selection is a fixture. The actual agent, tools, API
@@ -645,7 +676,7 @@ async def child(root):
                 if response.status not in (401, 403):
                     raise RuntimeError('Unauthenticated native status was exposed')
             checks.append('actual_native_HTTP_authentication_enforced')
-            (root/'workspace'/'mesh-file-proof.md').write_bytes(b'Before Mesh edit.'+file_newline)
+            (root/'workspace'/file_name).write_bytes(file_original.encode()+file_newline)
             file_mode = True
             import threading
             import tools.file_tools as native_file_tools
@@ -675,7 +706,7 @@ async def child(root):
                             headers={'Authorization':'Bearer '+key}) as response:
                         file_held = await response.json()
                     held_life=file_held['writer_lifecycle']['enrollment']['lifetime']
-                    held_path=root/'workspace'/'mesh-file-proof.md'
+                    held_path=root/'workspace'/file_name
                     if (held_path.read_bytes()!=file_expected or held_life['rootEnded']
                             or held_life['managedWorkEnded'] or held_life['toolEffects']['activeCalls']!=1
                             or file_held['writer_lifecycle']['writerQuiescence']):
@@ -692,19 +723,24 @@ async def child(root):
                         if time.monotonic()>deadline:
                             raise RuntimeError('Native file worker did not settle')
                         await asyncio.sleep(.05)
-                    proof_path = root/'workspace'/'mesh-file-proof.md'
+                    proof_path = root/'workspace'/file_name
                     proof = proof_path.read_bytes() if proof_path.is_file() else b''
                     if file_status['status']!='completed' or proof!=file_expected:
                         raise RuntimeError('Native file worker did not produce exact expected bytes')
                     if (file_status['writer_lifecycle']['writerQuiescence']
                             or file_life['toolEffects']['effectsSettled'] != (os.environ.get('HERMES_SAFE_MODE')=='1')):
                         raise RuntimeError('File success incorrectly granted unqualified writer release')
-                    if file_steps!=['read_file','write_file'] or not any('Before Mesh edit.' in text for text in tools_seen):
+                    if file_steps!=['read_file','write_file'] or not any(file_original in text for text in tools_seen):
                         raise RuntimeError('Native file edit did not read the original contents first')
                     (root/'file-tool-results.json').write_text(json.dumps(tools_seen),encoding='utf-8')
                     (root/'file-worker-evidence.json').write_text(json.dumps({
-                        'relativePath':'workspace/mesh-file-proof.md','sha256':hashlib.sha256(proof).hexdigest(),
+                        'relativePath':'workspace/'+file_name,'fileKind':file_kind,'sha256':hashlib.sha256(proof).hexdigest(),
                         'status':file_status,'heldAfterBytes':file_held,'exactContentVerified':True,'verifiedReadBeforeWrite':True,'newlineStyle':'CRLF' if file_newline==b'\r\n' else 'LF'},indent=2),encoding='utf-8')
+                    if file_kind=='javascript' and os.environ.get('HERMES_SAFE_MODE')=='1':
+                        runs=file_life['toolEffects']['postWriteRuns']
+                        if runs!={'startedCalls':1,'returnedCalls':1}:
+                            raise RuntimeError('Native JavaScript syntax process was not observed exactly once')
+                        checks.append('actual_native_javascript_postwrite_process_owned_and_returned')
                     checks.append('actual_native_HTTP_agent_file_write_exact_bytes_without_release')
                     checks.append('actual_file_bytes_do_not_settle_held_native_bookkeeping')
                     checks.append('actual_native_read_before_write_with_stale_guard_preserved')
@@ -932,6 +968,7 @@ async def child(root):
         if adapter is not None:
             await adapter.disconnect()
         await provider_runner.cleanup()
+        if node_discovery is not None: node_discovery.stop()
         for fence in fences:
             fence.terminate(); fence.close()
 
@@ -955,8 +992,8 @@ if __name__ == '__main__':
         print(json.dumps(result))
     else:
         options=sys.argv[3:]
-        if len(sys.argv)<3 or any(option not in ('--safe-mode','--crlf') for option in options) or len(set(options))!=len(options):
-            raise SystemExit('Usage: native_root python_executable [--safe-mode] [--crlf]')
+        if len(sys.argv)<3 or any(option not in ('--safe-mode','--crlf','--javascript') for option in options) or len(set(options))!=len(options):
+            raise SystemExit('Usage: native_root python_executable [--safe-mode] [--crlf] [--javascript]')
         native, executable = sys.argv[1:3]
         root = prepare(native)
         environment = {name: value for name, value in os.environ.items() if name.upper() in
@@ -968,6 +1005,7 @@ if __name__ == '__main__':
         if '--safe-mode' in options:
             environment['HERMES_SAFE_MODE']='1'  # Supported native no-plugin discovery mode.
         if '--crlf' in options: environment['MESH_FIXTURE_NEWLINE']='CRLF'
+        if '--javascript' in options: environment['MESH_FIXTURE_KIND']='javascript'
         # Keep profile/data roots isolated while resolving the installed runtime's
         # existing libraries explicitly. Never inherit provider keys or real HOME.
         libraries = subprocess.check_output([executable, '-c', 'import site;print(site.getusersitepackages())'], text=True).strip()

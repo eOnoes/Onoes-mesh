@@ -1,5 +1,6 @@
 import concurrent.futures
 import asyncio
+import subprocess
 import os
 from contextvars import copy_context, ContextVar
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -70,6 +71,12 @@ class HermesWriterScopeTests(unittest.TestCase):
                                                None, 'legacy', suffix=' arguments')
             self.assertEqual(future.result(timeout=3), 'legacy arguments')
 
+    def test_unbound_run_keeps_native_subprocess_options(self):
+        with patch.object(scope.subprocess,'run',return_value='legacy') as run:
+            self.assertEqual(scope.scoped_run(['legacy'],timeout=2,check=True,input='data',capture_output=True,text=True),'legacy')
+            run.assert_called_once_with(['legacy'],timeout=2,check=True,input='data',capture_output=True,text=True)
+        self.assertFalse(scope.suppress_writer_lsp())
+
     def test_unbound_thread_keeps_original_target_and_identity(self):
         result=[]
         thread=threading.Thread(target=lambda:result.append('legacy'),name='legacy-title',daemon=True)
@@ -105,6 +112,33 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
         values.update({name:[] for name in ['_registration_order','_persistent_carryover','_plugin_loaded_listeners']})
         return types.SimpleNamespace(**values,_discovered=True,_context_engine=None,_event_worker=None,
             _event_pending_by_generation={0:0},discover_and_load=lambda: self.fail('Observation must not discover plugins'))
+
+    def test_scoped_run_return_keeps_live_descendant_held(self):
+        child="import time; time.sleep(2)"
+        parent="import subprocess,sys; subprocess.Popen([sys.executable,'-c',%r],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); print('started')" % child
+        with scope.writer_foreground_scope(self.life):
+            result=scope.scoped_run([sys.executable,'-c',parent],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=3)
+            self.assertEqual(result.returncode,0);self.assertEqual(result.stdout.strip(),'started')
+        held=self.life.wait(50)
+        self.assertFalse(held['managedWorkEnded']);self.assertGreater(held['processTree']['activeProcesses'],0)
+        self.assertEqual(held['toolEffects']['postWriteRuns'],{'startedCalls':1,'returnedCalls':1})
+        self.assertTrue(self.life.wait(5000)['managedWorkEnded'])
+
+    def test_scoped_run_timeout_does_not_release_surviving_descendant(self):
+        child="import time; time.sleep(2)"
+        parent="import subprocess,sys,time; subprocess.Popen([sys.executable,'-c',%r],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); time.sleep(10)" % child
+        with scope.writer_foreground_scope(self.life):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                scope.scoped_run([sys.executable,'-c',parent],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=.3)
+        self.assertFalse(self.life.wait(50)['managedWorkEnded'])
+        self.assertTrue(self.life.wait(5000)['managedWorkEnded'])
+
+    def test_bounded_lsp_exclusion_is_scoped_and_rejects_stale_worker(self):
+        root,metrics=self.file_policy_fixture()
+        with scope.writer_foreground_scope(self.life):
+            self.assertTrue(scope.suppress_writer_lsp());old=copy_context()
+        self.assertFalse(scope.suppress_writer_lsp())
+        with self.assertRaises(RuntimeError):old.run(scope.suppress_writer_lsp)
 
     def file_policy_fixture(self):
         folder=tempfile.TemporaryDirectory(prefix='mesh-file-adapter-',dir=Path.cwd()/'data')

@@ -29,7 +29,7 @@
          temp_dir = self._env_temp_dir(env)
 --- /dev/null
 +++ b/tools/mesh_writer_scope.py
-@@ -0,0 +1,749 @@
+@@ -0,0 +1,788 @@
 +"""Candidate native tools.mesh_writer_scope; no HTTP/config enrollment or release grant."""
 +from contextlib import contextmanager
 +from contextvars import ContextVar, copy_context
@@ -219,6 +219,7 @@
 +        self._file_policy = file_policy
 +        self._file_completed = 0
 +        self._tool_refused = 0
++        self._postwrite_started = self._postwrite_returned = 0
 +        self.fence = fence
 +        self._lock = threading.RLock()
 +        self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
@@ -362,6 +363,7 @@
 +                                    'unverifiedCalls': self._tool_uncertain,
 +                                    'effectsSettled': not self._tool_active and self._tool_uncertain == 0,
 +                                    'qualifiedFileCalls': self._file_completed,
++                                    'postWriteRuns': {'startedCalls': self._postwrite_started,'returnedCalls': self._postwrite_returned},
 +                                    'fileToolGate': {'enabled': self._file_policy is not None and self._file_policy.strict_tools,
 +                                        'refusedCalls': self._tool_refused},
 +                                    'pipeline': {'fullyObservedCalls': self._pipeline_full,
@@ -779,6 +781,43 @@
 +            raise RuntimeError('Configured local executable is unavailable')
 +        argv[0] = str(Path(executable).resolve())
 +    return fence.popen(argv, **kwargs)  # Failure never falls back to an unfenced launch.
++
++
++def suppress_writer_lsp():
++    """The bounded completion lane excludes shared, turn-persistent LSP work."""
++    lifetime = _lifetime.get()
++    if lifetime is None or lifetime._file_policy is None:
++        return False
++    lifetime.assert_current_worker()
++    return True
++
++
++def scoped_run(argv, *, timeout=None, check=False, **kwargs):
++    """Native linter run subset; unbound calls retain subprocess.run behavior."""
++    if _current.get() is None:
++        return subprocess.run(argv,timeout=timeout,check=check,**kwargs)
++    lifetime = _lifetime.get()
++    with scoped_popen(argv,**kwargs) as proc:
++        if lifetime is not None:
++            with lifetime._lock: lifetime._postwrite_started += 1
++        try:
++            try:
++                output,error=proc.communicate(timeout=timeout)
++            except subprocess.TimeoutExpired:
++                proc.kill()  # Exact owned root only; remaining descendants keep the job held.
++                try: output,error=proc.communicate(timeout=1)
++                except subprocess.TimeoutExpired as pending: output,error=pending.output,pending.stderr
++                raise subprocess.TimeoutExpired(argv,timeout,output=output,stderr=error)
++            except BaseException:
++                proc.kill()
++                raise
++            code=proc.poll()
++            if check and code:
++                raise subprocess.CalledProcessError(code,argv,output=output,stderr=error)
++            return subprocess.CompletedProcess(argv,code,output,error)
++        finally:
++            if lifetime is not None:
++                with lifetime._lock: lifetime._postwrite_returned += 1
 --- /dev/null
 +++ b/tools/mesh_windows_writer_fence.py
 @@ -0,0 +1,327 @@
@@ -1598,6 +1637,27 @@
              return (*version, digest)
          return None
      except OSError:
+--- a/tools/file_operations_lint.py
++++ b/tools/file_operations_lint.py
+@@ -208,7 +208,8 @@
+         if _IS_WINDOWS:
+             path, cwd = _msys_to_windows_path(path), cwd and _msys_to_windows_path(cwd)
+         try:
+-            proc = subprocess.run(
++            from tools.mesh_writer_scope import scoped_run
++            proc = scoped_run(
+                 [executable, *args, path], cwd=cwd or None, env=with_hermes_node_path(hermes_subprocess_env()),
+                 stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                 text=True, encoding="utf-8", errors="replace", timeout=30, creationflags=windows_hide_flags(), check=False)
+@@ -267,6 +268,8 @@
+     def _lsp_service(self):
+         """The active LSPService, or None on a non-local backend / any failure.
+         LSP is an enrichment layer and must never break a write."""
++        from tools.mesh_writer_scope import suppress_writer_lsp
++        if suppress_writer_lsp(): return None
+         if not self._lsp_local_only():
+             return None
+         try:
 --- a/tools/terminal_tool.py
 +++ b/tools/terminal_tool.py
 @@ -1087,6 +1087,8 @@

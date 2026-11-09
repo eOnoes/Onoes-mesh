@@ -1940,3 +1940,11 @@ Full original goal active/incomplete. Next: dedicated profile/retirement closure
 and positive assignment consumer, then approved Rook wiring/deployed acceptance.
 Do not infer all post-write/background effects are settled just from dispatch gate
 or the tested Markdown file-handler result. No current source-writing hold released.
+
+
+## 2026-11-09 — Native post-write process component milestone
+Previous turn classified as progress: verified Echo base ancestry and identical Rook files; no merge needed. Current owned changes qualify native managed Node lint subprocess with scoped Windows Job and explicitly exclude shared persistent LSP for bounded file-policy workers. Ordinary unbound run/LSP behavior retained. Process-return and timeout tests leave surviving descendants held until actual exit. No positive whole-worker clearance or claim consumer added.
+Focused scope PASS62; pinned native functions PASS57 (../postwrite-functions-current.log); Workroom PASS160 (../rook-current-workroom-normal.log); full npm PASS379=302Node+77Python (../postwrite-full-tests.log). Initial restricted Workroom run failed EACCES on temporary loopback; normal-access rerun passed. No product failure inferred.
+Actual isolated JavaScript LF12921a94-32e2-454c-bea3-8756ae7d2b23 PASS18/verify18 and CRLF15930918-c636-4c41-8c0b-fdac83d3e5ad PASS18/verify18. Real tool result lint.status=ok, exact read/edit bytes and postWriteRuns1/1. Only managed Node discovery uses existing installation in fixture; actual AIAgent/file handler/Node/WindowsJob run. Default Markdown9accf5ec-907b-4250-a9bd-a686bf612ca2 PASS15/verify14; same19candidate hashes. Held bookkeeping, two strict refusal cases, FIFO/replay/retirement/abrupt-loss guards retained.
+Existing goal card update attempted via bootstrap; HTTP401, no card change or access workaround. Last known revision52 remains unverified this turn; checkpoint contains current evidence. Named launcher status was blocked by script authorization; no restart attempted. Live Mesh/Relay/Hermes/model/Mind untouched and Rook remains unactivated.
+Next: dedicated worker-profile and irreversible retirement proof, then positive assignment consumer; production Rook identity/report transport/single scheduler and deployed acceptance still needed. Full original goal incomplete. No source-writing hold released.

@@ -187,6 +187,7 @@ class WriterLifetime:
         self._file_policy = file_policy
         self._file_completed = 0
         self._tool_refused = 0
+        self._postwrite_started = self._postwrite_returned = 0
         self.fence = fence
         self._lock = threading.RLock()
         self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
@@ -330,6 +331,7 @@ class WriterLifetime:
                                     'unverifiedCalls': self._tool_uncertain,
                                     'effectsSettled': not self._tool_active and self._tool_uncertain == 0,
                                     'qualifiedFileCalls': self._file_completed,
+                                    'postWriteRuns': {'startedCalls': self._postwrite_started,'returnedCalls': self._postwrite_returned},
                                     'fileToolGate': {'enabled': self._file_policy is not None and self._file_policy.strict_tools,
                                         'refusedCalls': self._tool_refused},
                                     'pipeline': {'fullyObservedCalls': self._pipeline_full,
@@ -747,3 +749,40 @@ def scoped_popen(argv, **kwargs):
             raise RuntimeError('Configured local executable is unavailable')
         argv[0] = str(Path(executable).resolve())
     return fence.popen(argv, **kwargs)  # Failure never falls back to an unfenced launch.
+
+
+def suppress_writer_lsp():
+    """The bounded completion lane excludes shared, turn-persistent LSP work."""
+    lifetime = _lifetime.get()
+    if lifetime is None or lifetime._file_policy is None:
+        return False
+    lifetime.assert_current_worker()
+    return True
+
+
+def scoped_run(argv, *, timeout=None, check=False, **kwargs):
+    """Native linter run subset; unbound calls retain subprocess.run behavior."""
+    if _current.get() is None:
+        return subprocess.run(argv,timeout=timeout,check=check,**kwargs)
+    lifetime = _lifetime.get()
+    with scoped_popen(argv,**kwargs) as proc:
+        if lifetime is not None:
+            with lifetime._lock: lifetime._postwrite_started += 1
+        try:
+            try:
+                output,error=proc.communicate(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                proc.kill()  # Exact owned root only; remaining descendants keep the job held.
+                try: output,error=proc.communicate(timeout=1)
+                except subprocess.TimeoutExpired as pending: output,error=pending.output,pending.stderr
+                raise subprocess.TimeoutExpired(argv,timeout,output=output,stderr=error)
+            except BaseException:
+                proc.kill()
+                raise
+            code=proc.poll()
+            if check and code:
+                raise subprocess.CalledProcessError(code,argv,output=output,stderr=error)
+            return subprocess.CompletedProcess(argv,code,output,error)
+        finally:
+            if lifetime is not None:
+                with lifetime._lock: lifetime._postwrite_returned += 1

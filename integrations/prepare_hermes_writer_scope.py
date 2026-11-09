@@ -26,6 +26,7 @@ from integrations.windows_writer_fence import WindowsWriterFence
 
 BASELINE = '6491641456b51eb78c36a50a8508f145da328f7c70a432bced84b3b329e0046e'
 FOREGROUND_BASELINE = '723e8f0bc27c58c310f9530732c889e5f8480d74e12402656ed0033e08afc27c'
+POSTWRITE_BASELINE = '17402e525553b79145594c40b1f6f525f0c7ac0bd8ef579fa0a7509b8c2cc4df'
 READ_TRACKING_BASELINE = 'fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb'
 FILE_TOOLS_BASELINE = '1a23773abe410feb5dd99276d08b6c0837624309ea489c508d683c6965408f94'
 TERMINAL_TOOL_BASELINE = 'a09910c7c61a93d89e8b9e83efd3abcb5eff4b58a3cb53e3bd0162d2ee59e909'
@@ -259,6 +260,24 @@ def read_tracking_candidate(native_root):
     return {path:original},{path:candidate}
 
 
+def postwrite_candidate(native_root):
+    path='tools/file_operations_lint.py'
+    raw=(native_root/path).read_bytes()
+    if hashlib.sha256(raw).hexdigest()!=POSTWRITE_BASELINE:
+        raise RuntimeError('Native post-write lint source changed')
+    original=raw.decode('utf-8').replace('\r\n','\n');candidate=original
+    before='            proc = subprocess.run(\n'
+    if candidate.count(before)!=1: raise RuntimeError('Unexpected native Node linter launcher')
+    candidate=candidate.replace(before,'            from tools.mesh_writer_scope import scoped_run\n            proc = scoped_run(\n')
+    tree=ast.parse(candidate);cls=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='LintMixin')
+    fn=next(n for n in cls.body if isinstance(n,ast.FunctionDef) and n.name=='_lsp_service')
+    lines=candidate.splitlines(True);split=fn.body[0].end_lineno
+    lines[split:split]=['        from tools.mesh_writer_scope import suppress_writer_lsp\n',
+        '        if suppress_writer_lsp(): return None\n']
+    candidate=''.join(lines);ast.parse(candidate)
+    return {path:original},{path:candidate}
+
+
 def terminal_route_candidate(native_root):
     path = 'tools/terminal_tool.py'
     raw = (native_root / path).read_bytes()
@@ -440,6 +459,8 @@ def prepare(source_path):
     read_originals, read_modules = read_tracking_candidate(source_path.parent.parent)
     lifetime_originals.update(read_originals)
     modules.update(read_modules)
+    post_originals,post_modules=postwrite_candidate(source_path.parent.parent)
+    lifetime_originals.update(post_originals);modules.update(post_modules)
     terminal_originals, terminal_modules = terminal_route_candidate(source_path.parent.parent)
     lifetime_originals.update(terminal_originals)
     modules.update(terminal_modules)
@@ -1355,6 +1376,46 @@ def qualify_read_metadata(modules):
     return checks
 
 
+def qualify_postwrite(modules):
+    import os,shutil
+    node=shutil.which('node')
+    if node is None: raise RuntimeError('Existing Node executable is required for post-write qualification')
+    node=Path(node).resolve();root=Path(__file__).resolve().parents[1]/'data'/('postwrite-'+str(uuid.uuid4()));root.mkdir()
+    target=root/'postwrite.js';target.write_bytes(b'const meshProof = true;\n')
+    names=('_lsp_service','_run_managed_node_linter')
+    cls=next(n for n in ast.parse(modules['tools/file_operations_lint.py']).body if isinstance(n,ast.ClassDef) and n.name=='LintMixin')
+    methods=[n for n in cls.body if isinstance(n,ast.FunctionDef) and n.name in names]
+    ns={'Optional':typing.Optional,'ExecuteResult':types.SimpleNamespace,'_MANAGED_NODE_LINTERS':{'.js':('node','--check')}}
+    exec(compile(ast.Module(body=methods,type_ignores=[]),'tools/file_operations_lint.py','exec'),ns)
+    calls=[];service=object()
+    lsp=types.ModuleType('agent.lsp');lsp.get_service=lambda:(calls.append(True),service)[1]
+    constants=types.ModuleType('hermes_constants');constants.with_hermes_node_path=lambda env:{**env,'PATH':str(node.parent)}
+    compat=types.ModuleType('hermes_cli._subprocess_compat');compat.windows_hide_flags=lambda:0x08000000
+    local=types.ModuleType('tools.environments.local');local._IS_WINDOWS=True;local._msys_to_windows_path=lambda p:p
+    local.hermes_subprocess_env=lambda:{k:v for k,v in os.environ.items() if k.upper() in {'SYSTEMROOT','WINDIR','COMSPEC','TEMP','TMP'}}
+    replacements={'agent.lsp':lsp,'hermes_constants':constants,'hermes_cli._subprocess_compat':compat,
+        'tools.environments.local':local,'tools.mesh_writer_scope':scope}
+    receiver=types.SimpleNamespace(env=types.SimpleNamespace(cwd=str(root)),cwd=str(root),_lsp_local_only=lambda:True)
+    fence=WindowsWriterFence('native-postwrite-fixture','one')
+    life=scope.WriterLifetime(fence,file_policy=scope.FileCompletionPolicy(root,['postwrite.js'],text_reads=True))
+    try:
+        with patch.dict(sys.modules,replacements):
+            if ns['_lsp_service'](receiver) is not service:raise AssertionError('Unbound LSP changed')
+            with scope.writer_foreground_scope(life):
+                if ns['_lsp_service'](receiver) is not None or len(calls)!=1:
+                    raise AssertionError('Bounded file worker reached a shared LSP service')
+                result=ns['_run_managed_node_linter'](receiver,'.js',str(target))
+                if result.exit_code!=0:raise AssertionError('Actual native managed Node syntax check failed')
+            ended=life.wait(5000)
+            if not ended['managedWorkEnded'] or ended['toolEffects']['postWriteRuns']!={'startedCalls':1,'returnedCalls':1}:
+                raise AssertionError('Native managed Node linter escaped process accounting')
+            if ns['_lsp_service'](receiver) is not service or len(calls)!=2:
+                raise AssertionError('Scoped exclusion affected ordinary LSP calls')
+        return ['native_managed_node_linter_scoped_and_observed_ended',
+                'native_bounded_file_lsp_shared_service_not_called','native_ordinary_lsp_service_unchanged']
+    finally:fence.terminate();fence.close()
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
@@ -1362,6 +1423,7 @@ if __name__ == '__main__':
                                         'tools/environments/local.py': FOREGROUND_BASELINE, **TOOL_WORKER_BASELINES,
                                         'tools/file_tools.py': FILE_TOOLS_BASELINE,
                                         'tools/file_tools_read_tracking.py': READ_TRACKING_BASELINE,
+                                        'tools/file_operations_lint.py': POSTWRITE_BASELINE,
                                         'tools/terminal_tool.py': TERMINAL_TOOL_BASELINE,
                                         'agent/title_generator.py': TITLE_BASELINE,
                                         'gateway/run_turn_runner.py': CANONICAL_WORKER_BASELINE,
@@ -1376,7 +1438,7 @@ if __name__ == '__main__':
                             + qualify_tool_effect_boundary(modules) + qualify_file_tool_routes(modules)
                             + qualify_terminal_routes(modules) + qualify_status_observation(modules)
                             + qualify_title_thread(modules) + qualify_canonical_worker_seam(modules)
-                            + qualify_context_thread_factory(modules) + qualify_pipeline_shortcut(modules) + qualify_read_metadata(modules))
+                            + qualify_context_thread_factory(modules) + qualify_pipeline_shortcut(modules) + qualify_read_metadata(modules) + qualify_postwrite(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)
