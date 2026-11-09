@@ -1703,3 +1703,26 @@ No live native/Relay install or restart, model changes, Mind activation, automat
 activation or old hold release. Full goal incomplete. Next: qualify file completion
 boundary including middleware/Relay effects, then add trusted positive producer
 and Mesh assignment consumer. Native file write alone cannot unlock a claim.
+
+
+## Held native file bookkeeping acceptance — 2026-11-09T00:56:10.293342+00:00
+Prior goal turn progressed: 33a3656 pushed, native file write PASS13; milestone
+backup E:/App-Backups/ONOes-Mesh/2026-11-09_00-51-12-901_UTC_0a1ce253 verified.
+This slice holds actual tools.file_tools._note_edited in the isolated fixture after
+bytes exist but before native handler returns. Original bookkeeping runs after
+release; no installed native source modified. During hold: exact bytes on disk,
+rootEnded false, managedWorkEnded false, activeCalls1. After actual handler return:
+managedWorkEnded true, activeCalls0. Whole-writer release remains false.
+Runtime data/hermes-runtime-5940f2c3-ef49-4ee3-9834-a87d03c3f61d PASS14;
+independent verifier PASS13/all17 source hashes. Initial parent verifier failed
+KeyError because generation is inside enrollment, not top-level observation;
+corrected field lookup and reran verifier against retained successful runtime.
+Negative verifier evidence data/file-bookkeeping-negative-84680472-f8c2-40ad-ac24-60bd5b817ebb:
+premature managed end and mismatched generation both rejected. Syntax/diff PASS.
+Live named Mesh PID37724 Healthy true. Anonymous /api/health 401 with emptybody
+is expected auth rejection, not service outage; no restart. Goal progress saved
+and read back revision47/evidence3168chars; all6 checklist states preserved.
+GitHub workflow inspection local none/remote0. No native/Relay install, model
+service change, Mind access, automation enable, or old hold clearance. Full goal
+still incomplete. Next remains qualified file-effect adapter and trusted closure
+producer/Relay/Mesh consumer, rather than treating file existence as completion.

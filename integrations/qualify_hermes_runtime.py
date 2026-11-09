@@ -120,6 +120,15 @@ def verify_evidence(root):
                 or status['writer_lifecycle']['writerQuiescence'] or life['toolEffects']['effectsSettled']):
             raise RuntimeError('Native file worker evidence is incomplete or incorrectly releases ownership')
         result['checks'].append('actual_native_file_write_bytes_and_held_ownership')
+    if 'actual_file_bytes_do_not_settle_held_native_bookkeeping' in report['checks']:
+        file_evidence=json.loads((root/'file-worker-evidence.json').read_text(encoding='utf-8'))
+        held=file_evidence['heldAfterBytes']['writer_lifecycle'];final=file_evidence['status']['writer_lifecycle']
+        life=held['enrollment']['lifetime']
+        if (held['runId']!=final['runId'] or held['ownerId']!=final['ownerId']
+                or held['enrollment']['generation']!=final['enrollment']['generation'] or life['rootEnded'] or life['managedWorkEnded']
+                or life['toolEffects']['activeCalls']!=1 or held['writerQuiescence']):
+            raise RuntimeError('Held file bookkeeping evidence is incomplete or misbound')
+        result['checks'].append('file_bytes_precede_handler_completion_without_ownership_release')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -567,34 +576,63 @@ async def child(root):
                     raise RuntimeError('Unauthenticated native status was exposed')
             checks.append('actual_native_HTTP_authentication_enforced')
             file_mode = True
-            file_headers = {**headers, 'Idempotency-Key': 'mesh-native-file-proof'}
-            async with client.post(origin+'/v1/runs', headers=file_headers,
-                    json={'input': 'Create the synthetic Mesh file proof, then finish.'}) as response:
-                file_admitted = await response.json()
-                if response.status not in (200,201,202):
-                    raise RuntimeError('Native file run admission failed')
-            file_id = file_admitted['run_id']
-            deadline = time.monotonic()+45
-            while True:
-                async with client.get(origin+'/v1/runs/'+file_id,
-                        headers={'Authorization':'Bearer '+key}) as response:
-                    file_status = await response.json()
-                file_life = file_status.get('writer_lifecycle',{}).get('enrollment',{}).get('lifetime',{})
-                if file_status['status'] in ('completed','failed','cancelled','interrupted') and file_life.get('managedWorkEnded'):
-                    break
-                if time.monotonic()>deadline:
-                    raise RuntimeError('Native file worker did not settle')
-                await asyncio.sleep(.05)
-            proof_path = root/'workspace'/'mesh-file-proof.md'
-            proof = proof_path.read_bytes() if proof_path.is_file() else b''
-            if file_status['status']!='completed' or proof!=b'Mesh native file proof.\n':
-                raise RuntimeError('Native file worker did not produce exact expected bytes')
-            if file_status['writer_lifecycle']['writerQuiescence'] or file_life['toolEffects']['effectsSettled']:
-                raise RuntimeError('File success incorrectly granted unqualified writer release')
-            (root/'file-worker-evidence.json').write_text(json.dumps({
-                'relativePath':'workspace/mesh-file-proof.md','sha256':hashlib.sha256(proof).hexdigest(),
-                'status':file_status,'exactContentVerified':True},indent=2),encoding='utf-8')
-            checks.append('actual_native_HTTP_agent_file_write_exact_bytes_without_release')
+            import threading
+            import tools.file_tools as native_file_tools
+            file_write_started, file_write_release = threading.Event(), threading.Event()
+            original_note_edited = native_file_tools._note_edited
+            def held_note_edited(*args, **kwargs):
+                file_write_started.set()
+                if not file_write_release.wait(timeout=30):
+                    raise RuntimeError('Fixture file bookkeeping release timed out')
+                return original_note_edited(*args, **kwargs)
+            with patch.object(native_file_tools, '_note_edited', side_effect=held_note_edited):
+                try:
+                    file_headers = {**headers, 'Idempotency-Key': 'mesh-native-file-proof'}
+                    async with client.post(origin+'/v1/runs', headers=file_headers,
+                            json={'input': 'Create the synthetic Mesh file proof, then finish.'}) as response:
+                        file_admitted = await response.json()
+                        if response.status not in (200,201,202):
+                            raise RuntimeError('Native file run admission failed')
+                    file_id = file_admitted['run_id']
+                    deadline = time.monotonic()+45
+                    while not file_write_started.is_set():
+                        if time.monotonic()>deadline:
+                            raise RuntimeError('Native file write did not reach post-write bookkeeping')
+                        await asyncio.sleep(.02)
+                    async with client.get(origin+'/v1/runs/'+file_id,
+                            headers={'Authorization':'Bearer '+key}) as response:
+                        file_held = await response.json()
+                    held_life=file_held['writer_lifecycle']['enrollment']['lifetime']
+                    held_path=root/'workspace'/'mesh-file-proof.md'
+                    if (held_path.read_bytes()!=b'Mesh native file proof.\n' or held_life['rootEnded']
+                            or held_life['managedWorkEnded'] or held_life['toolEffects']['activeCalls']!=1
+                            or file_held['writer_lifecycle']['writerQuiescence']):
+                        raise RuntimeError('File bytes incorrectly implied native handler completion')
+                    file_write_release.set()
+                    deadline = time.monotonic()+45
+                    while True:
+                        async with client.get(origin+'/v1/runs/'+file_id,
+                                headers={'Authorization':'Bearer '+key}) as response:
+                            file_status = await response.json()
+                        file_life = file_status.get('writer_lifecycle',{}).get('enrollment',{}).get('lifetime',{})
+                        if file_status['status'] in ('completed','failed','cancelled','interrupted') and file_life.get('managedWorkEnded'):
+                            break
+                        if time.monotonic()>deadline:
+                            raise RuntimeError('Native file worker did not settle')
+                        await asyncio.sleep(.05)
+                    proof_path = root/'workspace'/'mesh-file-proof.md'
+                    proof = proof_path.read_bytes() if proof_path.is_file() else b''
+                    if file_status['status']!='completed' or proof!=b'Mesh native file proof.\n':
+                        raise RuntimeError('Native file worker did not produce exact expected bytes')
+                    if file_status['writer_lifecycle']['writerQuiescence'] or file_life['toolEffects']['effectsSettled']:
+                        raise RuntimeError('File success incorrectly granted unqualified writer release')
+                    (root/'file-worker-evidence.json').write_text(json.dumps({
+                        'relativePath':'workspace/mesh-file-proof.md','sha256':hashlib.sha256(proof).hexdigest(),
+                        'status':file_status,'heldAfterBytes':file_held,'exactContentVerified':True},indent=2),encoding='utf-8')
+                    checks.append('actual_native_HTTP_agent_file_write_exact_bytes_without_release')
+                    checks.append('actual_file_bytes_do_not_settle_held_native_bookkeeping')
+                finally:
+                    file_write_release.set()
             file_mode = False
             count = len(requests)
             worker_calls = sum('terminal' in item['tools'] for item in requests)
