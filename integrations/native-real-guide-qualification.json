@@ -43,5 +43,59 @@
     "Diagnose/fix native worker startup using safe diagnostics or a disposable instrumented fixture",
     "Requalify real build and independent review before production enrollment",
     "Rook/Mind remain off; model service restart remains declined"
-  ]
+  ],
+  "startupDiagnostics": {
+    "liveInjection": false,
+    "additionalRealModelPrompts": 0,
+    "localProviderFixture": {
+      "exitCode": 0,
+      "coreSourceHashesMatchInstalled": true,
+      "realWorkerFileAndTerminalPathCompleted": true,
+      "syntheticProvider": true,
+      "processTreeEnded": true
+    },
+    "standaloneCredentialReadiness": {
+      "complete": true,
+      "usable": true,
+      "seconds": 0.353,
+      "credentialsExported": false
+    },
+    "standaloneFrozenRoute": {
+      "complete": true,
+      "seconds": 0.356,
+      "provider": "openai-codex",
+      "apiMode": "codex_responses",
+      "expectedCodexHost": true,
+      "fallbackSelected": false,
+      "modelPrompts": 0
+    },
+    "constructorWithSyntheticRouting": {
+      "stage": "constructed_no_prompt",
+      "realCredentials": false,
+      "modelPrompts": 0,
+      "exitCode": 1,
+      "exitExplanation": "Deliberate RuntimeError stops after constructor, before model; parent fixture subsequently times out waiting for a provider call that intentionally never happens",
+      "processTreeEnded": true
+    },
+    "savedPolicyProviderMatchesEffectiveProvider": true,
+    "indexFinding": "Cached constructor source differed from actual signature; targeted files reindexed before adjusting disposable instrumentation",
+    "remaining": "Root cause unproven; diagnose real worker-specific routing/startup without retrying the intentionally cancelled chain"
+  },
+  "inAppGoalSync": {
+    "progressRevision": 54,
+    "priorRevision": 53,
+    "changedTables": [
+      "workroom_events",
+      "workroom_progress"
+    ],
+    "changedProgressFields": [
+      "result",
+      "evidence",
+      "revision"
+    ],
+    "checklistUnchanged": true,
+    "goalUnchanged": true,
+    "decisionUnchanged": true,
+    "integrity": "ok"
+  }
 }

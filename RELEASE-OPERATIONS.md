@@ -21,6 +21,10 @@ Evidence: `integrations/live-source-custody-qualification.json`.
   passed; the builder provider was synthetic. Positive review was checked against
   five actual artifact hashes and read-only check output. Production enrollment
   and real Codex generation remain unqualified.
+  The first real builder trial stalled at startup and was deliberately cancelled;
+  its worker exited and both guide copies stayed unchanged. Safe diagnostic
+  comparisons pass outside that worker path; its root cause is still unproven.
+  See `integrations/native-real-guide-qualification.json`.
 - Explicit openai-codex closed-profile preflight is implemented and tested.
   One live unsubmitted session's public policy matched the requested file/terminal
   toolsets and workspace, with zero admissions. After bridge installation, its
