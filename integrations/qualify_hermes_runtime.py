@@ -129,6 +129,17 @@ def verify_evidence(root):
                 or life['toolEffects']['activeCalls']!=1 or held['writerQuiescence']):
             raise RuntimeError('Held file bookkeeping evidence is incomplete or misbound')
         result['checks'].append('file_bytes_precede_handler_completion_without_ownership_release')
+    if report.get('nativeSafeMode'):
+        if 'native_safe_mode_plain_terminal_and_file_pipeline' not in report['checks']:
+            raise RuntimeError('Safe mode has no native pipeline acceptance')
+        terminal=json.loads((root/'tool-pipeline-evidence.json').read_text(encoding='utf-8'))
+        file_effects=json.loads((root/'file-worker-evidence.json').read_text(encoding='utf-8'))['status']['writer_lifecycle']['enrollment']['lifetime']['toolEffects']
+        for effects in [terminal,file_effects]:
+            pipeline=effects['pipeline']
+            if (not effects['observedCalls'] or pipeline['plainNativeCalls']!=effects['observedCalls']
+                    or pipeline['blockerCalls'] or pipeline['otherOrMissingCalls'] or pipeline['lateStages']):
+                raise RuntimeError('Safe-mode pipeline evidence is incomplete')
+        result['checks'].append('native_safe_mode_has_plain_terminal_and_file_pipeline')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -789,9 +800,17 @@ async def child(root):
         finally:
             canonical_release.set()
             process_ownership.close()
+        if os.environ.get('HERMES_SAFE_MODE')=='1':
+            for tool_effects in [effects,file_life['toolEffects']]:
+                pipeline=tool_effects['pipeline']
+                if (pipeline['plainNativeCalls']!=tool_effects['observedCalls'] or pipeline['blockerCalls']
+                        or pipeline['otherOrMissingCalls'] or pipeline['lateStages']):
+                    raise RuntimeError('Native safe-mode profile retained an unqualified pipeline')
+            checks.append('native_safe_mode_plain_terminal_and_file_pipeline')
         return {'qualification': 'PASS', 'checks': checks, 'providerRequests': len(requests),
                 'nonToolProviderRequests': sum('terminal' not in item['tools'] for item in requests),
                 'agentsCreated': len(agents_created), 'pythonVersion': sys.version.split()[0],
+                'nativeSafeMode': os.environ.get('HERMES_SAFE_MODE')=='1',
                 'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
     finally:
         title_release.set()
@@ -821,6 +840,8 @@ if __name__ == '__main__':
         (root / 'runtime-qualification.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
         print(json.dumps(result))
     else:
+        if len(sys.argv) not in (3,4) or (len(sys.argv)==4 and sys.argv[3]!='--safe-mode'):
+            raise SystemExit('Usage: native_root python_executable [--safe-mode]')
         native, executable = sys.argv[1:3]
         root = prepare(native)
         environment = {name: value for name, value in os.environ.items() if name.upper() in
@@ -829,6 +850,8 @@ if __name__ == '__main__':
             USERPROFILE=str(root / 'fixture-home'), APPDATA=str(root / 'appdata'), LOCALAPPDATA=str(root / 'localappdata'),
             TEMP=str(root / 'temp'), TMP=str(root / 'temp'), PYTHONIOENCODING='utf-8',
             TERMINAL_ENV='local', TERMINAL_CWD=str(root / 'workspace'))
+        if len(sys.argv)==4:
+            environment['HERMES_SAFE_MODE']='1'  # Supported native no-plugin discovery mode.
         # Keep profile/data roots isolated while resolving the installed runtime's
         # existing libraries explicitly. Never inherit provider keys or real HOME.
         libraries = subprocess.check_output([executable, '-c', 'import site;print(site.getusersitepackages())'], text=True).strip()

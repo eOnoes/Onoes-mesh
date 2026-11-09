@@ -1726,3 +1726,32 @@ GitHub workflow inspection local none/remote0. No native/Relay install, model
 service change, Mind access, automation enable, or old hold clearance. Full goal
 still incomplete. Next remains qualified file-effect adapter and trusted closure
 producer/Relay/Mesh consumer, rather than treating file existence as completion.
+
+
+## Supported native no-plugin worker profile — 2026-11-09T01:04:26.980493+00:00
+Prior turn progress: ede8e4a pushed; held post-write acceptance PASS14/verify13,
+backup E:/App-Backups/ONOes-Mesh/2026-11-09_00-56-34-499_UTC_d0350e39 verified.
+Added bounded fixed blocker category counts per tool call; repeated stage probes
+count once and stale contexts cannot contaminate another call. No names, paths,
+args, results, credentials or exception contents retained. No completion grant.
+Focused PASS48; full npm test PASS361 (301Node+60Python). Native function fixture
+PASS50. Candidate patch regenerated and git apply --check against installed native
+PASS without applying. Default runtime 2cea414e-5d3f-4bff-9d2d-ebcfa61ca761
+PASS14/verify13: blockers plugins/ownership/predeclared_modules/registration each1;
+no middleware/hooks/managed Relay blocker observed for either actual tool.
+Native PluginManager.discover_and_load explicitly supports HERMES_SAFE_MODE=1:
+skips plugin discovery and sets discovered true. This is supported runtime mode,
+not mutation of internal relay_enabled, deletion of registrations, or security bypass.
+Added --safe-mode qualifier option for fresh isolated profile; no global env change.
+Safe runtime c5231704-e136-4bc7-ae33-f9f9f0b92240 PASS15/verify14/all17hashes:
+actual terminal/file observed1/plain1/other0/late0/blockerCalls empty. Held file
+bookkeeping, FIFO, replay, retirement, separate-process loss remain PASS. False
+safe-mode evidence with plugin blocker rejected; retained negative04ee3625.
+Qualification record updated from actual safe report, candidate hashes and both
+runtime references. WholeWorkerReleaseQualified=false/effectsSettled=false;
+no file adapter qualified yet. Goal card revision48/evidence3434 readback verified,
+all6checklist states preserved. Live native/Relay/model/Mind untouched, no automation
+or historical hold changes. Full goal active/incomplete.
+Next: implement trusted bounded file-handler completion adapter for this supported
+native safe-mode lane, then carry pinned closure through Relay to Mesh assignment
+consumer. Terminal success/plain pipeline alone must never grant whole release.

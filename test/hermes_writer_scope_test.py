@@ -141,6 +141,27 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
         pipeline=self.life.snapshot()['toolEffects']['pipeline']
         self.assertEqual(pipeline['plainNativeCalls'],0);self.assertEqual(pipeline['otherOrMissingCalls'],2)
 
+    def test_pipeline_blocker_categories_count_calls_not_repeated_stages(self):
+        with scope.writer_foreground_scope(self.life),scope.writer_tool_effect():
+            manager=self.plain_manager()
+            manager._plugins={'private-plugin-name':object()}
+            manager._middleware={'private-callback-name':[lambda: self.fail('Callback ran')]}
+            for _ in range(3):
+                scope.record_writer_middleware('tool_request',manager)
+                scope.record_writer_middleware('tool_execution',manager)
+            scope.record_writer_relay(True)
+        snapshot=self.life.snapshot();blockers=snapshot['toolEffects']['pipeline']['blockerCalls']
+        self.assertEqual(blockers,{'plugins':1,'middleware':1,'relay_managed':1})
+        self.assertNotIn('private-plugin-name',str(snapshot));self.assertNotIn('private-callback-name',str(snapshot))
+        self.assertFalse(snapshot['writerQuiescence'])
+
+    def test_stale_context_cannot_add_blockers_to_another_call(self):
+        with scope.writer_foreground_scope(self.life):
+            with scope.writer_tool_effect():old=copy_context()
+            with scope.writer_tool_effect():old.run(scope.record_writer_relay,True)
+        blockers=self.life.snapshot()['toolEffects']['pipeline']['blockerCalls']
+        self.assertEqual(blockers,{'missing_stages':2})
+
     def test_late_pipeline_context_cannot_complete_a_different_tool_call(self):
         with scope.writer_foreground_scope(self.life):
             with scope.writer_tool_effect():old=copy_context()

@@ -8,24 +8,27 @@
     "actual_native_tool_pipeline_stages_observed_without_clearance",
     "actual_native_tool_thread_and_Windows_job_observed_without_release",
     "actual_native_HTTP_authentication_enforced",
+    "actual_native_HTTP_agent_file_write_exact_bytes_without_release",
+    "actual_file_bytes_do_not_settle_held_native_bookkeeping",
     "actual_native_SQLite_restart_replay_without_new_worker_or_old_owner",
     "native_SQLite_canonical_claim_lookup_and_worker_binding",
     "actual_canonical_HTTP_FIFO_observer_cancellation_and_exact_replay",
     "actual_canonical_retirement_timeout_drain_and_successor_queue_recovery",
-    "actual_abrupt_owner_process_loss_blocks_replay_and_preserves_queue"
+    "actual_abrupt_owner_process_loss_blocks_replay_and_preserves_queue",
+    "native_safe_mode_plain_terminal_and_file_pipeline"
   ],
-  "providerRequests": 10,
-  "nonToolProviderRequests": 3,
-  "agentsCreated": 1,
+  "providerRequests": 13,
+  "nonToolProviderRequests": 6,
+  "agentsCreated": 2,
   "pythonVersion": "3.14.7",
   "liveInstallation": false,
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual native per-tool request/execution/Relay pipeline observations, direct/canonical API and recovery; isolated profile/local fake provider. Native empty-request-middleware shortcut observed without callback invocation. All effects remain unverified; no completion clearance.",
+  "scope": "Actual native safe-mode no-plugin discovery profile: real terminal and file tools, held post-write bookkeeping, canonical FIFO and recovery. Isolated profile/local synthetic provider; no production install or whole-worker release.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "54b74ef920556e041b7bc6444a52bb0b8a562df6800f853cdd04eabc926e647b",
+    "tools/mesh_writer_scope.py": "790a6c60dde93c66d61c96f614b67672ca14f205dcb0aa29bd9f25005a949c3e",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
     "gateway/platforms/api_server_runs.py": "da68f5e791d525544e259edd1d292fb4f45972572901300ad24a5e5ec5216913",
@@ -53,9 +56,12 @@
     "actual_retirement_keeps_ownership_then_recovers_queue_once",
     "separate_process_loss_preserves_unknown_and_blocks_duplicate_work",
     "unmanaged_owner_refused_without_handoff_or_reservation",
-    "actual_native_pipeline_stages_remain_observation_only"
+    "actual_native_pipeline_stages_remain_observation_only",
+    "actual_native_file_write_bytes_and_held_ownership",
+    "file_bytes_precede_handler_completion_without_ownership_release",
+    "native_safe_mode_has_plain_terminal_and_file_pipeline"
   ],
-  "evidenceDirectory": "hermes-runtime-7142523e-48c7-408b-a821-b71b9f1dfdbc",
+  "evidenceDirectory": "hermes-runtime-c5231704-e136-4bc7-ae33-f9f9f0b92240",
   "remaining": [
     "Tool external effects and whole-worker release remain unqualified.",
     "Other uninstrumented background paths and positive live-chat-owner lifetime proof remain unqualified.",
@@ -93,7 +99,38 @@
   },
   "toolPipeline": {
     "qualification": "PASS",
-    "scope": "Actual native stage observations linked to the exact in-process tool ticket; registered state read passively after native manager selection, no extra discovery/dispatch. Counts only, no arguments/results/names retained. Plain-state observation is not qualified completion.",
+    "scope": "Fixed blocker category call counts only; no plugin/callback names, arguments or results. Default profile has plugin/ownership/registration/predeclared state. Supported HERMES_SAFE_MODE=1 profile has all stages plain for actual terminal and file calls. Plain observation still grants no effect completion.",
     "liveActivation": false
-  }
+  },
+  "nativeSafeMode": true,
+  "safeModeProfile": {
+    "qualification": "PASS",
+    "supportedNativeSetting": "HERMES_SAFE_MODE=1",
+    "runtimeChecks": 15,
+    "independentChecks": 14,
+    "terminalPipeline": {
+      "fullyObservedCalls": 1,
+      "plainNativeCalls": 1,
+      "otherOrMissingCalls": 0,
+      "lateStages": 0,
+      "completionQualified": false,
+      "blockerCalls": {}
+    },
+    "filePipeline": {
+      "fullyObservedCalls": 1,
+      "plainNativeCalls": 1,
+      "otherOrMissingCalls": 0,
+      "lateStages": 0,
+      "completionQualified": false,
+      "blockerCalls": {}
+    },
+    "liveActivation": false
+  },
+  "defaultProfileBlockers": {
+    "ownership": 1,
+    "plugins": 1,
+    "predeclared_modules": 1,
+    "registration": 1
+  },
+  "defaultEvidenceDirectory": "hermes-runtime-2cea414e-5d3f-4bff-9d2d-ebcfa61ca761"
 }
