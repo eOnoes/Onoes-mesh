@@ -1,0 +1,53 @@
+{
+  "schema": "mesh-nims-recovery-qualification/v1",
+  "qualification": "PASS",
+  "fullLocalRegressionTests": 427,
+  "planningLostReply": {
+    "qualification": "PASS",
+    "at": "2026-11-09T07:02:50.543Z",
+    "directory": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\nims-recovery-5ace33f1-7e29-404b-bb69-330cdf6fee2a",
+    "taskId": "650d4911-df4e-4f40-a141-1f9e76d9b231",
+    "sendId": "315243cc-ad11-4947-a05b-9131c2299114",
+    "threadId": "01a1bf1d-7178-7523-a6ed-c568b4e6d5d8",
+    "turnId": "01a1bf1d-744e-74d2-aa38-ff38f1d36f4b",
+    "before": "failed",
+    "after": "completed",
+    "modelTurns": 1,
+    "readbacks": 1,
+    "structuredReports": 1,
+    "decision": "pending",
+    "lossInjectedAfterNativeCompletion": true,
+    "reopenedBeforeReadback": true,
+    "productionBoardTouched": false,
+    "limitation": "Completed native reply lost before local finish. Process death during a running native turn and absent turn-ID recovery are not qualified."
+  },
+  "actualReviewReadback": {
+    "qualification": "PASS",
+    "directory": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\nims-review-recovery-7937e94e-b6bc-4b3b-a348-d53731e3a360",
+    "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-b88415f6-3be0-420e-888a-288ee2646949\\workspace",
+    "sendId": "bf4903c5-ada5-4d5f-9c77-af1175d352e1",
+    "taskId": "d7cf9ea3-a214-43fa-a2ac-b23601dfd660",
+    "threadId": "01a1bf16-6500-71a2-b17f-3a7d74962c46",
+    "turnId": "01a1bf16-6668-7e50-ba3e-98eb48539222",
+    "modelTurns": 0,
+    "readbacks": 1,
+    "reviews": 1,
+    "verdict": "changes_requested",
+    "teamState": "needs_review",
+    "originalFixtureUntouched": true,
+    "limitation": "Simulated lost local receipt in an isolated online copy; reads original completed real Nims review, not a live process-kill test."
+  },
+  "guards": [
+    "Exact saved task/send/thread/turn and original user payload",
+    "Completed turn with bounded final text; supported local item types and successful command execution only",
+    "Admission before and after native read; exact CAS and concurrent dedup",
+    "No replacement turn, thread resume or automatic approval",
+    "Blocked, absent identity, unavailable/incomplete/denied native evidence stays held"
+  ],
+  "limitations": [
+    "No running-turn process-kill survival qualification",
+    "No recovery when turn ID was never saved",
+    "Failed or unsupported native tool traces remain unresolved; no permission-denial state is inferred away"
+  ],
+  "productionDeployment": false
+}

@@ -12,8 +12,9 @@
 - Nims: real read-only file review and completed-turn readback/resume passed
   on 2026-11-09 using a disposable file and existing ChatGPT sign-in. Runtime
   policy/identity is checked before a turn. Automatic native-builder handoff
-  is qualified in a disposable board; production enrollment and uncertain
-  in-flight review recovery remain unqualified.
+  is qualified in a disposable board. Completed-result loss/reopen recovery
+  passed real native readback without resend. Production enrollment, running-turn
+  process-kill survival and absent turn-ID recovery remain unqualified.
 - Rook remains OFF pending production identity, reporting transport, a single
   scheduler owner and deployed acceptance.
 - Mind live store/keys/access not activated; model-service maintenance deferred
