@@ -20,8 +20,8 @@ try{
   task=store.workroom.save(task.id,{project:'synthetic',criteria:'Exact proof bytes',owner:'echo',team:'local_build',stage:'ready',revision:task.workroom?.revision??1});
   task=store.workroom.saveProgress(task.id,{goal:'Edit the single synthetic proof file',checklist:[{id:'proof',text:'Edit and verify the proof',status:'pending'}],
     result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision});
-  store.workroom.savePlan(task.id,{lead:'echo',spec:'Synthetic file edit',workspace:config.workspace,allowedFiles:'local-session-proof.md',
-    checks:'Read back exact bytes',boundaries:'Synthetic fixture only',workerId:'echo',reviewerId:'nims',state:'locked',
+  store.workroom.savePlan(task.id,{lead:'echo',spec:'Synthetic file edit',workspace:config.workspace,allowedFiles:'local-session-proof.md; local-build-proof.mjs; verify-local-build.mjs; local-build-check.json',
+    checks:'Run the fixture verify-local-build.mjs with Node, checking local-build-proof.mjs syntax; read back exact bytes',boundaries:'Synthetic fixture only',workerId:'echo',reviewerId:'nims',state:'locked',
     revision:task.plan?.revision??0,taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision});
   task=store.workroom.get(task.id);
   const agents=[{id:'echo',backend:'hermes',status:'idle',conversation_id:'native-local'},
@@ -29,7 +29,7 @@ try{
   store.workroom.automation.action(task.id,{action:'start',revision:0,planRevision:task.plan.revision,
     taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision},agents,config.workspace);
   const stage=store.workroom.automation.read(task.id),body={id:stage.workerSendId};
-  const profile={profileRef:'fixture-echo-builder',identityRef:'fixture-native-principal',model:'mesh-local-fixture',baseUrl:config.endpoint,workspace:config.workspace};
+  const profile={profileRef:'fixture-echo-builder',identityRef:'fixture-native-principal',toolProfile:'build-check-v1',model:'mesh-local-fixture',baseUrl:config.endpoint,workspace:config.workspace};
   const initialRunner=createTeamRunner({workroom:store.workroom,root:config.workspace,
     relay:{agents:async()=>agents},intervalMs:600000,nativeWorker:{rpc,profileFor:()=>profile,
       credential:async()=>'synthetic-local-provider',authorized:()=>true}});
@@ -52,6 +52,9 @@ try{
   }
   }finally{await observer.close();}
   const repeated=await reconcileLocalSession(recovery);
+  const build=JSON.parse(readFileSync(join(config.workspace,'local-build-check.json'),'utf8'));
+  assert.equal(build.syntaxExitCode,0);assert.notEqual(build.invalidSyntaxExitCode,0);assert.ok(Number.isInteger(build.invalidSyntaxExitCode));assert.ok(Number.isSafeInteger(build.checkerPid));
+  assert.equal(readFileSync(join(config.workspace,'local-build-proof.mjs'),'utf8'),'export const localProof = true;\n');
   assert.equal(repeated.resultHash,row.resultHash);
   const imported=store.workroom.get(task.id);assert.equal(imported.agentUpdates.length,1);
   const offer=imported.agentUpdates[0];assert.equal(offer.sendId,body.id);assert.equal(offer.messageId,row.resultMessageId);
@@ -63,7 +66,7 @@ try{
   assert.equal(JSON.stringify(store.workroom.get(task.id)).includes('synthetic-local-provider'),false);
   const report={qualification:'PASS',taskId:task.id,sendId:body.id,createRequestId:row.createRequestId,submissionId:row.submissionId,
     sessionId:row.sessionId,admissionId:row.admissionId,nativeProfileId:row.nativeProfileId,nativeEpoch:row.nativeEpoch,
-    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,terminalResultImported:true,resultHash:row.resultHash,resultMessageId:row.resultMessageId,
+    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,terminalResultImported:true,buildCheckVerified:true,resultHash:row.resultHash,resultMessageId:row.resultMessageId,
     workspaceStillHeld:true,writerQuiescence:false,liveActivation:false};
   writeFileSync(join(root,'mesh-local-binding-evidence.json'),JSON.stringify(report,null,2));
   await new Promise(resolve=>process.stdout.write(JSON.stringify({done:true,admissionId:row.admissionId})+'\n',resolve));

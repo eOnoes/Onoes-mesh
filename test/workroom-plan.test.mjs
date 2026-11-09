@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {sendTaskHandoff,syncTaskReplies} from '../lib/workroom.mjs';
-import {dispatchLocalSession,reconcileLocalSession} from '../lib/workroom-local-sessions.mjs';
+import {dispatchLocalSession,reconcileLocalSession,localSessionProfile} from '../lib/workroom-local-sessions.mjs';
 import {TaskError} from '../lib/task-store.mjs';
 import {createTeamRunner} from '../lib/workroom-automation.mjs';
 const filename=()=>join(mkdtempSync(join(tmpdir(),'mesh-plan-')),'tasks.sqlite');
@@ -305,4 +305,31 @@ test('terminal result absent stays eligible for read-only recovery; malformed an
   assert.equal(store.workroom.get(t.id).replies.length,0);
   row=local.observe(t.id,send.id,row.revision,localReceipt(row,'terminal'));assert.equal(local.pendingReads().length,0);
  }finally{store.close();}
+});
+
+test('native build-check profile is explicit, frozen, and never upgrades an existing file-only dispatch',async()=>{
+ const store=openTaskStore(filename());try{
+  const {t,send,profile}=localReady(store);
+  assert.equal(Object.hasOwn(localSessionProfile(profile),'toolProfile'),false);
+  for(const toolProfile of ['all','terminal','build-check-v2',null])
+   assert.throws(()=>localSessionProfile({...profile,toolProfile}),/fixed native worker profile/);
+  store.workroom.localSessions.reserve(t.id,send,profile);
+  assert.throws(()=>store.workroom.localSessions.reserve(t.id,send,{...profile,toolProfile:'build-check-v1'}),/different message/);
+ }finally{store.close();}
+ const buildStore=openTaskStore(filename());try{
+  const {t,send,profile}=localReady(buildStore);const fixed={...profile,toolProfile:'build-check-v1'};
+  const methods=[];
+  const rpc=async(method,params)=>{
+   methods.push(method);
+   if(method==='session.create'){
+    assert.deepEqual(params.toolsets,['file','terminal']);assert.equal(params.safe_mode,true);assert.equal(params.ignore_rules,true);
+    return{session_id:nativeSid};
+   }
+   if(method==='prompt.submit'){assert.equal(params.finite,true);return{};}
+   assert.equal(params.include_result,true);return localReceipt(buildStore.workroom.localSessions.read(t.id,send.id),'terminal');
+  };
+  const row=await dispatchLocalSession({workroom:buildStore.workroom,taskId:t.id,body:send,profile:fixed,rpc,credential:async()=>'fixture',admitted:()=>true});
+  assert.equal(row.profile.toolProfile,'build-check-v1');assert.equal(row.writerQuiescence,false);
+  assert.deepEqual(methods,['session.create','prompt.submit','prompt.lookup']);
+ }finally{buildStore.close();}
 });

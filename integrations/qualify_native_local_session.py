@@ -107,6 +107,13 @@ def verify(root):
         update=json.loads(text[len('```workroom-update\n'):-len('\n```')])
         if update['taskId']!=binding['taskId'] or update['sendId']!=binding['sendId']:
             raise RuntimeError('Native structured update belongs to another task or dispatch')
+    build=json.loads((root/'workspace'/'local-build-check.json').read_text())
+    tool=json.loads(json.loads((root/'build-terminal-receipt.json').read_text())['raw'])
+    if (binding.get('buildCheckVerified') is not True or build.get('syntaxExitCode')!=0
+            or not isinstance(build.get('invalidSyntaxExitCode'),int) or build['invalidSyntaxExitCode']==0
+            or tool.get('exit_code')!=0 or 'tests 3' not in tool.get('output','')
+            or (root/'workspace'/'local-build-proof.mjs').read_bytes()!=b'export const localProof = true;\n'):
+        raise RuntimeError('Real native terminal build-check evidence is incomplete')
     processes=json.loads((root/'local-session-fixture-processes.json').read_text())
     if not processes['processTreeEnded'] or processes['activeProcesses'] or processes['terminationRequested']:
         raise RuntimeError('Disposable owner/process tree did not end naturally')
@@ -115,7 +122,8 @@ def verify(root):
         'private_auth_and_conflict_refusals','owner_settled_and_fixture_tree_ended_naturally',
         'exact_read_only_submission_lookup_without_cross_session_access_or_dispatch',
         'actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit',
-        'native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review'],
+        'native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review',
+        'native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export'],
         'wholeWorkerReleaseQualified':False,'liveInstallation':False}
     (root/'local-session-verified.json').write_text(json.dumps(result,indent=2))
     return result
@@ -138,6 +146,27 @@ async def child(root):
     home=root/'fixture-home'
     if Path(get_hermes_home()).resolve()!=home.resolve():raise RuntimeError('Non-isolated native home')
     proof=root/'workspace'/'local-session-proof.md';proof.write_bytes(b'Before local session edit.\n')
+    import shutil
+    node_executable=shutil.which('node')
+    if not node_executable:raise RuntimeError('Existing Node is required for build qualification')
+    code=root/'workspace'/'local-build-proof.mjs';check=root/'workspace'/'verify-local-build.mjs'
+    check.write_text('\n'.join([
+        "import {spawnSync} from 'node:child_process';",
+        "import {writeFileSync} from 'node:fs';",
+        "import {pathToFileURL} from 'node:url';",
+        "import {test} from 'node:test';",
+        "import assert from 'node:assert/strict';",
+        "const code="+json.dumps(str(code))+";",
+        "const valid=spawnSync(process.execPath,['--check',code],{encoding:'utf8'});",
+        "const invalid=spawnSync(process.execPath,['--input-type=module','--check'],{input:'export const =;',encoding:'utf8'});",
+        "const evidence={syntaxExitCode:valid.status,invalidSyntaxExitCode:invalid.status,checkerPid:process.pid,checkerParentPid:process.ppid};",
+        "writeFileSync("+json.dumps(str(root/'workspace'/'local-build-check.json'))+",JSON.stringify(evidence));",
+        "console.log(JSON.stringify(evidence));",
+        "test('valid fixture syntax passes',()=>assert.equal(valid.status,0));",
+        "test('invalid syntax is rejected',()=>{assert.notEqual(invalid.status,null);assert.notEqual(invalid.status,0);});",
+        "test('built module exports the expected value',async()=>assert.equal((await import(pathToFileURL(code))).localProof,true));",
+    ])+'\n')
+    build_command=subprocess.list2cmdline([node_executable,'--test',str(check)])
     requests=[];worker_started=asyncio.Event();worker_release=asyncio.Event()
     async def provider(request):
         body=await request.json();requests.append({'tools':[t.get('function',{}).get('name') for t in body.get('tools',[])],
@@ -146,9 +175,21 @@ async def child(root):
         if is_worker and not worker_started.is_set():
             worker_started.set();await asyncio.wait_for(worker_release.wait(),30)
         previous=[m for m in body.get('messages',[]) if m.get('role')=='tool']
-        call=is_worker and len(previous)<2
+        build_worker='terminal' in tools
+        call=is_worker and len(previous)<(4 if build_worker else 2)
         name='read_file' if not previous else 'write_file';args={'path':str(proof)}
         if name=='write_file':args['content']='Mesh local session proof.\n'
+        if build_worker and len(previous)==2:
+            name='write_file';args={'path':str(code),'content':'export const localProof = true;\n'}
+        if build_worker and len(previous)==3:
+            name='terminal';args={'command':build_command,'workdir':str(root/'workspace'),'timeout':30}
+        if build_worker and len(previous)>=4:
+            check_result=previous[-1].get('content','')
+            (root/'build-terminal-receipt.json').write_text(json.dumps({'raw':check_result}))
+            parsed=json.loads(check_result)
+            if parsed.get('exit_code')!=0:raise RuntimeError('Native terminal build tests did not exit successfully')
+            if 'syntaxExitCode' not in check_result or not (root/'workspace'/'local-build-check.json').exists():
+                raise RuntimeError('Native terminal did not run the named Node build check')
         final='mesh local fixture completed'
         if is_worker:
             import re
@@ -158,7 +199,7 @@ async def child(root):
             if task_match and send_match:
                 update={'schema':'workroom-update/v1','taskId':task_match.group(1),'sendId':send_match.group(1),
                     'goal':'Edit the single synthetic proof file','checklist':[{'id':'proof','text':'Edit and verify the proof','status':'done'}],
-                    'result':'Updated local-session-proof.md','evidence':'Native file tool wrote Mesh local session proof.; external qualifier checks exact bytes.'}
+                    'result':'Updated local-session-proof.md','evidence':'Native terminal ran node --test: valid syntax, invalid syntax rejection and built export all passed; external qualifier checks bytes and native exit status.'}
                 final='```workroom-update\n'+json.dumps(update)+'\n```'
         message=({'role':'assistant','content':None,'tool_calls':[{'id':'local-proof-'+str(len(previous)),
             'type':'function','function':{'name':name,'arguments':json.dumps(args)}}]} if call else
