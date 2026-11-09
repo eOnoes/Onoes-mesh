@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,mkdirSync,writeFileSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {createServer} from 'node:http';
@@ -8,10 +8,13 @@ import {randomUUID} from 'node:crypto';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {syncTaskReplies} from '../lib/workroom.mjs';
 import {startApp} from '../server.mjs';
+import {normalizeWriterObservation} from '../lib/native-writer-observation.mjs';
 
 const writer={schema:'mesh-relay-writer-observation/v1',runId:'run_fixture',state:'observed',
   ownerId:'11111111-1111-4111-8111-111111111111',generation:'22222222-2222-4222-8222-222222222222',
   localWorkEnded:true,unverifiedToolCalls:2,sourceObservedAt:1000,observationOnly:true,writerQuiescence:false};
+function fileCompletion(){return {schema:'mesh-file-effect-summary/v1',policy:'bounded_native_write_file_v1',
+  observedCalls:1,activeCalls:0,qualifiedCalls:1,effectsSettled:true};}
 function fixture(){
   const path=join(mkdtempSync(join(tmpdir(),'mesh-native-receipt-')),'tasks.sqlite');
   const store=openTaskStore(path),task=store.create({title:'Observe original worker'}),sendId=randomUUID();
@@ -70,6 +73,16 @@ test('cross-task/changed-run/changed-worker and stale concurrent receipts cannot
   }finally{f.store.close();}
 });
 
+test('file completion is validated independently and cannot grant whole-worker release',()=>{
+  const value={...writer,unverifiedToolCalls:0,fileCompletion:{...fileCompletion(),privatePath:'discard'}};
+  const normalized=normalizeWriterObservation(value,writer.runId);
+  assert.deepEqual(normalized.fileCompletion,fileCompletion());assert.equal(normalized.writerQuiescence,false);
+  for(const patch of [{qualifiedCalls:0},{qualifiedCalls:2},{activeCalls:1},{effectsSettled:false},{policy:'other'}]){
+    assert.throws(()=>normalizeWriterObservation({...value,fileCompletion:{...value.fileCompletion,...patch}},writer.runId));
+  }
+  assert.throws(()=>normalizeWriterObservation(value,writer.runId,writer.generation,writer.generation));
+});
+
 test('expired sync cannot save an observation or failure after the native read',async()=>{
   const f=fixture();let admitted=true;try{
     const relay={nativeRead:async()=>({messages:[]}),nativeRunReceipt:async()=>{admitted=false;return f.receipt;}};
@@ -79,6 +92,9 @@ test('expired sync cannot save an observation or failure after the native read',
 });
 
 test('actual guarded sync route persists exact HTTP receipt across app restart without sending',async()=>{
+  const observedWriter=process.env.MESH_TEST_NATIVE_RECEIPT_FIXTURE
+    ? JSON.parse(readFileSync(process.env.MESH_TEST_NATIVE_RECEIPT_FIXTURE,'utf8')).writerLifecycle
+    : {...writer,unverifiedToolCalls:0,fileCompletion:fileCompletion()};
   const directory='data/native-receipt-http-'+randomUUID();mkdirSync(directory,{recursive:true});
   const tokenPath=resolve(directory,'synthetic.key');writeFileSync(tokenPath,'synthetic');
   const store=openTaskStore(resolve(directory,'tasks.sqlite')),task=store.create({title:'HTTP receipt persistence'}),sendId=randomUUID();
@@ -90,8 +106,8 @@ test('actual guarded sync route persists exact HTTP receipt across app restart w
     res.setHeader('Content-Type','application/json');
     if(req.url==='/api/agents/echo/sessions/original/messages')return res.end(JSON.stringify({messages:[]}));
     assert.equal(req.url,'/api/agents/echo/outbox/'+sendId+'/native-run');
-    res.end(JSON.stringify({ok:true,receipt:{agentId:'echo',sendId,conversationId:'original',runId:writer.runId,
-      nativeSessionId:'rotated',status:'completed',observation:'observed',terminal:true,writerQuiescence:false,writerLifecycle:writer}}));
+    res.end(JSON.stringify({ok:true,receipt:{agentId:'echo',sendId,conversationId:'original',runId:observedWriter.runId,
+      nativeSessionId:'rotated',status:'completed',observation:'observed',terminal:true,writerQuiescence:false,writerLifecycle:observedWriter}}));
   });
   await new Promise(resolve=>relay.listen(0,'127.0.0.1',resolve));
   const settings={MESH_RELAY_MODE:'http',MESH_RELAY_URL:'http://127.0.0.1:'+relay.address().port,
@@ -110,10 +126,11 @@ test('actual guarded sync route persists exact HTTP receipt across app restart w
     await admit();assert.equal((await api(route+'/sync','POST',{}, {'X-Trial-CSRF':'invalid'})).status,403);
     assert.equal(calls.length,0);
     const synced=await api(route+'/sync','POST',{});assert.equal(synced.status,200,JSON.stringify(synced));
-    assert.equal(synced.body.task.messages[0].nativeReceipt.ownerId,writer.ownerId);
+    assert.equal(synced.body.task.messages[0].nativeReceipt.ownerId,observedWriter.ownerId);
     await app.close();app=null;proof={};app=await startApp({dataDir:directory,relayEnabled:true});await admit();
     const reopened=await api(route);
-    assert.equal(reopened.body.task.messages[0].nativeReceipt.receipt.writerLifecycle.unverifiedToolCalls,2);
+    assert.equal(reopened.body.task.messages[0].nativeReceipt.receipt.writerLifecycle.unverifiedToolCalls,0);
+    assert.deepEqual(reopened.body.task.messages[0].nativeReceipt.receipt.writerLifecycle.fileCompletion,fileCompletion());
     assert.equal(reopened.body.task.messages[0].nativeReceipt.writerQuiescence,false);
     assert.equal(reopened.body.task.messages[0].state,'accepted');
     assert.deepEqual(calls,[['GET','/api/agents/echo/sessions/original/messages'],['GET','/api/agents/echo/outbox/'+sendId+'/native-run']]);

@@ -43,6 +43,26 @@ class RelayWriterObservationTests(unittest.TestCase):
                 self.assertFalse(result['localWorkEnded'])
                 self.assertFalse(result['writerQuiescence'])
 
+    def test_qualified_file_component_crosses_without_whole_worker_release(self):
+        observation=native_observation();effects=observation['enrollment']['lifetime']['toolEffects']
+        effects.update(unverifiedCalls=0,qualifiedFileCalls=2,effectsSettled=True,
+            policy='bounded_native_write_file_v1',pipeline={'plainNativeCalls':2,'fullyObservedCalls':2,'lateStages':0})
+        result=project(observation,observation['runId'])
+        self.assertEqual(result['state'],'observed');self.assertTrue(result['fileCompletion']['effectsSettled'])
+        self.assertEqual(result['fileCompletion']['qualifiedCalls'],2);self.assertFalse(result['writerQuiescence'])
+        for mutate in [lambda e:e.update(qualifiedFileCalls=1),lambda e:e.update(policy='other'),
+                lambda e:e['pipeline'].update(lateStages=1),lambda e:e.update(effectsSettled=False)]:
+            changed=copy.deepcopy(observation);mutate(changed['enrollment']['lifetime']['toolEffects'])
+            self.assertEqual(project(changed,observation['runId'])['state'],'unknown')
+
+    def test_mixed_file_and_unverified_calls_keep_component_unsettled(self):
+        observation=native_observation();effects=observation['enrollment']['lifetime']['toolEffects']
+        effects.update(unverifiedCalls=1,qualifiedFileCalls=1,effectsSettled=False,
+            policy='bounded_native_write_file_v1',pipeline={'plainNativeCalls':2,'fullyObservedCalls':2,'lateStages':0})
+        result=project(observation,observation['runId'])
+        self.assertEqual(result['state'],'observed');self.assertFalse(result['fileCompletion']['effectsSettled'])
+        self.assertEqual(result['unverifiedToolCalls'],1)
+
     def test_missing_and_restarted_observations_cannot_recover_completion(self):
         for observation in [None, {}, {**native_observation(), 'state': 'unknown', 'enrollment': None}]:
             result = project(observation, 'run_' + 'a' * 32)
@@ -51,7 +71,7 @@ class RelayWriterObservationTests(unittest.TestCase):
             self.assertFalse(result['localWorkEnded'])
 
 
-def qualify(source):
+def qualify(source, native_fixture=None):
     """Actual patched Relay reader, real synthetic SQLite binding, fixture native client."""
     import asyncio
     import hashlib
@@ -68,14 +88,15 @@ def qualify(source):
     from integrations import relay_writer_observation
     with patch.dict(sys.modules, {'relay_writer_observation': relay_writer_observation}):
         spec.loader.exec_module(module)
-    run = 'run_' + 'a' * 32
+    fixture_observation = native_fixture if native_fixture is not None else native_observation()
+    run = fixture_observation['runId']
     calls = []
     class Client:
         base_url = 'http://127.0.0.1:9'
         async def run_status(self, key):
             calls.append(key)
             return {'run_id': run, 'status': 'completed', 'session_id': 'rotated-fixture',
-                    'writer_lifecycle': native_observation(), 'output': 'private fixture output'}
+                    'writer_lifecycle': fixture_observation, 'output': 'private fixture output'}
     client = Client()
     db = sqlite3.connect(root / 'synthetic-outbox.sqlite')
     db.execute('CREATE TABLE outbox (idem_key TEXT,agent_id TEXT,session_id TEXT,transport_ref TEXT)')
@@ -94,6 +115,11 @@ def qualify(source):
         assert result['conversationId'] == 'original-fixture' and result['runId'] == run
         assert result['writerLifecycle']['localWorkEnded'] is True and result['writerQuiescence'] is False
         assert 'private fixture output' not in json.dumps(result)
+    if native_fixture is not None:
+        assert result['writerLifecycle']['fileCompletion']['qualifiedCalls'] >= 1
+        assert result['writerLifecycle']['fileCompletion']['effectsSettled'] is True
+        assert result['writerLifecycle']['ownerId'] == fixture_observation['ownerId']
+        assert result['writerLifecycle']['generation'] == fixture_observation['enrollment']['generation']
     (root / 'qualified-receipt.json').write_text(json.dumps(result), encoding='utf-8')
     store = Store()
     try:
@@ -108,6 +134,7 @@ def qualify(source):
     report = {'state': 'candidate_only', 'qualification': 'PASS', 'liveInstallation': False,
               'sourceBaseline': BASELINE, 'checks': ['exact_saved_SQLite_send_read', 'reopened_same_binding',
               'rotated_session_preserves_conversation', 'cross_agent_refused_before_read', 'metadata_only_no_release'],
+              'nativeFileFixture': native_fixture is not None,
               'files': {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
                         for name in ['relay_native_receipts.py', 'relay_writer_observation.py']}}
     (root / 'qualification.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
@@ -116,7 +143,12 @@ def qualify(source):
 
 if __name__ == '__main__':
     import sys
-    if len(sys.argv) == 3 and sys.argv[1] == '--qualify':
-        print(qualify(sys.argv[2]))
+    if len(sys.argv) in (3,4) and sys.argv[1] == '--qualify':
+        if len(sys.argv)==4:
+            import json
+            from pathlib import Path
+            observation=json.loads(Path(sys.argv[3]).read_text(encoding='utf-8'))['status']['writer_lifecycle']
+        else:observation=None
+        print(qualify(sys.argv[2],observation))
     else:
         unittest.main()

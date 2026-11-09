@@ -38,13 +38,32 @@ def project(observation, run_id):
     if not isinstance(effects, dict) or not isinstance(process, dict) or not isinstance(workers, list):
         return result
     counts = [effects.get(key) for key in ('observedCalls', 'activeCalls', 'unverifiedCalls')]
-    if (any(type(value) is not int or not 0 <= value <= 9007199254740991 for value in counts)
-            or counts[0] != counts[1] + counts[2] or len(workers) > 4096):
+    qualified = effects.get('qualifiedFileCalls', 0)
+    if (any(type(value) is not int or not 0 <= value <= 9007199254740991 for value in counts + [qualified])
+            or counts[0] != counts[1] + counts[2] + qualified or len(workers) > 4096):
         return result
+    file_completion = None
+    if 'qualifiedFileCalls' in effects:
+        if (type(effects.get('effectsSettled')) is not bool
+                or effects['effectsSettled'] != (counts[1] == 0 and counts[2] == 0)):
+            return result
+        if qualified:
+            pipeline = effects.get('pipeline')
+            if not isinstance(pipeline, dict):
+                return result
+            plain, full, late = [pipeline.get(key) for key in ('plainNativeCalls','fullyObservedCalls','lateStages')]
+            if (effects.get('policy') != 'bounded_native_write_file_v1'
+                    or any(type(value) is not int for value in (plain,full,late))
+                    or not qualified <= plain <= full <= counts[0] - counts[1] or late != 0):
+                return result
+            file_completion = {'schema':'mesh-file-effect-summary/v1','policy':'bounded_native_write_file_v1',
+                'observedCalls':counts[0],'activeCalls':counts[1],'qualifiedCalls':qualified,
+                'effectsSettled':effects['effectsSettled']}
     ended = life['managedWorkEnded']
     if ended and (life.get('rootEnded') is not True or workers or counts[1] or life.get('reason')
                   or process.get('sealed') is not True or type(process.get('activeProcesses')) is not int
                   or process['activeProcesses'] != 0 or process.get('state') not in ('ended', 'not_started')):
         return result
     return {**result, 'state': 'observed', 'ownerId': owner, 'generation': generation,
-            'localWorkEnded': ended, 'unverifiedToolCalls': counts[2], 'sourceObservedAt': stamp}
+            'localWorkEnded': ended, 'unverifiedToolCalls': counts[2], 'sourceObservedAt': stamp,
+            **({'fileCompletion':file_completion} if file_completion else {})}

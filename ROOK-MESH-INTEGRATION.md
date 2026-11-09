@@ -1791,3 +1791,42 @@ No live native/Relay/model/Mind change, automation enable or old hold release.
 Full goal active/incomplete. Next: trusted whole-worker closure contract for this
 bounded lane, pinned owner/run/generation transport through Relay, then assignment
 consumer. Other tools and live conversation owners remain unsupported for release.
+
+
+## Native file completion through Relay and saved Mesh receipt — 2026-11-09T01:22:59.088339+00:00
+Previous goal turn progressed:876e711 pushed; bounded direct file adapter native
+PASS15/verify15 and default PASS14/verify13. Backup
+E:/App-Backups/ONOes-Mesh/2026-11-09_01-15-55-613_UTC_3bd5e4c5 verified.
+Fixed Relay's legacy observed=active+unverified equation: qualified file calls now
+form the third partition. Strict safe integer counts, known adapter policy, plain
+native pipeline evidence, no late stages and consistent settlement required.
+Optional mesh-file-effect-summary/v1 carries counts and effect state only; old
+receipts unchanged. Python discards malformed proof to unknown. JS independently
+checks schema/policy/count partition/settlement/local-ended consistency; copies
+only permitted fields and enforces immutable native run/owner/generation pins.
+Whole writerQuiescence remains false; no claim release, task state or Done change.
+
+Actual saved native3240ac9a file proof passed through actual patched Relay reader
+with synthetic SQLite outbox and fresh/reopened binding:
+data/relay-writer-observation-b5483c9f-7865-4879-9f18-b1e1c6b5545a PASS5,
+nativeFileFixture=true, exact owner/run/generation and qualified component asserted.
+Candidate hashes relay_native_receipts.py
+0f84c2faf4eb75868d27c25df2ff489fd5830bd8b64c70b1142fbc92c2bccb52;
+relay_writer_observation.py
+b6e0de990be3ee3cd090c1808ad05b803266a82f9ad4ee0a4f8109e8230040b0.
+Generated receipt fed actual authenticated Mesh HTTP sync/SQLite/restart test via
+MESH_TEST_NATIVE_RECEIPT_FIXTURE; PASS6. Saved file summary survived app reopen,
+no extra Relay dispatch/send, expired admission/auth/CSRF and identity guards intact.
+This composes retained genuine native evidence with real Relay reader and real
+Mesh route; native gateway is not running in this transport qualification.
+Full npm test PASS369:302Node+67Python, ../file-completion-transport-full.log.
+Focused projection PASS5 and HTTP/SQLite PASS6. Both legacy and new summaries covered.
+Regenerated Relay patch; git apply --check at installed source PASS without install.
+Syntax/diff PASS. No native/model/Relay service or live Mesh restart/deployment.
+
+Goal revision50/evidence1253 readback verified, all6checklist states preserved.
+Exact prior evidence through rev49 (3706chars) archived verbatim above with hash
+99ae2dd5b2d1da61f6f4cf5e2b4d52014cbbe12847559fe1b4704137ee8ad2e1.
+GitHub workflows local none/remote0. Full goal active/incomplete. Next: whole-worker
+closure producer for the bounded worker lane, positive assignment consumer and
+coordinated native/Relay/Mesh rollout; no historical hold cleared by component proof.
