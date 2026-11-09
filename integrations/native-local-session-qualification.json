@@ -3,7 +3,7 @@
   "qualification": "PASS",
   "nativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
   "scope": "Disposable actual native builder/file/terminal/retirement to real signed-in Nims read-only review. Builder provider remains synthetic; production enrollment and watcher activation remain off.",
-  "evidenceDirectory": "hermes-local-session-ce81b23d-284a-4600-80a1-06933495f1cf",
+  "evidenceDirectory": "hermes-local-session-a709fb14-44ff-45eb-9082-38962fdb3a14",
   "candidateFiles": {
     "gateway/session_controls.py": "1e3ed1b9c5442ecc176a542a9c9d88f4e23851e1434a6868fc3c69ea6a653516",
     "tui_gateway/contracts/canonical.py": "1c25f27e18e0a6f7ddf4ecf98c857a3555ef9848b31980423480c5a664ca5e14",
@@ -35,24 +35,25 @@
     "authenticated_process_observation_persists_before_explicit_retirement_consumption",
     "passive_retirement_stays_held_during_write_and_terminal_execution_refuses_new_mutation",
     "frozen_profile_and_native_outcome_feed_one_saved_nims_read_only_review",
-    "real_nims_review_saved_under_original_dispatch_without_source_changes"
+    "real_nims_review_saved_under_original_dispatch_without_source_changes",
+    "native_approved_review_matches_actual_readonly_tool_output"
   ],
   "meshBinding": {
     "qualification": "PASS",
-    "taskId": "3e53f04c-811e-460b-be1c-01cac8b46c13",
-    "sendId": "01fd96c4-b595-49b4-b15b-63c947af9dd1",
-    "createRequestId": "mesh-local-create-806ab33e260bea8d848cc09fb8b293075d214c15337f4c6a9907adff391a6918",
-    "submissionId": "mesh-local-submit-806ab33e260bea8d848cc09fb8b293075d214c15337f4c6a9907adff391a6918",
-    "sessionId": "local-2623e87697b42116a73fc63d2da5ffed0ec037b80969a0520bc01489031edabf",
-    "admissionId": "d5db7f05e0a448bcae87c2c7f29e3725",
-    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-ce81b23d-284a-4600-80a1-06933495f1cf\\fixture-home",
+    "taskId": "cf620a34-d28a-4ad9-9f54-06e897a8d55f",
+    "sendId": "9ebf96c8-ec79-4a56-8d5d-2076c9a7dc49",
+    "createRequestId": "mesh-local-create-31160970642ec599d9db4dc7bb410845dc00db326d2324b60a1a440b7f8ccf04",
+    "submissionId": "mesh-local-submit-31160970642ec599d9db4dc7bb410845dc00db326d2324b60a1a440b7f8ccf04",
+    "sessionId": "local-73cf652ae7d7326309a002c31224b97075077de702659cc25d98f04659bb8e6c",
+    "admissionId": "4bc34993de7740e491e2366061a77238",
+    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-a709fb14-44ff-45eb-9082-38962fdb3a14\\fixture-home",
     "nativeEpoch": 1,
     "nativeGeneration": 1,
     "nativeStatus": "terminal",
     "rpcCounts": {
       "session.create": 1,
       "prompt.submit": 1,
-      "prompt.lookup": 267,
+      "prompt.lookup": 277,
       "mesh.fixture.release-child": 1,
       "mesh.fixture.release-write": 1
     },
@@ -65,11 +66,11 @@
     "processReadbackPersisted": true,
     "authorityDrainObserved": true,
     "executionClosedObserved": true,
-    "resultHash": "48f56a29a42c5ef1384ed4174a9c4d11a74060599e00b5c1e53c749336129006",
-    "resultMessageId": "native-ebb952d377c85b4c23c93b78f99eec11b6b9008a46b974772b1f2e9ebbd70abf",
+    "resultHash": "c17f2e1aef98ccf08cdb3f3a8c1b365423fd443164d79395015b33d5a1909200",
+    "resultMessageId": "native-2bc82590a7729a19a5d783d5a2249149eea1557417f7dfd90f70bbefd3a79eeb",
     "workspaceStillHeld": false,
     "writerQuiescence": true,
-    "retirementHash": "f268020197e7d0a766b320d1ae42764cba5f1f127b770e815b39d6717d442a18",
+    "retirementHash": "a169f1eaa9776f73eff26e8ba13ca7774166ecabbf6762552d5d47c596d69c37",
     "reviewSentToNims": true,
     "reviewTransportSynthetic": false,
     "realNimsReviewCompleted": true,
@@ -82,7 +83,7 @@
   "liveInstallation": false,
   "producerRefactor": "Qualified RPC bytes reproduced from pristine pinned archive",
   "remaining": [
-    "Production native worker service identity and profile/model binding are not enrolled; builder provider in qualification is synthetic.",
+    "Production native principal/profile is not enrolled. Current custom-provider lane does not support the configured openai-codex default; prepare the selected route before live binding.",
     "Real automatic builder-to-Nims delivery is qualified in a disposable board; uncertain in-flight reviewer recovery and production acceptance still need qualification.",
     "Rook own identity/report transport/single scheduler/deployed acceptance and explicit activation remain outstanding.",
     "Mind live access, shared model-service maintenance and external-machine integration remain deferred/open."
@@ -122,17 +123,18 @@
     "reviewTransportSynthetic": false,
     "liveDeliveryVerified": true,
     "liveDeliveryScope": "Real Nims transport in disposable local board; not production enrollment",
-    "reviewVerdict": "changes_requested"
+    "reviewVerdict": "approved"
   },
   "realNimsReview": {
-    "threadId": "01a1bf26-816a-7593-9ae6-8a208e739b75",
-    "turnId": "01a1bf26-888c-7d12-8009-48d6854c1d66",
-    "sendId": "a464984d-7498-4ce8-9e5d-439bb56364a5",
+    "threadId": "01a1bf39-cd7f-71f1-8cb6-c6aee69601fb",
+    "turnId": "01a1bf39-d66d-72c0-a625-dac6d80cb8bb",
+    "sendId": "d2cbfe84-1011-4dd0-b813-b7861a00c993",
     "status": "completed",
-    "verdict": "changes_requested",
+    "verdict": "approved",
     "filesUnchanged": true,
     "sourceReadVerified": true,
-    "automaticDone": false
+    "automaticDone": false,
+    "independentApprovalVerified": true
   },
   "nativeRuntime": {
     "version": "Python 3.14.9",
@@ -140,5 +142,24 @@
     "sha256": "ee82dfc67da9339850a0e89b618f1b04437837ed3e39ca36c7e7d33a3a7900b7",
     "matchesLiveServiceInterpreter": true,
     "liveBridgeInstalled": false
+  },
+  "positiveReviewVerification": {
+    "qualification": "PASS",
+    "check": "native_approved_review_matches_actual_readonly_tool_output",
+    "directory": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-a709fb14-44ff-45eb-9082-38962fdb3a14",
+    "taskId": "cf620a34-d28a-4ad9-9f54-06e897a8d55f",
+    "sendId": "d2cbfe84-1011-4dd0-b813-b7861a00c993",
+    "threadId": "01a1bf39-cd7f-71f1-8cb6-c6aee69601fb",
+    "turnId": "01a1bf39-d66d-72c0-a625-dac6d80cb8bb",
+    "verdict": "approved",
+    "artifactCount": 5,
+    "proofHex": "4d657368206c6f63616c2073657373696f6e2070726f6f662e0a",
+    "validSyntaxExit": 0,
+    "invalidSyntaxExit": 1,
+    "exportValue": true,
+    "allFiveHashesMatch": true,
+    "teamState": "needs_review",
+    "decision": "pending",
+    "modelTurnsStarted": 0
   }
 }

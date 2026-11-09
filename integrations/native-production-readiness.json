@@ -95,7 +95,9 @@
     "nativePrincipalRef": null,
     "builderProfileRef": null,
     "modelBinding": null,
-    "restartProcedureVerified": false
+    "restartProcedureVerified": false,
+    "ownerApprovalEvidence": "Not established; Echo found no named builder approval record",
+    "providerCompatibility": "Pending: currently qualified custom-provider lane cannot be assumed to support current openai-codex default"
   },
   "remaining": [
     "Confirm running import-root/launcher custody before replacing shared native files",
@@ -119,8 +121,44 @@
     "agent": "echo",
     "sendId": "ea58b52b-3e6d-4e33-b163-d6f7f42eaa0d",
     "runId": "run_a43b28319f2943feb289a70fd1a76295",
-    "status": "running",
+    "status": "running_with_saved_reply",
     "readOnly": true,
-    "deploymentAuthorizedByQuestion": false
+    "deploymentAuthorizedByQuestion": false,
+    "replySaved": true,
+    "replyHistoryId": 217,
+    "nativeClosureConfirmed": false,
+    "replyAuthority": "Read-only findings, not permission or deployment approval"
+  },
+  "launcherEvidence": {
+    "task": "Hermes_Gateway",
+    "state": "Ready",
+    "principal": "eMitchell109",
+    "execute": "wscript.exe",
+    "script": "C:/Users/eMitchell109/AppData/Local/hermes/gateway-service/Hermes_Gateway.vbs",
+    "scriptSha256": "485eb282c27762c1ec26f9079a00694db25bad255ab6ad99417cded2212525e4",
+    "trigger": "logon",
+    "guardianState": "Disabled",
+    "bootTaskObserved": false,
+    "sharedConsumers": [
+      "Relay",
+      "Telegram (Echo-reported)"
+    ],
+    "restartRecoveryVerified": false
+  },
+  "configuredBuilderMetadata": {
+    "model": "gpt-6-luna",
+    "provider": "openai-codex",
+    "endpointHostname": null,
+    "source": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\config.yaml",
+    "scope": "Configured default only, not verified per-run route or approval"
+  },
+  "ownerPreference": "Requested: preserve existing Codex route versus local Nemotron; no activation granted by selection",
+  "providerGuardEvidence": "lib/workroom-local-sessions.mjs::localRetirementReady requires provider=custom; no Codex compatibility is inferred",
+  "positiveAcceptanceEvidence": {
+    "directory": "data\\hermes-local-session-a709fb14-44ff-45eb-9082-38962fdb3a14",
+    "verdict": "approved",
+    "checks": 16,
+    "ownerDecision": "pending",
+    "productionActivated": false
   }
 }

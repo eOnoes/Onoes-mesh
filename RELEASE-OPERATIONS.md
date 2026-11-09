@@ -17,6 +17,11 @@
   is qualified in a disposable board. Completed-result loss/reopen recovery
   passed real native readback without resend. Production enrollment, running-turn
   process-kill survival and absent turn-ID recovery remain unqualified.
+- Positive acceptance: an exact-byte disposable task received real Nims approval;
+  native readback verified five hashes and read-only check output (15+1 checks).
+  Owner decision remained pending. Echo default is configured openai-codex,
+  while the qualified native consumer currently accepts custom only; route
+  preparation and explicit identity/maintenance binding remain open.
 - Rook remains OFF pending production identity, reporting transport, a single
   scheduler owner and deployed acceptance.
 - Mind live store/keys/access not activated; model-service maintenance deferred

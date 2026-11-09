@@ -284,7 +284,7 @@ async def child(root):
             send_match=re.search(r'Workroom message ([a-f0-9-]+)',frozen)
             if task_match and send_match:
                 update={'schema':'workroom-update/v1','taskId':task_match.group(1),'sendId':send_match.group(1),
-                    'goal':'Edit the single synthetic proof file','checklist':[{'id':'proof','text':'Edit and verify the proof','status':'done'}],
+                    'goal':'Build and verify the declared synthetic proof artifacts against exact acceptance criteria','checklist':[{'id':'proof','text':'Edit and verify the proof','status':'done'}],
                     'result':'Updated local-session-proof.md','evidence':'Native terminal ran node --test: valid syntax, invalid syntax rejection and built export all passed; external qualifier checks bytes and native exit status.'}
                 final='```workroom-update\n'+json.dumps(update)+'\n```'
         message=({'role':'assistant','content':None,'tool_calls':[{'id':'local-proof-'+str(len(previous)),
