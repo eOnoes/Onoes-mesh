@@ -29,7 +29,7 @@
          temp_dir = self._env_temp_dir(env)
 --- /dev/null
 +++ b/tools/mesh_writer_scope.py
-@@ -0,0 +1,711 @@
+@@ -0,0 +1,725 @@
 +"""Candidate native tools.mesh_writer_scope; no HTTP/config enrollment or release grant."""
 +from contextlib import contextmanager
 +from contextvars import ContextVar, copy_context
@@ -58,8 +58,11 @@
 +    """Trusted in-process exact file list; never loaded from model/request fields."""
 +    root: Path
 +    files: frozenset
++    text_reads: bool
 +
-+    def __init__(self, root, files):
++    def __init__(self, root, files, *, text_reads=False):
++        if type(text_reads) is not bool:
++            raise TypeError('Text-read completion must be explicitly selected')
 +        root = Path(root)
 +        if not root.is_absolute() or not root.is_dir() or root.resolve() != root:
 +            raise ValueError('An existing canonical workspace is required')
@@ -75,6 +78,11 @@
 +            selected.add(path)
 +        object.__setattr__(self, 'root', root)
 +        object.__setattr__(self, 'files', frozenset(selected))
++        object.__setattr__(self, 'text_reads', text_reads)
++
++    @property
++    def policy_id(self):
++        return 'bounded_native_text_files_v1' if self.text_reads else 'bounded_native_write_file_v1'
 +
 +    def require(self, args):
 +        if type(args) is not dict or type(args.get('path')) is not str or args.get('cross_profile', False) is not False:
@@ -338,7 +346,7 @@
 +                                        'plainNativeCalls': self._pipeline_plain, 'otherOrMissingCalls': self._pipeline_other,
 +                                        'lateStages': self._pipeline_late, 'completionQualified': False,
 +                                        'blockerCalls': dict(sorted(self._pipeline_blockers.items()))},
-+                                    'policy': 'bounded_native_write_file_v1' if self._file_policy is not None else 'no_external_effect_adapter_qualified'},
++                                    'policy': self._file_policy.policy_id if self._file_policy is not None else 'no_external_effect_adapter_qualified'},
 +                    'coverage': 'instrumented_foreground_delegate_and_job_members_only'}
 +
 +    def wait(self, timeout_ms=5000):
@@ -368,7 +376,7 @@
 +        lifetime._end_tool(ticket)
 +
 +
-+def call_writer_file_handler(args, callback):
++def call_writer_file_handler(args, callback, *, operation='write_file'):
 +    """Bound the whole native write handler; errors and foreign effects stay unknown."""
 +    lifetime = _lifetime.get()
 +    if lifetime is None or lifetime._file_policy is None:
@@ -378,6 +386,12 @@
 +    if owner is None or owner[0] is not lifetime or os.environ.get('HERMES_SAFE_MODE') != '1':
 +        raise RuntimeError('Bounded file completion requires the native safe-mode lane')
 +    path = lifetime._file_policy.require(args)
++    if operation == 'read_file':
++        if not lifetime._file_policy.text_reads or path.suffix.lower() not in {
++                '.md','.txt','.py','.js','.mjs','.cjs','.ts','.tsx','.jsx','.json','.css','.html','.toml','.yaml','.yml','.ps1'}:
++            raise RuntimeError('Only explicitly enabled plain-text reads are supported')
++    elif operation != 'write_file':
++        raise RuntimeError('Unsupported file completion operation')
 +    from hermes_cli.observability.shared_metrics_harness import _enabled
 +    if _enabled() is not False:
 +        raise RuntimeError('Bounded file completion does not support shared metrics effects')
@@ -1500,27 +1514,66 @@
      file_ops = ShellFileOperations(terminal_env)
      with _file_ops_lock:
          _file_ops_cache[task_id] = file_ops
-@@ -1311,7 +1317,7 @@
+@@ -1306,12 +1312,17 @@
+ }
+ 
+ 
+-def _handle_read_file(args, **kw):
++def _mesh_native_handle_read_file(args, **kw):
+     tid = kw.get("task_id") or "default"
      return read_file_tool(path=args.get("path", ""), offset=args.get("offset", 1), limit=args.get("limit", DEFAULT_READ_LIMIT), task_id=tid)
  
  
 -def _handle_write_file(args, **kw):
++def _handle_read_file(args, **kw):
++    from tools.mesh_writer_scope import call_writer_file_handler
++    return call_writer_file_handler(args, lambda: _mesh_native_handle_read_file(args, **kw), operation='read_file')
++
++
 +def _mesh_native_handle_write_file(args, **kw):
      tid = kw.get("task_id") or "default"
      if not args.get("path") or not isinstance(args.get("path"), str):
          return tool_error(
-@@ -1340,6 +1346,11 @@
+@@ -1340,6 +1351,11 @@
      ))
  
  
 +def _handle_write_file(args, **kw):
 +    from tools.mesh_writer_scope import call_writer_file_handler
-+    return call_writer_file_handler(args, lambda: _mesh_native_handle_write_file(args, **kw))
++    return call_writer_file_handler(args, lambda: _mesh_native_handle_write_file(args, **kw), operation='write_file')
 +
 +
  def _handle_patch(args, **kw):
      from hermes_cli.observability.shared_metrics_harness import record_file_edit
  
+--- a/tools/file_tools_read_tracking.py
++++ b/tools/file_tools_read_tracking.py
+@@ -249,6 +249,12 @@
+ def _file_metadata(resolved: str) -> tuple | None:
+     try:
+         st = os.stat(resolved)
++        if os.name == 'nt':
++            if not stat.S_ISREG(st.st_mode): return None
++            fd = os.open(resolved, os.O_RDONLY | getattr(os, 'O_NONBLOCK', 0) | getattr(os, 'O_BINARY', 0))
++            try: st = os.fstat(fd)
++            finally: os.close(fd)
++            if not stat.S_ISREG(st.st_mode): return None
+         return st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns
+     except OSError:
+         return None
+@@ -265,10 +271,10 @@
+             if not stat.S_ISREG(before.st_mode):
+                 return None
+             digest = hashlib.file_digest(stream, "sha256").digest()
+-            after = os.stat(resolved)
++            after = _file_metadata(resolved)
+         fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
+         version = tuple(getattr(before, name) for name in fields)
+-        if version == tuple(getattr(after, name) for name in fields):
++        if version == after:
+             return (*version, digest)
+         return None
+     except OSError:
 --- a/tools/terminal_tool.py
 +++ b/tools/terminal_tool.py
 @@ -1087,6 +1087,8 @@

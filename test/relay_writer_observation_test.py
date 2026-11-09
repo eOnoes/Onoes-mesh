@@ -55,6 +55,15 @@ class RelayWriterObservationTests(unittest.TestCase):
             changed=copy.deepcopy(observation);mutate(changed['enrollment']['lifetime']['toolEffects'])
             self.assertEqual(project(changed,observation['runId'])['state'],'unknown')
 
+    def test_text_file_policy_projects_read_and_write_counts(self):
+        observation=native_observation();effects=observation['enrollment']['lifetime']['toolEffects']
+        effects.update(unverifiedCalls=0,qualifiedFileCalls=2,effectsSettled=True,
+            policy='bounded_native_text_files_v1',pipeline={'plainNativeCalls':2,'fullyObservedCalls':2,'lateStages':0})
+        result=project(observation,observation['runId'])
+        self.assertEqual(result['fileCompletion']['policy'],'bounded_native_text_files_v1')
+        self.assertEqual(result['fileCompletion']['qualifiedCalls'],2)
+        self.assertFalse(result['writerQuiescence'])
+
     def test_mixed_file_and_unverified_calls_keep_component_unsettled(self):
         observation=native_observation();effects=observation['enrollment']['lifetime']['toolEffects']
         effects.update(unverifiedCalls=1,qualifiedFileCalls=1,effectsSettled=False,

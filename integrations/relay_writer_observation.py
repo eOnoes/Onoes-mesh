@@ -52,11 +52,11 @@ def project(observation, run_id):
             if not isinstance(pipeline, dict):
                 return result
             plain, full, late = [pipeline.get(key) for key in ('plainNativeCalls','fullyObservedCalls','lateStages')]
-            if (effects.get('policy') != 'bounded_native_write_file_v1'
+            if (effects.get('policy') not in ('bounded_native_write_file_v1','bounded_native_text_files_v1')
                     or any(type(value) is not int for value in (plain,full,late))
                     or not qualified <= plain <= full <= counts[0] - counts[1] or late != 0):
                 return result
-            file_completion = {'schema':'mesh-file-effect-summary/v1','policy':'bounded_native_write_file_v1',
+            file_completion = {'schema':'mesh-file-effect-summary/v1','policy':effects['policy'],
                 'observedCalls':counts[0],'activeCalls':counts[1],'qualifiedCalls':qualified,
                 'effectsSettled':effects['effectsSettled']}
     ended = life['managedWorkEnded']

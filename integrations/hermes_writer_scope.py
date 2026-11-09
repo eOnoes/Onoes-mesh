@@ -26,8 +26,11 @@ class FileCompletionPolicy:
     """Trusted in-process exact file list; never loaded from model/request fields."""
     root: Path
     files: frozenset
+    text_reads: bool
 
-    def __init__(self, root, files):
+    def __init__(self, root, files, *, text_reads=False):
+        if type(text_reads) is not bool:
+            raise TypeError('Text-read completion must be explicitly selected')
         root = Path(root)
         if not root.is_absolute() or not root.is_dir() or root.resolve() != root:
             raise ValueError('An existing canonical workspace is required')
@@ -43,6 +46,11 @@ class FileCompletionPolicy:
             selected.add(path)
         object.__setattr__(self, 'root', root)
         object.__setattr__(self, 'files', frozenset(selected))
+        object.__setattr__(self, 'text_reads', text_reads)
+
+    @property
+    def policy_id(self):
+        return 'bounded_native_text_files_v1' if self.text_reads else 'bounded_native_write_file_v1'
 
     def require(self, args):
         if type(args) is not dict or type(args.get('path')) is not str or args.get('cross_profile', False) is not False:
@@ -306,7 +314,7 @@ class WriterLifetime:
                                         'plainNativeCalls': self._pipeline_plain, 'otherOrMissingCalls': self._pipeline_other,
                                         'lateStages': self._pipeline_late, 'completionQualified': False,
                                         'blockerCalls': dict(sorted(self._pipeline_blockers.items()))},
-                                    'policy': 'bounded_native_write_file_v1' if self._file_policy is not None else 'no_external_effect_adapter_qualified'},
+                                    'policy': self._file_policy.policy_id if self._file_policy is not None else 'no_external_effect_adapter_qualified'},
                     'coverage': 'instrumented_foreground_delegate_and_job_members_only'}
 
     def wait(self, timeout_ms=5000):
@@ -336,7 +344,7 @@ def writer_tool_effect():
         lifetime._end_tool(ticket)
 
 
-def call_writer_file_handler(args, callback):
+def call_writer_file_handler(args, callback, *, operation='write_file'):
     """Bound the whole native write handler; errors and foreign effects stay unknown."""
     lifetime = _lifetime.get()
     if lifetime is None or lifetime._file_policy is None:
@@ -346,6 +354,12 @@ def call_writer_file_handler(args, callback):
     if owner is None or owner[0] is not lifetime or os.environ.get('HERMES_SAFE_MODE') != '1':
         raise RuntimeError('Bounded file completion requires the native safe-mode lane')
     path = lifetime._file_policy.require(args)
+    if operation == 'read_file':
+        if not lifetime._file_policy.text_reads or path.suffix.lower() not in {
+                '.md','.txt','.py','.js','.mjs','.cjs','.ts','.tsx','.jsx','.json','.css','.html','.toml','.yaml','.yml','.ps1'}:
+            raise RuntimeError('Only explicitly enabled plain-text reads are supported')
+    elif operation != 'write_file':
+        raise RuntimeError('Unsupported file completion operation')
     from hermes_cli.observability.shared_metrics_harness import _enabled
     if _enabled() is not False:
         raise RuntimeError('Bounded file completion does not support shared metrics effects')

@@ -161,6 +161,32 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
         self.assertFalse(effects['effectsSettled']);self.assertEqual(effects['qualifiedFileCalls'],0)
         self.assertEqual(effects['unverifiedCalls'],1)
 
+    def test_opt_in_plain_text_read_then_write_settles_both_operations(self):
+        root,metrics=self.file_policy_fixture()
+        self.life=scope.WriterLifetime(self.fence,file_policy=scope.FileCompletionPolicy(root,['allowed.md'],text_reads=True))
+        with patch.dict(os.environ,{'HERMES_SAFE_MODE':'1'}),patch.dict(sys.modules,{metrics.__name__:metrics}):
+            with scope.writer_foreground_scope(self.life):
+                for operation in ['read_file','write_file']:
+                    with scope.writer_tool_effect():
+                        self.record_plain_stages()
+                        scope.call_writer_file_handler({'path':str(root/'allowed.md')},lambda:'native result',operation=operation)
+        effects=self.life.snapshot()['toolEffects']
+        self.assertTrue(effects['effectsSettled']);self.assertEqual(effects['qualifiedFileCalls'],2)
+        self.assertEqual(effects['policy'],'bounded_native_text_files_v1')
+        self.assertFalse(self.life.snapshot()['writerQuiescence'])
+
+    def test_plain_read_is_opt_in_and_document_extraction_is_never_qualified(self):
+        root,metrics=self.file_policy_fixture()
+        for name,enabled in [('allowed.md',False),('document.pdf',True)]:
+            self.life=scope.WriterLifetime(self.fence,file_policy=scope.FileCompletionPolicy(root,[name],text_reads=enabled))
+            with patch.dict(os.environ,{'HERMES_SAFE_MODE':'1'}),patch.dict(sys.modules,{metrics.__name__:metrics}):
+                with scope.writer_foreground_scope(self.life),scope.writer_tool_effect():
+                    callback=unittest.mock.Mock()
+                    with self.assertRaises(RuntimeError):
+                        scope.call_writer_file_handler({'path':str(root/name)},callback,operation='read_file')
+                    callback.assert_not_called()
+            self.assertFalse(self.life.snapshot()['toolEffects']['effectsSettled'])
+
     def test_file_adapter_unbound_preserves_original_behavior(self):
         callback=unittest.mock.Mock(return_value='legacy result')
         self.assertEqual(scope.call_writer_file_handler({'path':'legacy relative path'},callback),'legacy result')

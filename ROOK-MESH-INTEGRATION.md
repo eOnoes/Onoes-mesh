@@ -1830,3 +1830,62 @@ Exact prior evidence through rev49 (3706chars) archived verbatim above with hash
 GitHub workflows local none/remote0. Full goal active/incomplete. Next: whole-worker
 closure producer for the bounded worker lane, positive assignment consumer and
 coordinated native/Relay/Mesh rollout; no historical hold cleared by component proof.
+
+
+## Windows read baseline repair and verified read/edit lane — 2026-11-09T02:04:17.445349+00:00
+Previous goal turn progressed by implementing opt-in text reads and retaining
+failed native acceptance. Prior action-limit checkpoint is superseded below;
+full original goal remains active/incomplete and no live services changed.
+
+ROOT CAUSE CORRECTION: earlier LF/CRLF explanation was incomplete. Actual native
+Python3.14 stat(path) vs fstat(open_handle) returned different st_ctime_ns values on
+unchanged synthetic files. Example c2919fd6 LF fixture path statctime
+1794188856136192500 vs handle fstatctime1794188856137211000. Native full-read
+stability compared those incompatible timestamps and incorrectly marked a full
+read partial. CRLF byte assertion was also a fixture error, but choosing CRLF alone
+would mask the metadata defect. Did not weaken/skip the native stale-read guard.
+
+Pinned original tools/file_tools_read_tracking.py baseline
+fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb.
+Candidate _file_metadata uses a read-only nonblocking descriptor/fstat on Windows;
+stat regular-file precheck and fstat regular-file recheck; descriptor closed in
+finally. _file_version compares original handle metadata with freshly reopened
+current path metadata using that same API. Device/inode/size/mtime/ctime and SHA256
+all retained. POSIX metadata remains stat-based. No auth/partial-read/baseline
+logic removed or bypassed. New native checks full read baseline, partial refusal,
+changed bytes with restored mtime, and stale snapshot cannot revive a baseline,
+on BOTH LF and CRLF. Function fixture PASS54. Now16native baselines/18target files.
+
+Trusted FileCompletionPolicy(text_reads=True) supports whole native read_file
+handler only for explicit approved plain-text files (no extraction/OCR extensions)
+and write_file. Policy bounded_native_text_files_v1 is validated on Relay and Mesh;
+older write-only v1 remains valid. Ordinary sessions delegate without new policy
+lookup. Real read -> guarded overwrite demonstrated, no partial-read bypass.
+Fixture can seed/verify LF or CRLF explicitly; preserves exact bytes and checks
+retained native read/write tool results independently. Failure responder stays live
+for a bounded drain so assertion failures do not become connection retry noise.
+Old write-only3240 evidence still verifies using its original version contract.
+
+Actual native safe LF4e0dd8a6-7580-48f9-b104-998968b7404e PASS16/verify16;
+safe CRLF16f481bf-c5d9-43c3-bee0-0ab91b86263b PASS16/verify16;
+default LF836dd0ad-639b-4609-9224-3a2ab4aef4a6 PASS15/verify14.
+All18source hashes identical across variants. Safe held state:observed2/active1/
+qualified1/unverified0/effectsSettledfalse; final:observed2/active0/qualified2/
+unverified0/effectsSettledtrue. Default stays qualified0/unverified2/effectsfalse.
+Whole writerQuiescence false in all cases. All FIFO/replay/title/graceful retirement/
+separate-process-loss checks remain passed. All previous failed snapshots retained.
+Full npm PASS372 (302Node+70Python), ../read-metadata-full.log.
+
+Real LF proof through patched Relay reader2ec3fddf-eae2-43f9-a6c5-1e9bc702309c
+PASS5, then actual authenticated Mesh HTTP/SQLite/restart PASS6. Real CRLF through
+Relay6fdcd59b-91f2-4c3d-8a1f-477ab9050260 PASS5, Mesh HTTP/restart PASS6.
+Both preserve exact run/owner/generation, qualified2 and adapter policy; no send,
+review, lane or claim release. Missing actual read output rejected by independent
+verifier; negative267077db-cd42-409c-a64f-7a4cc77c6e78. Both candidate patches
+regenerated; native and Relay git apply --check PASS without installing. Diff PASS.
+Goal card revision51/evidence1681 readback verified, all6checklist states unchanged.
+GitHub workflows local none/remote0. No model service restart, Mind database/key/
+access, native/Relay install, automation activation or historical hold clearance.
+Next: whole-worker closure for dedicated bounded lane, positive assignment consumer
+and coordinated rollout. Do not infer whole closure from retired turn/result frame
+(native managed_worker intentionally preserves some background processes).

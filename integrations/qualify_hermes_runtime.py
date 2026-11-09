@@ -115,7 +115,10 @@ def verify_evidence(root):
         file_evidence=json.loads((root/'file-worker-evidence.json').read_text(encoding='utf-8'))
         proof=(root/'workspace'/'mesh-file-proof.md').read_bytes()
         status=file_evidence['status'];life=status['writer_lifecycle']['enrollment']['lifetime']
-        if (proof!=b'Mesh native file proof.\n' or hashlib.sha256(proof).hexdigest()!=file_evidence['sha256']
+        newline = file_evidence.get('newlineStyle','LF')
+        if newline not in ('LF','CRLF'): raise RuntimeError('Unknown file fixture newline style')
+        expected_file_bytes = b'Mesh native file proof.' + (b'\r\n' if newline=='CRLF' else b'\n')
+        if (proof!=expected_file_bytes or hashlib.sha256(proof).hexdigest()!=file_evidence['sha256']
                 or status['status']!='completed' or not life['managedWorkEnded']
                 or status['writer_lifecycle']['writerQuiescence']
                 or life['toolEffects']['effectsSettled'] != bool(report.get('boundedFileCompletion'))):
@@ -141,13 +144,28 @@ def verify_evidence(root):
                     or pipeline['blockerCalls'] or pipeline['otherOrMissingCalls'] or pipeline['lateStages']):
                 raise RuntimeError('Safe-mode pipeline evidence is incomplete')
         result['checks'].append('native_safe_mode_has_plain_terminal_and_file_pipeline')
+    if 'actual_native_read_before_write_with_stale_guard_preserved' in report['checks']:
+        rows=json.loads((root/'file-tool-results.json').read_text(encoding='utf-8'))
+        decoded=[]
+        for row in rows:
+            try: decoded.append(json.loads(row))
+            except (ValueError,TypeError): decoded.append(None)
+        reads=[i for i,row in enumerate(decoded) if isinstance(row,dict) and 'Before Mesh edit.' in str(row.get('content',''))]
+        writes=[i for i,row in enumerate(decoded) if isinstance(row,dict) and row.get('bytes_written')==len(expected_file_bytes) and row.get('verified') is True]
+        if not reads or not writes or min(reads)>=max(writes):
+            raise RuntimeError('Actual read/write tool results are not proven')
+        result['checks'].append('actual_original_content_read_then_verified_native_edit')
     if report.get('boundedFileCompletion'):
         f=json.loads((root/'file-worker-evidence.json').read_text(encoding='utf-8'))
         effects=f['status']['writer_lifecycle']['enrollment']['lifetime']['toolEffects']
         held=f['heldAfterBytes']['writer_lifecycle']['enrollment']['lifetime']['toolEffects']
-        if (not report.get('nativeSafeMode') or effects['qualifiedFileCalls']!=1 or effects['unverifiedCalls']
-                or not effects['effectsSettled'] or effects['policy']!='bounded_native_write_file_v1'
-                or held['effectsSettled'] or held['qualifiedFileCalls'] or held['activeCalls']!=1):
+        text_reads = 'actual_native_read_before_write_with_stale_guard_preserved' in report['checks']
+        expected_calls = 2 if text_reads else 1
+        expected_policy = 'bounded_native_text_files_v1' if text_reads else 'bounded_native_write_file_v1'
+        if (not report.get('nativeSafeMode') or effects['qualifiedFileCalls']!=expected_calls or effects['unverifiedCalls']
+                or not effects['effectsSettled'] or effects['policy']!=expected_policy
+                or held['effectsSettled'] or held['qualifiedFileCalls']!=expected_calls-1 or held['activeCalls']!=1
+                or (text_reads and f.get('verifiedReadBeforeWrite') is not True)):
             raise RuntimeError('Bounded file-handler completion evidence is incomplete')
         result['checks'].append('bounded_file_handler_settles_after_bookkeeping_only')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
@@ -443,6 +461,9 @@ async def child(root):
     canonical_started, canonical_release = asyncio.Event(), asyncio.Event()
     canonical_mode = False
     file_mode = False
+    file_steps = []
+    file_newline = b'\r\n' if os.environ.get('MESH_FIXTURE_NEWLINE')=='CRLF' else b'\n'
+    file_expected = b'Mesh native file proof.' + file_newline
     async def provider(request):
         body = await request.json()
         requests.append({'path': request.path, 'tools': [item.get('function', {}).get('name') or item.get('name')
@@ -459,15 +480,21 @@ async def child(root):
         if not worker_allowed:
             title_started.set()
             await asyncio.wait_for(title_release.wait(), timeout=30)
-        tool = worker_allowed and not any(message.get('role') == 'tool' for message in body.get('messages', []))
-        tool_name = 'write_file' if file_mode and file_allowed else 'terminal'
-        tool_args = ({'path': str(root / 'workspace' / 'mesh-file-proof.md'), 'content': 'Mesh native file proof.\n'}
-                     if tool_name == 'write_file' else {'command': "printf 'mesh-runtime-proof'", 'timeout': 5})
-        message = ({'role': 'assistant', 'content': None, 'tool_calls': [{'id': 'call_mesh_fixture', 'type': 'function',
+        tool_results = [message for message in body.get('messages', []) if message.get('role') == 'tool']
+        file_turn = file_mode and file_allowed
+        tool = worker_allowed and len(tool_results) < (2 if file_turn else 1)
+        tool_name = ('read_file' if not tool_results else 'write_file') if file_turn else 'terminal'
+        if file_turn:
+            tool_args = {'path':str(root/'workspace'/'mesh-file-proof.md')}
+            if tool_name == 'write_file':tool_args['content']='Mesh native file proof.\n'
+            if tool:file_steps.append(tool_name)
+        else:tool_args={'command':"printf 'mesh-runtime-proof'",'timeout':5}
+        message = ({'role': 'assistant', 'content': None, 'tool_calls': [{'id': 'call_mesh_fixture_'+str(len(tool_results)), 'type': 'function',
                     'function': {'name': tool_name, 'arguments': json.dumps(tool_args)}}]}
                    if tool else {'role': 'assistant', 'content': 'mesh fixture completed' if worker_allowed
                                  else json.dumps({'title': 'Mesh runtime fixture'})})
         finish = 'tool_calls' if tool else 'stop'
+        (root/'provider-progress.json').write_text(json.dumps({'requests':requests,'fileSteps':file_steps}),encoding='utf-8')
         if body.get('stream'):
             delta = dict(message); delta.pop('role', None)
             if tool:
@@ -494,7 +521,7 @@ async def child(root):
         adapter = APIServerAdapter(PlatformConfig(enabled=True, extra={'host': '127.0.0.1', 'port': port,
                                                                       'key': key, 'model_name': 'mesh-runtime-fixture'}))
         adapter._mesh_writer_runs = WriterRunRegistry(factory, file_policy=(
-            FileCompletionPolicy((root/'workspace').resolve(), ['mesh-file-proof.md'])
+            FileCompletionPolicy((root/'workspace').resolve(), ['mesh-file-proof.md'], text_reads=True)
             if os.environ.get('HERMES_SAFE_MODE')=='1' else None))
         # Only provider selection is a fixture. The actual agent, tools, API
         # admission/executor, ownership checks and persistence run unchanged.
@@ -598,6 +625,7 @@ async def child(root):
                 if response.status not in (401, 403):
                     raise RuntimeError('Unauthenticated native status was exposed')
             checks.append('actual_native_HTTP_authentication_enforced')
+            (root/'workspace'/'mesh-file-proof.md').write_bytes(b'Before Mesh edit.'+file_newline)
             file_mode = True
             import threading
             import tools.file_tools as native_file_tools
@@ -627,7 +655,7 @@ async def child(root):
                         file_held = await response.json()
                     held_life=file_held['writer_lifecycle']['enrollment']['lifetime']
                     held_path=root/'workspace'/'mesh-file-proof.md'
-                    if (held_path.read_bytes()!=b'Mesh native file proof.\n' or held_life['rootEnded']
+                    if (held_path.read_bytes()!=file_expected or held_life['rootEnded']
                             or held_life['managedWorkEnded'] or held_life['toolEffects']['activeCalls']!=1
                             or file_held['writer_lifecycle']['writerQuiescence']):
                         raise RuntimeError('File bytes incorrectly implied native handler completion')
@@ -645,16 +673,20 @@ async def child(root):
                         await asyncio.sleep(.05)
                     proof_path = root/'workspace'/'mesh-file-proof.md'
                     proof = proof_path.read_bytes() if proof_path.is_file() else b''
-                    if file_status['status']!='completed' or proof!=b'Mesh native file proof.\n':
+                    if file_status['status']!='completed' or proof!=file_expected:
                         raise RuntimeError('Native file worker did not produce exact expected bytes')
                     if (file_status['writer_lifecycle']['writerQuiescence']
                             or file_life['toolEffects']['effectsSettled'] != (os.environ.get('HERMES_SAFE_MODE')=='1')):
                         raise RuntimeError('File success incorrectly granted unqualified writer release')
+                    if file_steps!=['read_file','write_file'] or not any('Before Mesh edit.' in text for text in tools_seen):
+                        raise RuntimeError('Native file edit did not read the original contents first')
+                    (root/'file-tool-results.json').write_text(json.dumps(tools_seen),encoding='utf-8')
                     (root/'file-worker-evidence.json').write_text(json.dumps({
                         'relativePath':'workspace/mesh-file-proof.md','sha256':hashlib.sha256(proof).hexdigest(),
-                        'status':file_status,'heldAfterBytes':file_held,'exactContentVerified':True},indent=2),encoding='utf-8')
+                        'status':file_status,'heldAfterBytes':file_held,'exactContentVerified':True,'verifiedReadBeforeWrite':True,'newlineStyle':'CRLF' if file_newline==b'\r\n' else 'LF'},indent=2),encoding='utf-8')
                     checks.append('actual_native_HTTP_agent_file_write_exact_bytes_without_release')
                     checks.append('actual_file_bytes_do_not_settle_held_native_bookkeeping')
+                    checks.append('actual_native_read_before_write_with_stale_guard_preserved')
                 finally:
                     file_write_release.set()
             file_mode = False
@@ -825,7 +857,27 @@ async def child(root):
                 'agentsCreated': len(agents_created), 'pythonVersion': sys.version.split()[0],
                 'nativeSafeMode': os.environ.get('HERMES_SAFE_MODE')=='1',
                 'boundedFileCompletion': os.environ.get('HERMES_SAFE_MODE')=='1',
+                'fileNewlineStyle':'CRLF' if file_newline==b'\r\n' else 'LF',
                 'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
+    except BaseException as error:
+        (root/'failure-before-cleanup.json').write_text(json.dumps({
+            'errorClass':type(error).__name__, 'message':str(error) if type(error) is RuntimeError else None,
+            'fileSteps':file_steps, 'lastFileStatus':locals().get('file_status'),
+            'heldFileStatus':locals().get('file_held')},indent=2),encoding='utf-8')
+        # Retain the responder while the released fixture worker finishes; closing
+        # it first would replace the original assertion with connection retry noise.
+        title_release.set(); canonical_release.set()
+        release = locals().get('file_write_release')
+        if release is not None: release.set()
+        ident = locals().get('file_id')
+        deadline = time.monotonic()+15
+        while adapter is not None and ident:
+            try: snapshot = adapter._mesh_writer_runs.snapshot(ident)
+            except Exception: break  # Preserve the original fixture failure.
+            if snapshot and snapshot.get('lifetime',{}).get('managedWorkEnded'): break
+            if time.monotonic()>=deadline: break
+            await asyncio.sleep(.05)
+        raise
     finally:
         title_release.set()
         canonical_release.set()
@@ -854,8 +906,9 @@ if __name__ == '__main__':
         (root / 'runtime-qualification.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
         print(json.dumps(result))
     else:
-        if len(sys.argv) not in (3,4) or (len(sys.argv)==4 and sys.argv[3]!='--safe-mode'):
-            raise SystemExit('Usage: native_root python_executable [--safe-mode]')
+        options=sys.argv[3:]
+        if len(sys.argv)<3 or any(option not in ('--safe-mode','--crlf') for option in options) or len(set(options))!=len(options):
+            raise SystemExit('Usage: native_root python_executable [--safe-mode] [--crlf]')
         native, executable = sys.argv[1:3]
         root = prepare(native)
         environment = {name: value for name, value in os.environ.items() if name.upper() in
@@ -864,8 +917,9 @@ if __name__ == '__main__':
             USERPROFILE=str(root / 'fixture-home'), APPDATA=str(root / 'appdata'), LOCALAPPDATA=str(root / 'localappdata'),
             TEMP=str(root / 'temp'), TMP=str(root / 'temp'), PYTHONIOENCODING='utf-8',
             TERMINAL_ENV='local', TERMINAL_CWD=str(root / 'workspace'))
-        if len(sys.argv)==4:
+        if '--safe-mode' in options:
             environment['HERMES_SAFE_MODE']='1'  # Supported native no-plugin discovery mode.
+        if '--crlf' in options: environment['MESH_FIXTURE_NEWLINE']='CRLF'
         # Keep profile/data roots isolated while resolving the installed runtime's
         # existing libraries explicitly. Never inherit provider keys or real HOME.
         libraries = subprocess.check_output([executable, '-c', 'import site;print(site.getusersitepackages())'], text=True).strip()

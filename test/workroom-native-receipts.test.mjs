@@ -130,7 +130,7 @@ test('actual guarded sync route persists exact HTTP receipt across app restart w
     await app.close();app=null;proof={};app=await startApp({dataDir:directory,relayEnabled:true});await admit();
     const reopened=await api(route);
     assert.equal(reopened.body.task.messages[0].nativeReceipt.receipt.writerLifecycle.unverifiedToolCalls,0);
-    assert.deepEqual(reopened.body.task.messages[0].nativeReceipt.receipt.writerLifecycle.fileCompletion,fileCompletion());
+    assert.deepEqual(reopened.body.task.messages[0].nativeReceipt.receipt.writerLifecycle.fileCompletion,observedWriter.fileCompletion);
     assert.equal(reopened.body.task.messages[0].nativeReceipt.writerQuiescence,false);
     assert.equal(reopened.body.task.messages[0].state,'accepted');
     assert.deepEqual(calls,[['GET','/api/agents/echo/sessions/original/messages'],['GET','/api/agents/echo/outbox/'+sendId+'/native-run']]);

@@ -26,6 +26,7 @@ from integrations.windows_writer_fence import WindowsWriterFence
 
 BASELINE = '6491641456b51eb78c36a50a8508f145da328f7c70a432bced84b3b329e0046e'
 FOREGROUND_BASELINE = '723e8f0bc27c58c310f9530732c889e5f8480d74e12402656ed0033e08afc27c'
+READ_TRACKING_BASELINE = 'fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb'
 FILE_TOOLS_BASELINE = '1a23773abe410feb5dd99276d08b6c0837624309ea489c508d683c6965408f94'
 TERMINAL_TOOL_BASELINE = 'a09910c7c61a93d89e8b9e83efd3abcb5eff4b58a3cb53e3bd0162d2ee59e909'
 TITLE_BASELINE = 'e5beaa6185f91e887d27a35a5acdde613c0144c156e63ed053566127ff25ce0f'
@@ -214,17 +215,48 @@ def file_tool_candidate(native_root):
         if candidate.count(before) != 1:
             raise RuntimeError('Unexpected file-tool backend selection shape')
         candidate = candidate.replace(before, after)
-    tree = ast.parse(candidate)
-    handler = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == '_handle_write_file')
-    lines = candidate.splitlines(keepends=True)
-    lines[handler.lineno-1] = lines[handler.lineno-1].replace('def _handle_write_file(', 'def _mesh_native_handle_write_file(')
-    wrapper = ("\n\ndef _handle_write_file(args, **kw):\n"
-        "    from tools.mesh_writer_scope import call_writer_file_handler\n"
-        "    return call_writer_file_handler(args, lambda: _mesh_native_handle_write_file(args, **kw))\n")
-    lines.insert(handler.end_lineno, wrapper)
-    candidate = ''.join(lines)
+    for operation in ('read_file','write_file'):
+        name = '_handle_' + operation
+        tree = ast.parse(candidate)
+        handler = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == name)
+        lines = candidate.splitlines(keepends=True)
+        native = '_mesh_native' + name
+        lines[handler.lineno-1] = lines[handler.lineno-1].replace('def ' + name + '(', 'def ' + native + '(')
+        wrapper = (f"\n\ndef {name}(args, **kw):\n"
+            "    from tools.mesh_writer_scope import call_writer_file_handler\n"
+            f"    return call_writer_file_handler(args, lambda: {native}(args, **kw), operation={operation!r})\n")
+        lines.insert(handler.end_lineno, wrapper)
+        candidate = ''.join(lines)
     ast.parse(candidate)
     return {path: original}, {path: candidate}
+
+
+def read_tracking_candidate(native_root):
+    path = 'tools/file_tools_read_tracking.py'
+    raw = (native_root/path).read_bytes()
+    if hashlib.sha256(raw).hexdigest()!=READ_TRACKING_BASELINE:
+        raise RuntimeError('Native read-tracking source changed')
+    original = raw.decode('utf-8').replace('\r\n','\n')
+    candidate = original
+    before = '        st = os.stat(resolved)\n        return st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns'
+    after = ("        st = os.stat(resolved)\n"
+        "        if os.name == 'nt':\n"
+        "            if not stat.S_ISREG(st.st_mode): return None\n"
+        "            fd = os.open(resolved, os.O_RDONLY | getattr(os, 'O_NONBLOCK', 0) | getattr(os, 'O_BINARY', 0))\n"
+        "            try: st = os.fstat(fd)\n"
+        "            finally: os.close(fd)\n"
+        "            if not stat.S_ISREG(st.st_mode): return None\n"
+        "        return st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns")
+    if candidate.count(before)!=1: raise RuntimeError('Unexpected native metadata shape')
+    candidate=candidate.replace(before,after)
+    before='            after = os.stat(resolved)\n'
+    if candidate.count(before)!=1: raise RuntimeError('Unexpected native version-after shape')
+    candidate=candidate.replace(before,'            after = _file_metadata(resolved)\n')
+    before='        if version == tuple(getattr(after, name) for name in fields):\n'
+    if candidate.count(before)!=1: raise RuntimeError('Unexpected native version comparison shape')
+    candidate=candidate.replace(before,'        if version == after:\n')
+    ast.parse(candidate)
+    return {path:original},{path:candidate}
 
 
 def terminal_route_candidate(native_root):
@@ -405,6 +437,9 @@ def prepare(source_path):
     file_originals, file_modules = file_tool_candidate(source_path.parent.parent)
     lifetime_originals.update(file_originals)
     modules.update(file_modules)
+    read_originals, read_modules = read_tracking_candidate(source_path.parent.parent)
+    lifetime_originals.update(read_originals)
+    modules.update(read_modules)
     terminal_originals, terminal_modules = terminal_route_candidate(source_path.parent.parent)
     lifetime_originals.update(terminal_originals)
     modules.update(terminal_modules)
@@ -1277,12 +1312,56 @@ def qualify_canonical_worker_seam(modules):
         fence.terminate(); fence.close()
 
 
+def qualify_read_metadata(modules):
+    import os,stat,logging
+    path='tools/file_tools_read_tracking.py'
+    namespace={'os':os,'stat':stat,'hashlib':hashlib}
+    tree=ast.parse(modules[path])
+    functions=[node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name in ('_file_metadata','_file_version')]
+    exec(compile(ast.Module(body=functions,type_ignores=[]),path,'exec'),namespace)
+    tracker=next(node for node in ast.parse(modules['tools/file_tools.py']).body if isinstance(node,ast.FunctionDef) and node.name=='_record_successful_read')
+    marks=[]
+    namespace.update(_read_tracker_lock=threading.RLock(),_bump_consecutive=lambda *a:1,
+        _cap_read_tracker_data=lambda *a:None,logger=logging.getLogger('fixture'),Path=Path,
+        file_state=types.SimpleNamespace(record_read=lambda *a,**kw:marks.append(kw['partial'])))
+    exec(compile(ast.Module(body=[tracker],type_ignores=[]),'tools/file_tools.py','exec'),namespace)
+    root=Path(__file__).resolve().parents[1]/'data'/('read-metadata-'+str(uuid.uuid4()));root.mkdir()
+    checks=[]
+    for label,ending in [('LF',b'\n'),('CRLF',b'\r\n')]:
+        file=root/(label+'.md');file.write_bytes(b'first'+ending+b'second'+ending)
+        metadata=namespace['_file_metadata'](str(file));version=namespace['_file_version'](str(file))
+        if version is None or version[:-1]!=metadata or version[-1]!=hashlib.sha256(file.read_bytes()).digest():
+            raise AssertionError('Native descriptor/path metadata mismatch')
+        def data():return {'dedup_hits':{},'dedup_generation_reads':set(),'read_history':set(),
+            'full_write_baselines':{},'dedup':{}}
+        full=data();namespace['_record_successful_read'](full,'fixture',str(file),str(file),1,2000,(str(file),1,2000),
+            partial=False,version_before=metadata,snapshot=version)
+        if full['full_write_baselines'].get(str(file))!=version or marks[-1]:
+            raise AssertionError('Unchanged full read was not granted its exact baseline')
+        partial=data();namespace['_record_successful_read'](partial,'fixture',str(file),str(file),1,1,(str(file),1,1),
+            partial=True,version_before=metadata,snapshot=version)
+        if partial['full_write_baselines'] or marks[-1] is not True:
+            raise AssertionError('Partial read incorrectly gained an overwrite baseline')
+        old_stat=file.stat();file.write_bytes(b'other'+ending+b'second'+ending)
+        os.utime(file,ns=(old_stat.st_atime_ns,old_stat.st_mtime_ns))
+        if namespace['_file_version'](str(file))==version:
+            raise AssertionError('Same-size changed bytes with restored mtime were accepted')
+        stale=data();namespace['_record_successful_read'](stale,'fixture',str(file),str(file),1,2000,(str(file),1,2000),
+            partial=False,version_before=metadata,snapshot=version)
+        if stale['full_write_baselines'] or marks[-1] is not True:
+            raise AssertionError('Changed bytes revived a stale full-read baseline')
+        checks += ['native_'+label+'_full_read_baseline_and_partial_read_refusal',
+                   'native_'+label+'_changed_bytes_with_preserved_mtime_detected']
+    return checks
+
+
 if __name__ == '__main__':
     out, candidate, modules = prepare(Path(sys.argv[1]))
     report = {'state': 'candidate_only', 'baselineSha256': BASELINE,
               'nativeSourceBaselines': {'tools/process_registry.py': BASELINE, **LIFETIME_BASELINES,
                                         'tools/environments/local.py': FOREGROUND_BASELINE, **TOOL_WORKER_BASELINES,
                                         'tools/file_tools.py': FILE_TOOLS_BASELINE,
+                                        'tools/file_tools_read_tracking.py': READ_TRACKING_BASELINE,
                                         'tools/terminal_tool.py': TERMINAL_TOOL_BASELINE,
                                         'agent/title_generator.py': TITLE_BASELINE,
                                         'gateway/run_turn_runner.py': CANONICAL_WORKER_BASELINE,
@@ -1297,7 +1376,7 @@ if __name__ == '__main__':
                             + qualify_tool_effect_boundary(modules) + qualify_file_tool_routes(modules)
                             + qualify_terminal_routes(modules) + qualify_status_observation(modules)
                             + qualify_title_thread(modules) + qualify_canonical_worker_seam(modules)
-                            + qualify_context_thread_factory(modules) + qualify_pipeline_shortcut(modules))
+                            + qualify_context_thread_factory(modules) + qualify_pipeline_shortcut(modules) + qualify_read_metadata(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)
