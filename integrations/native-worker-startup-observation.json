@@ -1,0 +1,33 @@
+{
+  "schema": "mesh-native-startup-observation/v1",
+  "markerInstallation": {
+    "schema": "mesh-worker-startup-marker-rollout/v1",
+    "target": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\managed_worker.py",
+    "baseSha256": "05ed19c86ba6756f73378b6a68170029084c25ef6ee0eee244ee2e39cce2082e",
+    "candidateSha256": "a7041dcabdf5c059cf943554560b8469fd4d91b65e271724bbb8d2b3267189d7",
+    "changedFiles": 1,
+    "newPermissions": false,
+    "newTools": false,
+    "gatewayRestartRequired": false,
+    "phaseLabelsOnly": true,
+    "rootCauseFixed": false,
+    "installed": true,
+    "backupFolder": "E:\\App-Backups\\Onoes-Mesh-Native-Bridge\\2026-11-09_16-02-57_UTC_startup-markers",
+    "activeWorkersBefore": 0,
+    "liveGatewayRestarted": false,
+    "activation": false
+  },
+  "gatewayHealth": {
+    "status": "ok",
+    "platform": "hermes-agent",
+    "version": "0.23.0"
+  },
+  "trialState": "prepared_awaiting_owner_approval",
+  "sessionCreated": false,
+  "promptSent": false,
+  "approvalGuardVerified": true,
+  "constructorEvidence": "integrations/native-constructor-startup-qualification.json",
+  "qualification": "NOT_QUALIFIED_FOR_REAL_WORKER",
+  "blocker": "Automatic approval review rejected new real-provider trial; awaiting explicit owner approval",
+  "liveWorkerRootCause": "UNPROVEN"
+}

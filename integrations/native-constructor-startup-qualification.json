@@ -1,0 +1,36 @@
+{
+  "folder": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-constructor-startup-9d9a93337a97462295897c564086a9d3",
+  "exitCode": 0,
+  "ownedProcessObservation": {
+    "schema": "mesh-writer-process-tree/v1",
+    "runId": "native-constructor-startup-probe",
+    "generation": "5525d496d3e747a29e0433ab9c872d77",
+    "coverage": "windows_job_members",
+    "sealed": true,
+    "terminationRequested": false,
+    "writerQuiescence": false,
+    "processTreeEnded": true,
+    "state": "ended",
+    "activeProcesses": 0,
+    "allRootsEnded": true
+  },
+  "result": {
+    "stage": "constructed_no_prompt",
+    "pid": 34732,
+    "elapsedSeconds": 4.137,
+    "existingCredentialUsable": true,
+    "apiMode": "codex_responses",
+    "promptsSubmitted": 0,
+    "credentialsExported": false,
+    "defaultStateOpened": false,
+    "constructorCombinedWithRealRoute": true
+  },
+  "qualification": "DIAGNOSTIC_ONLY_NOT_WORKER_ACCEPTANCE",
+  "policyProjection": "Worker bootstrap clears credential_ref/config_secret_ref; no private secret hydration; closed saved config retained",
+  "firstProbe": {
+    "exitCode": 1,
+    "reason": "owner-side saved reference not hydrated in standalone process",
+    "notLiveWorkerFailure": true
+  },
+  "rootCause": "UNPROVEN"
+}
