@@ -283,5 +283,39 @@
     "qualification": "PASS",
     "scope": "Trusted construction binds run_conversation and guards native module tool dispatcher for this bound agent. Finally retires supported surface after native cleanup. Actual native late entries refuse before handler/provider; outstanding delegates retain holds. Not whole-process closure or protection from prior captured methods/arbitrary Python mutation.",
     "liveActivation": false
+  },
+  "localSessionConnection": {
+    "qualification": "PASS",
+    "evidenceDirectory": "hermes-runtime-5a6bab34-fdbd-4f44-b40f-a7d8e5d11403",
+    "checks": [
+      "pinned_candidate_hashes",
+      "actual_file_bytes",
+      "native_session_and_submission_identity_replay",
+      "verified_separate_worker_and_observed_exit",
+      "private_auth_and_conflict_refusals",
+      "owner_settled_and_fixture_tree_ended_naturally"
+    ],
+    "scope": "actual native owner/private bootstrap/WS/local frozen session/process worker/file tools/SQLite receipt; synthetic local provider",
+    "ownerSettled": true,
+    "workerExitCode": 0,
+    "creationRefusalReason": "invalid_params",
+    "submissionRefusalReason": "admission_conflict",
+    "providerRequests": 4,
+    "fixtureTreeEndedNaturally": true,
+    "liveInstallation": false,
+    "wholeWorkerReleaseQualified": false,
+    "limitations": [
+      "Uses ephemeral native interactive bootstrap in isolated home, not an enrolled Rook service identity.",
+      "Existing native LOCAL route proven; Mesh claim/dispatch-to-local-session binding is not implemented or deployed.",
+      "Outer test Job contains whole disposable owner tree; it is not assignment-specific production writer clearance.",
+      "No live route/credential changes, no watcher activation, no positive completion consumer."
+    ]
+  },
+  "environmentHelperRegression": {
+    "qualification": "PASS",
+    "evidenceDirectory": "hermes-runtime-fdd7e29c-2e5a-46bd-8323-6053bf2eece1",
+    "runtimeChecks": 20,
+    "independentChecks": 20,
+    "sameCandidateFiles": true
   }
 }

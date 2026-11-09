@@ -1035,6 +1035,39 @@ async def child(root):
             fence.terminate(); fence.close()
 
 
+def runtime_environment(root, native, executable, options=()):
+    """Isolated roots and existing libraries only; no inherited provider secrets."""
+    environment = {name: value for name, value in os.environ.items() if name.upper() in
+                   {'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATH', 'PATHEXT', 'PROGRAMFILES', 'PROGRAMFILES(X86)'}}
+    environment.update(HERMES_HOME=str(root / 'fixture-home'), HOME=str(root / 'fixture-home'),
+        USERPROFILE=str(root / 'fixture-home'), APPDATA=str(root / 'appdata'), LOCALAPPDATA=str(root / 'localappdata'),
+        TEMP=str(root / 'temp'), TMP=str(root / 'temp'), PYTHONIOENCODING='utf-8',
+        TERMINAL_ENV='local', TERMINAL_CWD=str(root / 'workspace'))
+    if '--safe-mode' in options:
+        environment['HERMES_SAFE_MODE']='1'  # Supported native no-plugin discovery mode.
+    if '--crlf' in options: environment['MESH_FIXTURE_NEWLINE']='CRLF'
+    if '--javascript' in options: environment['MESH_FIXTURE_KIND']='javascript'
+    # Keep profile/data roots isolated while resolving the installed runtime's
+    # existing libraries explicitly. Never inherit provider keys or real HOME.
+    libraries = subprocess.check_output([executable, '-c', 'import site;print(site.getusersitepackages())'], text=True).strip()
+    if Path(libraries).is_dir():
+        environment['PYTHONPATH'] = libraries
+    # The live 3.14 library set lacks this pure-Python dependency. Reuse its
+    # existing source in this fixture only; never mix 3.11 compiled extensions.
+    snowball = Path(native) / 'venv/Lib/site-packages/snowballstemmer'
+    if snowball.is_dir():
+        for item in snowball.rglob('*'):
+            if item.is_symlink() or item.suffix.lower() in {'.pyd', '.so', '.dll', '.exe'}:
+                raise RuntimeError('Dependency fixture must contain pure Python only')
+        dependency_root = root / 'test-dependencies'
+        shutil.copytree(snowball, dependency_root / 'snowballstemmer', ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.pyo'))
+        environment['PYTHONPATH'] = str(dependency_root) + os.pathsep + environment.get('PYTHONPATH', '')
+        (root / 'dependency-fixture.json').write_text(json.dumps({'scope': 'isolated pure-Python snowballstemmer source',
+            'files': {str(path.relative_to(dependency_root)): hashlib.sha256(path.read_bytes()).hexdigest()
+                      for path in dependency_root.rglob('*') if path.is_file()}}, indent=2), encoding='utf-8')
+    return environment
+
+
 if __name__ == '__main__':
     if len(sys.argv) == 3 and sys.argv[1] == '--verify':
         print(json.dumps(verify_evidence(Path(sys.argv[2]).resolve())))
@@ -1058,34 +1091,7 @@ if __name__ == '__main__':
             raise SystemExit('Usage: native_root python_executable [--safe-mode] [--crlf] [--javascript]')
         native, executable = sys.argv[1:3]
         root = prepare(native)
-        environment = {name: value for name, value in os.environ.items() if name.upper() in
-                       {'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATH', 'PATHEXT', 'PROGRAMFILES', 'PROGRAMFILES(X86)'}}
-        environment.update(HERMES_HOME=str(root / 'fixture-home'), HOME=str(root / 'fixture-home'),
-            USERPROFILE=str(root / 'fixture-home'), APPDATA=str(root / 'appdata'), LOCALAPPDATA=str(root / 'localappdata'),
-            TEMP=str(root / 'temp'), TMP=str(root / 'temp'), PYTHONIOENCODING='utf-8',
-            TERMINAL_ENV='local', TERMINAL_CWD=str(root / 'workspace'))
-        if '--safe-mode' in options:
-            environment['HERMES_SAFE_MODE']='1'  # Supported native no-plugin discovery mode.
-        if '--crlf' in options: environment['MESH_FIXTURE_NEWLINE']='CRLF'
-        if '--javascript' in options: environment['MESH_FIXTURE_KIND']='javascript'
-        # Keep profile/data roots isolated while resolving the installed runtime's
-        # existing libraries explicitly. Never inherit provider keys or real HOME.
-        libraries = subprocess.check_output([executable, '-c', 'import site;print(site.getusersitepackages())'], text=True).strip()
-        if Path(libraries).is_dir():
-            environment['PYTHONPATH'] = libraries
-        # The live 3.14 library set lacks this pure-Python dependency. Reuse its
-        # existing source in this fixture only; never mix 3.11 compiled extensions.
-        snowball = Path(native) / 'venv/Lib/site-packages/snowballstemmer'
-        if snowball.is_dir():
-            for item in snowball.rglob('*'):
-                if item.is_symlink() or item.suffix.lower() in {'.pyd', '.so', '.dll', '.exe'}:
-                    raise RuntimeError('Dependency fixture must contain pure Python only')
-            dependency_root = root / 'test-dependencies'
-            shutil.copytree(snowball, dependency_root / 'snowballstemmer', ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.pyo'))
-            environment['PYTHONPATH'] = str(dependency_root) + os.pathsep + environment.get('PYTHONPATH', '')
-            (root / 'dependency-fixture.json').write_text(json.dumps({'scope': 'isolated pure-Python snowballstemmer source',
-                'files': {str(path.relative_to(dependency_root)): hashlib.sha256(path.read_bytes()).hexdigest()
-                          for path in dependency_root.rglob('*') if path.is_file()}}, indent=2), encoding='utf-8')
+        environment = runtime_environment(root, native, executable, options)
         print(json.dumps({'directory': str(root), 'state': 'running_isolated_native_runtime'}), flush=True)
         with (root / 'runtime.log').open('wb') as log:
             try:
