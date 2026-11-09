@@ -1628,3 +1628,51 @@ Next: qualify bounded tool-effect completion and wire its trusted assignment
 consumer, then dedicated production worker connection. Positive live-owner
 support and original wider application scope remain unfinished. No live native,
 Relay/model or Mind changes; automation OFF; full goal active/incomplete.
+
+## 2026-11-09 UTC - per-tool native pipeline evidence
+Previous goal turn PROGRESS:6032379 shared native context threads saved/pushed;
+backup E:/App-Backups/ONOes-Mesh/2026-11-09_00-19-14-176_UTC_cfe31bc0 verified.
+Inspected actual PluginManager/Relay pipeline: _delivery_manager can discover
+plugins, native request chain can skip callback invocation when has_middleware
+returns false, and Relay may own post-processing separately from tool handler.
+Added observations at already-native manager selection, execution-chain entry and
+actual Relay managed/unmanaged branch. Observation does not call discovery,
+callbacks, model providers, or additional Relay state getters. Existing native
+selection/dispatch remains unchanged; unconfigured calls have no tool ticket and
+return immediately. New source baselines: hermes_cli/plugins.py
+33fdb366981a104055503ce63c3e33adbbb39da8664fb9b36198626527d21568;
+hermes_cli/middleware.py3745ad211f365554a3c070083dc39d3ff9b6cdc93965f13d8796918433ec2328;
+agent/relay_tools.py33c6ce0518746628a3d3045057d2d3a1f61da6f4fcddb4abbae6e79db2c4fa2c.
+Candidate now15native baselines/17target files.
+
+Each tool gets private context ticket bound to its lifetime. Request/execution/
+Relay stage observations accumulate under that exact ticket and are reduced to
+counts on return. Missing/custom/unreadable pipeline state remains unqualified;
+stale copied contexts increment late-stage count instead of completing another
+call. No arguments, messages, plugin/callback names, credentials or paths retained.
+Every returned tool still increments unverifiedCalls; effectsSettled and whole
+writer clearance remain false. pipeline.completionQualified is always false.
+PlainNativeCalls records observed registry state only, not proof of absence of
+all past/uninstrumented effects or a positive completion receipt.
+
+Initial real runtime f205e6a5-2b15-44d8-8f48-97103553b693 failed stage-completeness
+assertion: native no-request-middleware shortcut bypasses invoke_middleware.
+Retained failed evidence. After terminal exit1, corrected native has_middleware
+presence-check observation (same existing manager getter call, no forced callback).
+Added actual native presence probe/request shortcut/execution chain/Relay-bypass
+fixture check: function qualification PASS50. This preserves native shortcut.
+Four new unit tests: no clearance from plain observations; custom callbacks/Relay
+not plain; missing/unreadable stages; stale context cannot complete another call.
+Focused scope PASS46; full npm test PASS359 (301Node+58Python),
+../tool-pipeline-final-full.log.
+
+Final real runtime data/hermes-runtime-7142523e-48c7-408b-a821-b71b9f1dfdbc:
+PASS12, independent evidence PASS11/all17source hashes. Tool pipeline evidence
+observedCalls1/fullyObserved1/unverified1, effectsSettled=false, lateStages0 and
+completionQualified=false. Real synthetic profile had plainNativeCalls0: do not
+claim its middleware environment is plain or qualified. Direct/FIFO/retirement/
+separate-process-loss tests remain passed. No retry of a still-live fixture.
+Next: qualify a bounded tool completion adapter/profile and consume its trusted
+closure in existing assignment policy. Positive consumer still absent and all
+historical holds retained. No live native/Relay/model or Mind install/restart,
+automation activation or private data access. Full original goal active/incomplete.

@@ -5,6 +5,7 @@
     "actual_native_HTTP_agent_tool_roundtrip",
     "actual_native_title_callback_keeps_completed_reply_worker_held",
     "actual_native_title_thread_exit_observed_before_local_settlement",
+    "actual_native_tool_pipeline_stages_observed_without_clearance",
     "actual_native_tool_thread_and_Windows_job_observed_without_release",
     "actual_native_HTTP_authentication_enforced",
     "actual_native_SQLite_restart_replay_without_new_worker_or_old_owner",
@@ -21,10 +22,10 @@
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual native direct/canonical API and recovery with shared context-thread factory installed, including title-thread join; isolated profile/local fake provider. Shared factory fixture and real nested-thread cleanup tests separately qualify context ownership. No opaque external-effect clearance.",
+  "scope": "Actual native per-tool request/execution/Relay pipeline observations, direct/canonical API and recovery; isolated profile/local fake provider. Native empty-request-middleware shortcut observed without callback invocation. All effects remain unverified; no completion clearance.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "8439122d4255a8d5a5f6599c405112e086bf818637c3a01fe768295921f5bdc0",
+    "tools/mesh_writer_scope.py": "54b74ef920556e041b7bc6444a52bb0b8a562df6800f853cdd04eabc926e647b",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
     "gateway/platforms/api_server_runs.py": "da68f5e791d525544e259edd1d292fb4f45972572901300ad24a5e5ec5216913",
@@ -36,7 +37,10 @@
     "agent/title_generator.py": "6c51388525a8ccf5fceb2b828c7be4c70869cd144091572f1e423539269064f8",
     "gateway/run_turn_runner.py": "9a8afcf3400bad7930c40811cd325ed0dd36514f800c08b4e8e2ba341aa75d49",
     "gateway/session_ingress.py": "1bc738f0297c3b24323b48889427f1f589e8de504a5df56b92d81324fdd20cbc",
-    "agent/memory_provider.py": "76951da0915f45509033e6909d3e9890c8abdcd6ed68502a558d955250a682f8"
+    "agent/memory_provider.py": "76951da0915f45509033e6909d3e9890c8abdcd6ed68502a558d955250a682f8",
+    "hermes_cli/plugins.py": "18f3f77329b603fe0c58ae11a6764e24ead827dd6b747434bd69ed5bdea6340a",
+    "hermes_cli/middleware.py": "0f5d72fa6945880c95767202233c57e851ac4d17d89d41563bc6c2e7d2c7c709",
+    "agent/relay_tools.py": "854e6e7f6df12167eda3f5fa4a10329d425c10e801f24b5e33afeb5fc75f3313"
   },
   "evidenceChecks": [
     "exact_exit_zero_tool_output_without_error",
@@ -48,9 +52,10 @@
     "actual_canonical_FIFO_results_cancellation_ordering_and_replay",
     "actual_retirement_keeps_ownership_then_recovers_queue_once",
     "separate_process_loss_preserves_unknown_and_blocks_duplicate_work",
-    "unmanaged_owner_refused_without_handoff_or_reservation"
+    "unmanaged_owner_refused_without_handoff_or_reservation",
+    "actual_native_pipeline_stages_remain_observation_only"
   ],
-  "evidenceDirectory": "hermes-runtime-2a54444e-ec02-4b03-9bba-8cc687e0a4d0",
+  "evidenceDirectory": "hermes-runtime-7142523e-48c7-408b-a821-b71b9f1dfdbc",
   "remaining": [
     "Tool external effects and whole-worker release remain unqualified.",
     "Other uninstrumented background paths and positive live-chat-owner lifetime proof remain unqualified.",
@@ -84,6 +89,11 @@
   "contextThreadFactory": {
     "qualification": "PASS",
     "scope": "Pinned native spawn_context_thread factory, standard unbound behavior, owned callback join, captured origin/profile, nested admitted work and late-start refusal. External tool/middleware effects remain unverified.",
+    "liveActivation": false
+  },
+  "toolPipeline": {
+    "qualification": "PASS",
+    "scope": "Actual native stage observations linked to the exact in-process tool ticket; registered state read passively after native manager selection, no extra discovery/dispatch. Counts only, no arguments/results/names retained. Plain-state observation is not qualified completion.",
     "liveActivation": false
   }
 }

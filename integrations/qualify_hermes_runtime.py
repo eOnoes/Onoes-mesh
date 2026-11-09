@@ -103,6 +103,14 @@ def verify_evidence(root):
                 or not guard['noHandoff'] or not guard['noReservation'] or not guard['noWorker']):
             raise RuntimeError('Unmanaged owner refusal evidence is incomplete')
         result['checks'].append('unmanaged_owner_refused_without_handoff_or_reservation')
+    if 'actual_native_tool_pipeline_stages_observed_without_clearance' in report['checks']:
+        effects=json.loads((root/'tool-pipeline-evidence.json').read_text(encoding='utf-8'))
+        pipeline=effects['pipeline']
+        if (effects['observedCalls']<1 or pipeline['fullyObservedCalls']!=effects['observedCalls']
+                or pipeline['lateStages'] or pipeline['completionQualified'] or effects['effectsSettled']
+                or effects['unverifiedCalls']!=effects['observedCalls']):
+            raise RuntimeError('Tool pipeline observations lost stages or granted clearance')
+        result['checks'].append('actual_native_pipeline_stages_remain_observation_only')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -527,6 +535,13 @@ async def child(root):
             checks.append('actual_native_title_thread_exit_observed_before_local_settlement')
             observation = status['writer_lifecycle']
             life = observation['enrollment']['lifetime']
+            effects=life['toolEffects'];pipeline=effects['pipeline']
+            if (effects['observedCalls']<1 or pipeline['fullyObservedCalls']!=effects['observedCalls']
+                    or pipeline['lateStages'] or pipeline['completionQualified'] or effects['effectsSettled']
+                    or effects['unverifiedCalls']!=effects['observedCalls']):
+                raise RuntimeError('Native tool pipeline stages were not completely observed without release')
+            (root/'tool-pipeline-evidence.json').write_text(json.dumps(effects,indent=2),encoding='utf-8')
+            checks.append('actual_native_tool_pipeline_stages_observed_without_clearance')
             if not life['managedWorkEnded'] or not life['processTree']['processTreeEnded']:
                 raise RuntimeError('Actual native process lifetime did not settle')
             if observation['writerQuiescence'] or life['toolEffects']['unverifiedCalls'] < 1:

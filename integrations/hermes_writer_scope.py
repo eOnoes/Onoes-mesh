@@ -15,6 +15,7 @@ _current = ContextVar('mesh_owned_writer_fence', default=None)
 _lifetime = ContextVar('mesh_writer_lifetime', default=None)
 _worker = ContextVar('mesh_owned_worker_ticket', default=None)
 _canonical_claim = ContextVar('mesh_canonical_writer_claim', default=None)
+_tool_ticket = ContextVar('mesh_writer_tool_ticket', default=None)
 _unspecified_environment = object()
 
 
@@ -125,6 +126,8 @@ class WriterLifetime:
         self._tool_calls = 0
         self._tool_active = set()
         self._tool_uncertain = 0
+        self._tool_pipeline = {}
+        self._pipeline_full = self._pipeline_plain = self._pipeline_other = self._pipeline_late = 0
 
     def _begin_tool(self):
         with self._lock:
@@ -132,7 +135,17 @@ class WriterLifetime:
             ticket = str(uuid4())
             self._tool_calls += 1
             self._tool_active.add(ticket)
+            self._tool_pipeline[ticket] = {'stages': set(), 'plain': True}
             return ticket
+
+    def _observe_tool_pipeline(self, ticket, stage, plain):
+        with self._lock:
+            record = self._tool_pipeline.get(ticket)
+            if ticket not in self._tool_active or record is None:
+                self._pipeline_late += 1
+                return
+            record['stages'].add(stage)
+            record['plain'] = record['plain'] and plain
 
     def _end_tool(self, ticket):
         with self._lock:
@@ -140,6 +153,13 @@ class WriterLifetime:
                 self._fault = 'tool_lifecycle_unconfirmed'
                 return
             self._tool_active.remove(ticket)
+            pipeline = self._tool_pipeline.pop(ticket)
+            full = pipeline['stages'] == {'request', 'execution', 'relay'}
+            self._pipeline_full += int(full)
+            if full and pipeline['plain']:
+                self._pipeline_plain += 1
+            else:
+                self._pipeline_other += 1
             # A returned handler/middleware is not proof that an external service
             # stopped. Only a separately qualified adapter may ever settle effects.
             self._tool_uncertain += 1
@@ -231,6 +251,9 @@ class WriterLifetime:
                     'toolEffects': {'observedCalls': self._tool_calls, 'activeCalls': len(self._tool_active),
                                     'unverifiedCalls': self._tool_uncertain,
                                     'effectsSettled': self._tool_calls == 0,
+                                    'pipeline': {'fullyObservedCalls': self._pipeline_full,
+                                        'plainNativeCalls': self._pipeline_plain, 'otherOrMissingCalls': self._pipeline_other,
+                                        'lateStages': self._pipeline_late, 'completionQualified': False},
                                     'policy': 'no_external_effect_adapter_qualified'},
                     'coverage': 'instrumented_foreground_delegate_and_job_members_only'}
 
@@ -253,10 +276,43 @@ def writer_tool_effect():
         yield
         return
     ticket = lifetime._begin_tool()
+    token = _tool_ticket.set((lifetime, ticket))
     try:
         yield
     finally:
+        _tool_ticket.reset(token)
         lifetime._end_tool(ticket)
+
+
+def record_writer_middleware(kind, manager):
+    """Record counts only from an already selected native manager; never discover plugins."""
+    owner = _tool_ticket.get()
+    stage = {'tool_request': 'request', 'tool_execution': 'execution'}.get(kind)
+    if owner is None or stage is None or _lifetime.get() is not owner[0]:
+        return
+    try:
+        data = vars(manager)
+        maps = ['_plugins','_portable_mcp_servers','_memory_hook_registrations','_aux_tasks',
+                '_ownership_ledger','_predeclared_modules','_hook_running_callbacks']
+        lists = ['_registration_order','_persistent_carryover','_plugin_loaded_listeners']
+        groups = ['_hooks','_middleware','_subscriptions','_hook_abandoned']
+        plain = (data.get('_discovered') is True and data.get('_context_engine') is None
+            and data.get('_event_worker') is None
+            and all(type(data.get(key)) is dict and not data[key] for key in maps)
+            and all(type(data.get(key)) is list and not data[key] for key in lists)
+            and all(type(data.get(key)) is dict and all(type(value) in (list,tuple,set) and not value
+                    for value in data[key].values()) for key in groups)
+            and type(data.get('_event_pending_by_generation')) is dict
+            and all(type(value) is int and value == 0 for value in data['_event_pending_by_generation'].values()))
+    except Exception:
+        plain = False  # Unreadable/changed state never becomes a plain-pipeline observation.
+    owner[0]._observe_tool_pipeline(owner[1], stage, plain)
+
+
+def record_writer_relay(managed):
+    owner = _tool_ticket.get()
+    if owner is not None and _lifetime.get() is owner[0]:
+        owner[0]._observe_tool_pipeline(owner[1], 'relay', type(managed) is bool and not managed)
 
 
 async def require_managed_session_owner(adapter, session_id):

@@ -32,6 +32,10 @@ TITLE_BASELINE = 'e5beaa6185f91e887d27a35a5acdde613c0144c156e63ed053566127ff25ce
 CANONICAL_WORKER_BASELINE = 'efc702798fcb827b77ad485c7559643d5ecf407b06b5f115c8e3047752054c8a'
 CANONICAL_INGRESS_BASELINE = '9b308b2ddf9cac9223361663c16eed1665feb4087fc0b58e0e3245e9708ce9a0'
 CONTEXT_THREAD_BASELINE = '240a2b45898e6a3a2fe3a2ee7d3ddb09a4c9053c1a163ccfd32707260a6ab341'
+PIPELINE_BASELINES = {
+    'hermes_cli/plugins.py': '33fdb366981a104055503ce63c3e33adbbb39da8664fb9b36198626527d21568',
+    'hermes_cli/middleware.py': '3745ad211f365554a3c070083dc39d3ff9b6cdc93965f13d8796918433ec2328',
+    'agent/relay_tools.py': '33c6ce0518746628a3d3045057d2d3a1f61da6f4fcddb4abbae6e79db2c4fa2c'}
 TOOL_WORKER_BASELINES = {
     'agent/tool_executor.py': '3fb81cd7ec8946df1f6e50b0879b4be4499223b4236450da0581ac7c0a1727e6',
     'agent/terminal_approval_batch.py': '3ac8420c2cdbbaf8d6f8241be5154a75aff4da54fd090492e9ce9ce9396e71dc'}
@@ -310,6 +314,45 @@ def context_thread_candidate(native_root):
     return {path: original}, {path: candidate}
 
 
+def pipeline_candidates(native_root):
+    originals,changed={},{}
+    for path,expected in PIPELINE_BASELINES.items():
+        raw=(native_root/path).read_bytes()
+        if hashlib.sha256(raw).hexdigest()!=expected:raise RuntimeError('Native tool pipeline source changed: '+path)
+        original=raw.decode('utf-8').replace('\r\n','\n');candidate=original
+        if path=='hermes_cli/plugins.py':
+            before='    return _delivery_manager().invoke_middleware(kind, **kwargs)\n'
+            after=('    manager = _delivery_manager()\n'
+                '    from tools.mesh_writer_scope import record_writer_middleware\n'
+                '    record_writer_middleware(kind, manager)\n'
+                '    return manager.invoke_middleware(kind, **kwargs)\n')
+        elif path=='hermes_cli/middleware.py':
+            before='    manager = _delivery_manager()\n'
+            after=before+('    from tools.mesh_writer_scope import record_writer_middleware\n'
+                '    record_writer_middleware(kind, manager)\n')
+        else:
+            before='        return callback(args), args\n'
+            after=('        from tools.mesh_writer_scope import record_writer_relay\n'
+                '        record_writer_relay(False)\n'+before)
+        if candidate.count(before)!=1:raise RuntimeError('Unexpected native pipeline shape: '+path)
+        candidate=candidate.replace(before,after)
+        if path=='hermes_cli/plugins.py':
+            fn=next(n for n in ast.parse(candidate).body if isinstance(n,ast.FunctionDef) and n.name=='has_middleware')
+            lines=candidate.splitlines(True);body=''.join(lines[fn.lineno-1:fn.end_lineno])
+            before='    manager = _delivery_manager()\n'
+            if body.count(before)!=1:raise RuntimeError('Unexpected native middleware presence check')
+            body=body.replace(before,before+'    from tools.mesh_writer_scope import record_writer_middleware\n'
+                '    record_writer_middleware(kind, manager)\n')
+            lines[fn.lineno-1:fn.end_lineno]=[body];candidate=''.join(lines)
+        if path=='agent/relay_tools.py':
+            before='    observed_args = args\n'
+            if candidate.count(before)!=1:raise RuntimeError('Unexpected native managed Relay shape')
+            candidate=candidate.replace(before,'    from tools.mesh_writer_scope import record_writer_relay\n'
+                '    record_writer_relay(True)\n'+before)
+        ast.parse(candidate);originals[path]=original;changed[path]=candidate
+    return originals,changed
+
+
 def prepare(source_path):
     raw = source_path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != BASELINE:
@@ -368,6 +411,9 @@ def prepare(source_path):
     context_originals, context_modules = context_thread_candidate(source_path.parent.parent)
     lifetime_originals.update(context_originals)
     modules.update(context_modules)
+    pipeline_originals,pipeline_modules=pipeline_candidates(source_path.parent.parent)
+    lifetime_originals.update(pipeline_originals)
+    modules.update(pipeline_modules)
     patch_text = ''.join(difflib.unified_diff(original.splitlines(True), candidate.splitlines(True),
                                            fromfile='a/tools/process_registry.py', tofile='b/tools/process_registry.py'))
     for path, text in modules.items():
@@ -1139,6 +1185,43 @@ def qualify_context_thread_factory(modules):
         fence.terminate();fence.close()
 
 
+def qualify_pipeline_shortcut(modules):
+    """Actual native presence probe/request shortcut/execution chain/Relay bypass."""
+    values={key:{} for key in ['_plugins','_portable_mcp_servers','_memory_hook_registrations','_aux_tasks',
+        '_ownership_ledger','_predeclared_modules','_hook_running_callbacks','_hooks','_middleware','_subscriptions','_hook_abandoned']}
+    values.update({key:[] for key in ['_registration_order','_persistent_carryover','_plugin_loaded_listeners']})
+    manager=types.SimpleNamespace(**values,_discovered=True,_context_engine=None,_event_worker=None,
+        _event_pending_by_generation={0:0},has_middleware=lambda kind:False)
+    def unexpected(*args,**kwargs):raise AssertionError('Empty request middleware should not invoke callbacks')
+    manager.invoke_middleware=unexpected
+    namespace={'Any':typing.Any,'Callable':typing.Callable,'_delivery_manager':lambda:manager,
+        'TOOL_REQUEST_MIDDLEWARE':'tool_request','RequestMiddlewareResult':types.SimpleNamespace,
+        '_safe_copy':lambda value:dict(value),'relay_runtime':types.SimpleNamespace(resolve_execution_context=lambda sid:(None,None,None))}
+    for path,names in [('hermes_cli/plugins.py',['has_middleware']),
+                       ('hermes_cli/middleware.py',['apply_tool_request_middleware','_run_execution_chain']),
+                       ('agent/relay_tools.py',['execute'])]:
+        tree=ast.parse(modules[path])
+        for name in names:
+            fn=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name==name)
+            exec(compile(ast.Module(body=[fn],type_ignores=[]),'<native-pipeline-shortcut>','exec'),namespace)
+    plugins=types.ModuleType('hermes_cli.plugins');plugins.has_middleware=namespace['has_middleware'];plugins._delivery_manager=lambda:manager
+    tools=types.ModuleType('tools');tools.__path__=[]
+    fence=WindowsWriterFence('native-pipeline-shortcut','one');lifetime=scope.WriterLifetime(fence)
+    try:
+        with patch.dict(sys.modules,{'hermes_cli.plugins':plugins,'tools':tools,'tools.mesh_writer_scope':scope}):
+            with scope.writer_foreground_scope(lifetime),scope.writer_tool_effect():
+                def dispatch(args):
+                    requested=namespace['apply_tool_request_middleware']('fixture',args,skip_relay=True)
+                    return namespace['_run_execution_chain']('tool_execution',lambda final:'native-pipeline',args=requested.payload)
+                result,args=namespace['execute']('fixture',{'fixture':True},dispatch,session_id='synthetic')
+            effects=lifetime.snapshot()['toolEffects']
+            if (result!='native-pipeline' or effects['pipeline']['fullyObservedCalls']!=1
+                    or effects['pipeline']['plainNativeCalls']!=1 or effects['effectsSettled']):
+                raise AssertionError('Native empty-middleware shortcut lost observations or granted clearance')
+        return ['native_empty_request_shortcut_and_full_pipeline_observed_without_clearance']
+    finally:fence.terminate();fence.close()
+
+
 def qualify_canonical_worker_seam(modules):
     """Actual native run_sync method; fixture policy/context and reserved claim only."""
     from contextlib import contextmanager
@@ -1195,7 +1278,7 @@ if __name__ == '__main__':
                                         'agent/title_generator.py': TITLE_BASELINE,
                                         'gateway/run_turn_runner.py': CANONICAL_WORKER_BASELINE,
                                         'gateway/session_ingress.py': CANONICAL_INGRESS_BASELINE,
-                                        'agent/memory_provider.py': CONTEXT_THREAD_BASELINE},
+                                        'agent/memory_provider.py': CONTEXT_THREAD_BASELINE, **PIPELINE_BASELINES},
               'qualificationScope': 'patched native functions with fixture profiles/ledgers and real threads/processes',
               'files': {name: hashlib.sha256(text.encode()).hexdigest() for name, text in modules.items()},
               'liveInstallation': False, 'wholeWorkerReleaseQualified': False}
@@ -1205,7 +1288,7 @@ if __name__ == '__main__':
                             + qualify_tool_effect_boundary(modules) + qualify_file_tool_routes(modules)
                             + qualify_terminal_routes(modules) + qualify_status_observation(modules)
                             + qualify_title_thread(modules) + qualify_canonical_worker_seam(modules)
-                            + qualify_context_thread_factory(modules))
+                            + qualify_context_thread_factory(modules) + qualify_pipeline_shortcut(modules))
         report['qualification'] = 'PASS'
     except BaseException as error:
         report.update(qualification='FAIL', errorClass=type(error).__name__)

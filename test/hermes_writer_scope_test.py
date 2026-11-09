@@ -98,6 +98,57 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
         context=copy_context()
         return lambda *args,**kwargs:context.run(target,*args,**kwargs)
 
+    def plain_manager(self):
+        values={name:{} for name in ['_plugins','_portable_mcp_servers','_memory_hook_registrations','_aux_tasks',
+            '_ownership_ledger','_predeclared_modules','_hook_running_callbacks','_hooks','_middleware','_subscriptions','_hook_abandoned']}
+        values.update({name:[] for name in ['_registration_order','_persistent_carryover','_plugin_loaded_listeners']})
+        return types.SimpleNamespace(**values,_discovered=True,_context_engine=None,_event_worker=None,
+            _event_pending_by_generation={0:0},discover_and_load=lambda: self.fail('Observation must not discover plugins'))
+
+    def test_plain_pipeline_observation_never_settles_tool_effects(self):
+        with scope.writer_foreground_scope(self.life),scope.writer_tool_effect():
+            manager=self.plain_manager()
+            scope.record_writer_relay(False)
+            scope.record_writer_middleware('tool_request',manager)
+            scope.record_writer_middleware('tool_execution',manager)
+        effects=self.life.snapshot()['toolEffects']
+        self.assertEqual(effects['pipeline']['fullyObservedCalls'],1)
+        self.assertEqual(effects['pipeline']['plainNativeCalls'],1)
+        self.assertEqual(effects['unverifiedCalls'],1)
+        self.assertFalse(effects['effectsSettled']);self.assertFalse(effects['pipeline']['completionQualified'])
+        self.assertFalse(self.life.snapshot()['writerQuiescence'])
+
+    def test_custom_callbacks_and_managed_relay_are_not_plain_pipeline_evidence(self):
+        with scope.writer_foreground_scope(self.life):
+            for custom,managed in [(True,False),(False,True)]:
+                manager=self.plain_manager()
+                if custom:manager._hooks={'private-callback-name':[lambda: self.fail('Callback must not run')]}
+                with scope.writer_tool_effect():
+                    scope.record_writer_relay(managed)
+                    scope.record_writer_middleware('tool_request',manager)
+                    scope.record_writer_middleware('tool_execution',manager)
+        snapshot=self.life.snapshot();pipeline=snapshot['toolEffects']['pipeline']
+        self.assertEqual(pipeline['fullyObservedCalls'],2);self.assertEqual(pipeline['plainNativeCalls'],0)
+        self.assertEqual(pipeline['otherOrMissingCalls'],2);self.assertNotIn('private-callback-name',str(snapshot))
+
+    def test_missing_or_unreadable_pipeline_stages_remain_unverified(self):
+        with scope.writer_foreground_scope(self.life):
+            with scope.writer_tool_effect():scope.record_writer_relay(False)
+            with scope.writer_tool_effect():
+                scope.record_writer_relay(False)
+                scope.record_writer_middleware('tool_request',object())
+                scope.record_writer_middleware('tool_execution',object())
+        pipeline=self.life.snapshot()['toolEffects']['pipeline']
+        self.assertEqual(pipeline['plainNativeCalls'],0);self.assertEqual(pipeline['otherOrMissingCalls'],2)
+
+    def test_late_pipeline_context_cannot_complete_a_different_tool_call(self):
+        with scope.writer_foreground_scope(self.life):
+            with scope.writer_tool_effect():old=copy_context()
+            with scope.writer_tool_effect():old.run(scope.record_writer_relay,False)
+        pipeline=self.life.snapshot()['toolEffects']['pipeline']
+        self.assertEqual(pipeline['lateStages'],1);self.assertEqual(pipeline['fullyObservedCalls'],0)
+        self.assertEqual(self.life.snapshot()['toolEffects']['unverifiedCalls'],2)
+
     def test_context_thread_retains_nested_work_and_final_cleanup_after_root(self):
         entered,release,cleanup,finish=threading.Event(),threading.Event(),threading.Event(),threading.Event()
         seen=[];profile=ContextVar('owned_callback_profile',default='wrong')
