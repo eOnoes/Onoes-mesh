@@ -6,6 +6,7 @@
     "actual_native_title_callback_keeps_completed_reply_worker_held",
     "actual_native_constructor_child_keeps_completed_run_held",
     "actual_native_title_thread_exit_observed_before_local_settlement",
+    "actual_native_bound_instance_late_entry_refused_after_cleanup",
     "actual_native_tool_pipeline_stages_observed_without_clearance",
     "actual_native_tool_thread_and_Windows_job_observed_without_release",
     "actual_native_HTTP_authentication_enforced",
@@ -29,15 +30,15 @@
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual native direct agent construction bound before initialization; owned constructor child remains held after root/title return until actual exit. JavaScript LF/CRLF read/edit and owned Node check; default Markdown compatibility. Whole-worker retirement and production profile remain unqualified.",
+  "scope": "One-use native instance binding; public conversation and actual module tool entry refuse late calls after original direct-worker cleanup. Actual JavaScript LF/CRLF and default Markdown native regressions; process/session route and whole-worker retirement remain unqualified.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "60f5d3de3c55e5f2b9d909e2af5a2658fea0a8e8f0c06f6ed96a01d6ff8da914",
+    "tools/mesh_writer_scope.py": "b518685e28afdb98d4efd656329aab89d3d27bf1ecd80377235810d113db793e",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
-    "gateway/platforms/api_server_runs.py": "c9c89f948c57fc22428f560b815a529c1c582d083f4de75cc1370e11d580cbe5",
+    "gateway/platforms/api_server_runs.py": "df0cab475250538c0d6773d24148eb603c926141b1bc01e511e9443dd3dc2bd3",
     "tools/environments/local.py": "c6637d76eaa64bded45a894a102bcbac3dba2646818751ddbde520b7f15fe1aa",
-    "agent/tool_executor.py": "47a6e5446b33ce94407efc8d60924a44c634814e1174746ec797b4f842c03ecc",
+    "agent/tool_executor.py": "3ff6c781bc4c785126ed78d426b8693090ae3d3bd30843ea95df20d2c1b6dd95",
     "agent/terminal_approval_batch.py": "5eb4c30429777b217720a67b301f445f8fb171cf3f6171113a4ce669da1512d6",
     "tools/file_tools.py": "6c224f385878a73aa350231f59ff3b6ebc0b13d927e968e21446db1ed9298afa",
     "tools/file_tools_read_tracking.py": "c2ca50e625178fb663faa46677713ba915946294dc19fbef849ea40342977e4d",
@@ -58,6 +59,7 @@
     "no_writer_release",
     "native_title_pending_then_actual_thread_exit",
     "native_constructor_child_held_until_actual_process_exit",
+    "native_supported_instance_entries_retired_without_writer_clearance",
     "native_SQLite_canonical_claim_binding_without_release",
     "actual_canonical_FIFO_results_cancellation_ordering_and_replay",
     "actual_retirement_keeps_ownership_then_recovers_queue_once",
@@ -72,13 +74,14 @@
     "bounded_file_handler_settles_after_bookkeeping_only",
     "strict_native_dispatch_refused_without_effects_or_release"
   ],
-  "evidenceDirectory": "hermes-runtime-1cc32dd4-a996-4100-b66e-b36637f2888d",
+  "evidenceDirectory": "hermes-runtime-855eb780-22b3-45b4-8b60-9bec484555c8",
   "remaining": [
     "Plain-text read_file/write_file components qualified in isolated direct lane; patch/search/delegation, other external effects and whole-worker release remain unqualified.",
     "Other uninstrumented background paths and positive live-chat-owner lifetime proof remain unqualified.",
     "Trusted positive completion consumption in assignment policy remains unimplemented; current receipts cannot clear work holds.",
     "Installed native/Relay deployment, dedicated worker-lane selection and production provider/profile configuration remain unverified.",
-    "Dedicated worker-profile attestation, other/background effects, irreversible whole-worker retirement and positive consumer need qualification before live release; Node post-write ownership is component evidence only."
+    "Dedicated worker-profile attestation, other/background effects, irreversible whole-worker retirement and positive consumer need qualification before live release; Node post-write ownership is component evidence only.",
+    "Existing native process route is for frozen LOCAL session policies, not current API_SERVER route; dedicated supported assignment/session bridge must be implemented and qualified without silently relaxing owner guards."
   ],
   "liveServicesChanged": false,
   "canonicalWorkerSeam": {
@@ -144,7 +147,7 @@
     "predeclared_modules": 1,
     "registration": 1
   },
-  "defaultEvidenceDirectory": "hermes-runtime-f1b12375-2b96-499a-a490-3111d7e06796",
+  "defaultEvidenceDirectory": "hermes-runtime-2dcc2882-fcb0-40d9-a24c-6eadb4287a5b",
   "boundedFileCompletion": true,
   "boundedFileAdapter": {
     "qualification": "PASS",
@@ -156,10 +159,10 @@
   "readWriteVariants": [
     {
       "lane": "safe-JavaScript-LF",
-      "directory": "hermes-runtime-051164da-6537-41b8-824f-0d20dd2b41de",
+      "directory": "hermes-runtime-515c4815-6254-4c84-821e-c4987b179adb",
       "qualification": "PASS",
-      "runtimeChecks": 19,
-      "independentChecks": 19,
+      "runtimeChecks": 20,
+      "independentChecks": 20,
       "fileEffects": {
         "observedCalls": 2,
         "activeCalls": 0,
@@ -187,10 +190,10 @@
     },
     {
       "lane": "safe-JavaScript-CRLF",
-      "directory": "hermes-runtime-1cc32dd4-a996-4100-b66e-b36637f2888d",
+      "directory": "hermes-runtime-855eb780-22b3-45b4-8b60-9bec484555c8",
       "qualification": "PASS",
-      "runtimeChecks": 19,
-      "independentChecks": 19,
+      "runtimeChecks": 20,
+      "independentChecks": 20,
       "fileEffects": {
         "observedCalls": 2,
         "activeCalls": 0,
@@ -218,10 +221,10 @@
     },
     {
       "lane": "default-Markdown-LF",
-      "directory": "hermes-runtime-f1b12375-2b96-499a-a490-3111d7e06796",
+      "directory": "hermes-runtime-2dcc2882-fcb0-40d9-a24c-6eadb4287a5b",
       "qualification": "PASS",
-      "runtimeChecks": 16,
-      "independentChecks": 15,
+      "runtimeChecks": 17,
+      "independentChecks": 16,
       "fileEffects": {
         "observedCalls": 2,
         "activeCalls": 0,
@@ -274,6 +277,11 @@
   "constructionQualification": {
     "qualification": "PASS",
     "scope": "Direct native _create_agent runs inside one-use construction context before root. Process/managed work inherits existing run Job. Failure retains reserved root; identity mismatch, reentry and premature foreground refused. Actual synthetic constructor child persists after native result and title return, keeping managedWorkEnded false until process exit. No complete initialization coverage or positive release claim.",
+    "liveActivation": false
+  },
+  "instanceBinding": {
+    "qualification": "PASS",
+    "scope": "Trusted construction binds run_conversation and guards native module tool dispatcher for this bound agent. Finally retires supported surface after native cleanup. Actual native late entries refuse before handler/provider; outstanding delegates retain holds. Not whole-process closure or protection from prior captured methods/arbitrary Python mutation.",
     "liveActivation": false
   }
 }

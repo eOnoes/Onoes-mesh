@@ -29,7 +29,7 @@
          temp_dir = self._env_temp_dir(env)
 --- /dev/null
 +++ b/tools/mesh_writer_scope.py
-@@ -0,0 +1,831 @@
+@@ -0,0 +1,896 @@
 +"""Candidate native tools.mesh_writer_scope; no HTTP/config enrollment or release grant."""
 +from contextlib import contextmanager
 +from contextvars import ContextVar, copy_context
@@ -221,6 +221,7 @@
 +        self._tool_refused = 0
 +        self._postwrite_started = self._postwrite_returned = 0
 +        self._construction_started = self._construction_returned = False
++        self._agent_guard = None
 +        self.fence = fence
 +        self._lock = threading.RLock()
 +        self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
@@ -359,6 +360,7 @@
 +                    'pendingWorkers': [{'id': key, 'kind': value['kind'], 'state': value['state']}
 +                                       for key, value in self._pending.items()],
 +                    'construction': {'started': self._construction_started, 'returned': self._construction_returned},
++                    'agentBinding': {'bound': self._agent_guard is not None, 'retired': bool(self._agent_guard and self._agent_guard['retired'])},
 +                    'processTree': process, 'managedWorkEnded': managed,
 +                    'writerQuiescence': False, 'reason': self._fault,
 +                    'toolEffects': {'observedCalls': self._tool_calls, 'activeCalls': len(self._tool_active),
@@ -593,6 +595,69 @@
 +    lifetime, run_id, generation = claim
 +    with writer_foreground_scope(lifetime, expected_run_id=run_id, expected_generation=generation):
 +        yield
++
++
++def bind_writer_agent(agent):
++    """Bind supported instance entry points once; not whole-process retirement."""
++    life = _lifetime.get()
++    if life is None:
++        return agent
++    with life._lock:
++        life.assert_current_worker()
++        owner = _worker.get()
++        if (life._pending[owner[1]]['kind'] != 'construction' or life._agent_guard is not None
++                or getattr(agent, '_mesh_writer_binding', None) is not None):
++            raise RuntimeError('Native agent binding is already consumed or outside construction')
++        originals = {name: getattr(agent, name) for name in
++                     ('run_conversation',)}
++        if any(not callable(method) for method in originals.values()):
++            raise TypeError('Native agent entry points are required')
++        guard = {'lifetime': life, 'retired': False}
++        # Reserve before mutating the instance; a partial install cannot be retried.
++        life._agent_guard = guard
++        try:
++            def protect(method):
++                def guarded(*args, **kwargs):
++                    require_writer_agent_entry(agent)
++                    return method(*args, **kwargs)
++                return guarded
++            for name, method in originals.items():
++                setattr(agent, name, protect(method))
++            agent._mesh_writer_binding = guard
++        except BaseException:
++            life._fault = 'agent_binding_unconfirmed'
++            raise
++    return agent
++
++
++def require_writer_agent_entry(agent):
++    """Guard the supported native instance and module tool-dispatch boundary."""
++    guard = getattr(agent, '_mesh_writer_binding', None)
++    if guard is None:
++        return  # Ordinary unenrolled native agents retain existing behavior.
++    life = guard.get('lifetime') if type(guard) is dict else None
++    if type(life) is not WriterLifetime or guard is not life._agent_guard:
++        raise RuntimeError('Native agent binding identity is unverified')
++    with life._lock:
++        if guard['retired']:
++            raise RuntimeError('This native writer agent has retired')
++        life.assert_current_worker()
++        if not life._root_started:
++            raise RuntimeError('Native writer foreground has not started')
++
++
++def retire_writer_agent(agent):
++    """Close the bound public instance surface after native cleanup returns."""
++    life = _lifetime.get()
++    if life is None:
++        return
++    with life._lock:
++        life.assert_current_worker()
++        guard = getattr(agent, '_mesh_writer_binding', None)
++        if guard is not life._agent_guard or guard is None or _worker.get()[1] != 'root':
++            life._fault = 'agent_retirement_unconfirmed'
++            raise RuntimeError('Native agent retirement identity is unverified')
++        guard['retired'] = True
 +
 +
 +@contextmanager
@@ -1245,7 +1310,7 @@
      session_id = selected_session_id or run_id
      # History loads for the session the request actually selected — including one resolved from
      # a declared X-Hermes-Session-Key, whose persisted delivery rows must reach the next
-@@ -862,71 +874,73 @@
+@@ -862,71 +874,76 @@
  
  def _run_agent_sync(self, run: _RunLaunch, agent, approval_notify, *, _api_server):
      """Executor-thread body of one run; returns ``(result, usage, served_runtime)``."""
@@ -1265,7 +1330,9 @@
 -    # (token, reset) pairs unwound in the finally block; bound only once each step succeeds.
 -    resets: list[tuple[Any, Callable]] = []
 -    with self._profile_scope(run.request_profile):
--        try:
++    from tools.mesh_writer_scope import writer_foreground_scope, retire_writer_agent
++    with writer_foreground_scope(getattr(run, 'writer_lifetime', None), expected_run_id=run.run_id, expected_generation=getattr(run, 'writer_generation', '')):
+         try:
 -            # Contextvars, not process env: concurrent runs must not share identity.
 -            resets.append((set_current_session_key(run.approval_session_key), reset_current_session_key))
 -            # chat_id carries the raw session id like _run_agent() does; without it
@@ -1299,7 +1366,72 @@
 -            r = agent.run_conversation(
 -                user_message=run.user_message, conversation_history=run.conversation_history,
 -                task_id=effective_task_id, **author_kwargs)
--        finally:
++            from gateway.session_context import clear_session_vars
++            from gateway.hosted_room_execution_policy import (
++                RoomExecutionPolicy, bind_room_execution_policy, reset_room_execution_policy)
++            # No eager slash-worker pre-warm: slash.exec spawns one on demand (its error path already relies on that
++            # respawn to recover from a dead worker). Each worker child runs its own MCP discovery (#61891), so
++            # pre-warming one per session forks the full stdio MCP fleet — ~20 OS processes per retained session on
++            # a config with a few stdio servers — even for sessions that never run a worker-routed command. Sessions
++            # held by a live transport are never reaped, so with the desktop app open for days those fleets
++            # accumulate until the OS refuses new process spawns.
++            from tools.approval import register_gateway_notify, unregister_gateway_notify
++            from tools.approval_context import reset_current_session_key, set_current_session_key
++            session_id = run.session_id
++            effective_task_id = session_id or run.run_id
++            # (token, reset) pairs unwound in the finally block; bound only once each step succeeds.
++            resets: list[tuple[Any, Callable]] = []
++            with self._profile_scope(run.request_profile):
++                try:
++                    # Contextvars, not process env: concurrent runs must not share identity.
++                    resets.append((set_current_session_key(run.approval_session_key), reset_current_session_key))
++                    # chat_id carries the raw session id like _run_agent() does; without it
++                    # tools.async_delegation sees no HERMES_SESSION_CHAT_ID and forces delegations sync.
++                    session_tokens = self._bind_api_server_session(
++                        chat_id=session_id or "", session_key=run.approval_session_key, session_id=session_id or "",
++                        profile=run.request_profile or "",
++                        browser_control_principal=run.browser_control_principal,
++                        browser_control_transport_family=run.browser_control_transport_family,
++                        # #98619 audited opt-in: the /v1/runs session id is wake-capable only when its
++                        # own continuation path reloads session history — an explicit body/chained
++                        # session id or a declared X-Hermes-Session-Key conversation (both load
++                        # SessionDB in _handle_runs), or the run_id fallback the client can post back
++                        # as body.session_id.  A previous_response_id continuation consumes its
++                        # ResponseStore snapshot instead and can never see a SessionDB delivery row,
++                        # so it stays default-denied until a merge contract exists for that chain;
++                        # likewise a caller-supplied conversation_history is authoritative for the
++                        # turn and never reads the delivery row, so it is denied the same way.
++                        session_history_delivery="1" if run.session_history_delivery else "")
++                    if session_tokens:
++                        resets.append((session_tokens, clear_session_vars))
++                    if run.agent_kwargs["room_dispatch"] is not None:
++                        policy = RoomExecutionPolicy.from_mapping(run.agent_kwargs["room_execution_policy"] or {})
++                        resets.append((bind_room_execution_policy(policy), reset_room_execution_policy))
++                    register_gateway_notify(run.approval_session_key, approval_notify)
++                    # /v1/runs owns its agent lifecycle (no TurnRunner): record process ownership
++                    # so stop/cancel reaps only the background processes this run created.
++                    _api_server._publish_turn_process_ownership(agent, effective_task_id)
++                    # Passed only when set: a human turn keeps today's call shape.
++                    author_kwargs = {"turn_author": run.turn_author} if run.turn_author is not None else {}
++                    r = agent.run_conversation(
++                        user_message=run.user_message, conversation_history=run.conversation_history,
++                        task_id=effective_task_id, **author_kwargs)
++                finally:
++                    # Clear ownership now so a later stop can't reap work this run left running.
++                    _api_server._clear_turn_process_ownership(agent)
++                    self._memory_sessions.checkin(agent)
++                    # Declared-conversation binding, same precedence gate as _run_agent.
++                    if run.declared_selected:
++                        self._bind_declared_conversation(
++                            getattr(agent, "session_id", None) or session_id, run.gateway_session_key)
++                    try:
++                        unregister_gateway_notify(run.approval_session_key)
++                    finally:
++                        for token, reset in resets:
++                            with suppress(Exception):
++                                reset(token)
++                return r, _run_usage(agent), _served_runtime(agent)
+         finally:
 -            # Clear ownership now so a later stop can't reap work this run left running.
 -            _api_server._clear_turn_process_ownership(agent)
 -            self._memory_sessions.checkin(agent)
@@ -1307,93 +1439,33 @@
 -            if run.declared_selected:
 -                self._bind_declared_conversation(
 -                    getattr(agent, "session_id", None) or session_id, run.gateway_session_key)
-+    from tools.mesh_writer_scope import writer_foreground_scope
-+    with writer_foreground_scope(getattr(run, 'writer_lifetime', None), expected_run_id=run.run_id, expected_generation=getattr(run, 'writer_generation', '')):
-+        from gateway.session_context import clear_session_vars
-+        from gateway.hosted_room_execution_policy import (
-+            RoomExecutionPolicy, bind_room_execution_policy, reset_room_execution_policy)
-+        # No eager slash-worker pre-warm: slash.exec spawns one on demand (its error path already relies on that
-+        # respawn to recover from a dead worker). Each worker child runs its own MCP discovery (#61891), so
-+        # pre-warming one per session forks the full stdio MCP fleet — ~20 OS processes per retained session on
-+        # a config with a few stdio servers — even for sessions that never run a worker-routed command. Sessions
-+        # held by a live transport are never reaped, so with the desktop app open for days those fleets
-+        # accumulate until the OS refuses new process spawns.
-+        from tools.approval import register_gateway_notify, unregister_gateway_notify
-+        from tools.approval_context import reset_current_session_key, set_current_session_key
-+        session_id = run.session_id
-+        effective_task_id = session_id or run.run_id
-+        # (token, reset) pairs unwound in the finally block; bound only once each step succeeds.
-+        resets: list[tuple[Any, Callable]] = []
-+        with self._profile_scope(run.request_profile):
-             try:
+-            try:
 -                unregister_gateway_notify(run.approval_session_key)
-+                # Contextvars, not process env: concurrent runs must not share identity.
-+                resets.append((set_current_session_key(run.approval_session_key), reset_current_session_key))
-+                # chat_id carries the raw session id like _run_agent() does; without it
-+                # tools.async_delegation sees no HERMES_SESSION_CHAT_ID and forces delegations sync.
-+                session_tokens = self._bind_api_server_session(
-+                    chat_id=session_id or "", session_key=run.approval_session_key, session_id=session_id or "",
-+                    profile=run.request_profile or "",
-+                    browser_control_principal=run.browser_control_principal,
-+                    browser_control_transport_family=run.browser_control_transport_family,
-+                    # #98619 audited opt-in: the /v1/runs session id is wake-capable only when its
-+                    # own continuation path reloads session history — an explicit body/chained
-+                    # session id or a declared X-Hermes-Session-Key conversation (both load
-+                    # SessionDB in _handle_runs), or the run_id fallback the client can post back
-+                    # as body.session_id.  A previous_response_id continuation consumes its
-+                    # ResponseStore snapshot instead and can never see a SessionDB delivery row,
-+                    # so it stays default-denied until a merge contract exists for that chain;
-+                    # likewise a caller-supplied conversation_history is authoritative for the
-+                    # turn and never reads the delivery row, so it is denied the same way.
-+                    session_history_delivery="1" if run.session_history_delivery else "")
-+                if session_tokens:
-+                    resets.append((session_tokens, clear_session_vars))
-+                if run.agent_kwargs["room_dispatch"] is not None:
-+                    policy = RoomExecutionPolicy.from_mapping(run.agent_kwargs["room_execution_policy"] or {})
-+                    resets.append((bind_room_execution_policy(policy), reset_room_execution_policy))
-+                register_gateway_notify(run.approval_session_key, approval_notify)
-+                # /v1/runs owns its agent lifecycle (no TurnRunner): record process ownership
-+                # so stop/cancel reaps only the background processes this run created.
-+                _api_server._publish_turn_process_ownership(agent, effective_task_id)
-+                # Passed only when set: a human turn keeps today's call shape.
-+                author_kwargs = {"turn_author": run.turn_author} if run.turn_author is not None else {}
-+                r = agent.run_conversation(
-+                    user_message=run.user_message, conversation_history=run.conversation_history,
-+                    task_id=effective_task_id, **author_kwargs)
-             finally:
+-            finally:
 -                for token, reset in resets:
 -                    with suppress(Exception):
 -                        reset(token)
 -        return r, _run_usage(agent), _served_runtime(agent)
-+                # Clear ownership now so a later stop can't reap work this run left running.
-+                _api_server._clear_turn_process_ownership(agent)
-+                self._memory_sessions.checkin(agent)
-+                # Declared-conversation binding, same precedence gate as _run_agent.
-+                if run.declared_selected:
-+                    self._bind_declared_conversation(
-+                        getattr(agent, "session_id", None) or session_id, run.gateway_session_key)
-+                try:
-+                    unregister_gateway_notify(run.approval_session_key)
-+                finally:
-+                    for token, reset in resets:
-+                        with suppress(Exception):
-+                            reset(token)
-+            return r, _run_usage(agent), _served_runtime(agent)
++            retire_writer_agent(agent)
  
  
  def _make_approval_notify(self, run: _RunLaunch, *, _api_server) -> Callable[[dict[str, Any]], None]:
-@@ -1067,7 +1081,9 @@
+@@ -1067,10 +1084,13 @@
              served_runtime = ((usage or {}).get("runtime") if isinstance(usage, dict) else None) or (
                  result.get("runtime") if isinstance(result, dict) else None) or {}
          else:
 -            with self._profile_scope(run.request_profile):
-+            from tools.mesh_writer_scope import enroll_direct_writer_run, writer_construction_scope
++            from tools.mesh_writer_scope import enroll_direct_writer_run, writer_construction_scope, bind_writer_agent
 +            enroll_direct_writer_run(getattr(self, '_mesh_writer_runs', None), run)
 +            with self._profile_scope(run.request_profile), writer_construction_scope(getattr(run, 'writer_lifetime', None), expected_run_id=run.run_id, expected_generation=getattr(run, 'writer_generation', '')):
                  agent = self._create_agent(
                      stream_delta_callback=_text_cb, tool_progress_callback=self._make_run_event_callback(run_id, loop),
                      interim_assistant_callback=_interim_cb, **run.agent_kwargs)
-@@ -1178,9 +1194,13 @@
++                bind_writer_agent(agent)
+             self._active_run_agents[run_id] = agent
+             approval_notify = _make_approval_notify(self, run, _api_server=_api_server)
+             result, usage, served_runtime = await _submit_api_worker(
+@@ -1178,9 +1198,13 @@
  
  async def _handle_get_run(self, request: web.Request, *, _api_server) -> web.Response:
      """GET /v1/runs/{run_id} — return pollable run status for external UIs."""
@@ -1430,7 +1502,7 @@
              stdin=subprocess.PIPE if stdin_data is not None else subprocess.DEVNULL,
 --- a/agent/tool_executor.py
 +++ b/agent/tool_executor.py
-@@ -769,69 +769,71 @@
+@@ -769,69 +769,72 @@
      authorization_gate: _ConcurrentToolAuthorizationGate | None = None,
  ) -> _ManagedToolResult:
      """Run Relay rewrites before Hermes policy and dispatch exactly once."""
@@ -1460,7 +1532,8 @@
 -            display_index=display_index,
 -            begin_execution=begin_execution,
 -            authorization_gate=authorization_gate,
-+    from tools.mesh_writer_scope import writer_tool_effect
++    from tools.mesh_writer_scope import writer_tool_effect, require_writer_agent_entry
++    require_writer_agent_entry(agent)
 +    with writer_tool_effect(function_name, function_args):
 +        from agent import relay_tools
 +        from hermes_cli.middleware import (
@@ -1561,7 +1634,7 @@
  
  
  # Sequential wait-loop poll cadence: /stop lands within ~1s even if the tool never polls is_interrupted().
-@@ -944,7 +946,8 @@
+@@ -944,7 +947,8 @@
          ref.trace = []
      if prepared is None:
          executor = DaemonThreadPoolExecutor(max_workers=1)
@@ -1571,7 +1644,7 @@
      deadline = time.monotonic() + timeout_s if timeout_s is not None else None
      started = time.monotonic()
      abandoned = False
-@@ -1410,7 +1413,8 @@
+@@ -1410,7 +1414,8 @@
          future_to_index = {}
          for submit_index, i in enumerate(runnable):
              try:

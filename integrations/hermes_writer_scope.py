@@ -189,6 +189,7 @@ class WriterLifetime:
         self._tool_refused = 0
         self._postwrite_started = self._postwrite_returned = 0
         self._construction_started = self._construction_returned = False
+        self._agent_guard = None
         self.fence = fence
         self._lock = threading.RLock()
         self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
@@ -327,6 +328,7 @@ class WriterLifetime:
                     'pendingWorkers': [{'id': key, 'kind': value['kind'], 'state': value['state']}
                                        for key, value in self._pending.items()],
                     'construction': {'started': self._construction_started, 'returned': self._construction_returned},
+                    'agentBinding': {'bound': self._agent_guard is not None, 'retired': bool(self._agent_guard and self._agent_guard['retired'])},
                     'processTree': process, 'managedWorkEnded': managed,
                     'writerQuiescence': False, 'reason': self._fault,
                     'toolEffects': {'observedCalls': self._tool_calls, 'activeCalls': len(self._tool_active),
@@ -561,6 +563,69 @@ def canonical_writer_foreground_scope():
     lifetime, run_id, generation = claim
     with writer_foreground_scope(lifetime, expected_run_id=run_id, expected_generation=generation):
         yield
+
+
+def bind_writer_agent(agent):
+    """Bind supported instance entry points once; not whole-process retirement."""
+    life = _lifetime.get()
+    if life is None:
+        return agent
+    with life._lock:
+        life.assert_current_worker()
+        owner = _worker.get()
+        if (life._pending[owner[1]]['kind'] != 'construction' or life._agent_guard is not None
+                or getattr(agent, '_mesh_writer_binding', None) is not None):
+            raise RuntimeError('Native agent binding is already consumed or outside construction')
+        originals = {name: getattr(agent, name) for name in
+                     ('run_conversation',)}
+        if any(not callable(method) for method in originals.values()):
+            raise TypeError('Native agent entry points are required')
+        guard = {'lifetime': life, 'retired': False}
+        # Reserve before mutating the instance; a partial install cannot be retried.
+        life._agent_guard = guard
+        try:
+            def protect(method):
+                def guarded(*args, **kwargs):
+                    require_writer_agent_entry(agent)
+                    return method(*args, **kwargs)
+                return guarded
+            for name, method in originals.items():
+                setattr(agent, name, protect(method))
+            agent._mesh_writer_binding = guard
+        except BaseException:
+            life._fault = 'agent_binding_unconfirmed'
+            raise
+    return agent
+
+
+def require_writer_agent_entry(agent):
+    """Guard the supported native instance and module tool-dispatch boundary."""
+    guard = getattr(agent, '_mesh_writer_binding', None)
+    if guard is None:
+        return  # Ordinary unenrolled native agents retain existing behavior.
+    life = guard.get('lifetime') if type(guard) is dict else None
+    if type(life) is not WriterLifetime or guard is not life._agent_guard:
+        raise RuntimeError('Native agent binding identity is unverified')
+    with life._lock:
+        if guard['retired']:
+            raise RuntimeError('This native writer agent has retired')
+        life.assert_current_worker()
+        if not life._root_started:
+            raise RuntimeError('Native writer foreground has not started')
+
+
+def retire_writer_agent(agent):
+    """Close the bound public instance surface after native cleanup returns."""
+    life = _lifetime.get()
+    if life is None:
+        return
+    with life._lock:
+        life.assert_current_worker()
+        guard = getattr(agent, '_mesh_writer_binding', None)
+        if guard is not life._agent_guard or guard is None or _worker.get()[1] != 'root':
+            life._fault = 'agent_retirement_unconfirmed'
+            raise RuntimeError('Native agent retirement identity is unverified')
+        guard['retired'] = True
 
 
 @contextmanager

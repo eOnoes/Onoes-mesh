@@ -71,6 +71,14 @@ class HermesWriterScopeTests(unittest.TestCase):
                                                None, 'legacy', suffix=' arguments')
             self.assertEqual(future.result(timeout=3), 'legacy arguments')
 
+    def test_unenrolled_agent_binding_and_retirement_leave_instance_unchanged(self):
+        agent=types.SimpleNamespace(run_conversation=lambda:'ordinary')
+        original=agent.run_conversation
+        self.assertIs(scope.bind_writer_agent(agent),agent)
+        scope.retire_writer_agent(agent)
+        self.assertIs(agent.run_conversation,original)
+        self.assertFalse(hasattr(agent,'_mesh_writer_binding'))
+
     def test_unbound_run_keeps_native_subprocess_options(self):
         with patch.object(scope.subprocess,'run',return_value='legacy') as run:
             self.assertEqual(scope.scoped_run(['legacy'],timeout=2,check=True,input='data',capture_output=True,text=True),'legacy')
@@ -112,6 +120,55 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
         values.update({name:[] for name in ['_registration_order','_persistent_carryover','_plugin_loaded_listeners']})
         return types.SimpleNamespace(**values,_discovered=True,_context_engine=None,_event_worker=None,
             _event_pending_by_generation={0:0},discover_and_load=lambda: self.fail('Observation must not discover plugins'))
+
+    def agent_fixture(self):
+        class Agent:
+            def run_conversation(self, value, *, suffix=''):
+                return value+suffix
+            def _run_agent_tool_execution_middleware(self, name, args):
+                return name,args
+        return Agent()
+
+    def test_agent_entry_points_require_owned_foreground_then_refuse_retired_reuse(self):
+        agent=self.agent_fixture()
+        with scope.writer_construction_scope(self.life):
+            self.assertIs(scope.bind_writer_agent(agent),agent)
+            cached=agent.run_conversation
+            with self.assertRaises(RuntimeError): agent.run_conversation('too early')
+            with self.assertRaises(RuntimeError): scope.bind_writer_agent(self.agent_fixture())
+        with self.assertRaises(RuntimeError): agent.run_conversation('unbound')
+        with scope.writer_foreground_scope(self.life):
+            self.assertEqual(agent.run_conversation('native',suffix=' call'),'native call')
+            scope.require_writer_agent_entry(agent)
+            scope.retire_writer_agent(agent)
+            with self.assertRaises(RuntimeError): cached('late')
+            with self.assertRaises(RuntimeError): scope.require_writer_agent_entry(agent)
+        self.assertEqual(self.life.snapshot()['agentBinding'],{'bound':True,'retired':True})
+        self.assertTrue(self.life.wait()['managedWorkEnded'])
+        self.assertFalse(self.life.snapshot()['writerQuiescence'])
+
+    def test_retired_agent_does_not_settle_its_still_running_owned_delegate(self):
+        agent=self.agent_fixture();started=threading.Event();release=threading.Event()
+        def child():
+            started.set();release.wait(5)
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                with scope.writer_construction_scope(self.life): scope.bind_writer_agent(agent)
+                with scope.writer_foreground_scope(self.life):
+                    future=scope.submit_writer_work(pool,child)
+                    self.assertTrue(started.wait(3));scope.retire_writer_agent(agent)
+                self.assertFalse(self.life.wait(30)['managedWorkEnded'])
+                release.set();future.result(timeout=3)
+            self.assertTrue(self.life.wait()['managedWorkEnded'])
+        finally: release.set()
+
+    def test_foreign_agent_cannot_retire_the_bound_instance(self):
+        agent=self.agent_fixture()
+        with scope.writer_construction_scope(self.life): scope.bind_writer_agent(agent)
+        with scope.writer_foreground_scope(self.life):
+            with self.assertRaises(RuntimeError): scope.retire_writer_agent(self.agent_fixture())
+        self.assertFalse(self.life.wait(30)['managedWorkEnded'])
+        self.assertEqual(self.life.snapshot()['reason'],'agent_retirement_unconfirmed')
 
     def test_construction_process_remains_held_through_foreground_return(self):
         with scope.writer_construction_scope(self.life):

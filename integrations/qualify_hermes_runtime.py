@@ -63,6 +63,15 @@ def verify_evidence(root):
                 or not after['managedWorkEnded'] or after['writerQuiescence']):
             raise RuntimeError('Construction process ownership evidence is incomplete')
         result['checks'].append('native_constructor_child_held_until_actual_process_exit')
+    if 'actual_native_bound_instance_late_entry_refused_after_cleanup' in report['checks']:
+        evidence=json.loads((root/'agent-binding-evidence.json').read_text())
+        final=json.loads((root/'final-status.json').read_text())
+        if (evidence['runId']!=final['run_id'] or evidence['binding']!={'bound':True,'retired':True}
+                or final['writer_lifecycle']['enrollment']['lifetime']['agentBinding']!=evidence['binding']
+                or evidence['refusedEntries']!=['run_conversation','native_tool_dispatch']
+                or evidence['noProviderRequest'] is not True or final['writer_lifecycle']['writerQuiescence']):
+            raise RuntimeError('Native instance entry refusal evidence is incomplete')
+        result['checks'].append('native_supported_instance_entries_retired_without_writer_clearance')
     if 'native_SQLite_canonical_claim_lookup_and_worker_binding' in report['checks']:
         claim = json.loads((root / 'canonical-claim-evidence.json').read_text(encoding='utf-8'))
         if (not claim['durableClaimMatched'] or not claim['duplicateRefused']
@@ -490,6 +499,7 @@ async def child(root):
     if Path(get_hermes_home()).resolve() != (root / 'fixture-home').resolve():
         raise RuntimeError('Native home is not isolated')
     requests, tools_seen, fences, agents_created = [], [], [], []
+    fixture_agents=[]
     title_started, title_release = asyncio.Event(), asyncio.Event()
     construction_release=root/'construction-child-release'
     construction_proc=None
@@ -596,11 +606,13 @@ async def child(root):
                 construction_proc=scoped_popen([sys.executable,'-c',code],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
             callbacks = {name: value for name, value in kwargs.items() if name.endswith('_callback')
                          or name in ('session_id', 'gateway_session_key', 'ephemeral_system_prompt')}
-            return AIAgent(base_url=endpoint, api_key='synthetic-local-provider', provider='custom',
+            created=AIAgent(base_url=endpoint, api_key='synthetic-local-provider', provider='custom',
                 api_mode='chat_completions', model='mesh-runtime-fixture', max_iterations=4, max_tokens=256,
                 enabled_toolsets=['file'] if file_mode else ['terminal'], skip_memory=True, skip_background_review=True,
                 skip_context_files=True, load_soul_identity=False, quiet_mode=True,
                 session_db=adapter._ensure_session_db(), cwd=str(root / 'workspace'), **callbacks)
+            fixture_agents.append(created)
+            return created
         adapter._create_agent = create_agent
         return adapter, 'http://127.0.0.1:' + str(port)
     adapter = None
@@ -688,6 +700,25 @@ async def child(root):
             (root / 'final-status.json').write_text(json.dumps(status, indent=2), encoding='utf-8')
             (root / 'provider-evidence.json').write_text(json.dumps({'requests': requests, 'toolResults': tools_seen}, indent=2), encoding='utf-8')
             checks.append('actual_native_title_thread_exit_observed_before_local_settlement')
+            binding=status['writer_lifecycle']['enrollment']['lifetime']['agentBinding']
+            if binding!={'bound':True,'retired':True}:raise RuntimeError('Native instance was not retired after cleanup')
+            count_before_late=len(requests);refused=[]
+            from agent.tool_executor import _run_agent_tool_execution_middleware as native_tool_dispatch
+            def late_handler(*args,**kwargs): raise AssertionError('Late native handler executed')
+            calls=[('run_conversation',lambda:fixture_agents[0].run_conversation()),
+                ('native_tool_dispatch',lambda:native_tool_dispatch(fixture_agents[0],function_name='write_file',
+                    function_args={'path':str(root/'workspace'/file_name),'content':'MUST NOT RUN'},
+                    effective_task_id='late-fixture',tool_call_id='late-fixture',execute=late_handler))]
+            for name,call in calls:
+                try:call()
+                except RuntimeError as error:
+                    if str(error)!='This native writer agent has retired':raise RuntimeError('Wrong late-entry refusal') from error
+                    refused.append(name)
+                else:raise RuntimeError('Retired native instance accepted a late entry')
+            if len(requests)!=count_before_late:raise RuntimeError('Retired entry made another provider request')
+            (root/'agent-binding-evidence.json').write_text(json.dumps({'runId':run_id,'binding':binding,
+                'refusedEntries':refused,'noProviderRequest':True,'scope':'supported instance entry points only; not whole-worker retirement'},indent=2),encoding='utf-8')
+            checks.append('actual_native_bound_instance_late_entry_refused_after_cleanup')
             observation = status['writer_lifecycle']
             life = observation['enrollment']['lifetime']
             effects=life['toolEffects'];pipeline=effects['pipeline']

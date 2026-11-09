@@ -72,9 +72,12 @@ def lifetime_candidates(native_root):
             split = fn.body[0].end_lineno
             body = lines[split:fn.end_lineno]
             lines[split:fn.end_lineno] = [
-                '    from tools.mesh_writer_scope import writer_foreground_scope\n',
+                '    from tools.mesh_writer_scope import writer_foreground_scope, retire_writer_agent\n',
                 "    with writer_foreground_scope(getattr(run, 'writer_lifetime', None), expected_run_id=run.run_id, expected_generation=getattr(run, 'writer_generation', '')):\n",
-                *['    ' + line if line.strip() else line for line in body]]
+                '        try:\n',
+                *['        ' + line if line.strip() else line for line in body],
+                '        finally:\n',
+                '            retire_writer_agent(agent)\n']
             current = ''.join(lines)
             launch = next(n for n in ast.parse(current).body if isinstance(n, ast.ClassDef) and n.name == '_RunLaunch')
             last = max(n.end_lineno for n in launch.body if isinstance(n, ast.AnnAssign))
@@ -88,9 +91,12 @@ def lifetime_candidates(native_root):
             if body.count(old) != 1:
                 raise RuntimeError('Unexpected native direct-executor admission shape')
             body = body.replace(old, '        else:\n'
-                '            from tools.mesh_writer_scope import enroll_direct_writer_run, writer_construction_scope\n'
+                '            from tools.mesh_writer_scope import enroll_direct_writer_run, writer_construction_scope, bind_writer_agent\n'
                 "            enroll_direct_writer_run(getattr(self, '_mesh_writer_runs', None), run)\n"
                 "            with self._profile_scope(run.request_profile), writer_construction_scope(getattr(run, 'writer_lifetime', None), expected_run_id=run.run_id, expected_generation=getattr(run, 'writer_generation', '')):\n")
+            before='                    interim_assistant_callback=_interim_cb, **run.agent_kwargs)\n'
+            if body.count(before)!=1: raise RuntimeError('Unexpected native agent-construction call')
+            body=body.replace(before,before+'                bind_writer_agent(agent)\n')
             lines = current.splitlines(True)
             lines[execute.lineno - 1:execute.end_lineno] = [body]
             current = ''.join(lines)
@@ -183,7 +189,8 @@ def tool_worker_candidates(native_root):
             split = fn.body[0].end_lineno
             body = lines[split:fn.end_lineno]
             lines[split:fn.end_lineno] = [
-                '    from tools.mesh_writer_scope import writer_tool_effect\n',
+                '    from tools.mesh_writer_scope import writer_tool_effect, require_writer_agent_entry\n',
+                '    require_writer_agent_entry(agent)\n',
                 '    with writer_tool_effect(function_name, function_args):\n',
                 *['    ' + line if line.strip() else line for line in body]]
             candidate = ''.join(lines)
@@ -632,9 +639,11 @@ def qualify_lifetimes(modules):
                  '_API_WORKER_LOCK': threading.Lock(), '_API_WORKER_LIVE': 0,
                  '_run_usage': lambda _: {}, '_served_runtime': lambda _: {}}
     extract('gateway/platforms/api_server_runs.py', ['_run_agent_sync', '_submit_api_worker'], namespace)
+    agent=types.SimpleNamespace(run_conversation=conversation,_run_agent_tool_execution_middleware=lambda *a,**k:None)
+    with scope.writer_construction_scope(lifetime):scope.bind_writer_agent(agent)
     try:
         with patch.dict(sys.modules, aliases):
-            namespace['_run_agent_sync'](host, run, types.SimpleNamespace(run_conversation=conversation), None, _api_server=api)
+            namespace['_run_agent_sync'](host, run, agent, None, _api_server=api)
         if observed != ['native API worker output'] or not lifetime.wait()['managedWorkEnded']:
             raise AssertionError('Native foreground lifetime did not encompass the whole callable')
         checks.append('native_api_callable_and_cleanup_bound_to_exact_lifetime')
@@ -661,11 +670,12 @@ def qualify_lifetimes(modules):
         cancel_run.writer_lifetime = lifetime
         cancel_host = types.SimpleNamespace(**vars(host))
         cancel_host._memory_sessions = types.SimpleNamespace(checkin=lambda _: lifetime.assert_current_worker())
+        agent=types.SimpleNamespace(run_conversation=conversation,_run_agent_tool_execution_middleware=lambda *a,**k:None)
+        with scope.writer_construction_scope(lifetime):scope.bind_writer_agent(agent)
         try:
             with patch.dict(sys.modules, aliases):
                 future = namespace['_submit_api_worker'](asyncio.get_running_loop(), lambda:
-                    namespace['_run_agent_sync'](cancel_host, cancel_run,
-                        types.SimpleNamespace(run_conversation=conversation), None, _api_server=api))
+                    namespace['_run_agent_sync'](cancel_host, cancel_run,agent, None, _api_server=api))
                 deadline = time.monotonic() + 3
                 while not started.is_set() and time.monotonic() < deadline:
                     await asyncio.sleep(.01)
