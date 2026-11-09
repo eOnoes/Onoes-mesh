@@ -48,6 +48,8 @@ def local_receipt_candidate(native_root, *, baselines):
                     'process_tree_ended': observed['processTreeEnded'],
                     'termination_requested': observed['terminationRequested'], 'writer_quiescence': False,
                     'reason': observed.get('reason')}
+                from gateway.mesh_assignment_process import observe_retirement
+                out['process_scope'].update(await observe_retirement(self.authority, scope))
         return out
 
 """
@@ -76,6 +78,10 @@ class AssignmentProcessObservation(Result):
     termination_requested: bool
     writer_quiescence: bool
     reason: str | None = None
+    authority_epoch: int
+    execution_closed: bool
+    authority_writes_drained: bool
+    worker_resources_idle: bool
 
 
 class PromptLookupResult(Result):

@@ -2,13 +2,13 @@
   "schema": "mesh-native-local-session-qualification/v1",
   "qualification": "PASS",
   "nativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
-  "scope": "Pinned native authenticated exact-assignment process readback, closed response contract and durable Mesh observation. Late-child held-to-ended transition retained across Mesh reopen; no whole-writer release or live enrollment.",
-  "evidenceDirectory": "hermes-local-session-fc0140da-84c6-407d-8203-9e9af1e26e93",
+  "scope": "Pinned native passive retirement readiness: exact terminal admission/worker lineage, drained tracked writes and idle owner resources sampled before/after read; real held-write observation and post-finish mutation refusal. No whole-writer consumer or live enrollment.",
+  "evidenceDirectory": "hermes-local-session-e66b48c5-f4d8-41b5-b6ff-cdd733e9d92f",
   "candidateFiles": {
-    "gateway/session_controls.py": "c2fc74708732a39e96ce0c29b7673b5a3b6b6cc532ee54c9d8450eca291dfc56",
-    "tui_gateway/contracts/canonical.py": "352925228b901d7fbbf18242f88f9d3dec84533d7fc0591a108cca2ee76edd23",
+    "gateway/session_controls.py": "67a82e9c3165ffa7074c31462a60ca133bcbc4783072f2fce3584f921dcf4f52",
+    "tui_gateway/contracts/canonical.py": "3f766054142b45dd898ed22589ec9db27063e557af0b4974086a05ce87e6d65f",
     "gateway/session_managed_worker.py": "843e7e96d70eb3733f9bc46f1679fc0b444985c87e066a7b41cab77b3fbc516f",
-    "gateway/mesh_assignment_process.py": "3b0378539b768add10527515d68368867ba95f4872ff3679c51e988d52046991",
+    "gateway/mesh_assignment_process.py": "6d84a746c05d35dffd44f271132e977fb6189553b7f53f66398a5408e1f86e5f",
     "gateway/mesh_windows_process.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/file_tools_read_tracking.py": "c2ca50e625178fb663faa46677713ba915946294dc19fbef849ea40342977e4d",
     "tools/file_tools.py": "1bc8b91716d6fac41861f706f4024381484d6fbdfb64fa3381688ab1cf5aa85e"
@@ -32,25 +32,27 @@
     "native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review",
     "native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export",
     "exact_assignment_job_remains_held_after_root_exit_until_late_child_ends",
-    "authenticated_process_observation_persists_in_mesh_without_writer_release"
+    "authenticated_process_observation_persists_in_mesh_without_writer_release",
+    "passive_retirement_stays_held_during_write_and_terminal_execution_refuses_new_mutation"
   ],
   "meshBinding": {
     "qualification": "PASS",
-    "taskId": "0464a3d6-fe32-4977-8338-31422e10642b",
-    "sendId": "4ced9be4-142a-45b9-a0a8-caeff6754da6",
-    "createRequestId": "mesh-local-create-a2e64516f919e27e6d4c5965af8f0f0ec738ef50c5c031905d8141622e6a075a",
-    "submissionId": "mesh-local-submit-a2e64516f919e27e6d4c5965af8f0f0ec738ef50c5c031905d8141622e6a075a",
-    "sessionId": "local-49f7f8fccbe6cbca6bed50618fedc8dbd46a8912a511e881544939095130b7d7",
-    "admissionId": "b0bcd5d580c24a23ba24123d07656751",
-    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-fc0140da-84c6-407d-8203-9e9af1e26e93\\fixture-home",
+    "taskId": "2e890694-3329-4637-8144-eac9dbb4df3d",
+    "sendId": "4aa6adbc-e49e-4574-bcdd-ac7b717da824",
+    "createRequestId": "mesh-local-create-d9242eab7734de393a367d0943cc4c81d70d5a123e838f684e3773cbdaf4dcc6",
+    "submissionId": "mesh-local-submit-d9242eab7734de393a367d0943cc4c81d70d5a123e838f684e3773cbdaf4dcc6",
+    "sessionId": "local-6b62892ca6f15e64feffeb1431ac991c39499ccdb448ddb201d324e22a33ab25",
+    "admissionId": "1c1b727fb77344398bf363c73d60d3ce",
+    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-e66b48c5-f4d8-41b5-b6ff-cdd733e9d92f\\fixture-home",
     "nativeEpoch": 1,
     "nativeGeneration": 1,
     "nativeStatus": "terminal",
     "rpcCounts": {
       "session.create": 1,
       "prompt.submit": 1,
-      "prompt.lookup": 282,
-      "mesh.fixture.release-child": 1
+      "prompt.lookup": 231,
+      "mesh.fixture.release-child": 1,
+      "mesh.fixture.release-write": 1
     },
     "restartedBeforeReadback": true,
     "observationOnlyRecovery": true,
@@ -59,13 +61,15 @@
     "terminalResultImported": true,
     "buildCheckVerified": true,
     "processReadbackPersisted": true,
-    "resultHash": "77747eae5dc483acabb32bf023ee931fd52ff97ffd07e54c7275bb732d6b0955",
-    "resultMessageId": "native-8982c8d5f6c572f3feb651eb53f58c0fe50b217752616e6582cd2686e71a637b",
+    "authorityDrainObserved": true,
+    "executionClosedObserved": true,
+    "resultHash": "1528fe67235c036d4868880383baef2d3aa74f50ae722ab5180d3b577e9fb2fb",
+    "resultMessageId": "native-559a425c6777503acc6fd84da37ca438c7020808a0295efcb5a1daa447c46bc4",
     "workspaceStillHeld": true,
     "writerQuiescence": false,
     "liveActivation": false
   },
-  "fullLocalRegressionTests": 408,
+  "fullLocalRegressionTests": 411,
   "nativeOwnerSettled": true,
   "fixtureTreeEndedNaturally": true,
   "wholeWorkerReleaseQualified": false,
@@ -74,7 +78,7 @@
   "remaining": [
     "Production Rook service identity and verified Echo transport/profile mapping are not enrolled.",
     "Optional automatic team worker-stage selection is implemented and qualified locally; production identity/profile transport and claim-stage enrollment remain disabled.",
-    "Authenticated process readback and Mesh persistence are qualified; native authority write/session-resource retirement and trusted positive clearance consumer remain incomplete. Native owner restart invalidates missing/changed observations; results cannot yet advance review.",
+    "Native retirement readiness is qualified locally. Closed supported profile, explicit native outcome and fresh trusted positive consumer/reviewer handoff remain incomplete; writer_quiescence stays false and results cannot advance review.",
     "Rook reporting transport, scheduler ownership and deployed acceptance/activation still required."
   ],
   "nativeBuildChecks": {
@@ -97,6 +101,9 @@
     "wholeWorkerReleaseQualified": false,
     "authenticatedNativeReadback": true,
     "meshObservationPersists": true,
-    "nativeOwnerRestartReceipt": false
+    "nativeOwnerRestartReceipt": false,
+    "passiveAuthorityWriteBarrier": true,
+    "exactExecutionClosure": true,
+    "terminalMutationRefused": true
   }
 }

@@ -1,8 +1,10 @@
 import unittest
 import threading
+import sqlite3
+from contextlib import contextmanager
 from unittest.mock import patch
 from types import SimpleNamespace
-from integrations.native_assignment_process import AssignmentProcessScope, make_assignment_scope
+from integrations.native_assignment_process import AssignmentProcessScope, make_assignment_scope, observe_retirement, execution_is_closed
 
 
 class FakeFence:
@@ -40,7 +42,7 @@ class FakeFence:
 
 class AssignmentProcessTests(unittest.TestCase):
     def scope(self, **changes):
-        return AssignmentProcessScope(SimpleNamespace(profile_id='fixture'),
+        return AssignmentProcessScope(SimpleNamespace(profile_id='fixture',epoch=1),
             SimpleNamespace(session_id='local-fixture'),
             dict(admission_id='a'*32, generation=1, principal_id='fixture', **changes),
             fence_factory=FakeFence)
@@ -127,6 +129,47 @@ class AssignmentProcessTests(unittest.TestCase):
         ended = scope.dispose()
         self.assertTrue(ended['terminationRequested'])
         self.assertFalse(ended['writerQuiescence'])
+
+
+class RetirementObservationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_pending_write_is_passive_and_does_not_read_or_interrupt(self):
+        called = []
+        scope = SimpleNamespace(identity={'authorityEpoch':1})
+        result = await observe_retirement(None, scope,
+            runtime_status=lambda _:dict(authority_writes_drained=False,worker_resources_idle=True),
+            read_closed=lambda *_:called.append('read'))
+        self.assertFalse(result['authority_writes_drained'])
+        self.assertFalse(result['execution_closed'])
+        self.assertEqual(called, [])
+
+    async def test_runtime_is_sampled_again_after_closed_execution_read(self):
+        samples = iter([dict(authority_writes_drained=True,worker_resources_idle=True),
+                        dict(authority_writes_drained=False,worker_resources_idle=True)])
+        result = await observe_retirement(None,SimpleNamespace(identity={'authorityEpoch':1}),
+            runtime_status=lambda _:next(samples),read_closed=lambda *_:True)
+        self.assertTrue(result['execution_closed'])
+        self.assertFalse(result['authority_writes_drained'])
+
+    async def test_exact_terminal_execution_and_children_are_required(self):
+        conn = sqlite3.connect(':memory:')
+        conn.executescript('CREATE TABLE session_admissions(admission_id,status,owner_epoch,generation,target_session_id,principal_id);'
+            'CREATE TABLE worker_executions(execution_id,status,owner_epoch,generation);')
+        admission = 'a'*32
+        conn.execute('INSERT INTO session_admissions VALUES(?,?,?,?,?,?)',(admission,'terminal',1,1,'local-fixture','fixture'))
+        execution = 'admission-worker:'+admission
+        conn.execute('INSERT INTO worker_executions VALUES(?,?,?,?)',(execution,'terminal',1,1))
+        @contextmanager
+        def read():
+            yield conn
+        authority = SimpleNamespace(epoch=1,db=SimpleNamespace(_read_ctx=read))
+        identity = dict(authorityEpoch=1,admissionId=admission,sessionId='local-fixture',principalId='fixture',executionGeneration=1)
+        self.assertTrue(execution_is_closed(authority,identity))
+        conn.execute('INSERT INTO worker_executions VALUES(?,?,?,?)',(execution+'/child:one','active',1,1))
+        self.assertFalse(execution_is_closed(authority,identity))
+        conn.execute("UPDATE worker_executions SET status='terminal'")
+        self.assertTrue(execution_is_closed(authority,identity))
+        self.assertFalse(execution_is_closed(authority,{**identity,'authorityEpoch':2}))
+        conn.close()
 
 
 if __name__ == '__main__':

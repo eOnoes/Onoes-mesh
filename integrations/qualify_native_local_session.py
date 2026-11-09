@@ -143,6 +143,15 @@ def verify(root):
             or authenticated_ended['writer_quiescence'] or authenticated_ended['termination_requested']
             or any(key in authenticated_ended for key in ('principalId','principal_id'))):
         raise RuntimeError('Authenticated assignment observation did not persist on the exact Mesh binding')
+    if (binding.get('authorityDrainObserved') is not True or binding.get('executionClosedObserved') is not True
+            or assignment.get('writeCommitted') is not True or assignment.get('closedMutationRefused') is not True
+            or assignment['blockedWrite']['authority_writes_drained'] is not False
+            or assignment['blockedWrite']['process_tree_ended'] is not True
+            or assignment['blockedLookupSeconds']>=2
+            or not all(authenticated_ended[key] is True for key in
+                ('execution_closed','authority_writes_drained','worker_resources_idle'))
+            or authenticated_ended['authority_epoch']!=binding['nativeEpoch']):
+        raise RuntimeError('Passive retirement/write barrier or terminal mutation refusal was not established')
     processes=json.loads((root/'local-session-fixture-processes.json').read_text())
     if not processes['processTreeEnded'] or processes['activeProcesses'] or processes['terminationRequested']:
         raise RuntimeError('Disposable owner/process tree did not end naturally')
@@ -154,7 +163,8 @@ def verify(root):
         'native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review',
         'native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export',
         'exact_assignment_job_remains_held_after_root_exit_until_late_child_ends',
-        'authenticated_process_observation_persists_in_mesh_without_writer_release'],
+        'authenticated_process_observation_persists_in_mesh_without_writer_release',
+        'passive_retirement_stays_held_during_write_and_terminal_execution_refuses_new_mutation'],
         'wholeWorkerReleaseQualified':False,'liveInstallation':False}
     (root/'local-session-verified.json').write_text(json.dumps(result,indent=2))
     return result
@@ -207,6 +217,8 @@ async def child(root):
         checker.write("\nimport {spawn} from 'node:child_process';\nspawn(process.execPath,['-e',"+
             json.dumps(child_code)+"],{detached:true,stdio:'ignore',windowsHide:true}).unref();\n")
     build_command=subprocess.list2cmdline([node_executable,'--test',str(check)])
+    import threading
+    write_entered=threading.Event();write_release=threading.Event();pending_write=None
     requests=[];worker_started=asyncio.Event();worker_release=asyncio.Event()
     async def provider(request):
         body=await request.json();requests.append({'tools':[t.get('function',{}).get('name') for t in body.get('tools',[])],
@@ -351,7 +363,7 @@ async def child(root):
                 dropped=False;native_submitted=None;node_calls={};native_session=None;native_request=None
                 released=False
                 async def release_fixture_child(params):
-                    nonlocal released,stage
+                    nonlocal released,stage,pending_write
                     if released or params!={'admission_id':native_submitted}:
                         raise RuntimeError('Fixture release did not select its original assignment')
                     stage='assignment_process_observation'
@@ -386,8 +398,58 @@ async def child(root):
                         'heldAfterRootExit':held,'naturallyEnded':ended,'differentAssignment':baseline_processes,
                         'authenticatedHeld':wire_held['process_scope'],'authenticatedEnded':wire_ended['process_scope'],
                         'lateRootRefused':True,'wholeWorkerReleaseQualified':False},indent=2))
+                    # Hold a real owner transaction while its tracked mutation remains pending.
+                    from gateway.session_runtime_workers import tracked_write
+                    def delayed_write():
+                        def write(conn):
+                            write_entered.set()
+                            if not write_release.wait(15):raise RuntimeError('Fixture writer gate timed out')
+                            conn.execute("INSERT OR REPLACE INTO state_meta(key,value) VALUES(?,?)",
+                                ('mesh.fixture.retirement-write','committed'))
+                        return runner.session_authority.db._execute_write(write)
+                    pending_write=asyncio.create_task(tracked_write(runner.session_authority,delayed_write))
+                    if not await asyncio.to_thread(write_entered.wait,3):raise RuntimeError('Fixture writer did not start')
+                    began=time.monotonic()
+                    blocked=await rpc('prompt.lookup',{'session_id':native_session,'submission_id':native_request})
+                    latency=time.monotonic()-began
+                    if blocked['process_scope']['authority_writes_drained'] or latency>2:
+                        raise RuntimeError('Retirement readback waited on or overlooked an unfinished write')
+                    evidence=json.loads((root/'assignment-process-evidence.json').read_text())
+                    evidence.update(blockedWrite=blocked['process_scope'],blockedLookupSeconds=latency)
+                    (root/'assignment-process-evidence.json').write_text(json.dumps(evidence,indent=2))
                     released=True
                     return {'released':True}
+                async def release_fixture_write(params):
+                    if params!={'admission_id':native_submitted} or pending_write is None or write_release.is_set():
+                        raise RuntimeError('Fixture writer release did not select its original assignment')
+                    write_release.set()
+                    await asyncio.wait_for(asyncio.shield(pending_write),5)
+                    ready=await rpc('prompt.lookup',{'session_id':native_session,'submission_id':native_request})
+                    if not all(ready['process_scope'][key] is True for key in
+                            ('execution_closed','authority_writes_drained','worker_resources_idle')):
+                        raise RuntimeError('Exact native retirement conditions did not become ready')
+                    from hermes_state_runtime import apply_worker_receipt,RuntimeStoreError
+                    db=runner.session_authority.db
+                    with db._read_ctx() as conn:
+                        worker_row=dict(conn.execute('SELECT * FROM worker_executions WHERE execution_id=?',
+                            ('admission-worker:'+native_submitted,)).fetchone())
+                    touched=[]
+                    def forbidden(*_):
+                        touched.append(True)
+                        raise RuntimeError('Closed native execution reached its mutation handler')
+                    try:
+                        await asyncio.to_thread(apply_worker_receipt,db,epoch=runner.session_authority.epoch,
+                            execution_id=worker_row['execution_id'],session_id=worker_row['session_id'],
+                            generation=worker_row['generation'],sequence=worker_row['last_sequence']+1,
+                            operation='fixture.after_finish',payload={},handlers={'fixture.after_finish':forbidden})
+                    except RuntimeStoreError as error:
+                        if error.reason!='stale_generation':raise
+                    else:raise RuntimeError('Closed native execution accepted a new mutation')
+                    if touched:raise RuntimeError('Retired worker mutation handler executed')
+                    evidence=json.loads((root/'assignment-process-evidence.json').read_text())
+                    evidence.update(authenticatedEnded=ready['process_scope'],writeCommitted=True,closedMutationRefused=True)
+                    (root/'assignment-process-evidence.json').write_text(json.dumps(evidence,indent=2))
+                    return {'writesDrained':True}
 
                 with (root/'node-binding.log').open('wb') as node_log:
                     node_process=subprocess.Popen([node,str(script),str(root)],cwd=root/'source',
@@ -403,6 +465,8 @@ async def child(root):
                             method=frame['method'];node_calls[method]=node_calls.get(method,0)+1
                             if method=='mesh.fixture.release-child':
                                 result=await release_fixture_child(frame['params'])
+                            elif method=='mesh.fixture.release-write':
+                                result=await release_fixture_write(frame['params'])
                             else:result=await rpc(method,frame['params'])
                             if method=='prompt.submit' and not dropped:
                                 native_submitted=result['admission_id'];native_session=frame['params']['session_id'];native_request=frame['params']['submission_id'];dropped=True
@@ -430,7 +494,7 @@ async def child(root):
             'message':str(error) if type(error) is RuntimeError else None,'providerRequests':len(requests)},indent=2))
         raise
     finally:
-        worker_release.set()
+        worker_release.set();write_release.set()
         try:
             if runner is not None:
                 if getattr(runner,'session_runtime_descriptor',None) is not None:

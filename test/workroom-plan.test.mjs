@@ -336,7 +336,8 @@ test('native build-check profile is explicit, frozen, and never upgrades an exis
 
 function processReceipt(row,generation=1){return {admission_id:row.admissionId??nativeAid,session_id:row.sessionId,
  profile_id:row.nativeProfileId??'fixture-native-home',execution_generation:generation,sealed:true,state:'ended',
- active_processes:0,root_ended:true,process_tree_ended:true,termination_requested:false,writer_quiescence:false};}
+ active_processes:0,root_ended:true,process_tree_ended:true,termination_requested:false,writer_quiescence:false,
+ authority_epoch:1,execution_closed:true,authority_writes_drained:true,worker_resources_idle:true};}
 
 test('native process observations preserve exact identity and never release the saved writer',async()=>{
  const file=filename();let store=openTaskStore(file);try{
@@ -348,9 +349,13 @@ test('native process observations preserve exact identity and never release the 
   row=local.observe(t.id,send.id,row.revision,{...base,process_scope:held});
   assert.equal(row.processObservation.active_processes,1);assert.equal(local.pendingReads().length,1);
   for(const process_scope of [false,[],{...held,admission_id:'c'.repeat(32)},{...held,session_id:'other'},
-   {...held,profile_id:'other'},{...held,execution_generation:2},{...held,writer_quiescence:true},
+   {...held,profile_id:'other'},{...held,execution_generation:2},{...held,writer_quiescence:true},{...held,authority_epoch:2},{...held,execution_closed:'true'},
    {...held,process_tree_ended:true},{...held,unrecognized:true},{...held,active_processes:-1}]){
    assert.throws(()=>local.observe(t.id,send.id,row.revision,{...base,process_scope}),/process observation/);
+  }
+  for(const key of ['execution_closed','authority_writes_drained','worker_resources_idle']){
+   row=local.observe(t.id,send.id,row.revision,{...base,process_scope:{...base.process_scope,[key]:false}});
+   assert.equal(local.pendingReads().length,1);
   }
   row=local.observe(t.id,send.id,row.revision,base);assert.equal(local.pendingReads().length,0);
   assert.equal(row.writerQuiescence,false);assert.equal(store.workroom.get(t.id).messages[0].state,'accepted');

@@ -58,6 +58,11 @@ try{
   await rpc('mesh.fixture.release-child',{admission_id:row.admissionId});
   row=await reconcileLocalSession(recovery);
   assert.equal(row.processObservation.process_tree_ended,true);assert.equal(row.writerQuiescence,false);
+  assert.equal(row.processObservation.authority_writes_drained,false);
+  await rpc('mesh.fixture.release-write',{admission_id:row.admissionId});
+  row=await reconcileLocalSession(recovery);
+  for(const key of ['execution_closed','authority_writes_drained','worker_resources_idle'])assert.equal(row.processObservation[key],true);
+
   const persistedProcess=row.processObservation;store.close();store=openTaskStore(file);
   assert.deepEqual(store.workroom.localSessions.read(task.id,body.id).processObservation,persistedProcess);
 
@@ -75,7 +80,7 @@ try{
   assert.equal(JSON.stringify(store.workroom.get(task.id)).includes('synthetic-local-provider'),false);
   const report={qualification:'PASS',taskId:task.id,sendId:body.id,createRequestId:row.createRequestId,submissionId:row.submissionId,
     sessionId:row.sessionId,admissionId:row.admissionId,nativeProfileId:row.nativeProfileId,nativeEpoch:row.nativeEpoch,
-    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,terminalResultImported:true,buildCheckVerified:true,processReadbackPersisted:true,resultHash:row.resultHash,resultMessageId:row.resultMessageId,
+    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,terminalResultImported:true,buildCheckVerified:true,processReadbackPersisted:true,authorityDrainObserved:true,executionClosedObserved:true,resultHash:row.resultHash,resultMessageId:row.resultMessageId,
     workspaceStillHeld:true,writerQuiescence:false,liveActivation:false};
   writeFileSync(join(root,'mesh-local-binding-evidence.json'),JSON.stringify(report,null,2));
   await new Promise(resolve=>process.stdout.write(JSON.stringify({done:true,admissionId:row.admissionId})+'\n',resolve));

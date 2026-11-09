@@ -1,4 +1,5 @@
 """Assignment-owned process observation; never a whole-writer clearance receipt."""
+import asyncio
 import os
 import re
 import threading
@@ -17,7 +18,7 @@ class AssignmentProcessScope:
             fence_factory = WindowsWriterFence
         self.identity = dict(admissionId=admission, sessionId=ref.session_id,
                              profileId=str(authority.profile_id), principalId=row['principal_id'],
-                             executionGeneration=generation)
+                             executionGeneration=generation, authorityEpoch=authority.epoch)
         self.fence = fence_factory(admission, str(generation))
         self.lock = threading.RLock()
         self.sealed = False
@@ -92,3 +93,59 @@ def make_assignment_scope(authority, ref, row):
     scope = AssignmentProcessScope(authority, ref, row)
     scopes[row['admission_id']] = scope
     return scope
+
+
+def passive_runtime_status(authority):
+    from gateway.session_runtime_workers import (
+        mutation_tasks, physical_workers, executing_sessions, side_agents)
+    return {
+        'authority_writes_drained': not list(mutation_tasks(authority)),
+        'worker_resources_idle': not (list(physical_workers(authority))
+            or list(executing_sessions(authority)) or list(side_agents(authority))
+            or getattr(authority, '_managed_spawning', {})
+            or getattr(authority, '_managed_workers', {})),
+    }
+
+
+def execution_is_closed(authority, identity):
+    """Read only: both the admission and its exact worker lineage must be terminal."""
+    try:
+        if authority.epoch != identity['authorityEpoch']:
+            return False
+        execution = 'admission-worker:' + identity['admissionId']
+        with authority.db._read_ctx() as conn:
+            admission = conn.execute('SELECT status,owner_epoch,generation,target_session_id,principal_id '
+                'FROM session_admissions WHERE admission_id=?', (identity['admissionId'],)).fetchone()
+            worker = conn.execute('SELECT status,owner_epoch,generation FROM worker_executions '
+                'WHERE execution_id=?', (execution,)).fetchone()
+            if (admission is None or worker is None or admission[0] != 'terminal' or worker[0] != 'terminal'
+                    or admission[1] != authority.epoch or worker[1] != authority.epoch
+                    or admission[2] != identity['executionGeneration'] or worker[2] != identity['executionGeneration']
+                    or admission[3] != identity['sessionId'] or admission[4] != identity['principalId']):
+                return False
+            # Hex admission IDs cannot contain SQL wildcard characters.
+            live_child = conn.execute("SELECT 1 FROM worker_executions WHERE execution_id LIKE ? "
+                "AND status!='terminal' LIMIT 1", (execution+'/child:%',)).fetchone()
+            return live_child is None
+    except Exception:
+        return False
+
+
+async def observe_retirement(authority, scope, *, runtime_status=None, read_closed=None):
+    """Passive evidence only. Never call the native stop/join shutdown operation."""
+    runtime_status = runtime_status or passive_runtime_status
+    read_closed = read_closed or execution_is_closed
+    base = dict(authority_epoch=scope.identity['authorityEpoch'], execution_closed=False,
+                authority_writes_drained=False, worker_resources_idle=False)
+    try:
+        before = runtime_status(authority)
+        # Do not wait for a held database writer merely to answer an observation.
+        if not all(before[key] is True for key in ('authority_writes_drained', 'worker_resources_idle')):
+            return {**base, **before}
+        closed = await asyncio.to_thread(read_closed, authority, scope.identity)
+        after = runtime_status(authority)
+        return {**base, 'execution_closed': closed is True,
+                'authority_writes_drained': after['authority_writes_drained'] is True,
+                'worker_resources_idle': after['worker_resources_idle'] is True}
+    except Exception:
+        return base
