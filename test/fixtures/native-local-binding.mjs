@@ -52,6 +52,15 @@ try{
   }
   }finally{await observer.close();}
   const repeated=await reconcileLocalSession(recovery);
+  assert.equal(repeated.processObservation.process_tree_ended,false);
+  assert.ok(repeated.processObservation.active_processes>0);
+  // Disposable line-bridge control only; this method is never sent to the native API.
+  await rpc('mesh.fixture.release-child',{admission_id:row.admissionId});
+  row=await reconcileLocalSession(recovery);
+  assert.equal(row.processObservation.process_tree_ended,true);assert.equal(row.writerQuiescence,false);
+  const persistedProcess=row.processObservation;store.close();store=openTaskStore(file);
+  assert.deepEqual(store.workroom.localSessions.read(task.id,body.id).processObservation,persistedProcess);
+
   const build=JSON.parse(readFileSync(join(config.workspace,'local-build-check.json'),'utf8'));
   assert.equal(build.syntaxExitCode,0);assert.notEqual(build.invalidSyntaxExitCode,0);assert.ok(Number.isInteger(build.invalidSyntaxExitCode));assert.ok(Number.isSafeInteger(build.checkerPid));
   assert.equal(readFileSync(join(config.workspace,'local-build-proof.mjs'),'utf8'),'export const localProof = true;\n');
@@ -66,7 +75,7 @@ try{
   assert.equal(JSON.stringify(store.workroom.get(task.id)).includes('synthetic-local-provider'),false);
   const report={qualification:'PASS',taskId:task.id,sendId:body.id,createRequestId:row.createRequestId,submissionId:row.submissionId,
     sessionId:row.sessionId,admissionId:row.admissionId,nativeProfileId:row.nativeProfileId,nativeEpoch:row.nativeEpoch,
-    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,terminalResultImported:true,buildCheckVerified:true,resultHash:row.resultHash,resultMessageId:row.resultMessageId,
+    nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,terminalResultImported:true,buildCheckVerified:true,processReadbackPersisted:true,resultHash:row.resultHash,resultMessageId:row.resultMessageId,
     workspaceStillHeld:true,writerQuiescence:false,liveActivation:false};
   writeFileSync(join(root,'mesh-local-binding-evidence.json'),JSON.stringify(report,null,2));
   await new Promise(resolve=>process.stdout.write(JSON.stringify({done:true,admissionId:row.admissionId})+'\n',resolve));

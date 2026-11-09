@@ -131,6 +131,18 @@ def verify(root):
             or not other['processTreeEnded'] or other['admissionId']==held['admissionId']
             or assignment['lateRootRefused'] is not True or assignment['wholeWorkerReleaseQualified']):
         raise RuntimeError('Assignment Job did not retain its late child independently')
+    persisted=json.loads(row['processObservation'] or 'null')
+    authenticated_held,authenticated_ended=(assignment[key] for key in ('authenticatedHeld','authenticatedEnded'))
+    if (binding.get('processReadbackPersisted') is not True or persisted!=authenticated_ended
+            or authenticated_held['process_tree_ended'] is not False or authenticated_held['active_processes']<1
+            or authenticated_ended['process_tree_ended'] is not True
+            or authenticated_ended['admission_id']!=binding['admissionId']
+            or authenticated_ended['session_id']!=binding['sessionId']
+            or authenticated_ended['profile_id']!=binding['nativeProfileId']
+            or authenticated_ended['execution_generation']!=binding['nativeGeneration']
+            or authenticated_ended['writer_quiescence'] or authenticated_ended['termination_requested']
+            or any(key in authenticated_ended for key in ('principalId','principal_id'))):
+        raise RuntimeError('Authenticated assignment observation did not persist on the exact Mesh binding')
     processes=json.loads((root/'local-session-fixture-processes.json').read_text())
     if not processes['processTreeEnded'] or processes['activeProcesses'] or processes['terminationRequested']:
         raise RuntimeError('Disposable owner/process tree did not end naturally')
@@ -141,7 +153,8 @@ def verify(root):
         'actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit',
         'native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review',
         'native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export',
-        'exact_assignment_job_remains_held_after_root_exit_until_late_child_ends'],
+        'exact_assignment_job_remains_held_after_root_exit_until_late_child_ends',
+        'authenticated_process_observation_persists_in_mesh_without_writer_release'],
         'wholeWorkerReleaseQualified':False,'liveInstallation':False}
     (root/'local-session-verified.json').write_text(json.dumps(result,indent=2))
     return result
@@ -335,7 +348,47 @@ async def child(root):
                 if node is None:raise RuntimeError('Existing Node is required for Mesh binding qualification')
                 (root/'node-binding-config.json').write_text(json.dumps({'endpoint':endpoint,'workspace':str(root/'workspace')}))
                 script=Path(__file__).resolve().parents[1]/'test'/'fixtures'/'native-local-binding.mjs'
-                dropped=False;native_submitted=None;node_calls={}
+                dropped=False;native_submitted=None;node_calls={};native_session=None;native_request=None
+                released=False
+                async def release_fixture_child(params):
+                    nonlocal released,stage
+                    if released or params!={'admission_id':native_submitted}:
+                        raise RuntimeError('Fixture release did not select its original assignment')
+                    stage='assignment_process_observation'
+                    assignments=runner.session_authority._mesh_assignment_processes
+                    baseline_processes=assignments[admission].observe()
+                    current_assignment=assignments[native_submitted]
+                    held=current_assignment.observe()
+                    wire_held=await rpc('prompt.lookup',{'session_id':native_session,'submission_id':native_request})
+                    if wire_held.get('process_scope',{}).get('process_tree_ended') is not False:
+                        raise RuntimeError('Authenticated native readback did not retain the live assignment child')
+                    if (not baseline_processes['processTreeEnded'] or held['processTreeEnded']
+                            or not held.get('allRootsEnded') or held.get('activeProcesses',0)<1
+                            or not held['assignmentLaunchSealed'] or held['terminationRequested']):
+                        raise RuntimeError('Assignment process scope failed to retain its late child')
+                    try:
+                        current_assignment.popen([sys.executable,'-c','raise SystemExit(99)'])
+                    except RuntimeError:pass
+                    else:raise RuntimeError('Retired native assignment launched a replacement root')
+                    child_release.write_text('release fixture child')
+                    deadline=time.monotonic()+10
+                    while True:
+                        ended=current_assignment.observe()
+                        if ended['processTreeEnded']:break
+                        if time.monotonic()>deadline:raise RuntimeError('Assignment child did not end naturally')
+                        await asyncio.sleep(.02)
+                    if ended['terminationRequested'] or ended['writerQuiescence']:
+                        raise RuntimeError('Process observation was confused with whole-writer clearance')
+                    wire_ended=await rpc('prompt.lookup',{'session_id':native_session,'submission_id':native_request})
+                    if wire_ended.get('process_scope',{}).get('process_tree_ended') is not True:
+                        raise RuntimeError('Authenticated native readback did not observe the ended assignment')
+                    (root/'assignment-process-evidence.json').write_text(json.dumps({
+                        'heldAfterRootExit':held,'naturallyEnded':ended,'differentAssignment':baseline_processes,
+                        'authenticatedHeld':wire_held['process_scope'],'authenticatedEnded':wire_ended['process_scope'],
+                        'lateRootRefused':True,'wholeWorkerReleaseQualified':False},indent=2))
+                    released=True
+                    return {'released':True}
+
                 with (root/'node-binding.log').open('wb') as node_log:
                     node_process=subprocess.Popen([node,str(script),str(root)],cwd=root/'source',
                         stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=node_log,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
@@ -348,9 +401,11 @@ async def child(root):
                                 if frame['admissionId']!=native_submitted:raise RuntimeError('Mesh bound a different native admission')
                                 break
                             method=frame['method'];node_calls[method]=node_calls.get(method,0)+1
-                            result=await rpc(method,frame['params'])
+                            if method=='mesh.fixture.release-child':
+                                result=await release_fixture_child(frame['params'])
+                            else:result=await rpc(method,frame['params'])
                             if method=='prompt.submit' and not dropped:
-                                native_submitted=result['admission_id'];dropped=True
+                                native_submitted=result['admission_id'];native_session=frame['params']['session_id'];native_request=frame['params']['submission_id'];dropped=True
                                 answer={'id':frame['id'],'error':'synthetic reply loss after durable native admission'}
                             else:answer={'id':frame['id'],'result':result}
                             node_process.stdin.write((json.dumps(answer)+'\n').encode());node_process.stdin.flush()
@@ -358,33 +413,8 @@ async def child(root):
                     finally:
                         if node_process.poll() is None:node_process.kill();await asyncio.to_thread(node_process.wait,5)
                         node_process.stdin.close();node_process.stdout.close()
-                if not dropped or node_calls.get('session.create')!=1 or node_calls.get('prompt.submit')!=1:
+                if not released or not dropped or node_calls.get('session.create')!=1 or node_calls.get('prompt.submit')!=1:
                     raise RuntimeError('Mesh binding did not reconcile the single original native dispatch')
-                stage='assignment_process_observation'
-                assignments=runner.session_authority._mesh_assignment_processes
-                baseline_processes=assignments[admission].observe()
-                current_assignment=assignments[native_submitted]
-                held=current_assignment.observe()
-                if (not baseline_processes['processTreeEnded'] or held['processTreeEnded']
-                        or not held.get('allRootsEnded') or held.get('activeProcesses',0)<1
-                        or not held['assignmentLaunchSealed'] or held['terminationRequested']):
-                    raise RuntimeError('Assignment process scope failed to retain its late child')
-                try:
-                    current_assignment.popen([sys.executable,'-c','raise SystemExit(99)'])
-                except RuntimeError:pass
-                else:raise RuntimeError('Retired native assignment launched a replacement root')
-                child_release.write_text('release fixture child')
-                deadline=time.monotonic()+10
-                while True:
-                    ended=current_assignment.observe()
-                    if ended['processTreeEnded']:break
-                    if time.monotonic()>deadline:raise RuntimeError('Assignment child did not end naturally')
-                    await asyncio.sleep(.02)
-                if ended['terminationRequested'] or ended['writerQuiescence']:
-                    raise RuntimeError('Process observation was confused with whole-writer clearance')
-                (root/'assignment-process-evidence.json').write_text(json.dumps({
-                    'heldAfterRootExit':held,'naturallyEnded':ended,'differentAssignment':baseline_processes,
-                    'lateRootRefused':True,'wholeWorkerReleaseQualified':False},indent=2))
                 report={'qualification':'PASS','sessionId':sid,'replayedSessionId':replayed['session_id'],
                     'admissionId':admission,'replayedAdmissionId':again['admission_id'],'finalResponse':final,
                     'distinctVerifiedWorker':True,'ownerPid':os.getpid(),'workerPid':pid,'workerBirth':birth,'workerHandleExited':True,

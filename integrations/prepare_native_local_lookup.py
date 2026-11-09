@@ -30,6 +30,24 @@ def local_receipt_candidate(native_root, *, baselines):
         if saved is not None:
             out['receipt'] = await self.receipt(ref, {'admission_id': saved['admission_id'],
                 'include_result': params.get('include_result') is True})
+            scope = getattr(self.authority, '_mesh_assignment_processes', {}).get(saved['admission_id'])
+            if scope is not None:
+                identity = scope.identity
+                if (identity['principalId'] != self.actor.subject or identity['sessionId'] != ref.session_id
+                        or identity['admissionId'] != saved['admission_id']
+                        or identity['profileId'] != str(self.authority.profile_id)
+                        or identity['executionGeneration'] != out['receipt'].get('execution_generation')):
+                    raise RuntimeStoreError('assignment_process_mismatch')
+                observed = await asyncio.to_thread(scope.observe)
+                out['process_scope'] = {
+                    'admission_id': identity['admissionId'], 'session_id': identity['sessionId'],
+                    'profile_id': identity['profileId'], 'execution_generation': identity['executionGeneration'],
+                    'sealed': observed['assignmentLaunchSealed'] and observed['sealed'],
+                    'state': observed['state'], 'active_processes': observed.get('activeProcesses'),
+                    'root_ended': observed.get('allRootsEnded', False),
+                    'process_tree_ended': observed['processTreeEnded'],
+                    'termination_requested': observed['terminationRequested'], 'writer_quiescence': False,
+                    'reason': observed.get('reason')}
         return out
 
 """
@@ -45,11 +63,27 @@ def local_receipt_candidate(native_root, *, baselines):
     include_result: bool | None = None
 
 
+class AssignmentProcessObservation(Result):
+    admission_id: str
+    session_id: str
+    profile_id: str
+    execution_generation: int
+    sealed: bool
+    state: str
+    active_processes: int | None = None
+    root_ended: bool
+    process_tree_ended: bool
+    termination_requested: bool
+    writer_quiescence: bool
+    reason: str | None = None
+
+
 class PromptLookupResult(Result):
     found: bool
     session_id: str
     submission_id: str
     receipt: PromptReceiptResult | None = None
+    process_scope: AssignmentProcessObservation | None = None
 
 
 canonical_method("prompt.lookup", params=PromptLookupParams, result=PromptLookupResult,

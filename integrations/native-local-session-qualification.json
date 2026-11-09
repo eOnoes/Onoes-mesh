@@ -2,11 +2,11 @@
   "schema": "mesh-native-local-session-qualification/v1",
   "qualification": "PASS",
   "nativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
-  "scope": "Pinned opt-in native LOCAL assignment process scope: worker starts suspended inside its own Windows Job, exact admission identity, late child stays held after root exits. Native build/test/result recovery retained. No whole-writer clearance or live enrollment.",
-  "evidenceDirectory": "hermes-local-session-69f3f4d1-06d8-4bc3-b4fe-05fc3f5c6755",
+  "scope": "Pinned native authenticated exact-assignment process readback, closed response contract and durable Mesh observation. Late-child held-to-ended transition retained across Mesh reopen; no whole-writer release or live enrollment.",
+  "evidenceDirectory": "hermes-local-session-fc0140da-84c6-407d-8203-9e9af1e26e93",
   "candidateFiles": {
-    "gateway/session_controls.py": "6172dc0eb4f63f0348538df813ab78620291092ec77319ba341059adeca58a01",
-    "tui_gateway/contracts/canonical.py": "f9f7a8932faa35de3c69865a412cbf457696f79d3561726c45764cd7e0026901",
+    "gateway/session_controls.py": "c2fc74708732a39e96ce0c29b7673b5a3b6b6cc532ee54c9d8450eca291dfc56",
+    "tui_gateway/contracts/canonical.py": "352925228b901d7fbbf18242f88f9d3dec84533d7fc0591a108cca2ee76edd23",
     "gateway/session_managed_worker.py": "843e7e96d70eb3733f9bc46f1679fc0b444985c87e066a7b41cab77b3fbc516f",
     "gateway/mesh_assignment_process.py": "3b0378539b768add10527515d68368867ba95f4872ff3679c51e988d52046991",
     "gateway/mesh_windows_process.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
@@ -31,24 +31,26 @@
     "actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit",
     "native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review",
     "native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export",
-    "exact_assignment_job_remains_held_after_root_exit_until_late_child_ends"
+    "exact_assignment_job_remains_held_after_root_exit_until_late_child_ends",
+    "authenticated_process_observation_persists_in_mesh_without_writer_release"
   ],
   "meshBinding": {
     "qualification": "PASS",
-    "taskId": "d6b5b957-1977-42ef-9231-ae89d5629136",
-    "sendId": "79cce792-1631-4f3d-8f76-66df6fbb4daa",
-    "createRequestId": "mesh-local-create-a0e4bd9c6bd66eb90c77009ab89408dd2c31335ebe27bbb9a597d898266162ae",
-    "submissionId": "mesh-local-submit-a0e4bd9c6bd66eb90c77009ab89408dd2c31335ebe27bbb9a597d898266162ae",
-    "sessionId": "local-a51e75e79887a1ba3ed3d9bfa413ba80d7caa35647f602b2ebcc2a2df5e2180a",
-    "admissionId": "e5dbc45bbd9d4f08963f359880dbc07f",
-    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-69f3f4d1-06d8-4bc3-b4fe-05fc3f5c6755\\fixture-home",
+    "taskId": "0464a3d6-fe32-4977-8338-31422e10642b",
+    "sendId": "4ced9be4-142a-45b9-a0a8-caeff6754da6",
+    "createRequestId": "mesh-local-create-a2e64516f919e27e6d4c5965af8f0f0ec738ef50c5c031905d8141622e6a075a",
+    "submissionId": "mesh-local-submit-a2e64516f919e27e6d4c5965af8f0f0ec738ef50c5c031905d8141622e6a075a",
+    "sessionId": "local-49f7f8fccbe6cbca6bed50618fedc8dbd46a8912a511e881544939095130b7d7",
+    "admissionId": "b0bcd5d580c24a23ba24123d07656751",
+    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-fc0140da-84c6-407d-8203-9e9af1e26e93\\fixture-home",
     "nativeEpoch": 1,
     "nativeGeneration": 1,
     "nativeStatus": "terminal",
     "rpcCounts": {
       "session.create": 1,
       "prompt.submit": 1,
-      "prompt.lookup": 253
+      "prompt.lookup": 282,
+      "mesh.fixture.release-child": 1
     },
     "restartedBeforeReadback": true,
     "observationOnlyRecovery": true,
@@ -56,13 +58,14 @@
     "automaticTeamDispatch": true,
     "terminalResultImported": true,
     "buildCheckVerified": true,
-    "resultHash": "15f5ff47673d370a47211bd5e42845abe5c0ff906cd15c08d38d276986e436ca",
-    "resultMessageId": "native-3a1a45e9dc1798ff81a62b8cb9b6180fffea7824f929a589d8409d66a73e87dd",
+    "processReadbackPersisted": true,
+    "resultHash": "77747eae5dc483acabb32bf023ee931fd52ff97ffd07e54c7275bb732d6b0955",
+    "resultMessageId": "native-8982c8d5f6c572f3feb651eb53f58c0fe50b217752616e6582cd2686e71a637b",
     "workspaceStillHeld": true,
     "writerQuiescence": false,
     "liveActivation": false
   },
-  "fullLocalRegressionTests": 407,
+  "fullLocalRegressionTests": 408,
   "nativeOwnerSettled": true,
   "fixtureTreeEndedNaturally": true,
   "wholeWorkerReleaseQualified": false,
@@ -71,7 +74,7 @@
   "remaining": [
     "Production Rook service identity and verified Echo transport/profile mapping are not enrolled.",
     "Optional automatic team worker-stage selection is implemented and qualified locally; production identity/profile transport and claim-stage enrollment remain disabled.",
-    "Per-assignment Windows process-tree component is qualified; authenticated process observation/persistence, native authority write/session-resource retirement and trusted positive clearance consumer remain incomplete. Results cannot yet be applied or advance review.",
+    "Authenticated process readback and Mesh persistence are qualified; native authority write/session-resource retirement and trusted positive clearance consumer remain incomplete. Native owner restart invalidates missing/changed observations; results cannot yet advance review.",
     "Rook reporting transport, scheduler ownership and deployed acceptance/activation still required."
   ],
   "nativeBuildChecks": {
@@ -91,6 +94,9 @@
     "replacementRootRejected": true,
     "unrelatedAssignmentCannotReleaseHold": true,
     "durableRestartReceipt": false,
-    "wholeWorkerReleaseQualified": false
+    "wholeWorkerReleaseQualified": false,
+    "authenticatedNativeReadback": true,
+    "meshObservationPersists": true,
+    "nativeOwnerRestartReceipt": false
   }
 }

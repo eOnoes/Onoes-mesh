@@ -122,7 +122,7 @@ function localReady(store,workspace='D:/example-only'){
   profile:{profileRef:'echo-builder-v1',identityRef:'approved-fixture',model:'synthetic',baseUrl:'http://127.0.0.1:9/v1',workspace}};
 }
 const nativeSid='local-'+'a'.repeat(64),nativeAid='b'.repeat(32);
-function localReceipt(row,status='started',generation=1){return {found:true,session_id:row.sessionId,submission_id:row.submissionId,receipt:{...(status==='terminal'?{result:{final_response:'Synthetic terminal result'}}:{}),admission_id:nativeAid,status,execution_generation:generation,authority_epoch:1,ref:{profile_id:'fixture-native-home',session_id:row.sessionId}}};}
+function localReceipt(row,status='started',generation=1){return {found:true,session_id:row.sessionId,submission_id:row.submissionId,...(status==='terminal'?{process_scope:processReceipt(row,generation)}:{}),receipt:{...(status==='terminal'?{result:{final_response:'Synthetic terminal result'}}:{}),admission_id:nativeAid,status,execution_generation:generation,authority_epoch:1,ref:{profile_id:'fixture-native-home',session_id:row.sessionId}}};}
 
 test('native intent shares saved build identity, survives restart, and cannot switch profile or Relay transport',async()=>{
  const file=filename();let store=openTaskStore(file);try{
@@ -332,4 +332,42 @@ test('native build-check profile is explicit, frozen, and never upgrades an exis
   assert.equal(row.profile.toolProfile,'build-check-v1');assert.equal(row.writerQuiescence,false);
   assert.deepEqual(methods,['session.create','prompt.submit','prompt.lookup']);
  }finally{buildStore.close();}
+});
+
+function processReceipt(row,generation=1){return {admission_id:row.admissionId??nativeAid,session_id:row.sessionId,
+ profile_id:row.nativeProfileId??'fixture-native-home',execution_generation:generation,sealed:true,state:'ended',
+ active_processes:0,root_ended:true,process_tree_ended:true,termination_requested:false,writer_quiescence:false};}
+
+test('native process observations preserve exact identity and never release the saved writer',async()=>{
+ const file=filename();let store=openTaskStore(file);try{
+  const {t,send,profile}=localReady(store),local=store.workroom.localSessions;
+  let row=local.reserve(t.id,send,profile).nativeLocal;row=local.startCreate(t.id,send.id,row.revision);
+  row=local.bindSession(t.id,send.id,row.revision,{session_id:nativeSid});row=local.startSubmit(t.id,send.id,row.revision);
+  const base=localReceipt(row,'terminal');
+  const held={...base.process_scope,state:'held',active_processes:1,process_tree_ended:false};
+  row=local.observe(t.id,send.id,row.revision,{...base,process_scope:held});
+  assert.equal(row.processObservation.active_processes,1);assert.equal(local.pendingReads().length,1);
+  for(const process_scope of [false,[],{...held,admission_id:'c'.repeat(32)},{...held,session_id:'other'},
+   {...held,profile_id:'other'},{...held,execution_generation:2},{...held,writer_quiescence:true},
+   {...held,process_tree_ended:true},{...held,unrecognized:true},{...held,active_processes:-1}]){
+   assert.throws(()=>local.observe(t.id,send.id,row.revision,{...base,process_scope}),/process observation/);
+  }
+  row=local.observe(t.id,send.id,row.revision,base);assert.equal(local.pendingReads().length,0);
+  assert.equal(row.writerQuiescence,false);assert.equal(store.workroom.get(t.id).messages[0].state,'accepted');
+  const saved=row.processObservation;store.close();store=openTaskStore(file);
+  assert.deepEqual(store.workroom.localSessions.read(t.id,send.id).processObservation,saved);
+  row=store.workroom.localSessions.read(t.id,send.id);
+  await assert.rejects(reconcileLocalSession({workroom:store.workroom,taskId:t.id,sendId:send.id,
+   rpc:async()=>{throw new Error('owner unavailable');},authorized:()=>true}),/observation is unavailable/);
+  row=store.workroom.localSessions.read(t.id,send.id);
+  assert.equal(row.processObservation,null);assert.equal(row.state,'unavailable');assert.equal(row.admissionId,nativeAid);
+  row=store.workroom.localSessions.observe(t.id,send.id,row.revision,base);
+  await assert.rejects(reconcileLocalSession({workroom:store.workroom,taskId:t.id,sendId:send.id,
+   rpc:async()=>({...base,receipt:{...base.receipt,authority_epoch:2}}),authorized:()=>true}),/admission identity changed/);
+  row=store.workroom.localSessions.read(t.id,send.id);assert.equal(row.processObservation,null);
+  // An owner that no longer has this assignment cannot inherit an old positive observation.
+  row=store.workroom.localSessions.observe(t.id,send.id,row.revision,{...base,process_scope:null});
+  assert.equal(row.processObservation,null);assert.equal(store.workroom.localSessions.pendingReads().length,1);
+  assert.equal(row.admissionId,nativeAid);assert.equal(row.writerQuiescence,false);
+ }finally{store.close();}
 });
