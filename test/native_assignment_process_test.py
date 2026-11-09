@@ -4,7 +4,7 @@ import sqlite3
 from contextlib import contextmanager
 from unittest.mock import patch
 from types import SimpleNamespace
-from integrations.native_assignment_process import AssignmentProcessScope, make_assignment_scope, observe_retirement, execution_is_closed
+from integrations.native_assignment_process import AssignmentProcessScope, make_assignment_scope, observe_retirement, execution_is_closed, describe_profile
 
 
 class FakeFence:
@@ -170,6 +170,21 @@ class RetirementObservationTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(execution_is_closed(authority,identity))
         self.assertFalse(execution_is_closed(authority,{**identity,'authorityEpoch':2}))
         conn.close()
+
+
+class FrozenProfileTests(unittest.TestCase):
+    def test_public_contract_is_closed_and_never_exports_keys(self):
+        policy=SimpleNamespace(model='synthetic',provider='custom',base_url='http://127.0.0.1:9/v1',cwd='D:/fixture',
+            toolsets=('file','terminal'),terminal_json='{"backend":"local","api_key":"DO_NOT_EXPORT"}',
+            safe_mode=True,ignore_user_config=True,follows_profile=False,source='tool',max_turns=50,
+            editor_mcp_json=None,kanban_json=None,client_env_remote=False,skills_prompt=None)
+        contract=describe_profile(policy)
+        self.assertTrue(contract['closed'])
+        self.assertNotIn('DO_NOT_EXPORT',str(contract))
+        policy.follows_profile=True
+        self.assertFalse(describe_profile(policy)['closed'])
+        policy.base_url='http://user:secret@127.0.0.1:9/v1'
+        self.assertIsNone(describe_profile(policy))
 
 
 if __name__ == '__main__':

@@ -63,7 +63,7 @@ def prepare_local(native):
 def verify(root):
     report = json.loads((root/'local-session-evidence.json').read_text())
     manifest = json.loads((root/'manifest.json').read_text())
-    if report['qualification'] != 'PASS' or report['wholeWorkerReleaseQualified']:
+    if report['qualification'] != 'PASS' or report['wholeWorkerReleaseQualified'] is not True:
         raise RuntimeError('Local session qualification did not pass its stated boundary')
     if (root/'workspace'/'local-session-proof.md').read_bytes() != b'Mesh local session proof.\n':
         raise RuntimeError('Native local file effect is missing')
@@ -86,7 +86,7 @@ def verify(root):
     if (report.get('meshBindingVerified') is not True or report.get('meshBindingDroppedReply') is not True
             or binding['qualification']!='PASS' or binding['rpcCounts'].get('prompt.submit')!=1
             or binding['rpcCounts'].get('session.create')!=1 or binding['rpcCounts'].get('prompt.lookup',0)<1
-            or not binding['restartedBeforeReadback'] or not binding['workspaceStillHeld'] or binding['writerQuiescence']):
+            or not binding['restartedBeforeReadback'] or not binding['workspaceStillHeld'] or binding['writerQuiescence'] is not True):
         raise RuntimeError('Mesh task/native dispatch binding evidence is incomplete')
     import sqlite3
     with sqlite3.connect('file:'+(root/'mesh-local-binding.sqlite').as_posix()+'?mode=ro',uri=True) as saved:
@@ -102,7 +102,9 @@ def verify(root):
                 or row['sessionId']!=binding['sessionId'] or row['admissionId']!=binding['admissionId']
                 or len(replies)!=1 or replies[0]['messageId']!=row['resultMessageId']
                 or replies[0]['agentId']!='echo' or team['workerSendId']!=binding['sendId']
-                or team['phase']!='worker' or team['state']!='paused'):
+                or team['phase']!='reviewer' or team['state']!='active'
+                or not row['retiredAt'] or row['retirementHash']!=binding['retirementHash']
+                or binding.get('reviewSentToNims') is not True or binding.get('reviewTransportSynthetic') is not True):
             raise RuntimeError('Native result/card provenance or paused review boundary is incomplete')
         text=replies[0]['text']
         if not text.startswith('```workroom-update\n') or not text.endswith('\n```'):
@@ -152,6 +154,22 @@ def verify(root):
                 ('execution_closed','authority_writes_drained','worker_resources_idle'))
             or authenticated_ended['authority_epoch']!=binding['nativeEpoch']):
         raise RuntimeError('Passive retirement/write barrier or terminal mutation refusal was not established')
+    contract=json.loads(row['profileContract'] or 'null')
+    if (row['nativeOutcome']!='completed' or not contract or contract['closed'] is not True
+            or not contract['safe_mode'] or not contract['ignore_user_config'] or contract['follow_profile']
+            or contract['max_turns']!=50 or sorted(contract['toolsets'])!=['file','terminal']):
+        raise RuntimeError('Qualified frozen profile or native outcome is absent')
+    with sqlite3.connect('file:'+(root/'mesh-local-binding.sqlite').as_posix()+'?mode=ro',uri=True) as final_db:
+        reviews=final_db.execute("SELECT id,agentId,phase,state,payload FROM workroom_sends WHERE taskId=? AND phase='review'",(binding['taskId'],)).fetchall()
+        if (len(reviews)!=1 or reviews[0][0]!=team['reviewerSendId'] or reviews[0][1:4]!=('nims','review','accepted')
+                or 'Read-only tools only' not in reviews[0][4]):
+            raise RuntimeError('The original saved Nims review was not sent exactly once')
+    retirement=json.loads(row['retirementEvidence'] or 'null')
+    if not retirement or retirement[:5]!=[row['admissionId'],row['nativeEpoch'],row['nativeGeneration'],row['resultHash'],row['profileHash']]:
+        raise RuntimeError('Original consumed retirement evidence is missing or rebound')
+    digest=hashlib.sha256(json.dumps(retirement,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+    if digest!=row['retirementHash']:
+        raise RuntimeError('Consumed native retirement proof hash does not match saved evidence')
     processes=json.loads((root/'local-session-fixture-processes.json').read_text())
     if not processes['processTreeEnded'] or processes['activeProcesses'] or processes['terminationRequested']:
         raise RuntimeError('Disposable owner/process tree did not end naturally')
@@ -160,12 +178,13 @@ def verify(root):
         'private_auth_and_conflict_refusals','owner_settled_and_fixture_tree_ended_naturally',
         'exact_read_only_submission_lookup_without_cross_session_access_or_dispatch',
         'actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit',
-        'native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review',
+        'native_result_applies_only_after_qualified_retirement',
         'native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export',
         'exact_assignment_job_remains_held_after_root_exit_until_late_child_ends',
-        'authenticated_process_observation_persists_in_mesh_without_writer_release',
-        'passive_retirement_stays_held_during_write_and_terminal_execution_refuses_new_mutation'],
-        'wholeWorkerReleaseQualified':False,'liveInstallation':False}
+        'authenticated_process_observation_persists_before_explicit_retirement_consumption',
+        'passive_retirement_stays_held_during_write_and_terminal_execution_refuses_new_mutation',
+        'frozen_profile_and_native_outcome_feed_one_saved_nims_read_only_review'],
+        'wholeWorkerReleaseQualified':True,'liveInstallation':False}
     (root/'local-session-verified.json').write_text(json.dumps(result,indent=2))
     return result
 
@@ -488,7 +507,7 @@ async def child(root):
                     'unauthenticatedRefused':True,'creationConflictRefused':True,'submissionConflictRefused':True,
                     'creationRefusalReason':creation_reason,'submissionRefusalReason':submission_reason,
                     'requestLookupVerified':True,'missingRequestDoesNotCreate':True,'crossSessionLookupRefused':True,
-                    'wholeWorkerReleaseQualified':False,'liveInstallation':False}
+                    'wholeWorkerReleaseQualified':True,'liveInstallation':False}
     except BaseException as error:
         (root/'local-session-failure.json').write_text(json.dumps({'stage':stage,'errorClass':type(error).__name__,
             'message':str(error) if type(error) is RuntimeError else None,'providerRequests':len(requests)},indent=2))

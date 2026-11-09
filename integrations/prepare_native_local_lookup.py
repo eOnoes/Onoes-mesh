@@ -26,13 +26,15 @@ def local_receipt_candidate(native_root, *, baselines):
         from hermes_state_runtime import find_session_admission
         saved = await asyncio.to_thread(find_session_admission, self.authority.db,
             principal_id=self.actor.subject, session_id=ref.session_id, request_id=params['submission_id'])
-        out = {'found': saved is not None, 'session_id': ref.session_id, 'submission_id': params['submission_id']}
+        out = {'found': saved is not None, 'session_id': ref.session_id, 'submission_id': params['submission_id'],
+            'outcome': saved.get('outcome') if saved is not None else None}
         if saved is not None:
             out['receipt'] = await self.receipt(ref, {'admission_id': saved['admission_id'],
                 'include_result': params.get('include_result') is True})
             scope = getattr(self.authority, '_mesh_assignment_processes', {}).get(saved['admission_id'])
             if scope is not None:
                 identity = scope.identity
+                out['profile_contract'] = scope.profile_contract
                 if (identity['principalId'] != self.actor.subject or identity['sessionId'] != ref.session_id
                         or identity['admissionId'] != saved['admission_id']
                         or identity['profileId'] != str(self.authority.profile_id)
@@ -84,12 +86,29 @@ class AssignmentProcessObservation(Result):
     worker_resources_idle: bool
 
 
+class ClosedWorkerProfile(Result):
+    model: str
+    provider: str
+    base_url: str
+    workspace: str
+    toolsets: list[str]
+    safe_mode: bool
+    ignore_user_config: bool
+    follow_profile: bool
+    source: str
+    max_turns: int
+    terminal_backend: str
+    closed: bool
+
+
 class PromptLookupResult(Result):
     found: bool
     session_id: str
     submission_id: str
     receipt: PromptReceiptResult | None = None
     process_scope: AssignmentProcessObservation | None = None
+    profile_contract: ClosedWorkerProfile | None = None
+    outcome: str | None = None
 
 
 canonical_method("prompt.lookup", params=PromptLookupParams, result=PromptLookupResult,

@@ -4,7 +4,7 @@ import {readFileSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {createInterface} from 'node:readline';
 import {openTaskStore} from '../../lib/task-store.mjs';
-import {reconcileLocalSession} from '../../lib/workroom-local-sessions.mjs';
+import {reconcileLocalSession,retireLocalSession} from '../../lib/workroom-local-sessions.mjs';
 import {createTeamRunner} from '../../lib/workroom-automation.mjs';
 import {writerQuiescenceBlockers} from '../../lib/workroom-claim-policy.mjs';
 
@@ -75,13 +75,30 @@ try{
   assert.equal(offer.applied,false);assert.equal(imported.replies.length,1);
   assert.throws(()=>store.workroom.applyAgentUpdate(task.id,{sendId:offer.sendId,messageId:offer.messageId,hash:offer.hash,
     revision:imported.progress.revision,taskRevision:imported.revision,briefRevision:imported.workroom.revision}),/retirement verification/);
+  assert.equal(row.nativeOutcome,'completed');assert.equal(row.profileContract.closed,true);
+  row=await retireLocalSession({...recovery,workroom:store.workroom,admitted:()=>true});
+  assert.equal(row.writerQuiescence,true);assert.match(row.retirementHash,/^[a-f0-9]{64}$/);
+  const current=store.workroom.get(task.id);
+  store.workroom.applyAgentUpdate(task.id,{sendId:offer.sendId,messageId:offer.messageId,hash:offer.hash,
+    revision:current.progress.revision,taskRevision:current.revision,briefRevision:current.workroom.revision});
+  const resumed=store.workroom.get(task.id);
+  store.workroom.automation.action(task.id,{action:'resume',revision:resumed.automation.revision,
+    planRevision:resumed.plan.revision,taskRevision:resumed.revision,briefRevision:resumed.workroom.revision,
+    progressRevision:resumed.progress.revision},agents,config.workspace);
+  const reviewSends=[];
+  const reviewRelay={agents:async()=>agents,nativeRead:async()=>({taskSessionBinding:1,messages:[]}),
+    taskMessage:async message=>{assert.equal(message.agentId,'nims');assert.match(message.text,/Phase: review/);assert.match(message.text,/Read-only tools only/);reviewSends.push(message);}};
+  const handoff=createTeamRunner({workroom:store.workroom,root:config.workspace,relay:reviewRelay,intervalMs:600000});
+  try{await handoff.tick();await handoff.tick();}finally{await handoff.close();}
+  assert.equal(reviewSends.length,1);assert.equal(reviewSends[0].id,stage.reviewerSendId);
+  assert.equal(store.workroom.get(task.id).automation.phase,'reviewer');
   assert.equal(repeated.admissionId,row.admissionId);assert.equal(counts['session.create'],1);assert.equal(counts['prompt.submit'],1);
-  assert.equal(row.writerQuiescence,false);assert.ok(writerQuiescenceBlockers(store.workroom.list()).length>0);
+  assert.equal(row.writerQuiescence,true);assert.ok(writerQuiescenceBlockers(store.workroom.list()).length>0);
   assert.equal(JSON.stringify(store.workroom.get(task.id)).includes('synthetic-local-provider'),false);
   const report={qualification:'PASS',taskId:task.id,sendId:body.id,createRequestId:row.createRequestId,submissionId:row.submissionId,
     sessionId:row.sessionId,admissionId:row.admissionId,nativeProfileId:row.nativeProfileId,nativeEpoch:row.nativeEpoch,
     nativeGeneration:row.nativeGeneration,nativeStatus:row.nativeStatus,rpcCounts:counts,restartedBeforeReadback:true,observationOnlyRecovery:true,teamRunnerObservation:true,automaticTeamDispatch:true,terminalResultImported:true,buildCheckVerified:true,processReadbackPersisted:true,authorityDrainObserved:true,executionClosedObserved:true,resultHash:row.resultHash,resultMessageId:row.resultMessageId,
-    workspaceStillHeld:true,writerQuiescence:false,liveActivation:false};
+    workspaceStillHeld:true,writerQuiescence:true,retirementHash:row.retirementHash,reviewSentToNims:true,reviewTransportSynthetic:true,liveActivation:false};
   writeFileSync(join(root,'mesh-local-binding-evidence.json'),JSON.stringify(report,null,2));
   await new Promise(resolve=>process.stdout.write(JSON.stringify({done:true,admissionId:row.admissionId})+'\n',resolve));
 }finally{store.close();input.close();process.stdin.pause();}

@@ -6,7 +6,7 @@ import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {sendTaskHandoff,syncTaskReplies} from '../lib/workroom.mjs';
-import {dispatchLocalSession,reconcileLocalSession,localSessionProfile} from '../lib/workroom-local-sessions.mjs';
+import {dispatchLocalSession,reconcileLocalSession,localSessionProfile,retireLocalSession,localRetirementReady} from '../lib/workroom-local-sessions.mjs';
 import {TaskError} from '../lib/task-store.mjs';
 import {createTeamRunner} from '../lib/workroom-automation.mjs';
 const filename=()=>join(mkdtempSync(join(tmpdir(),'mesh-plan-')),'tasks.sqlite');
@@ -374,5 +374,51 @@ test('native process observations preserve exact identity and never release the 
   row=store.workroom.localSessions.observe(t.id,send.id,row.revision,{...base,process_scope:null});
   assert.equal(row.processObservation,null);assert.equal(store.workroom.localSessions.pendingReads().length,1);
   assert.equal(row.admissionId,nativeAid);assert.equal(row.writerQuiescence,false);
+ }finally{store.close();}
+});
+
+function publicNativeProfile(profile){return {model:profile.model,provider:'custom',base_url:profile.baseUrl,
+ workspace:profile.workspace,toolsets:profile.toolProfile?['file','terminal']:['file'],safe_mode:true,
+ ignore_user_config:true,follow_profile:false,source:'tool',max_turns:50,terminal_backend:'local',closed:true};}
+
+test('native retirement consumes only fresh admitted matching-profile evidence, then persists exact writer closure',async()=>{
+ const file=filename();let store=openTaskStore(file);try{
+  const {t,send,profile}=localReady(store),local=store.workroom.localSessions;
+  let row=local.reserve(t.id,send,profile).nativeLocal;row=local.startCreate(t.id,send.id,row.revision);
+  row=local.bindSession(t.id,send.id,row.revision,{session_id:nativeSid});row=local.startSubmit(t.id,send.id,row.revision);
+  const value={...localReceipt(row,'terminal'),outcome:'completed',profile_contract:publicNativeProfile(profile)};
+  row=local.observe(t.id,send.id,row.revision,value);assert.equal(localRetirementReady(row),true);
+  assert.throws(()=>local.consumeRetirement(t.id,send.id,row.revision,JSON.parse(JSON.stringify(row))),/Fresh authorized/);
+  let admitted=true,reads=0;
+  const opts={workroom:store.workroom,taskId:t.id,sendId:send.id,authorized:()=>true,admitted:()=>admitted,
+   rpc:async()=>{reads++;return value;}};
+  await assert.rejects(retireLocalSession({...opts,rpc:async()=>{admitted=false;return value;}}),/admission ended/);
+  assert.equal(local.read(t.id,send.id).writerQuiescence,false);admitted=true;
+  await assert.rejects(retireLocalSession({...opts,rpc:async()=>({...value,profile_contract:{...value.profile_contract,model:'different'}})}),/not fully confirmed/);
+  assert.equal(local.read(t.id,send.id).writerQuiescence,false);
+  row=await retireLocalSession(opts);assert.equal(reads,1);assert.equal(row.writerQuiescence,true);
+  assert.match(row.retirementHash,/^[a-f0-9]{64}$/);const receipt=row.retirementHash;
+  const {execFileSync}=await import('node:child_process');
+  const backup=JSON.parse(execFileSync(process.execPath,['integrations/workroom-backup.mjs',file,join(mkdtempSync(join(tmpdir(),'mesh-retired-proof-backup-')),'snapshot')],{encoding:'utf8'}));
+  const restored=openTaskStore(backup.restored);try{
+   assert.deepEqual(restored.workroom.localSessions.read(t.id,send.id).retirementEvidence,row.retirementEvidence);
+   assert.equal(restored.workroom.localSessions.read(t.id,send.id).writerQuiescence,true);
+  }finally{restored.close();}
+  const peer=localReady(store);assert.ok(store.workroom.localSessions.reserve(peer.t.id,peer.send,peer.profile));
+  const held=localReady(store);assert.throws(()=>store.workroom.localSessions.reserve(held.t.id,held.send,held.profile),/existing workspace writer/);
+  store.close();store=openTaskStore(file);assert.equal(store.workroom.localSessions.read(t.id,send.id).retirementHash,receipt);
+  assert.equal(store.workroom.localSessions.read(t.id,send.id).writerQuiescence,true);
+ }finally{store.close();}
+});
+
+test('editing a card workspace cannot hide an unretired native writer in its original workspace',()=>{
+ const store=openTaskStore(filename());try{
+  let {t,send,profile}=localReady(store),local=store.workroom.localSessions;
+  let row=local.reserve(t.id,send,profile).nativeLocal;row=local.startCreate(t.id,send.id,row.revision);
+  row=local.bindSession(t.id,send.id,row.revision,{session_id:nativeSid});row=local.startSubmit(t.id,send.id,row.revision);
+  local.observe(t.id,send.id,row.revision,localReceipt(row,'started'));
+  t=store.workroom.get(t.id);store.workroom.savePlan(t.id,{...proposal(t),reviewerId:'nims',workspace:'D:/moved-card'});
+  const peer=localReady(store);
+  assert.throws(()=>local.reserve(peer.t.id,peer.send,peer.profile),/existing workspace writer|native writer/);
  }finally{store.close();}
 });

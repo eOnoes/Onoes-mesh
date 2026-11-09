@@ -33,7 +33,7 @@ def assignment_process_candidate(native_root):
     body = ''.join(lines[function.lineno:function.end_lineno])
     wrapped = (
         '    from gateway.mesh_assignment_process import make_assignment_scope\n'
-        '    assignment_scope = make_assignment_scope(authority, ref, row)\n'
+        '    assignment_scope = make_assignment_scope(authority, ref, row, policy)\n'
         '    try:\n' + textwrap.indent(body, '    ') +
         '    finally:\n'
         '        if assignment_scope is not None:\n'

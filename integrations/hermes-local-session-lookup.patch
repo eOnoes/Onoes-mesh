@@ -18,7 +18,7 @@
                      'prompt.resolve_unknown': self.resolve_unknown,
                      'session.interrupt': self.interrupt, 'session.events.since': self.events_since,
                      'approval.respond': self.respond, 'clarify.respond': self.respond_clarify}
-@@ -875,6 +875,42 @@
+@@ -875,6 +875,44 @@
                  out['usage'] = saved.get('usage') or {}
          return out
  
@@ -31,13 +31,15 @@
 +        from hermes_state_runtime import find_session_admission
 +        saved = await asyncio.to_thread(find_session_admission, self.authority.db,
 +            principal_id=self.actor.subject, session_id=ref.session_id, request_id=params['submission_id'])
-+        out = {'found': saved is not None, 'session_id': ref.session_id, 'submission_id': params['submission_id']}
++        out = {'found': saved is not None, 'session_id': ref.session_id, 'submission_id': params['submission_id'],
++            'outcome': saved.get('outcome') if saved is not None else None}
 +        if saved is not None:
 +            out['receipt'] = await self.receipt(ref, {'admission_id': saved['admission_id'],
 +                'include_result': params.get('include_result') is True})
 +            scope = getattr(self.authority, '_mesh_assignment_processes', {}).get(saved['admission_id'])
 +            if scope is not None:
 +                identity = scope.identity
++                out['profile_contract'] = scope.profile_contract
 +                if (identity['principalId'] != self.actor.subject or identity['sessionId'] != ref.session_id
 +                        or identity['admissionId'] != saved['admission_id']
 +                        or identity['profileId'] != str(self.authority.profile_id)
@@ -63,7 +65,7 @@
          receipt = await self.authority.receipt(self.actor, ref, admission_id)
 --- a/tui_gateway/contracts/canonical.py
 +++ b/tui_gateway/contracts/canonical.py
-@@ -54,6 +54,43 @@
+@@ -54,6 +54,60 @@
  
  canonical_method("prompt.receipt", params=PromptReceiptParams, result=PromptReceiptResult,
                   doc="Current receipt of one admission the caller submitted (or controls).")
@@ -94,12 +96,29 @@
 +    worker_resources_idle: bool
 +
 +
++class ClosedWorkerProfile(Result):
++    model: str
++    provider: str
++    base_url: str
++    workspace: str
++    toolsets: list[str]
++    safe_mode: bool
++    ignore_user_config: bool
++    follow_profile: bool
++    source: str
++    max_turns: int
++    terminal_backend: str
++    closed: bool
++
++
 +class PromptLookupResult(Result):
 +    found: bool
 +    session_id: str
 +    submission_id: str
 +    receipt: PromptReceiptResult | None = None
 +    process_scope: AssignmentProcessObservation | None = None
++    profile_contract: ClosedWorkerProfile | None = None
++    outcome: str | None = None
 +
 +
 +canonical_method("prompt.lookup", params=PromptLookupParams, result=PromptLookupResult,
@@ -136,7 +155,7 @@
 -    from gateway.session_context_refs import managed_turn_text, refused_turn_result
 -    _mark_spawning(authority, ref, row)
 +    from gateway.mesh_assignment_process import make_assignment_scope
-+    assignment_scope = make_assignment_scope(authority, ref, row)
++    assignment_scope = make_assignment_scope(authority, ref, row, policy)
      try:
 -        text, refusal = await managed_turn_text(authority, row, policy)
 -    except BaseException:
@@ -356,9 +375,11 @@
 +            await asyncio.to_thread(assignment_scope.retire)
 --- /dev/null
 +++ b/gateway/mesh_assignment_process.py
-@@ -0,0 +1,151 @@
+@@ -0,0 +1,182 @@
 +"""Assignment-owned process observation; never a whole-writer clearance receipt."""
 +import asyncio
++import json
++from urllib.parse import urlsplit
 +import os
 +import re
 +import threading
@@ -378,6 +399,7 @@
 +        self.identity = dict(admissionId=admission, sessionId=ref.session_id,
 +                             profileId=str(authority.profile_id), principalId=row['principal_id'],
 +                             executionGeneration=generation, authorityEpoch=authority.epoch)
++        self.profile_contract = None
 +        self.fence = fence_factory(admission, str(generation))
 +        self.lock = threading.RLock()
 +        self.sealed = False
@@ -438,7 +460,7 @@
 +            return dict(self.cached)
 +
 +
-+def make_assignment_scope(authority, ref, row):
++def make_assignment_scope(authority, ref, row, policy=None):
 +    # Dedicated owner enrollment only. This module has no installer or public control.
 +    if os.environ.get('MESH_LOCAL_PROCESS_SCOPE') != '1':
 +        return None
@@ -450,6 +472,7 @@
 +    if row['admission_id'] in scopes:
 +        raise RuntimeError('The native admission already owns a process scope')
 +    scope = AssignmentProcessScope(authority, ref, row)
++    scope.profile_contract = describe_profile(policy)
 +    scopes[row['admission_id']] = scope
 +    return scope
 +
@@ -508,6 +531,33 @@
 +                'worker_resources_idle': after['worker_resources_idle'] is True}
 +    except Exception:
 +        return base
++
++
++def describe_profile(policy):
++    """Export only fixed public launch fields; never config, keys or environment."""
++    if policy is None:
++        return None
++    try:
++        def read(name):
++            value=getattr(policy,name)
++            return value() if callable(value) else value
++        base=read('base_url')
++        url=urlsplit(base)
++        if url.username or url.password or url.query or url.fragment:
++            return None
++        terminal=json.loads(policy.terminal_json)
++        tools=list(policy.toolsets)
++        closed=(policy.safe_mode is True and policy.ignore_user_config is True
++            and read('follows_profile') is False and policy.source=='tool'
++            and not policy.editor_mcp_json and not policy.kanban_json and not policy.client_env_remote
++            and not policy.skills_prompt and set(tools) in ({'file'},{'file','terminal'})
++            and terminal.get('backend','local')=='local')
++        return dict(model=policy.model,provider=read('provider'),base_url=base,workspace=policy.cwd,
++            toolsets=tools,safe_mode=policy.safe_mode,ignore_user_config=policy.ignore_user_config,
++            follow_profile=read('follows_profile'),source=policy.source,max_turns=read('max_turns'),
++            terminal_backend=terminal.get('backend','local'),closed=closed)
++    except Exception:
++        return None
 --- /dev/null
 +++ b/gateway/mesh_windows_process.py
 @@ -0,0 +1,327 @@

@@ -237,3 +237,51 @@ test('native reservation exempts only its exact active stage and submission rech
   assert.equal(local.read(t.id,body.id).state,'session_bound');
  }finally{store.close();}
 });
+
+test('failed retired native worker pauses without dispatching Nims review',async()=>{
+ const store=openTaskStore(file());let runner;try{
+  const t=ready(store,'nims');store.workroom.automation.action(t.id,action(t),nativeAgents,process.cwd());
+  const native=nativeFixture(store),original=native.rpc;let reviews=0;
+  native.retireCompleted=true;
+  native.rpc=async(method,params)=>{
+   const reply=await original(method,params);if(method!=='prompt.lookup')return reply;
+   return {...reply,outcome:'failed',profile_contract:{model:native.profile.model,provider:'custom',base_url:native.profile.baseUrl,
+    workspace:process.cwd(),toolsets:['file'],safe_mode:true,ignore_user_config:true,follow_profile:false,source:'tool',max_turns:50,terminal_backend:'local',closed:true},
+    process_scope:{admission_id:'b'.repeat(32),session_id:params.session_id,profile_id:'synthetic-native',execution_generation:1,
+     authority_epoch:1,sealed:true,state:'ended',active_processes:0,root_ended:true,process_tree_ended:true,
+     termination_requested:false,writer_quiescence:false,execution_closed:true,authority_writes_drained:true,worker_resources_idle:true},
+    receipt:{...reply.receipt,result:{final_response:'Failed native fixture'}}};
+  };
+  runner=createTeamRunner({workroom:store.workroom,relay:{agents:async()=>nativeAgents,taskMessage:async()=>{reviews++;}},
+   root:process.cwd(),intervalMs:600000,nativeWorker:native});
+  await runner.tick();await runner.tick();
+  const after=store.workroom.get(t.id);assert.equal(after.automation.state,'paused');assert.equal(after.automation.phase,'worker');
+  assert.equal(after.messages[0].nativeLocal.writerQuiescence,true);assert.equal(reviews,0);
+ }finally{if(runner)await runner.close();store.close();}
+});
+
+test('qualified native completion applies once and dispatches the original Nims review once',async()=>{
+ const store=openTaskStore(file());let runner;try{
+  const t=ready(store,'nims');store.workroom.automation.action(t.id,action(t),nativeAgents,process.cwd());
+  const stage=store.workroom.automation.read(t.id),native=nativeFixture(store),original=native.rpc,reviews=[];
+  native.retireCompleted=true;
+  native.rpc=async(method,params)=>{
+   const reply=await original(method,params);if(method!=='prompt.lookup')return reply;
+   const update={schema:'workroom-update/v1',taskId:t.id,sendId:stage.workerSendId,goal:t.progress.goal,
+    checklist:t.progress.checklist.map(step=>({...step,status:'done'})),result:'Fixture artifact built',evidence:'Synthetic unit report'};
+   return {...reply,outcome:'completed',profile_contract:{model:native.profile.model,provider:'custom',base_url:native.profile.baseUrl,
+    workspace:process.cwd(),toolsets:['file'],safe_mode:true,ignore_user_config:true,follow_profile:false,source:'tool',max_turns:50,terminal_backend:'local',closed:true},
+    process_scope:{admission_id:'b'.repeat(32),session_id:params.session_id,profile_id:'synthetic-native',execution_generation:1,
+     authority_epoch:1,sealed:true,state:'ended',active_processes:0,root_ended:true,process_tree_ended:true,
+     termination_requested:false,writer_quiescence:false,execution_closed:true,authority_writes_drained:true,worker_resources_idle:true},
+    receipt:{...reply.receipt,result:{final_response:'```workroom-update\n'+JSON.stringify(update)+'\n```'}}};
+  };
+  const relay={agents:async()=>nativeAgents,nativeRead:async()=>({taskSessionBinding:1,messages:[]}),taskMessage:async message=>reviews.push(message)};
+  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,nativeWorker:native});
+  for(let i=0;i<5;i++)await runner.tick();const after=store.workroom.get(t.id);
+  assert.equal(after.automation.phase,'reviewer');assert.equal(after.agentUpdates[0].applied,true);
+  assert.equal(after.messages.find(m=>m.id===stage.workerSendId).nativeLocal.writerQuiescence,true);
+  assert.equal(reviews.length,1);assert.equal(reviews[0].id,stage.reviewerSendId);assert.equal(reviews[0].agentId,'nims');
+  assert.match(reviews[0].text,/Read-only tools only/);assert.equal(after.progress.decision,'pending');assert.notEqual(after.status,'done');
+ }finally{if(runner)await runner.close();store.close();}
+});

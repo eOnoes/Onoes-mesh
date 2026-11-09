@@ -1,5 +1,7 @@
 """Assignment-owned process observation; never a whole-writer clearance receipt."""
 import asyncio
+import json
+from urllib.parse import urlsplit
 import os
 import re
 import threading
@@ -19,6 +21,7 @@ class AssignmentProcessScope:
         self.identity = dict(admissionId=admission, sessionId=ref.session_id,
                              profileId=str(authority.profile_id), principalId=row['principal_id'],
                              executionGeneration=generation, authorityEpoch=authority.epoch)
+        self.profile_contract = None
         self.fence = fence_factory(admission, str(generation))
         self.lock = threading.RLock()
         self.sealed = False
@@ -79,7 +82,7 @@ class AssignmentProcessScope:
             return dict(self.cached)
 
 
-def make_assignment_scope(authority, ref, row):
+def make_assignment_scope(authority, ref, row, policy=None):
     # Dedicated owner enrollment only. This module has no installer or public control.
     if os.environ.get('MESH_LOCAL_PROCESS_SCOPE') != '1':
         return None
@@ -91,6 +94,7 @@ def make_assignment_scope(authority, ref, row):
     if row['admission_id'] in scopes:
         raise RuntimeError('The native admission already owns a process scope')
     scope = AssignmentProcessScope(authority, ref, row)
+    scope.profile_contract = describe_profile(policy)
     scopes[row['admission_id']] = scope
     return scope
 
@@ -149,3 +153,30 @@ async def observe_retirement(authority, scope, *, runtime_status=None, read_clos
                 'worker_resources_idle': after['worker_resources_idle'] is True}
     except Exception:
         return base
+
+
+def describe_profile(policy):
+    """Export only fixed public launch fields; never config, keys or environment."""
+    if policy is None:
+        return None
+    try:
+        def read(name):
+            value=getattr(policy,name)
+            return value() if callable(value) else value
+        base=read('base_url')
+        url=urlsplit(base)
+        if url.username or url.password or url.query or url.fragment:
+            return None
+        terminal=json.loads(policy.terminal_json)
+        tools=list(policy.toolsets)
+        closed=(policy.safe_mode is True and policy.ignore_user_config is True
+            and read('follows_profile') is False and policy.source=='tool'
+            and not policy.editor_mcp_json and not policy.kanban_json and not policy.client_env_remote
+            and not policy.skills_prompt and set(tools) in ({'file'},{'file','terminal'})
+            and terminal.get('backend','local')=='local')
+        return dict(model=policy.model,provider=read('provider'),base_url=base,workspace=policy.cwd,
+            toolsets=tools,safe_mode=policy.safe_mode,ignore_user_config=policy.ignore_user_config,
+            follow_profile=read('follows_profile'),source=policy.source,max_turns=read('max_turns'),
+            terminal_backend=terminal.get('backend','local'),closed=closed)
+    except Exception:
+        return None
