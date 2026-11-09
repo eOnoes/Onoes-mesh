@@ -11,6 +11,7 @@
     "actual_native_HTTP_agent_file_write_exact_bytes_without_release",
     "actual_file_bytes_do_not_settle_held_native_bookkeeping",
     "actual_native_read_before_write_with_stale_guard_preserved",
+    "strict_native_gate_refuses_unsupported_tool_and_outside_scope_before_pipeline",
     "actual_native_SQLite_restart_replay_without_new_worker_or_old_owner",
     "native_SQLite_canonical_claim_lookup_and_worker_binding",
     "actual_canonical_HTTP_FIFO_observer_cancellation_and_exact_replay",
@@ -18,23 +19,23 @@
     "actual_abrupt_owner_process_loss_blocks_replay_and_preserves_queue",
     "native_safe_mode_plain_terminal_and_file_pipeline"
   ],
-  "providerRequests": 14,
-  "nonToolProviderRequests": 7,
-  "agentsCreated": 2,
+  "providerRequests": 20,
+  "nonToolProviderRequests": 13,
+  "agentsCreated": 4,
   "pythonVersion": "3.14.7",
   "liveInstallation": false,
   "wholeWorkerReleaseQualified": false,
   "schema": "mesh-isolated-native-runtime-qualification/v1",
   "nativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
-  "scope": "Actual native plain-text read/edit flow on LF and CRLF with pinned Windows metadata consistency repair. Guarded full read establishes baseline; partial/changed reads remain refused. Isolated opt-in direct worker; no production install or whole-worker release.",
+  "scope": "Strict opt-in direct native file-worker dispatch, LF/CRLF read/edit, two real native refusal cases, canonical recovery and legacy default compatibility. Whole-worker retirement remains unqualified; no live install.",
   "candidateFiles": {
     "tools/process_registry.py": "f5d45f0e53948746098865f25efa5bf1a71284bff0dc5dae10d8d343ed103725",
-    "tools/mesh_writer_scope.py": "aec2953d5b122e455ed46f04232a042470c1cb57a14a24e5c661d20c2c445c25",
+    "tools/mesh_writer_scope.py": "68cb9d0e4e2ade8487611d4be94386fdd2a4d70530bb3d1aca77b3ac9858574e",
     "tools/mesh_windows_writer_fence.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/async_delegation.py": "587090a3240729768f5fe917b0b2963b33368b29133d6f9fae920595b7296073",
     "gateway/platforms/api_server_runs.py": "da68f5e791d525544e259edd1d292fb4f45972572901300ad24a5e5ec5216913",
     "tools/environments/local.py": "c6637d76eaa64bded45a894a102bcbac3dba2646818751ddbde520b7f15fe1aa",
-    "agent/tool_executor.py": "49cd5ed69966a6513bf4990ae957e7c0f400f1709e03cb178bada5dc0c34f80b",
+    "agent/tool_executor.py": "47a6e5446b33ce94407efc8d60924a44c634814e1174746ec797b4f842c03ecc",
     "agent/terminal_approval_batch.py": "5eb4c30429777b217720a67b301f445f8fb171cf3f6171113a4ce669da1512d6",
     "tools/file_tools.py": "1ccd2b466e46bfa5e5e70eb88fad011c4b45c5f4f6ad549ef5e9ceba9ae41b16",
     "tools/file_tools_read_tracking.py": "c2ca50e625178fb663faa46677713ba915946294dc19fbef849ea40342977e4d",
@@ -63,14 +64,16 @@
     "file_bytes_precede_handler_completion_without_ownership_release",
     "native_safe_mode_has_plain_terminal_and_file_pipeline",
     "actual_original_content_read_then_verified_native_edit",
-    "bounded_file_handler_settles_after_bookkeeping_only"
+    "bounded_file_handler_settles_after_bookkeeping_only",
+    "strict_native_dispatch_refused_without_effects_or_release"
   ],
-  "evidenceDirectory": "hermes-runtime-4e0dd8a6-7580-48f9-b104-998968b7404e",
+  "evidenceDirectory": "hermes-runtime-0012f9de-847a-4fe4-ad47-3ffb71364170",
   "remaining": [
     "Plain-text read_file/write_file components qualified in isolated direct lane; patch/search/delegation, other external effects and whole-worker release remain unqualified.",
     "Other uninstrumented background paths and positive live-chat-owner lifetime proof remain unqualified.",
     "Trusted positive completion consumption in assignment policy remains unimplemented; current receipts cannot clear work holds.",
-    "Installed native/Relay deployment, dedicated worker-lane selection and production provider/profile configuration remain unverified."
+    "Installed native/Relay deployment, dedicated worker-lane selection and production provider/profile configuration remain unverified.",
+    "Strict dispatch is a prerequisite only: dedicated worker-profile attestation, later/background post-write effects, irreversible writer retirement and positive consumer still need qualification before live release."
   ],
   "liveServicesChanged": false,
   "canonicalWorkerSeam": {
@@ -110,8 +113,8 @@
   "safeModeProfile": {
     "qualification": "PASS",
     "supportedNativeSetting": "HERMES_SAFE_MODE=1",
-    "runtimeChecks": 16,
-    "independentChecks": 16,
+    "runtimeChecks": 17,
+    "independentChecks": 17,
     "terminalPipeline": {
       "fullyObservedCalls": 1,
       "plainNativeCalls": 1,
@@ -136,7 +139,7 @@
     "predeclared_modules": 1,
     "registration": 1
   },
-  "defaultEvidenceDirectory": "hermes-runtime-836dd0ad-639b-4609-9224-3a2ab4aef4a6",
+  "defaultEvidenceDirectory": "hermes-runtime-31de2508-d9d8-47e8-8aca-643dce3e22dd",
   "boundedFileCompletion": true,
   "boundedFileAdapter": {
     "qualification": "PASS",
@@ -148,16 +151,20 @@
   "readWriteVariants": [
     {
       "lane": "safe-LF",
-      "directory": "hermes-runtime-4e0dd8a6-7580-48f9-b104-998968b7404e",
+      "directory": "hermes-runtime-0012f9de-847a-4fe4-ad47-3ffb71364170",
       "qualification": "PASS",
-      "runtimeChecks": 16,
-      "independentChecks": 16,
+      "runtimeChecks": 17,
+      "independentChecks": 17,
       "fileEffects": {
         "observedCalls": 2,
         "activeCalls": 0,
         "unverifiedCalls": 0,
         "effectsSettled": true,
         "qualifiedFileCalls": 2,
+        "fileToolGate": {
+          "enabled": true,
+          "refusedCalls": 0
+        },
         "pipeline": {
           "fullyObservedCalls": 2,
           "plainNativeCalls": 2,
@@ -171,16 +178,20 @@
     },
     {
       "lane": "safe-CRLF",
-      "directory": "hermes-runtime-16f481bf-c5d9-43c3-bee0-0ab91b86263b",
+      "directory": "hermes-runtime-c7b5f70e-7cf7-462f-9bd0-3aa641efd911",
       "qualification": "PASS",
-      "runtimeChecks": 16,
-      "independentChecks": 16,
+      "runtimeChecks": 17,
+      "independentChecks": 17,
       "fileEffects": {
         "observedCalls": 2,
         "activeCalls": 0,
         "unverifiedCalls": 0,
         "effectsSettled": true,
         "qualifiedFileCalls": 2,
+        "fileToolGate": {
+          "enabled": true,
+          "refusedCalls": 0
+        },
         "pipeline": {
           "fullyObservedCalls": 2,
           "plainNativeCalls": 2,
@@ -194,7 +205,7 @@
     },
     {
       "lane": "default-LF",
-      "directory": "hermes-runtime-836dd0ad-639b-4609-9224-3a2ab4aef4a6",
+      "directory": "hermes-runtime-31de2508-d9d8-47e8-8aca-643dce3e22dd",
       "qualification": "PASS",
       "runtimeChecks": 15,
       "independentChecks": 14,
@@ -204,6 +215,10 @@
         "unverifiedCalls": 2,
         "effectsSettled": false,
         "qualifiedFileCalls": 0,
+        "fileToolGate": {
+          "enabled": false,
+          "refusedCalls": 0
+        },
         "pipeline": {
           "fullyObservedCalls": 2,
           "plainNativeCalls": 0,
@@ -226,6 +241,11 @@
     "sourceBaseline": "fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb",
     "scope": "On Windows obtain path metadata using read-only descriptor/fstat consistently with byte snapshot. Keep device/inode/size/mtime/ctime and digest; compare current reopened path to original handle. No baseline created for partial/stale reads. POSIX metadata stays stat-based.",
     "nativeFunctionChecks": 54,
+    "liveActivation": false
+  },
+  "strictToolGate": {
+    "qualification": "PASS",
+    "scope": "Trusted per-run policy selection, before native tool middleware/body imports. Strict file policy permits only approved read_file/write_file and plain-text reads. Unsupported patch and out-of-scope read actually refused with unchanged target, no complete pipeline entry, unknown effects and no release. Ordinary unconfigured runs retain legacy behavior.",
     "liveActivation": false
   }
 }

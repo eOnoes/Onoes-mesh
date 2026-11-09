@@ -27,8 +27,11 @@ class FileCompletionPolicy:
     root: Path
     files: frozenset
     text_reads: bool
+    strict_tools: bool
 
-    def __init__(self, root, files, *, text_reads=False):
+    def __init__(self, root, files, *, text_reads=False, strict_tools=False):
+        if type(strict_tools) is not bool:
+            raise TypeError('Strict tool dispatch must be explicitly selected')
         if type(text_reads) is not bool:
             raise TypeError('Text-read completion must be explicitly selected')
         root = Path(root)
@@ -47,6 +50,7 @@ class FileCompletionPolicy:
         object.__setattr__(self, 'root', root)
         object.__setattr__(self, 'files', frozenset(selected))
         object.__setattr__(self, 'text_reads', text_reads)
+        object.__setattr__(self, 'strict_tools', strict_tools)
 
     @property
     def policy_id(self):
@@ -60,6 +64,15 @@ class FileCompletionPolicy:
             raise RuntimeError('File is outside the approved completion scope')
         return path
 
+    def require_tool(self, name, args):
+        if type(name) is not str or name not in ('read_file','write_file'):
+            raise RuntimeError('Mesh bounded worker supports only approved file tools')
+        path = self.require(args)
+        if name == 'read_file' and (not self.text_reads or path.suffix.lower() not in {
+                '.md','.txt','.py','.js','.mjs','.cjs','.ts','.tsx','.jsx','.json','.css','.html','.toml','.yaml','.yml','.ps1'}):
+            raise RuntimeError('Only explicitly enabled plain-text reads are supported')
+        return path
+
 
 class WriterRunRegistry:
     """In-process direct-run enrollment; no HTTP/config activation or release grant.
@@ -67,11 +80,14 @@ class WriterRunRegistry:
     Entries survive delivery completion/cancellation. A later durable consumer must
     acknowledge retirement; this candidate deliberately provides no forget/retry API.
     """
-    def __init__(self, fence_factory, *, max_entries=256, file_policy=None):
+    def __init__(self, fence_factory, *, max_entries=256, file_policy=None, file_policy_factory=None):
         if not callable(fence_factory) or type(max_entries) is not int or not 1 <= max_entries <= 4096:
             raise ValueError('A trusted fence factory and bounded capacity are required')
         if file_policy is not None and type(file_policy) is not FileCompletionPolicy:
             raise TypeError('A trusted file-completion policy is required')
+        if file_policy_factory is not None and (file_policy is not None or not callable(file_policy_factory)):
+            raise TypeError('Select one trusted file policy or policy factory')
+        self._file_policy_factory = file_policy_factory
         self._file_policy = file_policy
         self._factory, self._limit = fence_factory, max_entries
         self._lock, self._entries = threading.RLock(), {}
@@ -98,11 +114,14 @@ class WriterRunRegistry:
             entry = {'run': run, 'generation': generation, 'state': 'reserved', 'fence': None, 'lifetime': None}
             self._entries[run_id] = entry  # Reserve before resource creation; unknown failures stay held.
             try:
+                policy = self._file_policy_factory(run_id) if self._file_policy_factory is not None else self._file_policy
+                if policy is not None and type(policy) is not FileCompletionPolicy:
+                    raise TypeError('Factory did not return a trusted file policy')
                 fence = entry['fence'] = self._factory(run_id, generation)
                 if (getattr(fence, 'run_id', None) != run_id or getattr(fence, 'generation', None) != generation
                         or not callable(getattr(fence, 'popen', None))):
                     raise RuntimeError('Factory returned a mismatched native process fence')
-                lifetime = entry['lifetime'] = WriterLifetime(fence, file_policy=self._file_policy)
+                lifetime = entry['lifetime'] = WriterLifetime(fence, file_policy=policy)
                 run.writer_lifetime, run.writer_generation = lifetime, generation
                 entry['state'] = 'enrolled'
                 return lifetime
@@ -167,6 +186,7 @@ class WriterLifetime:
             raise TypeError('A trusted file-completion policy is required')
         self._file_policy = file_policy
         self._file_completed = 0
+        self._tool_refused = 0
         self.fence = fence
         self._lock = threading.RLock()
         self._pending = {'root': {'kind': 'foreground', 'state': 'reserved', 'started': False}}
@@ -310,6 +330,8 @@ class WriterLifetime:
                                     'unverifiedCalls': self._tool_uncertain,
                                     'effectsSettled': not self._tool_active and self._tool_uncertain == 0,
                                     'qualifiedFileCalls': self._file_completed,
+                                    'fileToolGate': {'enabled': self._file_policy is not None and self._file_policy.strict_tools,
+                                        'refusedCalls': self._tool_refused},
                                     'pipeline': {'fullyObservedCalls': self._pipeline_full,
                                         'plainNativeCalls': self._pipeline_plain, 'otherOrMissingCalls': self._pipeline_other,
                                         'lateStages': self._pipeline_late, 'completionQualified': False,
@@ -329,7 +351,7 @@ class WriterLifetime:
 
 
 @contextmanager
-def writer_tool_effect():
+def writer_tool_effect(function_name=None, function_args=None):
     """Observe before middleware; no arguments, results, credentials or memory retained."""
     lifetime = _lifetime.get()
     if lifetime is None:
@@ -338,6 +360,14 @@ def writer_tool_effect():
     ticket = lifetime._begin_tool()
     token = _tool_ticket.set((lifetime, ticket))
     try:
+        if lifetime._file_policy is not None and lifetime._file_policy.strict_tools:
+            try:
+                if os.environ.get('HERMES_SAFE_MODE') != '1':
+                    raise RuntimeError('Bounded tool dispatch requires native safe mode')
+                lifetime._file_policy.require_tool(function_name, function_args)
+            except Exception:
+                with lifetime._lock: lifetime._tool_refused += 1
+                raise
         yield
     finally:
         _tool_ticket.reset(token)
@@ -353,13 +383,7 @@ def call_writer_file_handler(args, callback, *, operation='write_file'):
     owner = _tool_ticket.get()
     if owner is None or owner[0] is not lifetime or os.environ.get('HERMES_SAFE_MODE') != '1':
         raise RuntimeError('Bounded file completion requires the native safe-mode lane')
-    path = lifetime._file_policy.require(args)
-    if operation == 'read_file':
-        if not lifetime._file_policy.text_reads or path.suffix.lower() not in {
-                '.md','.txt','.py','.js','.mjs','.cjs','.ts','.tsx','.jsx','.json','.css','.html','.toml','.yaml','.yml','.ps1'}:
-            raise RuntimeError('Only explicitly enabled plain-text reads are supported')
-    elif operation != 'write_file':
-        raise RuntimeError('Unsupported file completion operation')
+    path = lifetime._file_policy.require_tool(operation, args)
     from hermes_cli.observability.shared_metrics_harness import _enabled
     if _enabled() is not False:
         raise RuntimeError('Bounded file completion does not support shared metrics effects')

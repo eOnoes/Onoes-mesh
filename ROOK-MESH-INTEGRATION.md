@@ -1889,3 +1889,54 @@ access, native/Relay install, automation activation or historical hold clearance
 Next: whole-worker closure for dedicated bounded lane, positive assignment consumer
 and coordinated rollout. Do not infer whole closure from retired turn/result frame
 (native managed_worker intentionally preserves some background processes).
+
+
+## Rook handoff reconciled / strict pre-dispatch prerequisite — 2026-11-09T02:30:22.850859+00:00
+Previous goal turn progressed:8c33092 pushed; Windows read metadata fix and both
+line-ending workflows qualified. Backup
+E:/App-Backups/ONOes-Mesh/2026-11-09_02-05-14-196_UTC_3736cbc7 verified.
+
+Eddie supplied Echo's local Rook handoff. Verified exact
+ede8e4ae5b350b51caf6b5c8db612f4a444c97f1 is an ancestor of current checkout;
+all mapped Rook core/server/UI files unchanged between that commit and8c33092.
+No merge/cherry-pick/duplicate implementation needed. Current npm run test:workroom
+PASS160/160, ../rook-handoff-current-workroom.log (Echo snapshot had159; current
+includes the added native receipt validation case). Read v4 at exact supplied path
+C:/Users/eMitchell109/AppData/Local/hermes/cache/scratch/mesh_rook_handoff_v4.md,
+SHA256028636538502be1cb6cb878dfab24086f484762227358433f10dcf7d5b1afc17.
+Handoff is evidence/contract, not live activation authority. Preserve Rook steward,
+Echo builder, existing nims identity/Nims display as independent reviewer only when
+deployed route qualified. No second Codex identity, no Nims build route added.
+Live authenticated GET /api/workroom/rook returned managedFlowEnabled=false,
+connection.status=not_configured,writerClearance=false,8assignment holds. No writes,
+dispatch, identity enrollment, credential reuse or scheduler activation performed.
+Production identity/reporting send+lookup, one scheduler owner and v4 deployed
+acceptance remain unqualified; retain5h/12h/createdAt/idempotent claim contract.
+
+Added frozen optional strict_tools to trusted FileCompletionPolicy; dispatcher
+passes actual function_name/function_args to writer_tool_effect before original
+body imports/Relay/middleware. Strict mode checks supported read/write and exact
+approved path/plain-text format, then existing native auth still runs. Unsupported
+patch/terminal/tool_call and out-of-scope read cannot enter body. Handler revalidates
+scope after middleware. This is a prerequisite, NOT whole-worker closure proof.
+Refused calls remain unverified/held; no new positive completion or retry authority.
+Ordinary/unconfigured native sessions preserve behavior. Per-run policy factory is
+trusted in-process only, mutually exclusive with constant policy; invalid results
+reserve the original run before any fence resource and cannot start a replacement.
+No HTTP/model-selected policy, credentials or arguments retained in new gate counts.
+
+Focused scope PASS58, function fixtures PASS54; full npmPASS375 (302Node+73Python),
+../strict-file-worker-full.log. Native safe LF0012f9de-847a-4fe4-ad47-3ffb71364170
+PASS17/verify17; safe CRLFc7b5f70e-7cf7-462f-9bd0-3aa641efd911 PASS17/verify17;
+default LF31de2508-d9d8-47e8-8aca-643dce3e22dd PASS15/verify14. Same18candidate
+source hashes. Real native agent requested unsupported patch and out-of-scope read;
+both refusedCalls1,fullyObservedCalls0,target bytes unchanged,unverifiedCalls1,
+effectsSettledfalse,writerQuiescencefalse. Allowed read/edit still qualified2 with
+no refused calls. All owner/FIFO/replay/retirement/crash guards remain PASS.
+Patch regenerated; git apply --check PASS without installing. Diff review PASS.
+Goal card revision52/evidence2149 readback verified, all6checklist states preserved.
+No native/Relay/model/Mind or live Mesh restart, activation or claim clearance.
+Full original goal active/incomplete. Next: dedicated profile/retirement closure
+and positive assignment consumer, then approved Rook wiring/deployed acceptance.
+Do not infer all post-write/background effects are settled just from dispatch gate
+or the tested Markdown file-handler result. No current source-writing hold released.

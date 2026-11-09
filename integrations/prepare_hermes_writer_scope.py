@@ -183,7 +183,7 @@ def tool_worker_candidates(native_root):
             body = lines[split:fn.end_lineno]
             lines[split:fn.end_lineno] = [
                 '    from tools.mesh_writer_scope import writer_tool_effect\n',
-                '    with writer_tool_effect():\n',
+                '    with writer_tool_effect(function_name, function_args):\n',
                 *['    ' + line if line.strip() else line for line in body]]
             candidate = ''.join(lines)
         ast.parse(candidate)

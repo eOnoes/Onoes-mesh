@@ -120,6 +120,33 @@ class ManagedWriterLifetimeTests(unittest.TestCase):
         scope.record_writer_middleware('tool_execution',manager)
         scope.record_writer_relay(False)
 
+    def test_strict_gate_refuses_other_tools_and_paths_before_body_runs(self):
+        root,metrics=self.file_policy_fixture()
+        for name,path in [('patch',root/'allowed.md'),('terminal',root/'allowed.md'),
+                          ('tool_call',root/'allowed.md'),('read_file',root/'other.md')]:
+            self.life=scope.WriterLifetime(self.fence,file_policy=scope.FileCompletionPolicy(root,['allowed.md'],text_reads=True,strict_tools=True))
+            called=[]
+            with patch.dict(os.environ,{'HERMES_SAFE_MODE':'1'}):
+                with scope.writer_foreground_scope(self.life):
+                    with self.assertRaises(RuntimeError):
+                        with scope.writer_tool_effect(name,{'path':str(path)}):called.append(True)
+            effects=self.life.snapshot()['toolEffects']
+            self.assertEqual(called,[]);self.assertEqual(effects['fileToolGate'],{'enabled':True,'refusedCalls':1})
+            self.assertEqual(effects['pipeline']['fullyObservedCalls'],0)
+            self.assertEqual(effects['unverifiedCalls'],1);self.assertFalse(effects['effectsSettled'])
+
+    def test_strict_gate_allows_approved_file_and_preserves_unbound_calls(self):
+        root,metrics=self.file_policy_fixture()
+        self.life=scope.WriterLifetime(self.fence,file_policy=scope.FileCompletionPolicy(root,['allowed.md'],text_reads=True,strict_tools=True))
+        with patch.dict(os.environ,{'HERMES_SAFE_MODE':'1'}),patch.dict(sys.modules,{metrics.__name__:metrics}):
+            with scope.writer_foreground_scope(self.life):
+                with scope.writer_tool_effect('read_file',{'path':str(root/'allowed.md')}):
+                    self.record_plain_stages()
+                    scope.call_writer_file_handler({'path':str(root/'allowed.md')},lambda:'native result',operation='read_file')
+        effects=self.life.snapshot()['toolEffects']
+        self.assertTrue(effects['effectsSettled']);self.assertEqual(effects['fileToolGate']['refusedCalls'],0)
+        with scope.writer_tool_effect('terminal',{'command':'legacy'}):pass
+
     def test_approved_file_handler_qualifies_only_after_entire_tool_returns(self):
         root,metrics=self.file_policy_fixture()
         def handler():
@@ -773,6 +800,15 @@ class WriterRunEnrollmentTests(unittest.TestCase):
     def run_fixture(self, number=1, **kwargs):
         return types.SimpleNamespace(run_id=f'run_{number:032x}', admission=None,
                                      writer_lifetime=None, writer_generation='', **kwargs)
+
+    def test_invalid_per_run_policy_retains_reservation_before_resource_creation(self):
+        calls=[]
+        registry=scope.WriterRunRegistry(lambda *a:calls.append(a),file_policy_factory=lambda run_id:object())
+        run=self.run_fixture()
+        with self.assertRaises(TypeError):registry.enroll(run)
+        self.assertEqual(calls,[]);self.assertEqual(registry.snapshot(run.run_id)['state'],'unknown')
+        with self.assertRaises(RuntimeError):registry.enroll(self.run_fixture())
+        with self.assertRaises(TypeError):scope.WriterRunRegistry(lambda *a:None,file_policy_factory='request field')
 
     def test_server_mints_generation_and_duplicate_admission_cannot_replace_it(self):
         created = []

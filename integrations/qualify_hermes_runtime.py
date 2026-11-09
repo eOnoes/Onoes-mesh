@@ -168,6 +168,19 @@ def verify_evidence(root):
                 or (text_reads and f.get('verifiedReadBeforeWrite') is not True)):
             raise RuntimeError('Bounded file-handler completion evidence is incomplete')
         result['checks'].append('bounded_file_handler_settles_after_bookkeeping_only')
+    if 'strict_native_gate_refuses_unsupported_tool_and_outside_scope_before_pipeline' in report['checks']:
+        rows=json.loads((root/'strict-tool-gate-evidence.json').read_text(encoding='utf-8'))
+        if {row.get('case') for row in rows}!={'unsupported_tool','outside_scope'} or len(rows)!=2:
+            raise RuntimeError('Native strict gate cases are incomplete')
+        if (root/'workspace'/'mesh-outside-allowlist.md').read_bytes()!=b'unchanged\n':
+            raise RuntimeError('Native strict gate modified the refused target')
+        for row in rows:
+            writer=row['writer'];effect=writer['enrollment']['lifetime']['toolEffects']
+            if (row.get('targetUnchanged') is not True or effect['fileToolGate']!={'enabled':True,'refusedCalls':1}
+                    or effect['observedCalls']!=1 or effect['qualifiedFileCalls'] or effect['unverifiedCalls']!=1
+                    or effect['pipeline']['fullyObservedCalls'] or effect['effectsSettled'] or writer['writerQuiescence']):
+                raise RuntimeError('Native refusal entered the pipeline or claimed completion')
+        result['checks'].append('strict_native_dispatch_refused_without_effects_or_release')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -462,6 +475,7 @@ async def child(root):
     canonical_mode = False
     file_mode = False
     file_steps = []
+    attack_mode = None
     file_newline = b'\r\n' if os.environ.get('MESH_FIXTURE_NEWLINE')=='CRLF' else b'\n'
     file_expected = b'Mesh native file proof.' + file_newline
     async def provider(request):
@@ -481,7 +495,7 @@ async def child(root):
             title_started.set()
             await asyncio.wait_for(title_release.wait(), timeout=30)
         tool_results = [message for message in body.get('messages', []) if message.get('role') == 'tool']
-        file_turn = file_mode and file_allowed
+        file_turn = file_mode and file_allowed and attack_mode is None
         tool = worker_allowed and len(tool_results) < (2 if file_turn else 1)
         tool_name = ('read_file' if not tool_results else 'write_file') if file_turn else 'terminal'
         if file_turn:
@@ -489,6 +503,11 @@ async def child(root):
             if tool_name == 'write_file':tool_args['content']='Mesh native file proof.\n'
             if tool:file_steps.append(tool_name)
         else:tool_args={'command':"printf 'mesh-runtime-proof'",'timeout':5}
+        if attack_mode is not None and file_allowed:
+            tool = not tool_results
+            tool_name = 'patch' if attack_mode=='unsupported_tool' else 'read_file'
+            tool_args = {'path':str(root/'workspace'/'mesh-outside-allowlist.md')}
+            if tool_name=='patch':tool_args.update(old_string='unchanged',new_string='MUST NOT RUN')
         message = ({'role': 'assistant', 'content': None, 'tool_calls': [{'id': 'call_mesh_fixture_'+str(len(tool_results)), 'type': 'function',
                     'function': {'name': tool_name, 'arguments': json.dumps(tool_args)}}]}
                    if tool else {'role': 'assistant', 'content': 'mesh fixture completed' if worker_allowed
@@ -520,9 +539,10 @@ async def child(root):
             free.bind(('127.0.0.1', 0)); port = free.getsockname()[1]
         adapter = APIServerAdapter(PlatformConfig(enabled=True, extra={'host': '127.0.0.1', 'port': port,
                                                                       'key': key, 'model_name': 'mesh-runtime-fixture'}))
-        adapter._mesh_writer_runs = WriterRunRegistry(factory, file_policy=(
-            FileCompletionPolicy((root/'workspace').resolve(), ['mesh-file-proof.md'], text_reads=True)
-            if os.environ.get('HERMES_SAFE_MODE')=='1' else None))
+        def policy_for_run(run_id):
+            return (FileCompletionPolicy((root/'workspace').resolve(), ['mesh-file-proof.md'],
+                text_reads=True,strict_tools=True) if file_mode and os.environ.get('HERMES_SAFE_MODE')=='1' else None)
+        adapter._mesh_writer_runs = WriterRunRegistry(factory,file_policy_factory=policy_for_run)
         # Only provider selection is a fixture. The actual agent, tools, API
         # admission/executor, ownership checks and persistence run unchanged.
         def create_agent(**kwargs):
@@ -645,6 +665,7 @@ async def child(root):
                         if response.status not in (200,201,202):
                             raise RuntimeError('Native file run admission failed')
                     file_id = file_admitted['run_id']
+                    active_fixture_run_id = file_id
                     deadline = time.monotonic()+45
                     while not file_write_started.is_set():
                         if time.monotonic()>deadline:
@@ -689,6 +710,33 @@ async def child(root):
                     checks.append('actual_native_read_before_write_with_stale_guard_preserved')
                 finally:
                     file_write_release.set()
+            if os.environ.get('HERMES_SAFE_MODE')=='1':
+                outside=root/'workspace'/'mesh-outside-allowlist.md';outside.write_bytes(b'unchanged\n')
+                refusals=[]
+                for attack_mode in ['unsupported_tool','outside_scope']:
+                    async with client.post(origin+'/v1/runs',headers={**headers,'Idempotency-Key':'mesh-gate-'+attack_mode},
+                            json={'input':'Synthetic bounded-worker refusal check.'}) as response:
+                        attack_admitted=await response.json()
+                        if response.status not in (200,201,202):raise RuntimeError('Gate fixture admission failed')
+                    active_fixture_run_id=attack_admitted['run_id'];deadline=time.monotonic()+45
+                    while True:
+                        async with client.get(origin+'/v1/runs/'+active_fixture_run_id,
+                                headers={'Authorization':'Bearer '+key}) as response:
+                            attack_status=await response.json()
+                        attack_life=((attack_status.get('writer_lifecycle') or {}).get('enrollment') or {}).get('lifetime') or {}
+                        if attack_status.get('status') in ('completed','failed') and attack_life.get('managedWorkEnded'):break
+                        if time.monotonic()>deadline:raise RuntimeError('Gate fixture worker did not settle')
+                        await asyncio.sleep(.05)
+                    effect=attack_life['toolEffects']
+                    if (outside.read_bytes()!=b'unchanged\n' or effect['fileToolGate']!={'enabled':True,'refusedCalls':1}
+                            or effect['observedCalls']!=1 or effect['qualifiedFileCalls'] or effect['unverifiedCalls']!=1
+                            or effect['pipeline']['fullyObservedCalls'] or effect['effectsSettled']
+                            or attack_status['writer_lifecycle']['writerQuiescence']):
+                        raise RuntimeError('Unsupported native tool passed the bounded dispatch gate')
+                    refusals.append({'case':attack_mode,'writer':attack_status['writer_lifecycle'],'targetUnchanged':True})
+                attack_mode=None
+                (root/'strict-tool-gate-evidence.json').write_text(json.dumps(refusals,indent=2),encoding='utf-8')
+                checks.append('strict_native_gate_refuses_unsupported_tool_and_outside_scope_before_pipeline')
             file_mode = False
             count = len(requests)
             worker_calls = sum('terminal' in item['tools'] for item in requests)
@@ -863,13 +911,13 @@ async def child(root):
         (root/'failure-before-cleanup.json').write_text(json.dumps({
             'errorClass':type(error).__name__, 'message':str(error) if type(error) is RuntimeError else None,
             'fileSteps':file_steps, 'lastFileStatus':locals().get('file_status'),
-            'heldFileStatus':locals().get('file_held')},indent=2),encoding='utf-8')
+            'heldFileStatus':locals().get('file_held'),'attackMode':attack_mode,'lastAttackStatus':locals().get('attack_status')},indent=2),encoding='utf-8')
         # Retain the responder while the released fixture worker finishes; closing
         # it first would replace the original assertion with connection retry noise.
         title_release.set(); canonical_release.set()
         release = locals().get('file_write_release')
         if release is not None: release.set()
-        ident = locals().get('file_id')
+        ident = locals().get('active_fixture_run_id',locals().get('file_id'))
         deadline = time.monotonic()+15
         while adapter is not None and ident:
             try: snapshot = adapter._mesh_writer_runs.snapshot(ident)
