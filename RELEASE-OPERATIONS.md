@@ -547,3 +547,27 @@ Maintenance scope, pending launcher/import-root verification and Eddie's permiss
 4. Read back the original test session through the installed closed-profile bridge; require exact tools/model/workspace and key-presence=false before any separate generation qualification. Private references alone are not proof either way.
 
 This proposal does not enroll Rook, grant a production worker principal, activate automatic work, change model credentials, restart the shared local-model service, or connect Mind. Those existing gates remain independent. No maintenance permission has yet been assumed.
+
+
+## 2026-11-09 — reviewed native bridge maintenance ready, permission pending
+- Previous goal turn classified progress: live public policy, commit0fe6f18 and verified backup. Outstanding index32209 finished0 after219s; VBS explicitly unsupported. Bounded reader23878 finished0 but file not indexed. No duplicate/restart on observation timeout. One soft progress warning logged to ~/.hermes/agent-lab/logs/smart-stop.jsonl after repeated no-output reads; CPU/process metadata proved work remained active until terminal.
+- With muncher confirmed unable to handle VBS, read only selected non-secret runtime startup settings. Launcher is UTF16BOM (initial UTF8 decode failed before output; corrected encoding); same1870bytes/SHA485eb282c27762c1ec26f9079a00694db25bad255ab6ad99417cded2212525e4. It declares expected HERMES_HOME, prepended hermes-agent PYTHONPATH, current directory and exact3.14.9 Python, hidden sh.Run(...,0,False). Native CLI independently recognizes Hermes_Gateway/PID9804. No launcher modification.
+- Added source-only native_bridge_maintenance.py with exact seven-file allowlist; only two known new helpers can be absent originals. All package/candidate/baseline/current hashes checked before mutation, candidate syntax parsed, stopped-runtime guard required before/every/after replacement. No service controls or credential handling. Rollback restores exact five originals/removes only exact-hash introduced helpers; unexpected edits/path escapes refuse before mutation. Partial failures require safe stopped-state reconciliation, never blind restart.
+- Five meaningful focused tests PASS: busy runtime no mutation, full apply/exact rollback, tampered package no mutation, unexpected installed edits preserved, path escape refused. Real package dry-run PASS7; actual live guard correctly refuses native8642 listener. No live source was copied/deleted and no gateway stopped. Full434 remains prior unchanged-production baseline, not falsely counted as a new full run.
+- Maintenance package before/candidate/rollback hashes rechecked PASS7. Readiness and existing RELEASE-OPERATIONS.md contain concrete scope. Asked Eddie once for brief shared Echo/Relay/Telegram gateway maintenance; model service/Mesh stay running, active work must not be interrupted, Rook/Mind/autowork remain off. Approval pending; no timeout can count as approval.
+- Next dependent step only after approval: native guarded stop, prove stopped/no workers, apply exact source-only package, existing hidden launcher restart, health/hash/closed-policy readback. Production identity/enrollment, real Codex generation and Rook activation remain separate unqualified gates. Goal active/incomplete.
+
+
+Maintenance follow-up: focused tests now7/7, adding safe recovery after runtime returns mid-copy and refusing to classify an original source as a removable helper. Full Python discovery PASS136 in11.208s (../native-bridge-python-regression.log), including existing native process/identity/retirement guards. This is the actual discovered Python count, not the previous narrower97-test command. Prior337 Node tests remain unchanged baseline; no new claim of whole production activation. No service or source installation performed; permission remains pending.
+
+### Current build checklist — 2026-11-09
+- [x] Phone board create/edit/drag/theme/reload and recovery checks accepted by Eddie.
+- [x] Disposable native builder -> actual independent Nims review verified; Eddie acceptance remains a separate decision.
+- [x] Live Codex public file/terminal policy verified on one unsubmitted session with zero admissions.
+- [x] Bridge source package, rollback, registered hidden launcher and operator safeguards prepared/tested.
+- [ ] Shared Echo/Relay/Telegram gateway maintenance permission, bridge installation and actual recovery verification.
+- [ ] Key-free closed-policy readback, real Codex generation qualification and approved production worker binding.
+- [ ] Rook own identity/report transport/single scheduler/deployed acceptance and separate activation.
+- [ ] Mind canonical live ledger/keys/scope setup and reviewed connection; currently disconnected.
+- [ ] Main-PC inference controls/health qualification, then laptop and future AI-box integration. Existing model service stays running.
+- [ ] Whole-app release acceptance across local/phone workflows and external integrations; not complete.

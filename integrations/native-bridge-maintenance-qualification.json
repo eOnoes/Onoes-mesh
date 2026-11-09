@@ -1,0 +1,104 @@
+{
+  "schema": "mesh-native-bridge-maintenance/v1",
+  "state": "prepared_not_applied",
+  "focusedTests": {
+    "command": "python -m unittest test.native_bridge_maintenance_test -v",
+    "passed": 7
+  },
+  "dryRun": {
+    "files": 7,
+    "sourceChanged": false,
+    "servicesChanged": false
+  },
+  "liveRefusal": {
+    "command": "stopped_runtime()",
+    "expectedRefusal": "Native listener is still running; source untouched",
+    "sourceChanged": false
+  },
+  "sourcePackage": {
+    "qualification": "PASS",
+    "files": [
+      {
+        "file": "gateway/session_controls.py",
+        "candidateMatches": true,
+        "baselineMatches": true,
+        "installedStillBaseline": true
+      },
+      {
+        "file": "tui_gateway/contracts/canonical.py",
+        "candidateMatches": true,
+        "baselineMatches": true,
+        "installedStillBaseline": true
+      },
+      {
+        "file": "gateway/session_managed_worker.py",
+        "candidateMatches": true,
+        "baselineMatches": true,
+        "installedStillBaseline": true
+      },
+      {
+        "file": "gateway/mesh_assignment_process.py",
+        "candidateMatches": true,
+        "baselineMatches": true,
+        "installedStillBaseline": true
+      },
+      {
+        "file": "gateway/mesh_windows_process.py",
+        "candidateMatches": true,
+        "baselineMatches": true,
+        "installedStillBaseline": true
+      },
+      {
+        "file": "tools/file_tools_read_tracking.py",
+        "candidateMatches": true,
+        "baselineMatches": true,
+        "installedStillBaseline": true
+      },
+      {
+        "file": "tools/file_tools.py",
+        "candidateMatches": true,
+        "baselineMatches": true,
+        "installedStillBaseline": true
+      }
+    ],
+    "liveSourceChanged": false,
+    "serviceStopped": false
+  },
+  "launcher": {
+    "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\gateway-service\\Hermes_Gateway.vbs",
+    "bytes": 1870,
+    "sha256": "485eb282c27762c1ec26f9079a00694db25bad255ab6ad99417cded2212525e4",
+    "startupMetadata": [
+      "' Hermes Agent Gateway - Messaging Platform Integration",
+      "Set env = sh.Environment(\"PROCESS\")",
+      "env.Item(\"HERMES_HOME\") = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\"",
+      "env.Item(\"PYTHONIOENCODING\") = \"utf-8\"",
+      "env.Item(\"HERMES_GATEWAY_DETACHED\") = \"1\"",
+      "env.Item(\"HERMES_SUPERVISED_CHILD\") = \"1\"",
+      "env.Item(\"VIRTUAL_ENV\") = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\tools\"",
+      "existing_pp = env.Item(\"PYTHONPATH\")",
+      "env.Item(\"PYTHONPATH\") = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent;\" & existing_pp",
+      "env.Item(\"PYTHONPATH\") = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\"",
+      "sh.CurrentDirectory = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\"",
+      "sh.Run \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\tools\\python-3.14.9+20261021-win32-x64\\python.exe -m hermes_cli.main gateway run\", 0, False"
+    ]
+  },
+  "maintenanceApproval": "pending",
+  "liveInstallation": false,
+  "activationAuthorized": false,
+  "pythonRegression": {
+    "command": "python -m unittest discover -s test -p '*_test.py' -v",
+    "passed": 136,
+    "seconds": 11.208,
+    "result": "PASS"
+  },
+  "sourceRecoveryBackup": {
+    "directory": "E:\\App-Backups\\Onoes-Mesh-Native-Bridge\\2026-11-09_09-14-22_UTC_9d069d48",
+    "verified": true,
+    "sourceFilesVerified": 12,
+    "credentialsIncluded": false,
+    "sourceOnly": true,
+    "fileSetVerified": true,
+    "totalFiles": 15
+  }
+}

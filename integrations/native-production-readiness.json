@@ -8,7 +8,7 @@
     "pid": 9804,
     "module": "hermes_cli.main",
     "cwd": "C:/Users/eMitchell109/AppData/Local/hermes",
-    "launcherCustody": "unconfirmed; recorded parent PID no longer exists"
+    "launcherCustody": "Verified registered Hermes_Gateway task and hidden launcher declare expected import root/interpreter; actual stop/start recovery not yet exercised."
   },
   "installedPython": "C:/Users/eMitchell109/AppData/Local/hermes/tools/python-3.14.9+20261021-win32-x64/python.exe",
   "qualifiedPython": "3.14.9+20261021",
@@ -103,7 +103,7 @@
     "providerCompatibility": "Explicit Codex candidate supports key-free frozen preflight and refuses key/endpoint/tool mismatches; real Codex generation not qualified."
   },
   "remaining": [
-    "Confirm running import-root/launcher custody before replacing shared native files",
+    "Obtain shared gateway maintenance permission; use native no-interruption stop guard, verify quiescence, apply seven reviewed sources and validate recovery. Registered launcher/import root are now verified.",
     "Confirm dedicated or existing explicitly approved native principal and least-privilege binding; no credentials copied",
     "Confirm builder model/provider/profile and allowed Mesh workspace",
     "Wire production transport and readback into server-side runner only after reviewed binding",
@@ -154,7 +154,26 @@
       "Relay",
       "Telegram (Echo-reported)"
     ],
-    "restartRecoveryVerified": false
+    "restartRecoveryVerified": false,
+    "startupMetadata": {
+      "file": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\gateway-service\\Hermes_Gateway.vbs",
+      "bytes": 1870,
+      "sha256": "485eb282c27762c1ec26f9079a00694db25bad255ab6ad99417cded2212525e4",
+      "startupMetadata": [
+        "' Hermes Agent Gateway - Messaging Platform Integration",
+        "Set env = sh.Environment(\"PROCESS\")",
+        "env.Item(\"HERMES_HOME\") = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\"",
+        "env.Item(\"PYTHONIOENCODING\") = \"utf-8\"",
+        "env.Item(\"HERMES_GATEWAY_DETACHED\") = \"1\"",
+        "env.Item(\"HERMES_SUPERVISED_CHILD\") = \"1\"",
+        "env.Item(\"VIRTUAL_ENV\") = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\tools\"",
+        "existing_pp = env.Item(\"PYTHONPATH\")",
+        "env.Item(\"PYTHONPATH\") = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent;\" & existing_pp",
+        "env.Item(\"PYTHONPATH\") = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\"",
+        "sh.CurrentDirectory = \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\"",
+        "sh.Run \"C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\tools\\python-3.14.9+20261021-win32-x64\\python.exe -m hermes_cli.main gateway run\", 0, False"
+      ]
+    }
   },
   "configuredBuilderMetadata": {
     "model": "gpt-6-luna",
@@ -329,5 +348,15 @@
     "teamState": "needs_review",
     "decision": "pending",
     "modelTurnsStarted": 0
+  },
+  "maintenancePreparation": {
+    "evidence": "integrations/native-bridge-maintenance-qualification.json",
+    "operatorTool": "integrations/native_bridge_maintenance.py",
+    "focusedTestsPassed": 7,
+    "dryRunPassed": true,
+    "refusesRunningNativeListener": true,
+    "approval": "pending",
+    "installed": false,
+    "pythonRegressionPassed": 136
   }
 }
