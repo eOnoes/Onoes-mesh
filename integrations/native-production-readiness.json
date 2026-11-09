@@ -121,13 +121,16 @@
     "agent": "echo",
     "sendId": "ea58b52b-3e6d-4e33-b163-d6f7f42eaa0d",
     "runId": "run_a43b28319f2943feb289a70fd1a76295",
-    "status": "running_with_saved_reply",
+    "status": "completed",
     "readOnly": true,
     "deploymentAuthorizedByQuestion": false,
     "replySaved": true,
     "replyHistoryId": 217,
     "nativeClosureConfirmed": false,
-    "replyAuthority": "Read-only findings, not permission or deployment approval"
+    "replyAuthority": "Read-only findings, not permission or deployment approval",
+    "nativeRunTerminalConfirmed": true,
+    "terminalObservedAt": "2026-11-09T07:40:11.712Z",
+    "closureScope": "Native run terminal confirmed; receipt writerQuiescence remains false, not source-writer clearance"
   },
   "launcherEvidence": {
     "task": "Hermes_Gateway",
