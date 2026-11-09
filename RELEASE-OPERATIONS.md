@@ -2,30 +2,39 @@
 
 ## Current readiness - 2026-11-09
 
-- Local/phone: owner-confirmed card editing, movement, persistence and recovery.
-  Private page and named process checked healthy on 2026-11-09.
-- Native automatic build-to-review: supported-profile local qualification passed
-  416 regression tests and 14 real-native checks at e0892f9. Provider and Nims
-  review transport were synthetic in that earlier run. A later disposable
-  native-builder-to-real-Nims handoff passed 15 checks; builder provider remains
-  synthetic, production identity/profile enrollment remains off. The same
-  15-check path also passed on the live service interpreter, Python3.14.9;
-  installed source still has the original five files and lacks two new helpers.
-- Nims: real read-only file review and completed-turn readback/resume passed
-  on 2026-11-09 using a disposable file and existing ChatGPT sign-in. Runtime
-  policy/identity is checked before a turn. Automatic native-builder handoff
-  is qualified in a disposable board. Completed-result loss/reopen recovery
-  passed real native readback without resend. Production enrollment, running-turn
-  process-kill survival and absent turn-ID recovery remain unqualified.
-- Positive acceptance: an exact-byte disposable task received real Nims approval;
-  native readback verified five hashes and read-only check output (15+1 checks).
-  Owner decision remained pending. Echo default is configured openai-codex,
-  while the qualified native consumer currently accepts custom only; route
-  preparation and explicit identity/maintenance binding remain open.
-- Rook remains OFF pending production identity, reporting transport, a single
-  scheduler owner and deployed acceptance.
-- Mind live store/keys/access not activated; model-service maintenance deferred
-  by Eddie. Other machines and shared memory/tools remain in scope and open.
+- Local/phone: Eddie confirmed card creation, editing, movement, saved review/Done,
+  both themes, background/resume, rotation with an unsaved draft and network recovery.
+  The full end-to-end production worker workflow still requires acceptance.
+- Latest full local gate: `npm test` passed 449 checks (352 Node + 97 Python),
+  with static/design checks. The current checkout also passed all 195 Workroom
+  tests after reconciliation with Echo's Rook handoff. See
+  `integrations/draft-harness-qualification.json` and the project checkpoint.
+- Main-PC health: live read-only CPU/RAM/GPU and fixed supervisor observations
+  verified, including shared concurrent refreshes and honest unloaded/unknown states.
+  Responsive UI and selected-workspace reload verified. Model lifecycle controls,
+  per-model resource attribution and the other two machines remain unqualified.
+- Native worker bridge: disposable native builder-to-real-Nims independent review
+  passed; the builder provider was synthetic. Positive review was checked against
+  five actual artifact hashes and read-only check output. Production enrollment
+  and real Codex generation remain unqualified.
+- Explicit openai-codex closed-profile preflight is implemented and tested.
+  One live unsubmitted session's public policy matched the requested file/terminal
+  toolsets and workspace, with zero admissions. This is not generation or private
+  credential-absence proof. The shared gateway still has its baseline source;
+  the tested seven-file bridge installer/rollback is prepared but not applied.
+  Gateway maintenance approval remains pending.
+- Rook candidate ede8e4ae is already included in this checkout. Its local tests
+  are not deployed acceptance. Rook remains OFF pending its own approved identity,
+  reporting transport, one scheduler owner and deployed integration checks.
+- The in-app parent goal retains all six original stages: two done, three working
+  and one blocked; owner review remains pending. Its saved evidence is current
+  through the 449-check baseline. The complete build goal remains open.
+- Mind live database/keys/access remain OFF. Eddie owns; Echo and Nims operate.
+  Canonical store identity must be established before connection. Shared memory,
+  skills and MCP tools remain unfinished. Model-service maintenance was declined.
+- Backups are manual/milestone only to E:\App-Backups, per Eddie's decision;
+  off-device protection is deferred. The latest verified backup is recorded in
+  the checkpoint. Whole-app production acceptance is not claimed.
 
 Historical records below describe their dated baselines, not today's loaded code.
 
