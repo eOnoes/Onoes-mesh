@@ -30,5 +30,15 @@
   "qualification": "NOT_QUALIFIED_FOR_REAL_WORKER",
   "blocker": "Approved single trial showed construction-stage delay; final log reached ready, but guide task interrupted. Root cause unproven.",
   "liveWorkerRootCause": "UNPROVEN",
-  "trialEvidence": "integrations/native-worker-construction-trial.json"
+  "trialEvidence": "integrations/native-worker-construction-trial.json",
+  "constructorTimingInstallation": "integrations/native-constructor-timing-installation.json",
+  "currentWorkerSourceSha256": "91d7d57dabb61e628bcbe1e1eedc418902262d665a9d23fbe9dbbe20aca0294f",
+  "timingQualification": "integrations/native-constructor-timing-qualification.json",
+  "nextBatch": {
+    "maxTasks": 3,
+    "state": "prepared_awaiting_owner_approval",
+    "allGuardsVerified": true,
+    "newSessions": 0,
+    "newModelRequests": 0
+  }
 }

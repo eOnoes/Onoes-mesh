@@ -1,0 +1,12 @@
+{
+  "schema": "mesh-native-constructor-timing-installation/v1",
+  "target": "C:\\Users\\eMitchell109\\AppData\\Local\\hermes\\hermes-agent\\agent\\managed_worker.py",
+  "beforeSha256": "a7041dcabdf5c059cf943554560b8469fd4d91b65e271724bbb8d2b3267189d7",
+  "installedSha256": "91d7d57dabb61e628bcbe1e1eedc418902262d665a9d23fbe9dbbe20aca0294f",
+  "backup": "E:\\App-Backups\\Onoes-Mesh-Native-Bridge\\2026-11-09_16-26-56_UTC_constructor-timing",
+  "activeWorkersBefore": 0,
+  "gatewayRestarted": false,
+  "newPermissions": false,
+  "logs": "Fixed route/factory phase names and monotonic clock values only",
+  "modelRequestsSent": 0
+}

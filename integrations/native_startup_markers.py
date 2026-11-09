@@ -1,5 +1,6 @@
 """Content-free instrumentation for disposable worker diagnostics, never live injection."""
 import ast
+import re
 
 
 MARKERS = (
@@ -33,3 +34,49 @@ def instrument_worker(source: bytes) -> bytes:
         text = text[:point] + marker + text[point:]
     ast.parse(text)
     return text.encode('utf-8')
+
+
+def instrument_constructor(source: bytes) -> bytes:
+    """Time route resolution and construction; never log arguments or returned values."""
+    text = source.decode('utf-8')
+    if 'MESH_WORKER_CONSTRUCT ' in text:
+        raise ValueError('constructor_markers_already_present')
+    anchor = '        return factory(**{**kwargs, **worker_route(policy, kwargs)})\n'
+    if text.count(anchor) != 1:
+        raise ValueError('unexpected_constructor_seam')
+    lines = []
+    def event(phase):
+        lines.append('        print("MESH_WORKER_CONSTRUCT ' + phase
+                     + '", __import__("time").monotonic_ns(), '
+                     + 'file=__import__("sys").stderr, flush=True)\n')
+    event('route_begin')
+    lines.append('        _mesh_startup_route = worker_route(policy, kwargs)\n')
+    event('route_complete')
+    event('factory_begin')
+    lines.append('        _mesh_startup_agent = factory(**{**kwargs, **_mesh_startup_route})\n')
+    event('factory_complete')
+    lines.append('        return _mesh_startup_agent\n')
+    text = text.replace(anchor, ''.join(lines))
+    ast.parse(text)
+    return text.encode('utf-8')
+
+
+def constructor_timings(log: str) -> list[dict]:
+    """Only accept complete, ordered per-process timing records."""
+    groups = {}
+    for pid, phase, timestamp in re.findall(
+            r'\[pid (\d+)\] MESH_WORKER_CONSTRUCT (\w+) (\d+)', log):
+        groups.setdefault(pid, []).append((phase, int(timestamp)))
+    expected = ['route_begin', 'route_complete', 'factory_begin', 'factory_complete']
+    results = []
+    for pid, events in groups.items():
+        if [phase for phase, _ in events] != expected:
+            raise ValueError('incomplete_or_duplicate_constructor_timing')
+        ticks = [tick for _, tick in events]
+        if ticks != sorted(ticks):
+            raise ValueError('nonmonotonic_constructor_timing')
+        results.append({'pid': int(pid), 'routeMilliseconds': (ticks[1]-ticks[0])/1e6,
+                        'factoryMilliseconds': (ticks[3]-ticks[2])/1e6})
+    if not results:
+        raise ValueError('missing_constructor_timing')
+    return results

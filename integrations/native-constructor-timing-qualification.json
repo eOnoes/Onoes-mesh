@@ -1,0 +1,43 @@
+{
+  "schema": "mesh-native-startup-diagnostic/v1",
+  "fixture": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-ff5bc8a6-4170-4a86-aeb9-9b3206fdfc04",
+  "sourceInstrumentation": "fixed startup labels, route/factory monotonic timing and faulthandler enabled before owned process start",
+  "originalWorkerSha256": "05ed19c86ba6756f73378b6a68170029084c25ef6ee0eee244ee2e39cce2082e",
+  "instrumentedWorkerSha256": "881cb4aaf7f864af93b9ad5607fd4e13aba56b263cec9c04f7f31f9e4eba76f3",
+  "liveGatewayChanged": false,
+  "liveInjection": false,
+  "realProvider": false,
+  "qualification": "DIAGNOSTIC_ONLY_NOT_RELEASE_ACCEPTANCE",
+  "exitCode": 0,
+  "ownedProcessObservation": {
+    "schema": "mesh-writer-process-tree/v1",
+    "runId": "worker-startup-diagnostic",
+    "generation": "ae079f48-4196-458d-9d21-3bf0a8d846ad",
+    "coverage": "windows_job_members",
+    "sealed": true,
+    "terminationRequested": false,
+    "writerQuiescence": false,
+    "processTreeEnded": true,
+    "state": "ended",
+    "activeProcesses": 0,
+    "allRootsEnded": true
+  },
+  "constructorTimings": [
+    {
+      "pid": 63692,
+      "routeMilliseconds": 10.0978,
+      "factoryMilliseconds": 1705.7916
+    },
+    {
+      "pid": 37528,
+      "routeMilliseconds": 12.1612,
+      "factoryMilliseconds": 1451.6684
+    }
+  ],
+  "negativeChecks": {
+    "malformedTimingRefusals": 4,
+    "sourceRefusals": 2
+  },
+  "liveWorkerTiming": "NOT_MEASURED",
+  "rootCause": "UNPROVEN"
+}
