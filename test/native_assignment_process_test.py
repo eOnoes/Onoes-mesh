@@ -1,0 +1,133 @@
+import unittest
+import threading
+from unittest.mock import patch
+from types import SimpleNamespace
+from integrations.native_assignment_process import AssignmentProcessScope, make_assignment_scope
+
+
+class FakeFence:
+    def __init__(self, run, generation):
+        self.run, self.generation = run, generation
+        self.active = 0
+        self.sealed = self.closed = False
+        self.launches = 0
+        self.terminated = False
+
+    def popen(self, argv, **kwargs):
+        self.launches += 1
+        self.active = 1
+        return SimpleNamespace(pid=123)
+
+    def seal(self):
+        self.sealed = True
+
+    def snapshot(self):
+        return dict(state='ended' if self.sealed and not self.active else 'held',
+                    processTreeEnded=self.sealed and not self.active,
+                    activeProcesses=self.active, terminationRequested=self.terminated,
+                    writerQuiescence=False, runId=self.run, generation=self.generation)
+
+    def close(self):
+        if self.active:
+            raise RuntimeError('live process')
+        self.closed = True
+
+    def terminate(self):
+        self.active = 0
+        self.terminated = True
+        return self.snapshot()
+
+
+class AssignmentProcessTests(unittest.TestCase):
+    def scope(self, **changes):
+        return AssignmentProcessScope(SimpleNamespace(profile_id='fixture'),
+            SimpleNamespace(session_id='local-fixture'),
+            dict(admission_id='a'*32, generation=1, principal_id='fixture', **changes),
+            fence_factory=FakeFence)
+
+    def test_child_keeps_assignment_held_after_retirement_then_natural_end_is_cached(self):
+        scope = self.scope()
+        scope.popen(['synthetic'])
+        held = scope.retire()
+        self.assertFalse(held['processTreeEnded'])
+        self.assertEqual(held['activeProcesses'], 1)
+        self.assertFalse(scope.fence.closed)
+        scope.fence.active = 0
+        ended = scope.observe()
+        self.assertTrue(ended['processTreeEnded'])
+        self.assertTrue(scope.fence.closed)
+        self.assertFalse(ended['writerQuiescence'])
+        self.assertEqual(scope.observe(), ended)
+        self.assertEqual(ended['admissionId'], 'a'*32)
+
+    def test_duplicate_and_post_retirement_launches_never_create_another_root(self):
+        scope = self.scope()
+        scope.popen(['synthetic'])
+        with self.assertRaises(RuntimeError):
+            scope.popen(['duplicate'])
+        scope.retire()
+        with self.assertRaises(RuntimeError):
+            scope.popen(['late'])
+        self.assertEqual(scope.fence.launches, 1)
+        scope.dispose()
+
+    def test_retirement_before_delayed_factory_blocks_launch(self):
+        scope = self.scope()
+        scope.retire()
+        with self.assertRaises(RuntimeError):
+            scope.popen(['late-factory'])
+        self.assertEqual(scope.fence.launches, 0)
+
+    def test_failed_launch_does_not_become_positive_empty_job_evidence(self):
+        scope = self.scope()
+        def fail(*args, **kwargs):
+            raise OSError('fixture launch failure')
+        scope.fence.popen = fail
+        with self.assertRaises(OSError):
+            scope.popen(['synthetic'])
+        self.assertEqual(scope.retire()['state'], 'unknown')
+        self.assertFalse(scope.observe()['processTreeEnded'])
+        scope.dispose()
+
+    def test_retirement_serializes_with_factory_already_launching(self):
+        scope = self.scope()
+        entered, release, retired = threading.Event(), threading.Event(), threading.Event()
+        original = scope.fence.popen
+        def delayed(*args, **kwargs):
+            entered.set()
+            if not release.wait(2):
+                raise RuntimeError('fixture release missing')
+            return original(*args, **kwargs)
+        scope.fence.popen = delayed
+        launch = threading.Thread(target=lambda: scope.popen(['synthetic']))
+        launch.start()
+        self.assertTrue(entered.wait(2))
+        retirement = threading.Thread(target=lambda: (scope.retire(), retired.set()))
+        retirement.start()
+        self.assertFalse(retired.is_set())
+        release.set()
+        launch.join(2)
+        retirement.join(2)
+        self.assertTrue(retired.is_set())
+        self.assertTrue(scope.observe()['assignmentLaunchSealed'])
+        self.assertFalse(scope.observe()['processTreeEnded'])
+        with self.assertRaises(RuntimeError):
+            scope.popen(['late'])
+        scope.dispose()
+
+    def test_unenrolled_owner_does_not_create_a_scope(self):
+        authority = SimpleNamespace()
+        with patch.dict('os.environ', {}, clear=True):
+            self.assertIsNone(make_assignment_scope(authority, None, {}))
+        self.assertFalse(hasattr(authority, '_mesh_assignment_processes'))
+
+    def test_explicit_shutdown_retains_termination_and_never_clears_writer(self):
+        scope = self.scope()
+        scope.popen(['synthetic'])
+        ended = scope.dispose()
+        self.assertTrue(ended['terminationRequested'])
+        self.assertFalse(ended['writerQuiescence'])
+
+
+if __name__ == '__main__':
+    unittest.main()

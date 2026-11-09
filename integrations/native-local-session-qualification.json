@@ -2,11 +2,14 @@
   "schema": "mesh-native-local-session-qualification/v1",
   "qualification": "PASS",
   "nativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
-  "scope": "Pinned native LOCAL worker; explicit frozen build-check-v1 file/terminal tools, real Node syntax and module tests, saved automatic stage and result recovery. Isolated synthetic provider; no live enrollment or assignment clearance.",
-  "evidenceDirectory": "hermes-local-session-52b21cd8-b818-4b96-9a72-c00c671f90c0",
+  "scope": "Pinned opt-in native LOCAL assignment process scope: worker starts suspended inside its own Windows Job, exact admission identity, late child stays held after root exits. Native build/test/result recovery retained. No whole-writer clearance or live enrollment.",
+  "evidenceDirectory": "hermes-local-session-69f3f4d1-06d8-4bc3-b4fe-05fc3f5c6755",
   "candidateFiles": {
     "gateway/session_controls.py": "6172dc0eb4f63f0348538df813ab78620291092ec77319ba341059adeca58a01",
     "tui_gateway/contracts/canonical.py": "f9f7a8932faa35de3c69865a412cbf457696f79d3561726c45764cd7e0026901",
+    "gateway/session_managed_worker.py": "843e7e96d70eb3733f9bc46f1679fc0b444985c87e066a7b41cab77b3fbc516f",
+    "gateway/mesh_assignment_process.py": "3b0378539b768add10527515d68368867ba95f4872ff3679c51e988d52046991",
+    "gateway/mesh_windows_process.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
     "tools/file_tools_read_tracking.py": "c2ca50e625178fb663faa46677713ba915946294dc19fbef849ea40342977e4d",
     "tools/file_tools.py": "1bc8b91716d6fac41861f706f4024381484d6fbdfb64fa3381688ab1cf5aa85e"
   },
@@ -14,7 +17,8 @@
     "gateway/session_controls.py": "3e6797de16ee375f21221a5da1c589756c6d0c31f21cd342a16a020eba891b71",
     "tui_gateway/contracts/canonical.py": "ecccf8d09673b5d5401a3ecd30adb70cb7a9be1ee7d221dec23cd34a3feaa853",
     "tools/file_tools_read_tracking.py": "fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb",
-    "tools/file_tools.py": "925ebccc2a70b5a1b55541242cb19ed6614a18e82df1d6bc29474dc22c4f0dee"
+    "tools/file_tools.py": "925ebccc2a70b5a1b55541242cb19ed6614a18e82df1d6bc29474dc22c4f0dee",
+    "gateway/session_managed_worker.py": "4d51ca8d605ee3facc20e3ef6b8d9f3aeebe5ac14c849a7a4174937f9a5198f4"
   },
   "checks": [
     "pinned_candidate_hashes",
@@ -26,24 +30,25 @@
     "exact_read_only_submission_lookup_without_cross_session_access_or_dispatch",
     "actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit",
     "native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review",
-    "native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export"
+    "native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export",
+    "exact_assignment_job_remains_held_after_root_exit_until_late_child_ends"
   ],
   "meshBinding": {
     "qualification": "PASS",
-    "taskId": "959a0a4a-f03d-4e1b-8c2c-f89d37cb92e4",
-    "sendId": "b3466ad4-b270-416b-a3b2-57a4832dcae6",
-    "createRequestId": "mesh-local-create-bc6e5f4dc51e6b0d9a070a00e08bc0d55ce94f59d73e2d7c6f6a6c93d744ff3b",
-    "submissionId": "mesh-local-submit-bc6e5f4dc51e6b0d9a070a00e08bc0d55ce94f59d73e2d7c6f6a6c93d744ff3b",
-    "sessionId": "local-ff2120176e85180cfd392679b24d63df270b2215502c8dd21ff4033fcd231b97",
-    "admissionId": "556e9e42566c4d09b77fe9a685357ff1",
-    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-52b21cd8-b818-4b96-9a72-c00c671f90c0\\fixture-home",
+    "taskId": "d6b5b957-1977-42ef-9231-ae89d5629136",
+    "sendId": "79cce792-1631-4f3d-8f76-66df6fbb4daa",
+    "createRequestId": "mesh-local-create-a0e4bd9c6bd66eb90c77009ab89408dd2c31335ebe27bbb9a597d898266162ae",
+    "submissionId": "mesh-local-submit-a0e4bd9c6bd66eb90c77009ab89408dd2c31335ebe27bbb9a597d898266162ae",
+    "sessionId": "local-a51e75e79887a1ba3ed3d9bfa413ba80d7caa35647f602b2ebcc2a2df5e2180a",
+    "admissionId": "e5dbc45bbd9d4f08963f359880dbc07f",
+    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-69f3f4d1-06d8-4bc3-b4fe-05fc3f5c6755\\fixture-home",
     "nativeEpoch": 1,
     "nativeGeneration": 1,
     "nativeStatus": "terminal",
     "rpcCounts": {
       "session.create": 1,
       "prompt.submit": 1,
-      "prompt.lookup": 276
+      "prompt.lookup": 253
     },
     "restartedBeforeReadback": true,
     "observationOnlyRecovery": true,
@@ -51,13 +56,13 @@
     "automaticTeamDispatch": true,
     "terminalResultImported": true,
     "buildCheckVerified": true,
-    "resultHash": "4a498e5163d26c4a227ff9b894a4766073cc78e70d820c532e9f1eb9cb480789",
-    "resultMessageId": "native-874233b4284c7aca01855a7ca9b285bcab4d45b1b6ada3f4792c65b1833ffc78",
+    "resultHash": "15f5ff47673d370a47211bd5e42845abe5c0ff906cd15c08d38d276986e436ca",
+    "resultMessageId": "native-3a1a45e9dc1798ff81a62b8cb9b6180fffea7824f929a589d8409d66a73e87dd",
     "workspaceStillHeld": true,
     "writerQuiescence": false,
     "liveActivation": false
   },
-  "fullLocalRegressionTests": 400,
+  "fullLocalRegressionTests": 407,
   "nativeOwnerSettled": true,
   "fixtureTreeEndedNaturally": true,
   "wholeWorkerReleaseQualified": false,
@@ -66,7 +71,7 @@
   "remaining": [
     "Production Rook service identity and verified Echo transport/profile mapping are not enrolled.",
     "Optional automatic team worker-stage selection is implemented and qualified locally; production identity/profile transport and claim-stage enrollment remain disabled.",
-    "Real native Node check/test/export path is qualified; broader build-command coverage, per-assignment retirement proof and trusted positive clearance consumer remain incomplete. Results cannot yet be applied or advance review.",
+    "Per-assignment Windows process-tree component is qualified; authenticated process observation/persistence, native authority write/session-resource retirement and trusted positive clearance consumer remain incomplete. Results cannot yet be applied or advance review.",
     "Rook reporting transport, scheduler ownership and deployed acceptance/activation still required."
   ],
   "nativeBuildChecks": {
@@ -77,5 +82,15 @@
     "invalidSyntaxExitCode": 1,
     "builtExportVerified": true,
     "toolProfile": "build-check-v1"
+  },
+  "assignmentProcessQualification": {
+    "qualification": "PASS",
+    "separateJobPerAdmission": true,
+    "heldAfterRootExitWithOneLiveChild": true,
+    "naturalChildExitObserved": true,
+    "replacementRootRejected": true,
+    "unrelatedAssignmentCannotReleaseHold": true,
+    "durableRestartReceipt": false,
+    "wholeWorkerReleaseQualified": false
   }
 }

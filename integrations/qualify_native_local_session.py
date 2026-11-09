@@ -20,6 +20,7 @@ def prepare_local(native):
     import difflib,tarfile
     from integrations.prepare_hermes_writer_scope import read_tracking_candidate
     from integrations.prepare_native_local_lookup import local_receipt_candidate
+    from integrations.prepare_native_assignment_process import assignment_process_candidate
     native=Path(native).resolve()
     if subprocess.check_output(['git','-C',str(native),'rev-parse','HEAD'],text=True).strip()!=LOCAL_NATIVE_HEAD:
         raise RuntimeError('Native local-session source revision changed; review before qualification')
@@ -34,6 +35,8 @@ def prepare_local(native):
             members.append(member)
         tar.extractall(source,members=members,filter='data')
     originals,modules=local_receipt_candidate(source,baselines=LOCAL_BASELINES)
+    assignment_originals,assignment_modules=assignment_process_candidate(source)
+    originals.update(assignment_originals);modules.update(assignment_modules)
     read_originals,read_modules=read_tracking_candidate(source)
     originals.update(read_originals);modules.update(read_modules)
     file_path='tools/file_tools.py';raw=(source/file_path).read_bytes()
@@ -47,7 +50,7 @@ def prepare_local(native):
     originals[file_path]=original
     patch=''
     for name,text in modules.items():
-        patch+=''.join(difflib.unified_diff(originals[name].splitlines(True),text.splitlines(True),fromfile='a/'+name,tofile='b/'+name))
+        patch+=''.join(difflib.unified_diff(originals[name].splitlines(True),text.splitlines(True),fromfile='a/'+name if originals[name] else '/dev/null',tofile='b/'+name))
         (source/name).write_bytes(text.encode('utf-8'))
     (root/'candidate.patch').write_bytes(patch.encode('utf-8'))
     for name in ['fixture-home','appdata','localappdata','temp','workspace']:(root/name).mkdir()
@@ -114,6 +117,20 @@ def verify(root):
             or tool.get('exit_code')!=0 or 'tests 3' not in tool.get('output','')
             or (root/'workspace'/'local-build-proof.mjs').read_bytes()!=b'export const localProof = true;\n'):
         raise RuntimeError('Real native terminal build-check evidence is incomplete')
+    assignment=json.loads((root/'assignment-process-evidence.json').read_text())
+    held,ended,other=(assignment[key] for key in ('heldAfterRootExit','naturallyEnded','differentAssignment'))
+    for snapshot in (held,ended):
+        if (snapshot['admissionId']!=binding['admissionId'] or snapshot['sessionId']!=binding['sessionId']
+                or snapshot['profileId']!=binding['nativeProfileId']
+                or snapshot['executionGeneration']!=binding['nativeGeneration']
+                or not snapshot['assignmentLaunchSealed'] or not snapshot['sealed']
+                or snapshot['terminationRequested'] or snapshot['writerQuiescence']):
+            raise RuntimeError('Assignment process identity or observation boundary changed')
+    if (held['processTreeEnded'] or not held['allRootsEnded'] or held['activeProcesses']<1
+            or not ended['processTreeEnded'] or ended['activeProcesses']!=0
+            or not other['processTreeEnded'] or other['admissionId']==held['admissionId']
+            or assignment['lateRootRefused'] is not True or assignment['wholeWorkerReleaseQualified']):
+        raise RuntimeError('Assignment Job did not retain its late child independently')
     processes=json.loads((root/'local-session-fixture-processes.json').read_text())
     if not processes['processTreeEnded'] or processes['activeProcesses'] or processes['terminationRequested']:
         raise RuntimeError('Disposable owner/process tree did not end naturally')
@@ -123,7 +140,8 @@ def verify(root):
         'exact_read_only_submission_lookup_without_cross_session_access_or_dispatch',
         'actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit',
         'native_terminal_result_saved_once_with_exact_card_dispatch_and_paused_review',
-        'native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export'],
+        'native_terminal_node_tests_pass_with_valid_and_invalid_syntax_and_built_export',
+        'exact_assignment_job_remains_held_after_root_exit_until_late_child_ends'],
         'wholeWorkerReleaseQualified':False,'liveInstallation':False}
     (root/'local-session-verified.json').write_text(json.dumps(result,indent=2))
     return result
@@ -143,6 +161,7 @@ async def child(root):
     from gateway.runtime_ownership import process_ownership
     from hermes_cli.gateway_runtime import discover_gateway_endpoint
     from hermes_cli.gateway_client import _session_ticket,gateway_ws_target
+    os.environ['MESH_LOCAL_PROCESS_SCOPE']='1'
     home=root/'fixture-home'
     if Path(get_hermes_home()).resolve()!=home.resolve():raise RuntimeError('Non-isolated native home')
     proof=root/'workspace'/'local-session-proof.md';proof.write_bytes(b'Before local session edit.\n')
@@ -166,6 +185,14 @@ async def child(root):
         "test('invalid syntax is rejected',()=>{assert.notEqual(invalid.status,null);assert.notEqual(invalid.status,0);});",
         "test('built module exports the expected value',async()=>assert.equal((await import(pathToFileURL(code))).localProof,true));",
     ])+'\n')
+    child_ready=root/'workspace'/'assignment-child-ready.json'
+    child_release=root/'workspace'/'assignment-child-release'
+    child_code=("const fs=require('node:fs');fs.writeFileSync("+json.dumps(str(child_ready))+
+        ",JSON.stringify({pid:process.pid,parent:process.ppid}));const timer=setInterval(()=>{if(fs.existsSync("+
+        json.dumps(str(child_release))+")){clearInterval(timer);process.exit(0);}},25);")
+    with check.open('a') as checker:
+        checker.write("\nimport {spawn} from 'node:child_process';\nspawn(process.execPath,['-e',"+
+            json.dumps(child_code)+"],{detached:true,stdio:'ignore',windowsHide:true}).unref();\n")
     build_command=subprocess.list2cmdline([node_executable,'--test',str(check)])
     requests=[];worker_started=asyncio.Event();worker_release=asyncio.Event()
     async def provider(request):
@@ -333,6 +360,31 @@ async def child(root):
                         node_process.stdin.close();node_process.stdout.close()
                 if not dropped or node_calls.get('session.create')!=1 or node_calls.get('prompt.submit')!=1:
                     raise RuntimeError('Mesh binding did not reconcile the single original native dispatch')
+                stage='assignment_process_observation'
+                assignments=runner.session_authority._mesh_assignment_processes
+                baseline_processes=assignments[admission].observe()
+                current_assignment=assignments[native_submitted]
+                held=current_assignment.observe()
+                if (not baseline_processes['processTreeEnded'] or held['processTreeEnded']
+                        or not held.get('allRootsEnded') or held.get('activeProcesses',0)<1
+                        or not held['assignmentLaunchSealed'] or held['terminationRequested']):
+                    raise RuntimeError('Assignment process scope failed to retain its late child')
+                try:
+                    current_assignment.popen([sys.executable,'-c','raise SystemExit(99)'])
+                except RuntimeError:pass
+                else:raise RuntimeError('Retired native assignment launched a replacement root')
+                child_release.write_text('release fixture child')
+                deadline=time.monotonic()+10
+                while True:
+                    ended=current_assignment.observe()
+                    if ended['processTreeEnded']:break
+                    if time.monotonic()>deadline:raise RuntimeError('Assignment child did not end naturally')
+                    await asyncio.sleep(.02)
+                if ended['terminationRequested'] or ended['writerQuiescence']:
+                    raise RuntimeError('Process observation was confused with whole-writer clearance')
+                (root/'assignment-process-evidence.json').write_text(json.dumps({
+                    'heldAfterRootExit':held,'naturallyEnded':ended,'differentAssignment':baseline_processes,
+                    'lateRootRefused':True,'wholeWorkerReleaseQualified':False},indent=2))
                 report={'qualification':'PASS','sessionId':sid,'replayedSessionId':replayed['session_id'],
                     'admissionId':admission,'replayedAdmissionId':again['admission_id'],'finalResponse':final,
                     'distinctVerifiedWorker':True,'ownerPid':os.getpid(),'workerPid':pid,'workerBirth':birth,'workerHandleExited':True,
@@ -362,6 +414,9 @@ async def child(root):
                     if any(not task.done() for task in _authority_tasks(authority)):
                         raise RuntimeError('Disposable native owner retains authority tasks')
         finally:
+            if runner is not None:
+                for assignment in getattr(getattr(runner,'session_authority',None),'_mesh_assignment_processes',{}).values():
+                    assignment.dispose()
             if control is not None:await control.stop()
             process_ownership.close();await service.cleanup()
     if report is None:raise RuntimeError('No completed native local session evidence')
