@@ -1,6 +1,6 @@
 {
   "schema": "mesh-workspace-navigation-qualification/v1",
-  "qualification": "PASS_WITH_PREEXISTING_TEST_HARNESS_FAILURE",
+  "qualification": "PASS",
   "scope": "Selected-view reload persistence and representative browser health-panel checks; no model lifecycle or external-machine qualification",
   "defectBefore": {
     "selectedPanel": "Control",
@@ -78,7 +78,13 @@
       "failure": "Cannot use import statement outside a module",
       "sameFailureOnUnchangedHEAD": true,
       "baselineEvidence": "../workspace-draft-baseline.log",
-      "disposition": "Repair outdated VM/module setup before final release; not suppressed or counted as passing"
+      "disposition": "Resolved: updated isolated module fixture; original six checks pass and are included in npm test",
+      "resolved": true,
+      "current": {
+        "passed": 6,
+        "failed": 0,
+        "evidence": "integrations/draft-harness-qualification.json"
+      }
     }
   },
   "proofImage": "C:/Users/eMitchell109/.codex/visualizations/2026/11/01/01a19832-dbf0-7ca2-a60f-239b5ec006e6/mesh-control-phone-navigation-20261109.png",

@@ -1,0 +1,42 @@
+{
+  "schema": "mesh-draft-harness-qualification/v1",
+  "qualification": "PASS",
+  "scope": "Modernized legacy draft-editor VM fixture; production app code and all original assertions unchanged",
+  "changes": [
+    "Strip static imports only; preserve dynamic Workroom initializer",
+    "Explicit unrelated Relay/Mind/Agent workspace adapters",
+    "Include draft, navigation and summary-cache checks in npm test via test:workspaces"
+  ],
+  "focusedDraftChecks": {
+    "passed": 6,
+    "failed": 0
+  },
+  "negativeControl": {
+    "testOnlyMutation": "Force selectTask to overwrite unsaved fields",
+    "detected": true,
+    "failuresDetected": 2,
+    "liveSourceChanged": false
+  },
+  "fullRegression": {
+    "command": "npm test",
+    "exitCode": 0,
+    "nodeSuiteCounts": [
+      40,
+      1,
+      29,
+      87,
+      195
+    ],
+    "nodePassed": 352,
+    "pythonPassed": 97,
+    "totalPassed": 449,
+    "log": "../draft-harness-full-regression.log"
+  },
+  "assertionsRemoved": 0,
+  "productionCodeChanged": false,
+  "runningServicesRestarted": false,
+  "remaining": [
+    "Shared native bridge maintenance approval pending",
+    "Production worker/Rook/Mind/model-control and external-machine gates remain open"
+  ]
+}

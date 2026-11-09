@@ -28,6 +28,10 @@ function harness() {
     getElementById: id => ids.get(id), createElement: () => new Element(),
     querySelectorAll: selector => selector.startsWith('form ') ? [...ids.values()] : [] },
     navigator: { onLine: true }, window: { addEventListener() {} },
+    // These separate workspaces are outside the legacy editor under test.
+    createRelayChat: () => ({setAvailable() {}, clear() {}}),
+    createMindWorkspace: () => ({setAvailable() {}, clear() {}, setTasks() {}}),
+    renderAgentWorkspace() {},
     sessionStorage: { getItem() {}, setItem() {}, removeItem() {} }, AbortController, Date,
     setTimeout(fn, ms) { const id = ++timerId; timers.set(id, { fn, ms }); return id; },
     clearTimeout(id) { timers.delete(id); }, setInterval() {},
@@ -37,7 +41,8 @@ function harness() {
       const item = queue.shift(); return { status: item.status ?? 200, ok: (item.status ?? 200) < 400,
         text: async () => item.bodyPromise ? await item.bodyPromise : JSON.stringify(item.body) };
     } });
-  vm.runInContext(source.replace(/export /g, ''), context);
+  // Strip static imports only; keep the real dynamic Workroom initializer intact.
+  vm.runInContext(source.replace(/^import[ \t]+[^\n]*\n/gm, '').replace(/export /g, ''), context);
   vm.runInContext("admitted = true; demo = { csrfToken: 'c'.repeat(43), expiresAt: Date.now() + 60000 }; commands = [{ id: 'm3-slow', command: 'node lib/slow-command.mjs', cwd: '.' }];", context);
   const run = code => vm.runInContext(code, context);
   return { ids, calls, queue, run,
