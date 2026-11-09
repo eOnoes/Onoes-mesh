@@ -95,5 +95,12 @@
     "Qualified load/unload/chat/cancel controls remain gated; model-service restart previously declined",
     "Laptop and future AI-box health integration",
     "Shared native bridge maintenance approval still pending; Rook/Mind remain off"
-  ]
+  ],
+  "browserVerification": {
+    "evidence": "integrations/workspace-navigation-qualification.json",
+    "representativePhoneAndLandscapeFit": true,
+    "lockAndReconnectVerified": true,
+    "staleModelDetailsCleared": true,
+    "actualPhoneOwnerAcceptance": false
+  }
 }

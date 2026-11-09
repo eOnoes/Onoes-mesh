@@ -1,0 +1,91 @@
+{
+  "schema": "mesh-workspace-navigation-qualification/v1",
+  "qualification": "PASS_WITH_PREEXISTING_TEST_HARNESS_FAILURE",
+  "scope": "Selected-view reload persistence and representative browser health-panel checks; no model lifecycle or external-machine qualification",
+  "defectBefore": {
+    "selectedPanel": "Control",
+    "urlHash": "#inference",
+    "afterReload": "Inference"
+  },
+  "liveAfter": {
+    "selectedPanel": "Control",
+    "urlHash": "#control",
+    "afterReload": "Control",
+    "staticAssetReloadOnly": true,
+    "meshRestarted": false
+  },
+  "responsiveChecks": [
+    {
+      "view": "Inference",
+      "viewport": [
+        390,
+        844
+      ],
+      "documentWidth": 390,
+      "documentScrollWidth": 390,
+      "panelWidth": 349,
+      "panelScrollWidth": 349
+    },
+    {
+      "view": "Inference",
+      "viewport": [
+        844,
+        390
+      ],
+      "documentWidth": 844,
+      "documentScrollWidth": 844,
+      "panelWidth": 561,
+      "panelScrollWidth": 561
+    },
+    {
+      "view": "Control",
+      "viewport": [
+        390,
+        844
+      ],
+      "documentWidth": 390,
+      "documentScrollWidth": 390,
+      "panelWidth": 349,
+      "panelScrollWidth": 349
+    }
+  ],
+  "healthUI": {
+    "freshReadingsVisible": true,
+    "zeroGPUValuePreserved": true,
+    "modelControlsDisabled": true,
+    "readOnlyRefreshWorked": true,
+    "workspaceLockClearsModelObservations": true,
+    "reconnectRestoresAuthorizedView": true,
+    "expiredModelObservationClearsPreviousModelDetails": true,
+    "actualPhoneOwnerAcceptance": false
+  },
+  "tests": {
+    "navigation": {
+      "passed": 4,
+      "command": "node --test test/workspace-navigation.test.mjs"
+    },
+    "rookNotices": {
+      "passed": 5
+    },
+    "workroomRegression": {
+      "passed": 195,
+      "failed": 0,
+      "command": "npm run test:workroom"
+    },
+    "legacyDraftHarness": {
+      "passed": 0,
+      "failed": 6,
+      "failure": "Cannot use import statement outside a module",
+      "sameFailureOnUnchangedHEAD": true,
+      "baselineEvidence": "../workspace-draft-baseline.log",
+      "disposition": "Repair outdated VM/module setup before final release; not suppressed or counted as passing"
+    }
+  },
+  "proofImage": "C:/Users/eMitchell109/.codex/visualizations/2026/11/01/01a19832-dbf0-7ca2-a60f-239b5ec006e6/mesh-control-phone-navigation-20261109.png",
+  "cleanup": {
+    "viewportReset": true,
+    "temporaryBrowserTabClosed": true
+  },
+  "agentWorkDispatched": false,
+  "sharedServicesRestarted": false
+}

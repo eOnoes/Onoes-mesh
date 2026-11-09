@@ -11,6 +11,13 @@ function activate(tab, focus = false) {
     t.setAttribute('aria-selected', String(selected)); t.tabIndex = selected ? 0 : -1;
     $(t.getAttribute('aria-controls')).hidden = !selected;
   }
+  const name = tab?.getAttribute('aria-controls')?.replace(/^panel-/, '');
+  if (/^(overview|relay|inference|workroom|agent|mind|control)$/.test(name ?? '')) {
+    try {
+      const hash = '#' + name;
+      if (window.location?.hash !== hash) window.history?.replaceState?.(window.history.state, '', hash);
+    } catch { /* Unavailable browser history must not prevent tab selection. */ }
+  }
   if (focus) tab.focus();
 }
 for (const tab of tabs) {
