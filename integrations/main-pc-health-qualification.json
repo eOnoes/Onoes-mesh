@@ -1,0 +1,99 @@
+{
+  "schema": "mesh-main-pc-health-qualification/v1",
+  "qualification": "PASS",
+  "scope": "Live authenticated read-only PC health and reported model status; model control, per-model GPU attribution and other machines NOT qualified",
+  "response": {
+    "httpStatus": 200,
+    "schema": "mesh-inference/live-v2",
+    "freshAgeSeconds": 0.005,
+    "cpuReadingAvailable": true,
+    "ramReadingAvailable": true,
+    "gpuReadingAvailable": true,
+    "gpuScope": "whole device, attribution unverified",
+    "modelObservation": "fresh; none reported loaded; Qwen27 reports missing model files",
+    "modelControlsEnabled": false
+  },
+  "concurrencyBefore": {
+    "method": "GET",
+    "requests": 3,
+    "responses": [
+      {
+        "status": 200,
+        "generatedAt": "2026-11-09T09:29:07.611Z",
+        "seconds": 1.718
+      },
+      {
+        "status": 200,
+        "generatedAt": "2026-11-09T09:29:07.641Z",
+        "seconds": 1.748
+      },
+      {
+        "status": 200,
+        "generatedAt": "2026-11-09T09:29:07.641Z",
+        "seconds": 1.748
+      }
+    ],
+    "distinctCollections": 2,
+    "modelControlRequests": 0,
+    "credentialsExported": false
+  },
+  "concurrencyAfter": {
+    "method": "GET",
+    "requests": 3,
+    "responses": [
+      {
+        "status": 200,
+        "generatedAt": "2026-11-09T09:34:05.853Z",
+        "cpuLoadPct": 2,
+        "ramUsedPct": 33,
+        "gpuUtilPct": 0
+      },
+      {
+        "status": 200,
+        "generatedAt": "2026-11-09T09:34:05.853Z",
+        "cpuLoadPct": 2,
+        "ramUsedPct": 33,
+        "gpuUtilPct": 0
+      },
+      {
+        "status": 200,
+        "generatedAt": "2026-11-09T09:34:05.853Z",
+        "cpuLoadPct": 2,
+        "ramUsedPct": 33,
+        "gpuUtilPct": 0
+      }
+    ],
+    "distinctSamples": 1,
+    "hardwareCollectorsObserved": 1,
+    "seconds": 2.735,
+    "meshPid": 54404,
+    "modelServiceUnchanged": true,
+    "databaseTables": 23,
+    "databaseRowsUnchanged": true,
+    "modelControlRequests": 0,
+    "credentialsExported": false
+  },
+  "localTests": {
+    "command": "node --test test/summary-cache.test.mjs test/gpu-metrics.test.mjs test/supervisor-observation.test.mjs",
+    "passed": 13,
+    "failed": 0,
+    "serveSyntax": "PASS"
+  },
+  "deployment": {
+    "meshPid": 54404,
+    "meshOnlyRestart": true,
+    "databaseTables": 23,
+    "taskCount": 14,
+    "allDatabaseRowsFingerprintUnchanged": true,
+    "sharedModelServiceUnchanged": true,
+    "echoGatewayRestarted": false
+  },
+  "modelControlRequests": 0,
+  "credentialsExported": false,
+  "remaining": [
+    "Actual phone visual acceptance of health panel",
+    "Qualified load/unload/chat/cancel controls remain gated; model-service restart previously declined",
+    "Laptop and future AI-box health integration",
+    "Shared native bridge maintenance approval still pending; Rook/Mind remain off"
+  ]
+}

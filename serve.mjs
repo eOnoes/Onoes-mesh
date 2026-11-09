@@ -1,4 +1,5 @@
 import {parseGpuMetrics} from './lib/gpu-metrics.mjs';
+import {createSummaryReader} from './lib/summary-cache.mjs';
 import { tailscaleAccess } from './lib/tailscale-access.mjs';
 import {requestAudit,auditReason} from './lib/request-audit.mjs';
 // Mesh's serving layer: the app, a shared-token gate, and the two live connections.
@@ -219,7 +220,7 @@ async function strataHealth() {
   return null;
 }
 
-let summaryCache = null;
+const readInferenceSummary = createSummaryReader(inferenceSummary);
 
 async function inferenceSummary() {
   // One PowerShell pass for everything the OS knows, one nvidia-smi call for the card,
@@ -490,8 +491,7 @@ const server = http.createServer(async (req, res) => {
     // The collector costs ~1.7s (one PowerShell launch + nvidia-smi + four probes). Every
   // panel polls every 5s, so two open tabs would double that for identical numbers.
   if (path === '/inference/summary') {
-    if (summaryCache && Date.now() - summaryCache.at < 2000) return sendJson(res, 200, summaryCache.value);
-    try { const value = await inferenceSummary(); summaryCache = { at: Date.now(), value }; return sendJson(res, 200, value); }
+    try { return sendJson(res, 200, await readInferenceSummary()); }
     catch (error) { return sendJson(res, 500, { ok: false, error: String(error?.message ?? error) }); }
   }
 
