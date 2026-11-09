@@ -317,5 +317,11 @@
     "runtimeChecks": 20,
     "independentChecks": 20,
     "sameCandidateFiles": true
+  },
+  "installedNativeCompatibility": {
+    "qualification": "NOT_QUALIFIED",
+    "testedNativeHead": "acc3cada0da86c81efc8aa6c5a291989549ca900",
+    "observedNativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
+    "reason": "External native source update. Historical legacy candidate retained; current dedicated-session bridge has separate qualification."
   }
 }

@@ -8,6 +8,55 @@ import sys
 import uuid
 
 
+LOCAL_NATIVE_HEAD='2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19'
+LOCAL_BASELINES={
+    'gateway/session_controls.py':'3e6797de16ee375f21221a5da1c589756c6d0c31f21cd342a16a020eba891b71',
+    'tui_gateway/contracts/canonical.py':'ecccf8d09673b5d5401a3ecd30adb70cb7a9be1ee7d221dec23cd34a3feaa853',
+    'tools/file_tools_read_tracking.py':'fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb',
+    'tools/file_tools.py':'925ebccc2a70b5a1b55541242cb19ed6614a18e82df1d6bc29474dc22c4f0dee'}
+
+
+def prepare_local(native):
+    import difflib,tarfile
+    from integrations.prepare_hermes_writer_scope import read_tracking_candidate
+    from integrations.prepare_native_local_lookup import local_receipt_candidate
+    native=Path(native).resolve()
+    if subprocess.check_output(['git','-C',str(native),'rev-parse','HEAD'],text=True).strip()!=LOCAL_NATIVE_HEAD:
+        raise RuntimeError('Native local-session source revision changed; review before qualification')
+    root=Path(__file__).resolve().parents[1]/'data'/('hermes-local-session-'+str(uuid.uuid4()))
+    source=root/'source';source.mkdir(parents=True);archive=root/'source.tar'
+    subprocess.run(['git','-C',str(native),'archive','--format=tar','--output='+str(archive),LOCAL_NATIVE_HEAD],check=True)
+    with tarfile.open(archive) as tar:
+        members=[]
+        for member in tar.getmembers():
+            if member.issym() or member.islnk():raise RuntimeError('Native archive link needs review: '+member.name)
+            if member.name=='.github/workflows' or member.name.startswith('.github/workflows/'):continue
+            members.append(member)
+        tar.extractall(source,members=members,filter='data')
+    originals,modules=local_receipt_candidate(source,baselines=LOCAL_BASELINES)
+    read_originals,read_modules=read_tracking_candidate(source)
+    originals.update(read_originals);modules.update(read_modules)
+    file_path='tools/file_tools.py';raw=(source/file_path).read_bytes()
+    if hashlib.sha256(raw).hexdigest()!=LOCAL_BASELINES[file_path]:raise RuntimeError('Current native file source changed')
+    original=raw.decode('utf-8').replace('\r\n','\n')
+    before='    stable = version is not None and version[:-1] == version_before == _file_metadata(resolved_str)\n'
+    if original.count(before)!=1:raise RuntimeError('Current native full-read stability shape changed')
+    modules[file_path]=original.replace(before,
+        '    stable = (version is not None and version[:-1] == version_before == _file_metadata(resolved_str)\n'
+        '              and version == _file_version(resolved_str))\n')
+    originals[file_path]=original
+    patch=''
+    for name,text in modules.items():
+        patch+=''.join(difflib.unified_diff(originals[name].splitlines(True),text.splitlines(True),fromfile='a/'+name,tofile='b/'+name))
+        (source/name).write_bytes(text.encode('utf-8'))
+    (root/'candidate.patch').write_bytes(patch.encode('utf-8'))
+    for name in ['fixture-home','appdata','localappdata','temp','workspace']:(root/name).mkdir()
+    (root/'manifest.json').write_text(json.dumps({'state':'isolated_local_session_candidate','nativeHead':LOCAL_NATIVE_HEAD,
+        'source':str(source),'home':str(root/'fixture-home'),'files':{n:hashlib.sha256(t.encode()).hexdigest() for n,t in modules.items()},
+        'baselines':LOCAL_BASELINES,'liveInstallation':False,'wholeWorkerReleaseQualified':False},indent=2))
+    return root
+
+
 def verify(root):
     report = json.loads((root/'local-session-evidence.json').read_text())
     manifest = json.loads((root/'manifest.json').read_text())
@@ -27,14 +76,23 @@ def verify(root):
             or report.get('submissionConflictRefused') is not True
             or report.get('creationRefusalReason')!='invalid_params'
             or report.get('submissionRefusalReason')!='admission_conflict'
-            or report.get('workerPid')==report.get('ownerPid')):
+            or report.get('workerPid')==report.get('ownerPid')
+            or not all(report.get(key) is True for key in ('requestLookupVerified','missingRequestDoesNotCreate','crossSessionLookupRefused'))):
         raise RuntimeError('Native local receipt/replay/process evidence is incomplete')
+    binding=json.loads((root/'mesh-local-binding-evidence.json').read_text())
+    if (report.get('meshBindingVerified') is not True or report.get('meshBindingDroppedReply') is not True
+            or binding['qualification']!='PASS' or binding['rpcCounts'].get('prompt.submit')!=1
+            or binding['rpcCounts'].get('session.create')!=1 or binding['rpcCounts'].get('prompt.lookup',0)<1
+            or not binding['restartedBeforeReadback'] or not binding['workspaceStillHeld'] or binding['writerQuiescence']):
+        raise RuntimeError('Mesh task/native dispatch binding evidence is incomplete')
     processes=json.loads((root/'local-session-fixture-processes.json').read_text())
     if not processes['processTreeEnded'] or processes['activeProcesses'] or processes['terminationRequested']:
         raise RuntimeError('Disposable owner/process tree did not end naturally')
     result = {'qualification':'PASS','checks':['pinned_candidate_hashes','actual_file_bytes',
         'native_session_and_submission_identity_replay','verified_separate_worker_and_observed_exit',
-        'private_auth_and_conflict_refusals','owner_settled_and_fixture_tree_ended_naturally'],
+        'private_auth_and_conflict_refusals','owner_settled_and_fixture_tree_ended_naturally',
+        'exact_read_only_submission_lookup_without_cross_session_access_or_dispatch',
+        'actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit'],
         'wholeWorkerReleaseQualified':False,'liveInstallation':False}
     (root/'local-session-verified.json').write_text(json.dumps(result,indent=2))
     return result
@@ -140,6 +198,15 @@ async def child(root):
                 submission_error=await rpc('prompt.submit',{**submission,'text':'Conflicting payload must never execute.'},expect_error=True)
                 submission_reason=submission_error.get('data',{}).get('reason',submission_error.get('message'))
                 if submission_reason!='admission_conflict':raise RuntimeError('Wrong native submission-conflict refusal')
+                before_lookup=len(requests)
+                lookup=await rpc('prompt.lookup',{'session_id':sid,'submission_id':submission['submission_id']})
+                missing=await rpc('prompt.lookup',{'session_id':sid,'submission_id':'never-submitted-fixture'})
+                other=await rpc('session.create',{**params,'request_id':'mesh-other-local-create'})
+                cross=await rpc('prompt.lookup',{'session_id':other['session_id'],'submission_id':submission['submission_id']})
+                if (lookup.get('found') is not True or lookup.get('receipt',{}).get('admission_id')!=admission
+                        or lookup.get('session_id')!=sid or lookup.get('submission_id')!=submission['submission_id']
+                        or missing.get('found') is not False or cross.get('found') is not False
+                        or len(requests)!=before_lookup):raise RuntimeError('Native read-only request lookup is not exact or created work')
                 pid,birth=worker.worker
                 if worker.process.poll() is not None:raise RuntimeError('Native worker exited before tool work')
                 worker_release.set();stage='receipt';deadline=time.monotonic()+60
@@ -155,15 +222,51 @@ async def child(root):
                 while worker.process.poll() is None:
                     if time.monotonic()>deadline:raise RuntimeError('Native worker handle did not exit')
                     await asyncio.sleep(.02)
+                by_request=await rpc('prompt.lookup',{'session_id':sid,'submission_id':submission['submission_id'],'include_result':True})
+                if by_request.get('receipt',{}).get('admission_id')!=admission or by_request.get('receipt',{}).get('result',{}).get('final_response')!=final:
+                    raise RuntimeError('Native terminal request lookup lost its result')
                 count=len(requests);stage='replay';again=await rpc('prompt.submit',submission)
                 if again['admission_id']!=admission or len(requests)!=count:raise RuntimeError('Submission retry created work')
+                stage='mesh_binding'
+                import shutil
+                node=shutil.which('node')
+                if node is None:raise RuntimeError('Existing Node is required for Mesh binding qualification')
+                (root/'node-binding-config.json').write_text(json.dumps({'endpoint':endpoint,'workspace':str(root/'workspace')}))
+                script=Path(__file__).resolve().parents[1]/'test'/'fixtures'/'native-local-binding.mjs'
+                dropped=False;native_submitted=None;node_calls={}
+                with (root/'node-binding.log').open('wb') as node_log:
+                    node_process=subprocess.Popen([node,str(script),str(root)],cwd=root/'source',
+                        stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=node_log,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+                    try:
+                        while True:
+                            line=await asyncio.wait_for(asyncio.to_thread(node_process.stdout.readline),90)
+                            if not line:raise RuntimeError('Mesh binding fixture exited before completion')
+                            frame=json.loads(line)
+                            if frame.get('done'):
+                                if frame['admissionId']!=native_submitted:raise RuntimeError('Mesh bound a different native admission')
+                                break
+                            method=frame['method'];node_calls[method]=node_calls.get(method,0)+1
+                            result=await rpc(method,frame['params'])
+                            if method=='prompt.submit' and not dropped:
+                                native_submitted=result['admission_id'];dropped=True
+                                answer={'id':frame['id'],'error':'synthetic reply loss after durable native admission'}
+                            else:answer={'id':frame['id'],'result':result}
+                            node_process.stdin.write((json.dumps(answer)+'\n').encode());node_process.stdin.flush()
+                        if await asyncio.to_thread(node_process.wait,10)!=0:raise RuntimeError('Mesh binding fixture failed')
+                    finally:
+                        if node_process.poll() is None:node_process.kill();await asyncio.to_thread(node_process.wait,5)
+                        node_process.stdin.close();node_process.stdout.close()
+                if not dropped or node_calls.get('session.create')!=1 or node_calls.get('prompt.submit')!=1:
+                    raise RuntimeError('Mesh binding did not reconcile the single original native dispatch')
                 report={'qualification':'PASS','sessionId':sid,'replayedSessionId':replayed['session_id'],
                     'admissionId':admission,'replayedAdmissionId':again['admission_id'],'finalResponse':final,
                     'distinctVerifiedWorker':True,'ownerPid':os.getpid(),'workerPid':pid,'workerBirth':birth,'workerHandleExited':True,
-                    'workerExitCode':worker.process.returncode,'replayCreatedNoProviderWork':True,'providerRequests':count,
+                    'workerExitCode':worker.process.returncode,'replayCreatedNoProviderWork':True,'providerRequests':len(requests),
+                    'nativeBaselineProviderRequests':count,'meshBindingVerified':True,'meshBindingDroppedReply':True,
                     'scope':'actual native owner/private bootstrap/WS/local frozen session/process worker/file tools/SQLite receipt; synthetic local provider',
                     'unauthenticatedRefused':True,'creationConflictRefused':True,'submissionConflictRefused':True,
                     'creationRefusalReason':creation_reason,'submissionRefusalReason':submission_reason,
+                    'requestLookupVerified':True,'missingRequestDoesNotCreate':True,'crossSessionLookupRefused':True,
                     'wholeWorkerReleaseQualified':False,'liveInstallation':False}
     except BaseException as error:
         (root/'local-session-failure.json').write_text(json.dumps({'stage':stage,'errorClass':type(error).__name__,
@@ -200,9 +303,9 @@ if __name__=='__main__':
         print(json.dumps(verify(Path(sys.argv[2]).resolve())))
     else:
         if len(sys.argv)!=3:raise SystemExit('Usage: native_root python_executable | --verify directory')
-        from integrations.qualify_hermes_runtime import prepare,runtime_environment
+        from integrations.qualify_hermes_runtime import runtime_environment
         from integrations.windows_writer_fence import WindowsWriterFence
-        native,executable=sys.argv[1:];root=prepare(native)
+        native,executable=sys.argv[1:];root=prepare_local(native)
         environment=runtime_environment(root,native,executable,('--safe-mode',))
         print(json.dumps({'directory':str(root),'state':'running_isolated_local_session'}),flush=True)
         fence=WindowsWriterFence('local-session-fixture',str(uuid.uuid4()))

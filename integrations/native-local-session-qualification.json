@@ -1,0 +1,63 @@
+{
+  "schema": "mesh-native-local-session-qualification/v1",
+  "qualification": "PASS",
+  "nativeHead": "2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19",
+  "scope": "Current native dedicated LOCAL worker and Mesh durable work-send binding; isolated private bootstrap/WS, synthetic provider, no live transport enrollment.",
+  "evidenceDirectory": "hermes-local-session-6d6202e3-9e4f-43ac-ae90-efd6bea9668d",
+  "candidateFiles": {
+    "gateway/session_controls.py": "6172dc0eb4f63f0348538df813ab78620291092ec77319ba341059adeca58a01",
+    "tui_gateway/contracts/canonical.py": "f9f7a8932faa35de3c69865a412cbf457696f79d3561726c45764cd7e0026901",
+    "tools/file_tools_read_tracking.py": "c2ca50e625178fb663faa46677713ba915946294dc19fbef849ea40342977e4d",
+    "tools/file_tools.py": "1bc8b91716d6fac41861f706f4024381484d6fbdfb64fa3381688ab1cf5aa85e"
+  },
+  "sourceBaselines": {
+    "gateway/session_controls.py": "3e6797de16ee375f21221a5da1c589756c6d0c31f21cd342a16a020eba891b71",
+    "tui_gateway/contracts/canonical.py": "ecccf8d09673b5d5401a3ecd30adb70cb7a9be1ee7d221dec23cd34a3feaa853",
+    "tools/file_tools_read_tracking.py": "fb839642d9e8de715ef7beb85a9d971e07fc16ae4a5b07fd05cc3da9238644fb",
+    "tools/file_tools.py": "925ebccc2a70b5a1b55541242cb19ed6614a18e82df1d6bc29474dc22c4f0dee"
+  },
+  "checks": [
+    "pinned_candidate_hashes",
+    "actual_file_bytes",
+    "native_session_and_submission_identity_replay",
+    "verified_separate_worker_and_observed_exit",
+    "private_auth_and_conflict_refusals",
+    "owner_settled_and_fixture_tree_ended_naturally",
+    "exact_read_only_submission_lookup_without_cross_session_access_or_dispatch",
+    "actual_mesh_saved_dispatch_restarts_and_reconciles_lost_native_reply_without_resubmit"
+  ],
+  "meshBinding": {
+    "qualification": "PASS",
+    "taskId": "da46b122-3b3c-4c20-82d9-b23c8fd0917d",
+    "sendId": "8d27355f-abc2-40dd-b3e2-9eaafac3d9d4",
+    "createRequestId": "mesh-local-create-7090b4381948f849df0301b475104af9c3b1537af2b9535507ca55e1b3b8908e",
+    "submissionId": "mesh-local-submit-7090b4381948f849df0301b475104af9c3b1537af2b9535507ca55e1b3b8908e",
+    "sessionId": "local-7d1c84bc9705a69da270735487e1e7b68ccc79ff5eb459c03479aeda357d34bc",
+    "admissionId": "7f2021e183f24eb8bad4481b0563dee6",
+    "nativeProfileId": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\hermes-local-session-6d6202e3-9e4f-43ac-ae90-efd6bea9668d\\fixture-home",
+    "nativeEpoch": 1,
+    "nativeGeneration": 1,
+    "nativeStatus": "terminal",
+    "rpcCounts": {
+      "session.create": 1,
+      "prompt.submit": 1,
+      "prompt.lookup": 224
+    },
+    "restartedBeforeReadback": true,
+    "workspaceStillHeld": true,
+    "writerQuiescence": false,
+    "liveActivation": false
+  },
+  "fullLocalRegressionTests": 389,
+  "nativeOwnerSettled": true,
+  "fixtureTreeEndedNaturally": true,
+  "wholeWorkerReleaseQualified": false,
+  "liveInstallation": false,
+  "producerRefactor": "Qualified RPC bytes reproduced from pristine pinned archive",
+  "remaining": [
+    "Production Rook service identity and verified Echo transport/profile mapping are not enrolled.",
+    "Automatic team/claim-stage wiring to this optional service entry remains disabled.",
+    "Worker result import, supported build/test tools, per-assignment retirement proof and trusted positive clearance consumer remain incomplete.",
+    "Rook reporting transport, scheduler ownership and deployed acceptance/activation still required."
+  ]
+}

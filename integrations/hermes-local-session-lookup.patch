@@ -1,0 +1,109 @@
+--- a/gateway/session_controls.py
++++ b/gateway/session_controls.py
+@@ -96,7 +96,7 @@
+ _END_REASON = re.compile(r'[a-z][a-z_]{0,31}')
+ # Verbs whose param sets are closed and never carried a ``profile`` key.
+ _PROFILE_IMPLICIT = frozenset({'session.create', 'session.list', 'session.info', 'session.resume', 'session.detach',
+-                               'prompt.submit', 'prompt.receipt', 'prompt.cancel', 'prompt.resolve_unknown',
++                               'prompt.submit', 'prompt.receipt', 'prompt.lookup', 'prompt.cancel', 'prompt.resolve_unknown',
+                                'prompt.steer_queued', 'prompt.replace_queued',
+                                'session.interrupt', 'session.events.since', 'session.mutate', 'session.stats',
+                                'approval.respond', 'clarify.respond'})
+@@ -234,7 +234,7 @@
+                     'setup.status': self.setup_status, 'setup.runtime_check': self.setup_runtime_check,
+                     'session.resume': self.resume, 'session.detach': self.detach,
+                     'prompt.submit': self.submit,
+-                    'prompt.receipt': self.receipt, 'prompt.cancel': self.cancel,
++                    'prompt.receipt': self.receipt, 'prompt.lookup': self.lookup, 'prompt.cancel': self.cancel,
+                     'prompt.resolve_unknown': self.resolve_unknown,
+                     'session.interrupt': self.interrupt, 'session.events.since': self.events_since,
+                     'approval.respond': self.respond, 'clarify.respond': self.respond_clarify}
+@@ -875,6 +875,22 @@
+                 out['usage'] = saved.get('usage') or {}
+         return out
+ 
++    async def lookup(self, ref, params):
++        if (set(params) - {'session_id', 'submission_id', 'include_result'}
++                or not isinstance(params.get('submission_id'), str)
++                or not params['submission_id'] or len(params['submission_id']) > 256):
++            raise RuntimeStoreError('invalid_params')
++        self.authority.authorize(self.actor, ref, 'session:read')
++        from hermes_state_runtime import find_session_admission
++        saved = await asyncio.to_thread(find_session_admission, self.authority.db,
++            principal_id=self.actor.subject, session_id=ref.session_id, request_id=params['submission_id'])
++        out = {'found': saved is not None, 'session_id': ref.session_id, 'submission_id': params['submission_id']}
++        if saved is not None:
++            out['receipt'] = await self.receipt(ref, {'admission_id': saved['admission_id'],
++                'include_result': params.get('include_result') is True})
++        return out
++
++
+     async def cancel(self, ref, params):
+         admission_id = params.get('admission_id')
+         receipt = await self.authority.receipt(self.actor, ref, admission_id)
+--- a/tui_gateway/contracts/canonical.py
++++ b/tui_gateway/contracts/canonical.py
+@@ -54,6 +54,23 @@
+ 
+ canonical_method("prompt.receipt", params=PromptReceiptParams, result=PromptReceiptResult,
+                  doc="Current receipt of one admission the caller submitted (or controls).")
++
++
++class PromptLookupParams(Params):
++    session_id: str
++    submission_id: str
++    include_result: bool | None = None
++
++
++class PromptLookupResult(Result):
++    found: bool
++    session_id: str
++    submission_id: str
++    receipt: PromptReceiptResult | None = None
++
++
++canonical_method("prompt.lookup", params=PromptLookupParams, result=PromptLookupResult,
++                 doc="Read-only exact submission lookup within the caller principal and session.")
+ 
+ 
+ class PromptCancelParams(Params):
+--- a/tools/file_tools_read_tracking.py
++++ b/tools/file_tools_read_tracking.py
+@@ -249,6 +249,12 @@
+ def _file_metadata(resolved: str) -> tuple | None:
+     try:
+         st = os.stat(resolved)
++        if os.name == 'nt':
++            if not stat.S_ISREG(st.st_mode): return None
++            fd = os.open(resolved, os.O_RDONLY | getattr(os, 'O_NONBLOCK', 0) | getattr(os, 'O_BINARY', 0))
++            try: st = os.fstat(fd)
++            finally: os.close(fd)
++            if not stat.S_ISREG(st.st_mode): return None
+         return st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns
+     except OSError:
+         return None
+@@ -265,10 +271,10 @@
+             if not stat.S_ISREG(before.st_mode):
+                 return None
+             digest = hashlib.file_digest(stream, "sha256").digest()
+-            after = os.stat(resolved)
++            after = _file_metadata(resolved)
+         fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
+         version = tuple(getattr(before, name) for name in fields)
+-        if version == tuple(getattr(after, name) for name in fields):
++        if version == after:
+             return (*version, digest)
+         return None
+     except OSError:
+--- a/tools/file_tools.py
++++ b/tools/file_tools.py
+@@ -548,7 +548,8 @@
+     skill_view so a follow-up skill_manage(patch) is accepted).
+     """
+     version = (snapshot or _file_version(resolved_str)) if version_before is not None else None
+-    stable = version is not None and version[:-1] == version_before == _file_metadata(resolved_str)
++    stable = (version is not None and version[:-1] == version_before == _file_metadata(resolved_str)
++              and version == _file_version(resolved_str))
+     complete = False
+     with _read_tracker_lock:
+         task_data["dedup_hits"].pop(dedup_key, None)

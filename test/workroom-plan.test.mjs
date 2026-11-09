@@ -5,7 +5,8 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {openTaskStore} from '../lib/task-store.mjs';
-import {sendTaskHandoff} from '../lib/workroom.mjs';
+import {sendTaskHandoff,syncTaskReplies} from '../lib/workroom.mjs';
+import {dispatchLocalSession} from '../lib/workroom-local-sessions.mjs';
 import {TaskError} from '../lib/task-store.mjs';
 const filename=()=>join(mkdtempSync(join(tmpdir(),'mesh-plan-')),'tasks.sqlite');
 function ready(store){let t=store.create({title:'Scoped build',description:'One bounded artifact',owner:'echo'});t=store.workroom.save(t.id,{...meta(t),criteria:'Artifact meets acceptance',revision:t.workroom?.revision??1});return store.workroom.saveProgress(t.id,{goal:'Bounded build',checklist:[{id:'one',text:'Implement and verify',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision});}
@@ -112,4 +113,75 @@ test('online backup and migration restore preserve a nonempty locked plan',async
  const receipt=JSON.parse(execFileSync(process.execPath,['integrations/workroom-backup.mjs',file,join(directory,'snapshot')],{encoding:'utf8'}));
  assert.equal(receipt.restore,'PASS');assert.equal(receipt.counts.workroom_plans,1);assert.match(receipt.durable.workroom_plans,/^[a-f0-9]{64}$/);
  store=openTaskStore(receipt.restored);try{assert.deepEqual(store.workroom.get(t.id).plan,expected);}finally{store.close();}
+});
+
+function localReady(store,workspace='D:/example-only'){
+ let t=ready(store);store.workroom.savePlan(t.id,{...proposal(t),workspace,reviewerId:'nims'});t=store.workroom.get(t.id);
+ return {t,send:{id:randomUUID(),agentId:'echo',conversationId:'native-local',text:'Implement this locked build.'},
+  profile:{profileRef:'echo-builder-v1',identityRef:'approved-fixture',model:'synthetic',baseUrl:'http://127.0.0.1:9/v1',workspace}};
+}
+const nativeSid='local-'+'a'.repeat(64),nativeAid='b'.repeat(32);
+function localReceipt(row,status='started',generation=1){return {found:true,session_id:row.sessionId,submission_id:row.submissionId,receipt:{admission_id:nativeAid,status,execution_generation:generation,authority_epoch:1,ref:{profile_id:'fixture-native-home',session_id:row.sessionId}}};}
+
+test('native intent shares saved build identity, survives restart, and cannot switch profile or Relay transport',async()=>{
+ const file=filename();let store=openTaskStore(file);try{
+  const {t,send,profile}=localReady(store);
+  assert.throws(()=>store.workroom.localSessions.reserve(t.id,send,{...profile,api_key:'do-not-store'}),/profile/);
+  assert.throws(()=>store.workroom.localSessions.reserve(t.id,send,{...profile,workspace:'D:/wrong-workspace'}),/matching workspace/);
+  assert.equal(store.workroom.get(t.id).messages.length,0);
+  const prepared=store.workroom.localSessions.reserve(t.id,send,profile),first=prepared.nativeLocal;
+  assert.match(first.createRequestId,/^mesh-local-create-[a-f0-9]{64}$/);assert.match(first.submissionId,/^mesh-local-submit-[a-f0-9]{64}$/);
+  store.close();store=openTaskStore(file);
+  assert.deepEqual(store.workroom.localSessions.reserve(t.id,send,profile).nativeLocal,first);
+  assert.throws(()=>store.workroom.reserve(t.id,send,'work'),/different message/);
+  assert.throws(()=>store.workroom.localSessions.reserve(t.id,send,{...profile,identityRef:'different-owner'}),/different message/);
+  assert.throws(()=>store.workroom.settle(send.id,'rejected'),/dedicated native receipt/);
+  let calls=0;await assert.rejects(sendTaskHandoff({workroom:store.workroom,taskId:t.id,body:{...body(),id:send.id,agentId:send.agentId,conversationId:send.conversationId},relay:{nativeRead:async()=>{calls++;}},admitted:()=>true}),/dedicated native transport/);
+  assert.equal(calls,0);
+ }finally{store.close();}
+});
+
+test('uncertain native submission recovers only by readback across restart and pins immutable admission identity',async()=>{
+ const file=filename();let store=openTaskStore(file);try{
+  const {t,send,profile}=localReady(store);let creates=0,submits=0,reads=0;
+  const rpc=async(method,params)=>{
+   if(method==='session.create'){creates++;return {session_id:nativeSid};}
+   if(method==='prompt.submit'){submits++;throw new Error('reply lost after receiver commit');}
+   assert.equal(method,'prompt.lookup');reads++;const row=store.workroom.localSessions.read(t.id,send.id);
+   return localReceipt(row);
+  };
+  const options={taskId:t.id,body:send,profile,rpc,credential:async()=>'DO_NOT_PERSIST_KEY',admitted:()=>true};
+  await assert.rejects(dispatchLocalSession({...options,workroom:store.workroom}),/uncertain/);
+  const pending=store.workroom.localSessions.read(t.id,send.id);assert.equal(pending.state,'submit_unknown');
+  store.close();store=openTaskStore(file);
+  const changed=store.workroom.get(t.id);store.workroom.saveProgress(t.id,{goal:'Later clarification must not hide the original receipt',checklist:changed.progress.checklist,result:changed.progress.result,evidence:changed.progress.evidence,reviewer:changed.progress.reviewer,decision:changed.progress.decision,revision:changed.progress.revision,taskRevision:changed.revision,briefRevision:changed.workroom.revision});
+  assert.throws(()=>store.workroom.localSessions.startSubmit(t.id,send.id,pending.revision),/first native submission/);
+  const observed=await dispatchLocalSession({...options,workroom:store.workroom});
+  assert.equal(creates,1);assert.equal(submits,1);assert.equal(reads,1);assert.equal(observed.admissionId,nativeAid);
+  assert.equal(observed.writerQuiescence,false);assert.equal(store.workroom.get(t.id).messages[0].state,'accepted');
+  assert.equal(JSON.stringify(store.workroom.get(t.id)).includes('DO_NOT_PERSIST_KEY'),false);
+  assert.throws(()=>store.workroom.localSessions.observe(t.id,send.id,pending.revision,localReceipt(observed)),/binding changed/);
+  assert.throws(()=>store.workroom.localSessions.observe(t.id,send.id,observed.revision,{...localReceipt(observed),receipt:{...localReceipt(observed).receipt,admission_id:'c'.repeat(32)}}),/identity changed/);
+  const missing=store.workroom.localSessions.observe(t.id,send.id,observed.revision,{found:false,session_id:observed.sessionId,submission_id:observed.submissionId});
+  assert.equal(missing.admissionId,nativeAid);assert.equal(missing.state,'unavailable');
+  const terminal=store.workroom.localSessions.observe(t.id,send.id,missing.revision,localReceipt(missing,'terminal'));
+  assert.equal(terminal.writerQuiescence,false);assert.equal(store.workroom.get(t.id).messages[0].state,'accepted');
+  const {execFileSync}=await import('node:child_process');
+  const backup=JSON.parse(execFileSync(process.execPath,['integrations/workroom-backup.mjs',file,join(mkdtempSync(join(tmpdir(),'mesh-native-binding-backup-')),'snapshot')],{encoding:'utf8'}));
+  assert.equal(backup.restore,'PASS');const restored=openTaskStore(backup.restored);try{assert.deepEqual(restored.workroom.localSessions.read(t.id,send.id),terminal);}finally{restored.close();}
+  const peer=localReady(store);assert.throws(()=>store.workroom.reserve(peer.t.id,peer.send,'work'),/native writer/);
+  let legacyReads=0;await syncTaskReplies({workroom:store.workroom,taskId:t.id,relay:{nativeRead:async()=>{legacyReads++;}},admitted:()=>true});assert.equal(legacyReads,0);
+  assert.throws(()=>store.workroom.nativeReceipts.binding(t.id,send.id),/dedicated native session/);
+ }finally{store.close();}
+});
+
+test('native unsent work refuses a changed scope while already attempted work remains reconcilable',()=>{
+ const store=openTaskStore(filename());try{
+  let {t,send,profile}=localReady(store);const local=store.workroom.localSessions;
+  let row=local.reserve(t.id,send,profile).nativeLocal;
+  row=local.startCreate(t.id,send.id,row.revision);row=local.bindSession(t.id,send.id,row.revision,{session_id:nativeSid});
+  t=store.workroom.get(t.id);store.workroom.saveProgress(t.id,{goal:'Changed after session creation',checklist:t.progress.checklist,result:t.progress.result,evidence:t.progress.evidence,reviewer:t.progress.reviewer,decision:t.progress.decision,revision:t.progress.revision,taskRevision:t.revision,briefRevision:t.workroom.revision});
+  assert.throws(()=>local.startSubmit(t.id,send.id,row.revision),/changed before native submission/);
+  assert.equal(local.read(t.id,send.id).state,'session_bound');
+ }finally{store.close();}
 });
