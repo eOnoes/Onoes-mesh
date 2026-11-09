@@ -111,6 +111,15 @@ def verify_evidence(root):
                 or effects['unverifiedCalls']!=effects['observedCalls']):
             raise RuntimeError('Tool pipeline observations lost stages or granted clearance')
         result['checks'].append('actual_native_pipeline_stages_remain_observation_only')
+    if 'actual_native_HTTP_agent_file_write_exact_bytes_without_release' in report['checks']:
+        file_evidence=json.loads((root/'file-worker-evidence.json').read_text(encoding='utf-8'))
+        proof=(root/'workspace'/'mesh-file-proof.md').read_bytes()
+        status=file_evidence['status'];life=status['writer_lifecycle']['enrollment']['lifetime']
+        if (proof!=b'Mesh native file proof.\n' or hashlib.sha256(proof).hexdigest()!=file_evidence['sha256']
+                or status['status']!='completed' or not life['managedWorkEnded']
+                or status['writer_lifecycle']['writerQuiescence'] or life['toolEffects']['effectsSettled']):
+            raise RuntimeError('Native file worker evidence is incomplete or incorrectly releases ownership')
+        result['checks'].append('actual_native_file_write_bytes_and_held_ownership')
     (root / 'verified-evidence.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     return result
 
@@ -403,6 +412,7 @@ async def child(root):
     title_started, title_release = asyncio.Event(), asyncio.Event()
     canonical_started, canonical_release = asyncio.Event(), asyncio.Event()
     canonical_mode = False
+    file_mode = False
     async def provider(request):
         body = await request.json()
         requests.append({'path': request.path, 'tools': [item.get('function', {}).get('name') or item.get('name')
@@ -411,16 +421,21 @@ async def child(root):
             if message.get('role') == 'tool':
                 tools_seen.append(str(message.get('content', '')))
         terminal_allowed = any(item.get('function', {}).get('name') == 'terminal' for item in body.get('tools', []))
+        file_allowed = any(item.get('function', {}).get('name') == 'write_file' for item in body.get('tools', []))
+        worker_allowed = terminal_allowed or file_allowed
         if canonical_mode and terminal_allowed:
             canonical_started.set()
             await asyncio.wait_for(canonical_release.wait(), timeout=30)
-        if not terminal_allowed:
+        if not worker_allowed:
             title_started.set()
             await asyncio.wait_for(title_release.wait(), timeout=30)
-        tool = terminal_allowed and not any(message.get('role') == 'tool' for message in body.get('messages', []))
+        tool = worker_allowed and not any(message.get('role') == 'tool' for message in body.get('messages', []))
+        tool_name = 'write_file' if file_mode and file_allowed else 'terminal'
+        tool_args = ({'path': str(root / 'workspace' / 'mesh-file-proof.md'), 'content': 'Mesh native file proof.\n'}
+                     if tool_name == 'write_file' else {'command': "printf 'mesh-runtime-proof'", 'timeout': 5})
         message = ({'role': 'assistant', 'content': None, 'tool_calls': [{'id': 'call_mesh_fixture', 'type': 'function',
-                    'function': {'name': 'terminal', 'arguments': json.dumps({'command': "printf 'mesh-runtime-proof'", 'timeout': 5})}}]}
-                   if tool else {'role': 'assistant', 'content': 'mesh fixture completed' if terminal_allowed
+                    'function': {'name': tool_name, 'arguments': json.dumps(tool_args)}}]}
+                   if tool else {'role': 'assistant', 'content': 'mesh fixture completed' if worker_allowed
                                  else json.dumps({'title': 'Mesh runtime fixture'})})
         finish = 'tool_calls' if tool else 'stop'
         if body.get('stream'):
@@ -457,7 +472,7 @@ async def child(root):
                          or name in ('session_id', 'gateway_session_key', 'ephemeral_system_prompt')}
             return AIAgent(base_url=endpoint, api_key='synthetic-local-provider', provider='custom',
                 api_mode='chat_completions', model='mesh-runtime-fixture', max_iterations=4, max_tokens=256,
-                enabled_toolsets=['terminal'], skip_memory=True, skip_background_review=True,
+                enabled_toolsets=['file'] if file_mode else ['terminal'], skip_memory=True, skip_background_review=True,
                 skip_context_files=True, load_soul_identity=False, quiet_mode=True,
                 session_db=adapter._ensure_session_db(), cwd=str(root / 'workspace'), **callbacks)
         adapter._create_agent = create_agent
@@ -551,6 +566,36 @@ async def child(root):
                 if response.status not in (401, 403):
                     raise RuntimeError('Unauthenticated native status was exposed')
             checks.append('actual_native_HTTP_authentication_enforced')
+            file_mode = True
+            file_headers = {**headers, 'Idempotency-Key': 'mesh-native-file-proof'}
+            async with client.post(origin+'/v1/runs', headers=file_headers,
+                    json={'input': 'Create the synthetic Mesh file proof, then finish.'}) as response:
+                file_admitted = await response.json()
+                if response.status not in (200,201,202):
+                    raise RuntimeError('Native file run admission failed')
+            file_id = file_admitted['run_id']
+            deadline = time.monotonic()+45
+            while True:
+                async with client.get(origin+'/v1/runs/'+file_id,
+                        headers={'Authorization':'Bearer '+key}) as response:
+                    file_status = await response.json()
+                file_life = file_status.get('writer_lifecycle',{}).get('enrollment',{}).get('lifetime',{})
+                if file_status['status'] in ('completed','failed','cancelled','interrupted') and file_life.get('managedWorkEnded'):
+                    break
+                if time.monotonic()>deadline:
+                    raise RuntimeError('Native file worker did not settle')
+                await asyncio.sleep(.05)
+            proof_path = root/'workspace'/'mesh-file-proof.md'
+            proof = proof_path.read_bytes() if proof_path.is_file() else b''
+            if file_status['status']!='completed' or proof!=b'Mesh native file proof.\n':
+                raise RuntimeError('Native file worker did not produce exact expected bytes')
+            if file_status['writer_lifecycle']['writerQuiescence'] or file_life['toolEffects']['effectsSettled']:
+                raise RuntimeError('File success incorrectly granted unqualified writer release')
+            (root/'file-worker-evidence.json').write_text(json.dumps({
+                'relativePath':'workspace/mesh-file-proof.md','sha256':hashlib.sha256(proof).hexdigest(),
+                'status':file_status,'exactContentVerified':True},indent=2),encoding='utf-8')
+            checks.append('actual_native_HTTP_agent_file_write_exact_bytes_without_release')
+            file_mode = False
             count = len(requests)
             worker_calls = sum('terminal' in item['tools'] for item in requests)
             creations, fence_count = len(agents_created), len(fences)

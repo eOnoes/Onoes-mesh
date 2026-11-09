@@ -1676,3 +1676,30 @@ Next: qualify a bounded tool completion adapter/profile and consume its trusted
 closure in existing assignment policy. Positive consumer still absent and all
 historical holds retained. No live native/Relay/model or Mind install/restart,
 automation activation or private data access. Full original goal active/incomplete.
+
+
+## Native file worker qualification — 2026-11-09T00:50:45.233449+00:00
+Previous goal turn: progress (verified internal relay_enabled is not profile config).
+Native _ProcessRelayPluginConfiguration._initialize uses explicit plugin inputs,
+but its system file always remains in the stack; no supported blanket-disable
+contract established. No internal flag forced and no live configuration changed.
+Added actual /v1/runs -> AIAgent -> native file tool integration to existing
+isolated runtime qualifier. File-only toolset selected for a new direct worker;
+local synthetic provider requests write_file with a fixed fixture-workspace path.
+Exact file bytes verified on disk: Mesh native file proof. plus newline, SHA256
+7da5f2563d2ed30f31d2424c8e07bfc7882b364a91484b44f008f24fa9c95ba7.
+Fresh runtime data/hermes-runtime-71500f70-db85-48b7-90da-56cdf27da990 PASS13;
+independent verifier PASS12 including all17 candidate native source hashes.
+File worker completed, managedWorkEnded true, no pending workers, process tree
+ended. Tool fullyObservedCalls1, plainNativeCalls0, unverifiedCalls1;
+effectsSettled false and writerQuiescence false. Success is not clearance.
+Independent negative checks: altered file bytes rejected; false ownership release
+rejected. Evidence data/file-evidence-negative-9f81d013-3df4-4450-bfcf-4fc827e0effc.
+Initial negative-check temp folder creation was denied by local filesystem policy;
+repeated in writable ignored data folder, retained evidence. No policy bypass.
+Syntax compile and git diff --check PASS. Existing canonical FIFO, observer cancel,
+exact replay, graceful retirement and abrupt separate-process loss checks PASS.
+No live native/Relay install or restart, model changes, Mind activation, automation
+activation or old hold release. Full goal incomplete. Next: qualify file completion
+boundary including middleware/Relay effects, then add trusted positive producer
+and Mesh assignment consumer. Native file write alone cannot unlock a claim.
