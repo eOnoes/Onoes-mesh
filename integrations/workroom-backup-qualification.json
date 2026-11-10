@@ -1,0 +1,29 @@
+{
+  "schema": "mesh-backup-recovery-qualification/v1",
+  "status": "PASS",
+  "sourceBaseCommit": "476de60",
+  "actualHeldTrial": {
+    "taskCount": 1,
+    "integrity": "ok",
+    "foreignKeys": "ok",
+    "restore": "PASS",
+    "tablesCompared": 23,
+    "recovery": {
+      "pausedTeams": 1,
+      "uncertainSends": 0
+    },
+    "snapshotSha256": "e2281ca39c4f0cf854d5890698949774921e5e3aeda330133daee17039d2b8d2"
+  },
+  "acceptance": "Every saved table compared; only the exact startup team pause/revision/reason and prepared-send uncertainty are allowed. Missing safety recovery, changed assignments, review, payload or invented writer retirement are rejected.",
+  "newAgentTasks": 0,
+  "liveAppChanged": false,
+  "gatewayMaintenance": "Approved by Eddie only when idle; not yet performed",
+  "tests": {
+    "command": "npm test",
+    "exitCode": 0,
+    "nodePassed": 372,
+    "pythonPassed": 114,
+    "totalPassed": 486,
+    "focusedChecks": 3
+  }
+}

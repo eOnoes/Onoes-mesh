@@ -704,3 +704,14 @@ requesting any further live task. Rook and Mind remain off.
 
 - Final npm test exit0:369Node +114Python =483checks. Original two installed-profile tests retained verbatim in their original file; seven new readiness/launcher tests are separate. All test/owned helper processes terminal; code index final two-file refresh pending. No new provider task.
 - Installed source and launcher hashes rechecked: all three still match their originals. Prepared candidate is not installed. Next: explicit shared gateway maintenance decision; full goal remains active/incomplete.
+
+
+## 2026-11-10: unfinished-team restore verification corrected
+- Previous goal turn was progress: prepared supported single-owner gateway maintenance,483checks, committed/pushed476de60, verified source/data and rollback backups. Gateway decision was pending; Eddie now explicitly approved maintenance WHEN IDLE. This authorizes the prepared three-file update and shared gateway restart only after authoritative live no-active-job confirmation. No model-service restart/new provider trial authorized.
+- Compared failed preserved rehearsal with snapshot: only workroom_automation reason/revision/state changed. Original active revision2 becomes paused revision3 with exact standard restart reason; card/review data unchanged. This is intentional no-replay recovery, not data loss. Original FAILED receipt/evidence retained.
+- New lib/workroom-backup.mjs checks every saved user table, rather than only the previous12-table durable hash list plus row counts. Permits only exact active->paused reason/+1revision and prepared->unknown send state, with all other fields/IDs/payloads/holds unchanged. Requires safety recovery to actually occur; unchanged active/prepared states fail. No production recovery behavior changed.
+- Actual original held trial restored successfully in a NEW isolated directory, integrity/FK PASS, one saved task, strict all-table fidelity PASS. Original native worker quiescence remains UNPROVEN and no retry/review/release/Done was performed. Tests reject invented quiescence, changed task/assignment/scope/review/revision, missing safety pause or tables/rows. Focused3PASS; full gate running.
+- First restricted E backup reads failed; same read-only comparison succeeded with approved library access, no private message contents printed. No service process touched.
+
+- Full npm test exit0:372Node+114Python=486checks. Actual held-trial isolated restore compares all23tables, permits exactly one safe team pause, no uncertain sends; no private/live store was changed.
+- Approved maintenance live preflight: authenticated native control identify/status both answered; ownerPID6080/instance1236809ce08a4c10852afd23b8bbc4a6 ready, active_agents=1. Idle condition NOT met. No installation/restart. Live source data/gateway-live-activity.json. Wait for authoritative zero-active-work response, not a stale status file.

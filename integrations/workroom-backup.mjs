@@ -3,6 +3,7 @@ import {mkdirSync,copyFileSync,writeFileSync,readFileSync} from 'node:fs';
 import {resolve,join,dirname} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {openTaskStore} from '../lib/task-store.mjs';
+import {verifyBackupRestore} from '../lib/workroom-backup.mjs';
 
 // SQLite online backup includes committed WAL data. Never copy a running DB file alone.
 const source=resolve(process.argv[2]||'data/workroom-preview/tasks.sqlite');
@@ -32,8 +33,8 @@ copyFileSync(snapshot,restored,1); // COPYFILE_EXCL: never replace a prior resto
 const store=openTaskStore(restored);
 let taskCount;try{taskCount=store.workroom.list().length;}finally{store.close();}
 const restoredCounts=inspect(restored);
-if(JSON.stringify(durable)!==JSON.stringify(durableDigest(restored)))throw Error('Restored task or review provenance differs');
+const fidelity=verifyBackupRestore(snapshot,restored);
 for(const [table,count] of Object.entries(counts))if(restoredCounts[table]!==count)throw Error('Restore changed row count: '+table);
-const receipt={createdAt:new Date().toISOString(),source,snapshot,restored,sha256:createHash('sha256').update(readFileSync(snapshot)).digest('hex'),counts,durable,taskCount,integrity:'ok',foreignKeys:'ok',restore:'PASS',note:'Restore opened through application migrations in isolated copy; live database was not replaced.'};
+const receipt={createdAt:new Date().toISOString(),source,snapshot,restored,sha256:createHash('sha256').update(readFileSync(snapshot)).digest('hex'),counts,durable,fidelity,taskCount,integrity:'ok',foreignKeys:'ok',restore:'PASS',note:'Restore opened through application migrations in isolated copy; all saved tables compared, allowing only exact startup safety pauses and prepared-send uncertainty. Live database was not replaced.'};
 writeFileSync(join(directory,'receipt.json'),JSON.stringify(receipt,null,2));
 console.log(JSON.stringify(receipt,null,2));
