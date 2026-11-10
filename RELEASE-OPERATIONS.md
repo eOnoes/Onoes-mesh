@@ -9,8 +9,8 @@ Evidence: `integrations/live-source-custody-qualification.json`.
 - Local/phone: Eddie confirmed card creation, editing, movement, saved review/Done,
   both themes, background/resume, rotation with an unsaved draft and network recovery.
   The full end-to-end production worker workflow still requires acceptance.
-- Latest full local gate: `npm test` passed 465 checks (364 Node + 101 Python),
-  with static/design checks; all 207 Workroom tests passed. The server now accepts
+- Latest full local gate: `npm test` passed 468 checks (367 Node + 101 Python),
+  with static/design checks; all 210 Workroom tests passed. The server now accepts
   an explicit native worker connection and uses it for dispatch, observation and
   verified retirement. An actual admitted HTTP test proved a mismatched profile
   holds without a prompt or Relay fallback. This used a synthetic transport;
@@ -24,6 +24,13 @@ Evidence: `integrations/live-source-custody-qualification.json`.
   cover uncertain disconnect, no automatic reconnect/resend and sanitized errors.
   The trusted bootstrap helper is available, but the normal launcher remains off.
   See `integrations/native-gateway-transport-qualification.json`.
+- Guide team pilot: one synthetic build, verified retirement and one independent
+  synthetic review passed through the actual admitted server; results survived
+  restart with owner review still pending. The prepared real trial is guide-copy
+  only, one builder plus one Nims review, no retries or automatic Done. It requires
+  separate owner approval tied to its exact scope hash. Native workspace selection
+  may narrow only within the checkout; normal startup remains unchanged/off.
+  See `integrations/guide-team-pilot-qualification.json`.
 - Main-PC health: live read-only CPU/RAM/GPU and fixed supervisor observations
   verified, including shared concurrent refreshes and honest unloaded/unknown states.
   Responsive UI and selected-workspace reload verified. Model lifecycle controls,

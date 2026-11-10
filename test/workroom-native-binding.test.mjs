@@ -54,6 +54,8 @@ test('standalone and Relay-disabled startup reject enrollment before contacting 
   try {
     process.env.MESH_STANDALONE='0';
     await assert.rejects(startApp({relayEnabled:false,nativeWorkerOptions:options}),/require Mesh/);
+    await assert.rejects(startApp({relayEnabled:true,nativeWorkerOptions:{...options,
+      profile:{...profile(),workspace:join(ROOT,'..')}}}),/outside trial root/i);
     process.env.MESH_STANDALONE='1';
     await assert.rejects(startApp({relayEnabled:true,nativeWorkerOptions:options}),/standalone/);
     assert.equal(calls,0);

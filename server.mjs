@@ -127,6 +127,9 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   if (nativeWorkerOptions !== undefined && !relayEnabled)
     throw new Error('Native worker connections require Mesh team routing; standalone cannot enroll one.');
   const nativeWorker = createNativeWorkerBinding(nativeWorkerOptions);
+  // A native enrollment may narrow its workspace to an owned subfolder, never
+  // widen the existing qualification beyond this checkout or through a link.
+  if(nativeWorker)await confinedPath(nativeWorker.workspace);
   // Trusted fixture seam only. No HTTP/CLI/environment adapter selection.
   if (localInferenceTestOptions !== undefined && (!localInferenceTestOptions ||
       Object.keys(localInferenceTestOptions).some(k => !['adapter', 'now'].includes(k)) ||
@@ -186,8 +189,8 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       tokenFile: process.env.MESH_RELAY_TOKEN_FILE ?? 'D:\\Dev\\Onoes-Relay\\.private\\relay.key',
     })
     : await createRelayLink({ root: ROOT, directory, confine: confinedPath, store, enabled: relayEnabled });
-  const relay=relayEnabled&&!standalone&&process.env.MESH_NIMS==='1'?withNims(baseRelay,{root:ROOT,workroom:store.workroom}):baseRelay;
-  const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:ROOT,simpleFlow:process.env.MESH_SIMPLE_FLOW==='1',nativeWorker,nativeObserver:nativeWorker}):null;
+  const relay=relayEnabled&&!standalone&&process.env.MESH_NIMS==='1'?withNims(baseRelay,{root:nativeWorker?.workspace??ROOT,workroom:store.workroom}):baseRelay;
+  const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:nativeWorker?.workspace??ROOT,simpleFlow:process.env.MESH_SIMPLE_FLOW==='1',nativeWorker,nativeObserver:nativeWorker}):null;
   // Only hashes of fixed source code/CSS authorize the existing native HTML.
   // srcdoc receives that HTML via an admitted API read, never a public route.
   let relayScriptHashes = '', relayStyleHashes = '';

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-10T19:41:37.304245+00:00",
+  "qualification": "PASS",
+  "scope": "Actual isolated-server build/retirement/review/restart pilot with synthetic worker and reviewer; live pilot prepared only",
+  "sourceBaseCommit": "7dab8d0",
+  "checks": {
+    "command": "npm test",
+    "exitCode": 0,
+    "nodePassed": 367,
+    "pythonPassed": 101,
+    "totalPassed": 468,
+    "workroomPassed": 210,
+    "staticDesignGate": "PASS",
+    "pilotChecks": 3,
+    "builderAttempts": 1,
+    "reviewerAttempts": 1,
+    "workerRelayPosts": 0,
+    "workerQuiescenceVerified": true,
+    "restartPreserved": true,
+    "ownerApprovalRecorded": false,
+    "automaticDone": false,
+    "duplicateAttemptDenied": true,
+    "preparedMutationDenied": true,
+    "outsideCheckoutDeniedBeforeRPC": true
+  },
+  "fixtureEvidence": {
+    "path": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-c891d6cf-8258-42c5-8db6-37788ce6bea6\\result.json",
+    "scopeHash": "33df01d38f2a81869882a9d866b371c24f687646b7cfd9f24c17de7455fb8c08",
+    "taskId": "6c42632d-e2e7-4c75-a749-3ecead1c5055",
+    "nativeIndependentReviewQualified": false
+  },
+  "preparedLivePilot": {
+    "path": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-5a4b4e0b-a812-45f1-86fb-b80f2dcc40dd\\pilot.json",
+    "review": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-5a4b4e0b-a812-45f1-86fb-b80f2dcc40dd\\REVIEW.txt",
+    "scopeHash": "16d058d6d00409bf2d95a26ddcb9930bc87835b6e89d48341e6de4462fe6b8fe",
+    "taskId": "1cda7264-8f50-4700-bce1-a653bb9fe061",
+    "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-work-5a4b4e0b-a812-45f1-86fb-b80f2dcc40dd",
+    "beforeSha256": "ea34b8cab4e4a625b7e92e595a4f4d627c0e33eac3f03b19069eca2e5c0e71c4",
+    "expectedSha256": "50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f",
+    "limits": {
+      "builderAttempts": 1,
+      "builderMaxTurns": 50,
+      "builderTools": [
+        "file"
+      ],
+      "reviewerAttempts": 1,
+      "reviewer": "nims",
+      "reviewerMode": "read-only",
+      "automaticRetries": false,
+      "automaticDone": false
+    },
+    "attemptMarkerExists": false,
+    "providerTasksSubmitted": 0,
+    "installedNativeBridgeHashesChecked": 9
+  },
+  "guards": [
+    "Exclusive attempt record precedes any mutable store open or connection; duplicate launch cannot pause original work",
+    "Approval bound to exact scope hash and unchanged code, guide copy, original guide, task and installed native bridge",
+    "Enrolled workspace may only narrow within the checkout, through existing no-link confinement",
+    "Nims review uses same enrolled workspace; readback matches original saved payload via read-only SQLite, not truncated browser receipt",
+    "Uncertain work records HELD and original IDs; no automatic resend; timeout or runner exit never asserts worker quiescence"
+  ],
+  "failureHistory": [
+    "First actual server pilot refused the owned subfolder under checkout-only team policy. Fixed only the explicit native path to use its confined enrolled workspace; normal root unchanged and outside-checkout input remains rejected.",
+    "Browser task intentionally omits native reviewer payload. Operator reads the one original review payload from read-only saved sends instead; this exact read was exercised in the fixture before any live approval."
+  ],
+  "deployment": {
+    "liveAppChanged": false,
+    "productionEnrollment": false,
+    "RookActivated": false,
+    "MindActivated": false,
+    "modelServiceRestarted": false,
+    "newProviderTasks": 0
+  }
+}
