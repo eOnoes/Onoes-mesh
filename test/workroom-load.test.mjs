@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
-import {createBoardLoader} from '../public/workroom-load.mjs';
+import {createBoardLoader,createCardOpener} from '../public/workroom-load.mjs';
 import {startApp} from '../server.mjs';
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
@@ -49,4 +49,27 @@ test('peer failure leaves cards usable and a later refresh can recover',async()=
 test('the actual app serves the board loader module unchanged',async()=>{
  const app=await startApp({dataDir:'data/board-loader-http-'+randomUUID(),relayEnabled:false});
  try{const r=await fetch(app.url+'/workroom-load.mjs');assert.equal(r.status,200);assert.equal(await r.text(),await readFile(new URL('../public/workroom-load.mjs',import.meta.url),'utf8'));}finally{await app.close();}
+});
+
+
+test('a card clicked during board refresh opens once it settles without waiting for peers',async()=>{
+ const peers=deferred(),opened=[];let busy=true;
+ const opener=createCardOpener({isBusy:()=>busy,open:id=>opened.push(id)});
+ const loader=createBoardLoader({request:async path=>path==='/api/workroom'?{tasks:[{id:'saved-card'}]}:peers.promise,onBoard:board=>opener.request(board.tasks[0].id),onAgents:()=>{}});
+ await loader.load();assert.deepEqual(opened,[]);busy=false;opener.drain();
+ assert.deepEqual(opened,['saved-card']);opener.drain();assert.deepEqual(opened,['saved-card']);
+ peers.resolve([]);await tick();assert.deepEqual(opened,['saved-card']);
+});
+
+test('only the latest explicit card navigation survives a busy operation',()=>{
+ let busy=true;const opened=[],opener=createCardOpener({isBusy:()=>busy,open:id=>opened.push(id)});
+ opener.request('old-card');opener.request('chosen-card');opener.drain();assert.deepEqual(opened,[]);
+ busy=false;opener.drain();opener.drain();assert.deepEqual(opened,['chosen-card']);
+ opener.request('next-card');assert.deepEqual(opened,['chosen-card','next-card']);
+});
+
+test('privacy clearance cancels queued card navigation before a late refresh settles',()=>{
+ let busy=true;const opened=[],opener=createCardOpener({isBusy:()=>busy,open:id=>opened.push(id)});
+ opener.request('private-old-card');opener.clear();busy=false;opener.drain();assert.deepEqual(opened,[]);
+ opener.request('fresh-card');assert.deepEqual(opened,['fresh-card']);
 });

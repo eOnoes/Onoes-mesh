@@ -1,7 +1,7 @@
 import {bindCardDrag} from './workroom-drag.mjs';
 import {captureBoardView,restoreBoardView} from './workroom-view.mjs';
 import {saveCardBrief} from './workroom-edit.mjs';
-import {createBoardLoader} from './workroom-load.mjs';
+import {createBoardLoader,createCardOpener} from './workroom-load.mjs';
 import {handoffStatus,taskTimeline,cardNextAction,nativeWorkerStatus} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
 import {createPlanEditor,scopedTeamStatus} from './workroom-plan.mjs';
@@ -125,7 +125,7 @@ if(root){
     });
   }
   window.meshWorkroom.onClear(()=>{
-    boardLoader.clear();agentsKnown=false;root.dataset.managedFlow='0';
+    boardLoader.clear();cardOpener.clear();agentsKnown=false;root.dataset.managedFlow='0';
     viewEpoch++;clearTimeout(followTimer);
     tasks=[];selected=null;agents=[];pending=null;teamPolicy=null;
     details.close();details.replaceChildren();board.replaceChildren();
@@ -133,7 +133,8 @@ if(root){
     pendingMove=null;moveDialog.close();moveNote.textContent='';moveNotice.textContent='';moveOwner.replaceChildren();
     status.textContent='Start a session to view the board.';
   });
-  const act=async operation=>{if(busy)return;busy=true;refresh.disabled=true;try{await operation();}catch(error){status.textContent=error.message;if(moveDialog.open)moveNotice.textContent=error.message;const planNotice=details.querySelector('.workroom-plan [role=status]');if(planNotice)planNotice.textContent=error.message;const notice=details.querySelector('[role="status"]');if(notice)notice.textContent=error.message;const dockNotice=details.querySelector('.workroom-sheet-footer [role=status]');if(dockNotice)dockNotice.textContent=error.message;}finally{busy=false;refresh.disabled=false;}};
+  const act=async operation=>{if(busy)return;busy=true;refresh.disabled=true;try{await operation();}catch(error){status.textContent=error.message;if(moveDialog.open)moveNotice.textContent=error.message;const planNotice=details.querySelector('.workroom-plan [role=status]');if(planNotice)planNotice.textContent=error.message;const notice=details.querySelector('[role="status"]');if(notice)notice.textContent=error.message;const dockNotice=details.querySelector('.workroom-sheet-footer [role=status]');if(dockNotice)dockNotice.textContent=error.message;}finally{busy=false;refresh.disabled=false;void cardOpener.drain();}};
+  const cardOpener=createCardOpener({isBusy:()=>busy,open:id=>act(()=>open(id))});
   function draw(){
     const view=captureBoardView(board,document);
     board.replaceChildren();
@@ -158,7 +159,7 @@ if(root){
         if(handoff)button.append(el('small',`${handoff.phase} → ${handoff.agentId} · ${handoff.state}`));
         const signal=agentsKnown?handoffStatus(task,agents):null;if(signal)button.append(el('small',signal.label));
         }
-        button.addEventListener('click',()=>{returnFocus=button;act(()=>open(task.id));});
+        button.addEventListener('click',()=>{returnFocus=button;cardOpener.request(task.id);});
         const card=el('div');card.className='workroom-card';
         button.setAttribute('aria-description','Tap to open. Hold and drag to move, or use left and right arrow keys.');
         handleDrag(button,card,task);card.append(button);stack.append(card);
@@ -175,8 +176,9 @@ if(root){
   }
   async function open(id){
     const epoch=++viewEpoch;clearTimeout(followTimer);
-    const opened=await request('/api/workroom/'+id);selected=opened.task;teamPolicy=opened.teamPolicy||null;
+    const opened=await request('/api/workroom/'+id);
     if(epoch!==viewEpoch)return;
+    selected=opened.task;teamPolicy=opened.teamPolicy||null;
     // Never carry an uncertain message into another task.
     pending=null;details.replaceChildren();details.classList.add('workroom-task-sheet');details.classList.toggle('workroom-simple-flow',Boolean(teamPolicy?.simpleFlow));
     const content=el('div');content.className='workroom-sheet-content';
@@ -545,7 +547,7 @@ if(root){
   }
   refresh.addEventListener('click',()=>act(load));
   window.addEventListener('mesh-open-task',event=>{
-    if(typeof event.detail?.id==='string' && /^[0-9a-f-]{36}$/.test(event.detail.id))act(()=>open(event.detail.id));
+    if(typeof event.detail?.id==='string' && /^[0-9a-f-]{36}$/.test(event.detail.id))cardOpener.request(event.detail.id);
   });
   projectFilter.addEventListener('input',draw);
   document.getElementById('tab-workroom')?.addEventListener('click',()=>act(load));

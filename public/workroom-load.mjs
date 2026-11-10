@@ -22,3 +22,13 @@ export function createBoardLoader({request,onBoard,onAgents}) {
   }
   return {load,clear};
 }
+
+// Only explicit read-only navigation is retained; writes are never queued.
+export function createCardOpener({isBusy,open}) {
+  let pending=null;
+  function drain(){
+    if(pending===null||isBusy())return;
+    const id=pending;pending=null;return open(id);
+  }
+  return {request(id){pending=id;return drain();},drain,clear(){pending=null;}};
+}
