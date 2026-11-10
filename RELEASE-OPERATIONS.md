@@ -1,6 +1,62 @@
 # Mesh private release candidate
 
-## Current readiness - 2026-11-10
+## Verified current readiness - 2026-11-10
+
+This is a private release candidate, not an owner-accepted production release.
+The application code milestone is `601c463`. The running API reports version
+`0.1.0`, build `13a054e37a78`, started `2026-11-10T22:45:12.274Z`, using
+`data/workroom-preview/tasks.sqlite`. These are runtime-reported identifiers;
+the earlier whole-source custody record below is historical evidence, not a
+new full-custody acceptance. Current default link:
+https://emitchell.tail8c4a75.ts.net:8453/#workroom.
+
+- Latest complete local gate: **499 checks passed** (`npm test`, 385 Node plus
+  114 Python), including 225 Workroom cases. Code index refresh completed.
+- Live UI: a card click during refresh is retained as read-only navigation;
+  session clearance cancels it. Main-PC CPU/RAM/GPU readings are visible in
+  both Inference and Control. GPU/VRAM describe the whole device, not a model.
+- Native worker process tracking is installed. Real file-only Codex workers
+  have produced exact retirement receipts, but the recent 50-turn guide trials
+  remain held on their actual report/artifact results. Neither dispatched a
+  Nims review. Those results do not qualify the full native team flow.
+- A new exact anchored-patch guide trial is prepared, **not run**. Its original
+  expected bytes/hash and one-builder/one-read-only-review/no-retry limits remain.
+  Scope: `8cc6bb1b865bfcf2054d84f15f852948fd6a56ef3c7853135e94cb63d45c29fc`.
+  It requires its separately requested owner approval; this record grants none.
+- Main Rook status is `not_configured`: identity unverified, scheduler disabled.
+  The read-only status also reports eight historical accepted-send writer holds.
+  Card Done, a final reply or elapsed time must not release those holds. Exact
+  native tool/child quiescence evidence and approved production wiring are still
+  required. A read-only question to Echo asks whether existing evidence exists;
+  it authorizes no enrollment, retry, repair or activation.
+- Freshness finding: one new ordinary Echo question carried marker
+  `MESH_RELEASE_COORD_20261110`, but the subsequent reply addressed the earlier
+  `MESH_IDLE_COORD_20261110`. It is not Rook signoff. Source inspection of
+  `hermes_send` and `HermesRunsClient.submit_run` shows the supplied text forwarded
+  as native `input`; exact live message/run/prompt binding is still unverified.
+  Do not infer a transport defect or trust the stale answer as current evidence.
+- Relay retains its native conversation/outbox authority; Workroom retains task,
+  plan and review authority. Foreground polling is the current update path.
+  F2 background notification selection remains open. Telegram synchronization,
+  sandbox stream imports and new notification services are not enabled.
+- Main model lifecycle qualification remains blocked by the declined shared-model
+  maintenance window. Read-only telemetry grants no load/unload/chat capability.
+  Rook, production native worker enrollment and live canonical Mind remain off.
+- First-release register remains **12/21**; parent stages remain **2/6**, review
+  pending. Full phone workflow C1, owner release/custody C4, off-device recovery
+  C5, D/E2 and F2 remain open. Manual/milestone backups use `E:/App-Backups`;
+  no schedule, pruning or off-device destination has been invented.
+- The broader goal still includes canonical Mind shared context/skills/MCP and
+  laptop/future AI-box integration. This local candidate is not that finish line.
+
+Current evidence: `integrations/guide-team-post-maintenance-qualification.json`,
+`data/host-cpu-live-qualification.json`, `data/workroom-first-click-qualification.json`,
+`data/release-audit-release.json`, `data/release-audit-rook.json`, and the dated
+entries in `WORKROOM-AB-CHECKPOINT.md`. Current restart/recovery stays the named
+`integrations/restart-workroom-preview.ps1`; shared gateway and model service
+maintenance have separate ownership/approval boundaries.
+
+## Earlier readiness snapshot - 2026-11-10 (superseded)
 
 Running Mesh build `114cf18da16a` was reconciled with saved source on 2026-11-09.
 All 23 data tables and 14 cards were preserved; shared services were unchanged.
