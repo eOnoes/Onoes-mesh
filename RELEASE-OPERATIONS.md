@@ -21,6 +21,22 @@ parent progress revision61 record evidence and remaining requirements. First loc
 release remains12/21; full app goal remains active. No provider calls or retries
 were made to implement this correction.
 
+## Open Relay compression mismatch - read-only evidence
+
+A selected ordinary Echo question reached its exact canonical API admission with
+the correct current input. Its saved compressed context summarized the new Rook
+question but ended by restating the already-answered maintenance question as the
+active request. The native result then answered that older question. This rules
+out a stale Relay draft for that send; it does not yet prove the faulty source
+path or a generally broken route. No native patch, restart or history repair has
+been applied. One read-only coordination question asks Echo for any already-reviewed
+fix/owner. Exact metadata-only evidence and the completed receipt are in the existing
+checkpoint. Echo answered the new coordination marker correctly and reports no
+known reviewed fix or owner. His workspace differed from the current Mesh checkout;
+future diagnostic handoffs must include absolute evidence paths. Fresh ordinary
+coordination succeeded, but this does not repair or qualify compression. Keep this
+regression open alongside full live team acceptance.
+
 ## Earlier readiness snapshot - before native-report handoff correction
 
 This is a private release candidate, not an owner-accepted production release.
