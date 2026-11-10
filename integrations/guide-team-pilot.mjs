@@ -42,9 +42,9 @@ export function prepareGuideTeamPilot({fixture=false}={}) {
     task=store.create({title:'Guide team pilot — phone recovery notes',description:'One isolated guide-copy build followed by one independent review. No live app changes.',owner:'echo'});
     task=store.workroom.save(task.id,{project:'Onoes-Mesh pilot',criteria:'Preserve every original byte; append only the exact supplied recovery note; independent review approves.',owner:'echo',team:'local_build',stage:'ready',revision:1});
     task=store.workroom.saveProgress(task.id,{goal:'Append the verified phone recovery note to the isolated guide copy and independently verify the exact result.',
-      checklist:[{id:'guide',text:'Append exactly the supplied note and verify the guide copy',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision});
-    task=store.workroom.savePlan(task.id,{lead:'echo',spec:'Append EXACTLY the following UTF-8 text to MESH-QUICK-START.md, preserving all original bytes. Do not change its original text.\nBEGIN EXACT APPEND\n'+suffix+'END EXACT APPEND\nExpected complete-file SHA-256: '+expectedSha256,
-      workspace,allowedFiles:'MESH-QUICK-START.md',checks:'Independently read the file; verify exact original bytes plus supplied append, final SHA-256 '+expectedSha256+', and no other files in the workspace. Reviewer may use read-only commands; do not write a checker or any file.',
+      checklist:[{id:'guide',text:'Append exactly the supplied note and read the guide copy back',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision});
+    task=store.workroom.savePlan(task.id,{lead:'echo',spec:'Append EXACTLY the decoded UTF-8 value of this JSON string to MESH-QUICK-START.md: '+JSON.stringify(suffix)+'. Append BOTH leading newline characters even if the existing file already ends in a newline. Preserve all original '+original.length+' bytes. Expected final length '+(original.length+Buffer.byteLength(suffix))+' bytes. Expected complete-file SHA-256: '+expectedSha256,
+      workspace,allowedFiles:'MESH-QUICK-START.md',checks:'Builder: append the exact text using file tools, then read it back. Do not claim an unavailable SHA/terminal/directory check; those checks belong to the independent reviewer and host, not your worker checklist. Reviewer and host: independently verify all original bytes plus the exact append, final SHA-256 '+expectedSha256+', and no other files in the workspace. Reviewer may use read-only commands; do not write a checker or any file.',
       boundaries:'Guide-copy-only qualification. No other files, databases, memory, credentials, external messages, workers, service operations, commits, purchases or scope expansion. Ask if unclear. Builder file tools only; Nims independently reviews read-only. Do not mark Done or record owner approval.',
       workerId:'echo',reviewerId:'nims',state:'locked',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision}).task;
   } finally {store.close();}
@@ -89,7 +89,8 @@ async function admitted(app) {
   const session=await bootstrap.json();headers.Cookie=bootstrap.headers.get('set-cookie').split(';')[0];headers['X-Trial-CSRF']=session.csrfToken;
   return async(route,body)=>{
     const response=await fetch(app.url+route,{method:body===undefined?'GET':'POST',headers,...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(30000)});
-    const value=await response.json();
+    const text=await response.text();let value;
+    try{value=text?JSON.parse(text):{};}catch{throw Error('Pilot HTTP '+response.status+': invalid response; original attempt remains held');}
     assert.equal(response.status,200,'Pilot HTTP '+response.status+': '+(value.error??'Request refused'));return value;
   };
 }
@@ -149,7 +150,8 @@ export async function runGuideTeamPilot(path,{ownerApproved=false,approvedScopeH
     if(fixture){process.env.MESH_DSH_APPROVAL_ORIGIN=fixture.relayUrl;process.env.MESH_DSH_TOKEN_FILE=fixture.tokenFile;}
     const nativeWorkerOptions=fixture?{profile:p.profile,rpc:fixture.rpc,authorized:()=>true}
       :nativeGatewayWorkerOptions({...runtime,profile:p.profile,authorized:()=>true});
-    app=await startApp({dataDir:p.dataDir,relayEnabled:true,nativeWorkerOptions});
+    app=await startApp({dataDir:p.dataDir,relayEnabled:true,nativeWorkerOptions,sessionTtlMs:600000,
+      ...(fixture?.sessionNow?{sessionNow:fixture.sessionNow}:{})});
     const request=await admitted(app),route='/api/workroom/'+p.taskId;
     await fixture?.connected?.({request});
     task=(await request(route)).task;

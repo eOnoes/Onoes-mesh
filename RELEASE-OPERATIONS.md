@@ -678,3 +678,17 @@ Evidence and ordered remaining work:
 `integrations/native-production-binding-readiness.json`. Next implement the
 explicit, disabled-by-default binding and qualify its exact profile before
 requesting any further live task. Rook and Mind remain off.
+
+
+## 2026-11-10: approved guide team trial held; enrollment prerequisite identified
+
+- Eddie approved one builder and one read-only reviewer, no retries. Actual builder ran once; review was never sent. Original guide bytes preserved, but exact append missed one LF (6159 versus6160bytes). Failed copy remains untouched.
+- Native turn completed without whole-worker process tracking; writer quiescence is UNPROVEN. No manual release, retry, Done, or production enrollment. Trial IDs and hashes: integrations/guide-team-live-qualification.json.
+- Source confirms process scope requires owner environment MESH_LOCAL_PROCESS_SCOPE=1. Echo's fresh Relay answer (MESH_SCOPE_COORD_20261110) confirms shared launcher does not explicitly set it; inherited runtime value unknown. No retroactive scope recovery. Recommendation: separately reviewed dedicated Mesh owner/profile, isolated home/data/loopback port. Shared services unchanged.
+- Added strict process-capability preflight for automatic Codex teams. Missing, false and string values prevent prompt submission. Prepared two-file native capability patch in a disposable copy only; NOT installed or enabled. Four offline behavior checks cover authorization, platform, flag and no invented scope.
+- Future pilot now explains exact escaped newlines, limits builder checks to available file tools and retains independent host/reviewer SHA/directory checks. HTTP admission lasts ten minutes beyond the eight-minute trial limit; expiry reports its actual status. Existing failed intent cannot be reused after source changes.
+- Focused pilot checks5/5 pass. Full-suite final result recorded separately below. No live app, Rook, Mind, model service, credentials or shared gateway changes.
+- Lesson: a completed agent turn is not writer retirement; capability must be proven before dispatch. Synthetic end-to-end success is not deployed acceptance.
+
+- Final local npm test: exit0. Full Node and Python suites passed; test log data/guide-pilot-corrections-full-tests.log. Restricted first run could not bind test servers; rerun with required local access passed.
+- Held-trial backup: SQLite snapshot preserved separately. Automatic restore rehearsal changed durable provenance and therefore FAILED verification; it is not a verified restore. Original evidence and snapshot retained without modifying live data.

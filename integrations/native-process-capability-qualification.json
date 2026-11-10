@@ -1,0 +1,21 @@
+{
+  "source": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-process-capability-eff7fc32-f42c-4621-8501-0efd57fc1885\\source",
+  "baselineHashes": {
+    "gateway/session_controls.py": "a242ba17ac0105fac760812b322236e744ccc63bb19f48d2da0fa24932d214a8",
+    "tui_gateway/contracts/canonical.py": "3dc5c762256ccc9d357c20f627797c232265ce4c8fbe2f4afbd00d8ef1f6e880"
+  },
+  "candidateHashes": {
+    "gateway/session_controls.py": "aa4acaf3488f803743a30c7aa15fa851f3cb37911af4063b377a43546a3a9008",
+    "tui_gateway/contracts/canonical.py": "c1f50320ca9ca6bed97ef5cba3ede1a172b76ebe31e9f6c48e3e0a06e5ffb2ff"
+  },
+  "installed": false,
+  "enrollmentEnabled": false,
+  "qualification": "OFFLINE ONLY",
+  "behaviorChecks": [
+    "literal Windows owner flag only",
+    "non-Windows denied",
+    "authorization before disclosure",
+    "no invented retroactive scope"
+  ],
+  "liveQualification": false
+}

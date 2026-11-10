@@ -1,0 +1,11 @@
+--- a/gateway/session_controls.py
++++ b/gateway/session_controls.py
+@@ -887 +887,3 @@
+-        out = {'found': saved is not None, 'session_id': ref.session_id, 'submission_id': params['submission_id'],
++        import os
++        out = {'process_scope_supported': os.name == 'nt' and os.environ.get('MESH_LOCAL_PROCESS_SCOPE') == '1',
++               'found': saved is not None, 'session_id': ref.session_id, 'submission_id': params['submission_id'],
+--- a/tui_gateway/contracts/canonical.py
++++ b/tui_gateway/contracts/canonical.py
+@@ -105,0 +106 @@
++    process_scope_supported: bool | None = None

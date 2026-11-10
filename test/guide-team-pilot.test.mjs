@@ -27,7 +27,7 @@ test('changed guide and task/source intent cannot pass the prepared scope check'
 test('actual server pilot builds once, retires, reviews once and reloads without recording owner approval',{timeout:60000},async()=>{
   const ready=prepareGuideTeamPilot({fixture:true}),p=validateGuideTeamPilot(ready.path),file=join(p.workspace,'MESH-QUICK-START.md');
   const token='disposable-pilot-token',tokenFile=join(dirname(ready.path),'synthetic-key');writeFileSync(tokenFile,token);
-  const messages=[],calls=[];let submitted=false,request,workerPosts=0,reviewPosts=0;
+  const messages=[],calls=[];let submitted=false,request,workerPosts=0,reviewPosts=0,now=Date.now();
   const peer=http.createServer(async(req,res)=>{
     res.setHeader('Content-Type','application/json');
     if(req.headers.authorization!=='Bearer '+token){res.writeHead(401);res.end('{}');return;}
@@ -50,19 +50,19 @@ test('actual server pilot builds once, retires, reviews once and reloads without
   const sid='local-'+'a'.repeat(64),aid='b'.repeat(32),profileId='synthetic-pilot';
   const contract={model:p.profile.model,provider:'openai-codex',base_url:null,workspace:p.workspace,toolsets:['file'],
     safe_mode:true,ignore_user_config:true,follow_profile:false,source:'tool',max_turns:50,terminal_backend:'local',closed:true,api_key_configured:false};
-  const fixture={source:'disposable_fixture',relayUrl:'http://127.0.0.1:'+peer.address().port,tokenFile,
+  const fixture={source:'disposable_fixture',relayUrl:'http://127.0.0.1:'+peer.address().port,tokenFile,sessionNow:()=>now,
     connected:async value=>{request=value.request;},rpc:async(method,params)=>{
       calls.push(method);
       if(method==='session.create')return {session_id:sid};
       if(method==='prompt.submit'){
-        assert.equal(submitted,false);submitted=true;writeFileSync(file,Buffer.concat([readFileSync(file),Buffer.from(p.suffix)]));return {};
+        assert.equal(submitted,false);submitted=true;now+=300001;writeFileSync(file,Buffer.concat([readFileSync(file),Buffer.from(p.suffix)]));return {};
       }
       assert.equal(method,'prompt.lookup');
-      if(!submitted)return {found:false,session_id:params.session_id,submission_id:params.submission_id,outcome:null,profile_contract:contract};
+      if(!submitted)return {found:false,session_id:params.session_id,submission_id:params.submission_id,outcome:null,profile_contract:contract,process_scope_supported:true};
       const task=(await request('/api/workroom/'+p.taskId)).task;
       const update={schema:'workroom-update/v1',taskId:p.taskId,sendId:task.automation.workerSendId,goal:task.progress.goal,
         checklist:task.progress.checklist.map(s=>({...s,status:'done'})),result:'Exact append made to guide copy',evidence:'Synthetic native file operation'};
-      return {found:true,session_id:params.session_id,submission_id:params.submission_id,outcome:'completed',profile_contract:contract,
+      return {found:true,session_id:params.session_id,submission_id:params.submission_id,outcome:'completed',profile_contract:contract,process_scope_supported:true,
         receipt:{admission_id:aid,ref:{profile_id:profileId,session_id:sid},authority_epoch:1,execution_generation:1,status:'terminal',
           result:{final_response:'```workroom-update\n'+JSON.stringify(update)+'\n```'}},
         process_scope:{admission_id:aid,session_id:sid,profile_id:profileId,execution_generation:1,authority_epoch:1,
@@ -81,5 +81,38 @@ test('actual server pilot builds once, retires, reviews once and reloads without
     const before=calls.length;await assert.rejects(runGuideTeamPilot(ready.path,{fixture}),/already has an attempt/);assert.equal(calls.length,before);
     assert.throws(()=>validateGuideTeamPilot(ready.path),/already has an attempt/);
     assert.equal(JSON.parse(readFileSync(join(dirname(ready.path),'result.json'),'utf8')).qualification,'PASS');
+  } finally {peer.closeAllConnections();await new Promise(resolve=>peer.close(resolve));}
+});
+
+test('expired access records its actual HTTP status without dispatch or malformed-JSON errors',async()=>{
+  const ready=prepareGuideTeamPilot({fixture:true});let now=Date.now(),calls=0;
+  const fixture={source:'disposable_fixture',relayUrl:'http://127.0.0.1:9',tokenFile:join(dirname(ready.path),'unused'),
+    sessionNow:()=>now,connected:()=>{now+=600001;},rpc:()=>{calls++;throw Error('No native call expected');}};
+  await assert.rejects(runGuideTeamPilot(ready.path,{fixture}),/Pilot HTTP 401/);
+  assert.equal(calls,0);
+  const result=JSON.parse(readFileSync(join(dirname(ready.path),'result.json'),'utf8'));
+  assert.equal(result.qualification,'HELD');assert.match(result.reason,/HTTP 401/);
+});
+
+test('unenrolled or untyped process capability stops the team before any model submission',{timeout:60000},async()=>{
+  const peer=http.createServer((req,res)=>{res.setHeader('Content-Type','application/json');
+    if(req.url==='/api/agents'){res.end(JSON.stringify([{id:'echo',backend:'hermes',status:'idle',conversation_id:'fixture-echo'},
+      {id:'nims',backend:'codex',status:'idle',conversation_id:'fixture-nims'}]));return;}
+    res.writeHead(503);res.end('{}');});
+  await new Promise(resolve=>peer.listen(0,'127.0.0.1',resolve));
+  try {
+    for(const capability of [undefined,false,'true']){
+      const ready=prepareGuideTeamPilot({fixture:true}),p=validateGuideTeamPilot(ready.path),calls=[];
+      const key=join(dirname(ready.path),'synthetic-key');writeFileSync(key,'fixture-only');
+      const fixture={source:'disposable_fixture',relayUrl:'http://127.0.0.1:'+peer.address().port,tokenFile:key,rpc:async(method,params)=>{
+        calls.push(method);if(method==='session.create')return {session_id:'local-'+'c'.repeat(64)};
+        assert.equal(method,'prompt.lookup');
+        return {found:false,session_id:params.session_id,submission_id:params.submission_id,outcome:null,process_scope_supported:capability,
+          profile_contract:{model:p.profile.model,provider:'openai-codex',base_url:null,workspace:p.workspace,toolsets:['file'],safe_mode:true,
+            ignore_user_config:true,follow_profile:false,source:'tool',max_turns:50,terminal_backend:'local',closed:true,api_key_configured:false}};
+      }};
+      await assert.rejects(runGuideTeamPilot(ready.path,{fixture,deadlineMs:10000}));
+      assert.equal(calls.filter(m=>m==='session.create').length,1);assert.equal(calls.includes('prompt.submit'),false);
+    }
   } finally {peer.closeAllConnections();await new Promise(resolve=>peer.close(resolve));}
 });

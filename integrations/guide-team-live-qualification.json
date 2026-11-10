@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-10T19:52:12.240399+00:00",
+  "qualification": "HELD",
+  "sourceCommit": "80f47d4",
+  "approvedScopeHash": "16d058d6d00409bf2d95a26ddcb9930bc87835b6e89d48341e6de4462fe6b8fe",
+  "taskId": "1cda7264-8f50-4700-bce1-a653bb9fe061",
+  "builderAttempts": 1,
+  "reviewAttempts": 0,
+  "retryAttempts": 0,
+  "worker": {
+    "sessionId": "local-527fb383cf8f7625ebb9c5b303167f424a45b31e719ed982aeea48d3b02d3055",
+    "submissionId": "mesh-local-submit-652ae6a9ad6a7dba5b24b1da49792d21d4dac739e7fef0a6269ee68b2a00109f",
+    "admissionId": "d704f1561f344bd590635bdd6c43e56f",
+    "nativeStatus": "terminal",
+    "nativeOutcome": "completed",
+    "writerQuiescence": false,
+    "resultHash": "be827f11bf58b22787edd398cca303fdc5572e8eb79d1390a815e4e418d5643d",
+    "retirementHash": null
+  },
+  "artifact": {
+    "originalBytes": 5972,
+    "actualBytes": 6159,
+    "expectedBytes": 6160,
+    "originalPrefixPreserved": true,
+    "originalSha256": "ea34b8cab4e4a625b7e92e595a4f4d627c0e33eac3f03b19069eca2e5c0e71c4",
+    "actualSha256": "eeb4801e516a7edd9e6088023c01a3e5cad1d37c61ea8feb9fbbbb6cd710c912",
+    "expectedSha256": "50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f",
+    "exactMatch": false,
+    "difference": "One leading newline from the required append is absent; original guide bytes preserved"
+  },
+  "workerReport": {
+    "schema": "workroom-update/v1",
+    "taskId": "1cda7264-8f50-4700-bce1-a653bb9fe061",
+    "sendId": "647f9ddf-9f0c-4f0c-8384-61a8474a27e2",
+    "goal": "Append the verified phone recovery note to the isolated guide copy and independently verify the exact result.",
+    "checklist": [
+      {
+        "id": "step-1",
+        "text": "guide: Append exactly the supplied note and verify the guide copy",
+        "status": "blocked"
+      }
+    ],
+    "result": "Appended the supplied phone recovery note to MESH-QUICK-START.md. Did not verify original-byte preservation, the expected SHA-256, or that no other workspace files changed.",
+    "evidence": "Read MESH-QUICK-START.md back; the supplied note appears at the end. The required SHA-256 and workspace file-scope checks were not run."
+  },
+  "nativeReadback": {
+    "at": "2026-11-10T19:46:10.918Z",
+    "keys": [
+      "found",
+      "session_id",
+      "submission_id",
+      "outcome",
+      "profile_contract",
+      "receipt"
+    ],
+    "found": true,
+    "sessionId": "local-527fb383cf8f7625ebb9c5b303167f424a45b31e719ed982aeea48d3b02d3055",
+    "submissionId": "mesh-local-submit-652ae6a9ad6a7dba5b24b1da49792d21d4dac739e7fef0a6269ee68b2a00109f",
+    "outcome": "completed",
+    "processScope": null,
+    "receiptKeys": [
+      "admission_id",
+      "ref",
+      "sequence",
+      "status",
+      "outcome",
+      "authority_epoch",
+      "execution_generation",
+      "result",
+      "usage"
+    ],
+    "scopeKeys": []
+  },
+  "runner": {
+    "sessionHandle": 71814,
+    "exitCode": 1,
+    "terminal": true,
+    "reason": "HTTP admission expired at five minutes; empty 401 response became Unexpected end of JSON input",
+    "heldResult": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-5a4b4e0b-a812-45f1-86fb-b80f2dcc40dd\\result.json",
+    "pauseAttempt": "Attempted normal pause only after identifying original runner; listener was already absent, so no request/process was touched"
+  },
+  "findings": [
+    "Process registration requires owner environment MESH_LOCAL_PROCESS_SCOPE=1. Echo confirms the shared launcher does not explicitly set it; inherited live value is unknown. No request observation flag or retroactive process registration is available.",
+    "Builder correctly reported blocked verification: file-only toolset cannot execute the prescribed SHA checks. Future scope must assign readback to builder and retain cryptographic/directory checks with the independent reviewer/host.",
+    "Exact-append prompt needs unambiguous escaped-newline instructions; preserve this failed copy, do not repair it and relabel the trial passed.",
+    "Pilot HTTP lifetime must exceed its overall bounded deadline, with clear non-JSON error reporting."
+  ],
+  "unchanged": [
+    "No Nims review sent",
+    "No repeat/new provider attempt",
+    "No live app/gateway/model restart",
+    "Rook/Mind remain off",
+    "No manual writer-release proof or Done"
+  ],
+  "coordination": {
+    "agent": "Echo",
+    "marker": "MESH_SCOPE_COORD_20261110",
+    "recommendation": "Keep shared gateway unchanged; separately review a dedicated Mesh owner/profile with isolated home, data and loopback port. No new admission or restart authorized by this trial."
+  }
+}
