@@ -16,6 +16,30 @@ function proposal(t,state='locked'){return{lead:'echo',spec:'Create one artifact
 const relay=()=>({agents:async()=>[{id:'echo',conversation_id:'session',backend:'hermes',status:'idle'},{id:'dsh',conversation_id:'review-session',backend:'a2a',status:'idle'}],nativeRead:async()=>({taskSessionBinding:1}),taskMessage:async()=>{}});
 const body=()=>({id:randomUUID(),agentId:'echo',conversationId:'session',phase:'work'});
 
+test('locked work report example carries the exact saved goal, IDs and wording',()=>{
+ const store=openTaskStore(filename());try{
+  let t=ready(store);t=store.workroom.savePlan(t.id,proposal(t)).task;
+  const send=store.workroom.reserve(t.id,{id:randomUUID(),agentId:'echo',conversationId:'session',text:'Build only the scoped artifact'},'work');
+  const example=JSON.parse(send.payload.split('containing JSON with exactly these keys:\n')[1].split('\n')[0]);
+  assert.equal(example.goal,t.progress.goal);
+  assert.deepEqual(example.checklist,t.progress.checklist.map(step=>({...step,status:'pending'})));
+ }finally{store.close();}
+});
+
+test('locked worker reports cannot change goal, checklist IDs, wording, count or order',()=>{
+ for(const mutate of [u=>u.goal='A different goal',u=>u.checklist[0].id='step-1',u=>u.checklist[0].text='Different work',u=>u.checklist.pop(),u=>u.checklist.reverse()]){
+  const store=openTaskStore(filename());try{
+   let t=ready(store);t=store.workroom.saveProgress(t.id,{goal:t.progress.goal,checklist:[...t.progress.checklist,{id:'two',text:'Report the evidence',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:t.progress.revision,taskRevision:t.revision,briefRevision:t.workroom.revision});
+   t=store.workroom.savePlan(t.id,proposal(t)).task;const send=store.workroom.reserve(t.id,{id:randomUUID(),agentId:'echo',conversationId:'session',text:'Scoped work'},'work');store.workroom.settle(send.id,'accepted');
+   const update={schema:'workroom-update/v1',taskId:t.id,sendId:send.id,goal:t.progress.goal,checklist:t.progress.checklist.map(step=>({...step,status:'done'})),result:'Claimed completion',evidence:'Worker evidence'};mutate(update);
+   store.workroom.captureReplies(t.id,send.id,[{id:'user',k:'you',t:send.payload},{id:'bad-result',k:'ag',t:'```workroom-update\n'+JSON.stringify(update)+'\n```'}]);
+   const before=store.workroom.get(t.id),offer=before.agentUpdates.at(-1);
+   assert.throws(()=>store.workroom.applyAgentUpdate(t.id,{sendId:offer.sendId,messageId:offer.messageId,hash:offer.hash,revision:before.progress.revision,taskRevision:before.revision,briefRevision:before.workroom.revision}),/Worker report changed the locked goal or checklist/);
+   assert.deepEqual(store.workroom.get(t.id),before);assert.equal(before.plan.state,'locked');assert.equal(offer.applied,false);
+  }finally{store.close();}
+ }
+});
+
 test('new leads begin gated; locks persist, reject incomplete/self-review/stale edits, and ordinary progress keeps scope',()=>{
  const file=filename();let store=openTaskStore(file);try{
   let t=ready(store);assert.equal(t.plan.state,'draft');

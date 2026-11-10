@@ -1,6 +1,6 @@
 {
-  "schema": "mesh-guide-post-maintenance-preparation/v1",
-  "qualification": "PREPARED_NOT_RUN",
+  "schema": "mesh-guide-post-maintenance-qualification/v1",
+  "qualification": "HELD",
   "prepared": {
     "path": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-03369aa8-d418-4058-9d2d-99faa9df87b1\\pilot.json",
     "review": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-03369aa8-d418-4058-9d2d-99faa9df87b1\\REVIEW.txt",
@@ -25,10 +25,43 @@
   "tests": {
     "command": "npm test",
     "exitCode": 0,
-    "nodePassed": 374,
+    "nodePassed": 376,
     "pythonPassed": 114,
-    "totalPassed": 488
+    "totalPassed": 490,
+    "focusedPassed": 34,
+    "log": "data/locked-report-full-suite.log"
   },
-  "newProviderTasks": 0,
-  "approvalRequired": "One new Echo-role file-only build plus one Nims read-only review; no retries. Original failed trial remains held."
+  "newProviderTasks": 1,
+  "ownerApproval": "One fresh team trial approved; builder attempt consumed. No retries performed.",
+  "execution": {
+    "taskId": "60693867-827d-46c8-80f9-aa3581add3c8",
+    "workSendId": "20ee691e-b8ce-4c85-b2cd-50d223f24362",
+    "plannedReviewSendId": "10d2bc31-4328-41ba-8793-31bc2ec29b2b",
+    "nativeSessionId": "local-373d8c6968a0360b412428411838eb9ff106d7627ec269c898805c4cb1d3344f",
+    "submissionId": "mesh-local-submit-37b1909a7ce7f1513713495439ee684f395ae74eba89e4ac2251d8bc6925f2d1",
+    "admissionId": "fa7d95ae0cbd49dfa76605d19dcf051a",
+    "reviewerAttemptsUsed": 0,
+    "workerResult": "completed",
+    "writerQuiescence": true,
+    "retirementReceiptHash": "4ae49e46b903622444e6f78cc6fd03a1aa42da1c25c85ad8e53d15b1abedc952"
+  },
+  "componentQualification": "PASS: actual file-only Codex worker retirement; not production/team acceptance",
+  "holds": [
+    "Worker report replaced locked checklist ID guide with step-1; subsequent scope guard paused before review.",
+    "Guide is 6160 bytes but fails exact expected bytes: one blank line shifted from before heading to end."
+  ],
+  "artifact": {
+    "actualSha256": "c967a3966f9720305d3a259d4740c5d889c205f373096d7e748d762bf4d7c27c",
+    "expectedSha256": "50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f",
+    "bytes": 6160,
+    "originalPrefixPreserved": true,
+    "exactMatch": false
+  },
+  "correction": {
+    "workerExample": "Uses exact saved goal and checklist IDs/text.",
+    "reportImport": "Reject changed locked goal/checklist ID/text/count/order before canonical progress mutation; retain raw report.",
+    "pilotSourceBinding": "Also pin workroom.mjs and workroom-updates.mjs.",
+    "liveTrialRerun": false,
+    "liveAppDeployment": "NOT DEPLOYED: existing PowerShell launcher invocation was refused by execution policy; no restart attempted by alternate route."
+  }
 }

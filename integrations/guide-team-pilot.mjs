@@ -12,7 +12,7 @@ import {createCodexClient} from '../lib/codex-client.mjs';
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const fingerprint=t=>sha(JSON.stringify({id:t.id,title:t.title,description:t.description,status:t.status,
   workroom:t.workroom,progress:t.progress,plan:t.plan}));
-const codeFiles=['server.mjs','lib/workroom-native-binding.mjs','lib/native-gateway-transport.mjs',
+const codeFiles=['server.mjs','lib/workroom.mjs','lib/workroom-updates.mjs','lib/workroom-native-binding.mjs','lib/native-gateway-transport.mjs',
   'lib/workroom-local-sessions.mjs','lib/workroom-automation.mjs','lib/nims-link.mjs','lib/codex-client.mjs',
   'integrations/native_gateway_transport.py','integrations/guide-team-pilot.mjs'];
 const home='C:/Users/eMitchell109/AppData/Local/hermes';
