@@ -35,8 +35,8 @@ Evidence: `integrations/live-source-custody-qualification.json`.
   One live unsubmitted session's public policy matched the requested file/terminal
   toolsets and workspace, with zero admissions. After bridge installation, its
   authenticated closed-profile lookup also verified no API key configured for
-  that exact session; repeated reads left admissions at zero. Real generation
-  and production enrollment remain unqualified. See
+  that exact session; repeated reads left admissions at zero. The finite file-only
+  real-generation path now passed as above; production enrollment remains unqualified. See
   `integrations/native-installed-profile-qualification.json`.
   Eddie approved bridge maintenance on 2026-11-09;
   all seven reviewed files are installed and the gateway drained/restarted safely.
@@ -642,3 +642,21 @@ Maintenance follow-up: focused tests now7/7, adding safe recovery after runtime 
 - Normal Save displayed Goal and checklist saved. Hard reload/reopen shows new449-check result and exact2/6 state. Read-only SQLite cross-check: taskrevision1 unchanged, progressrevision53, all other13 card rows unchanged, integrityok; only workroom_progress and workroom_events differ from pre-edit backup. Thus no dispatch/claim/model tables changed.
 - Hidden own IABtab64 closed and CUA completion sent once. One heading locator missed because case/accessibility text differed; fresh AX index used to blur input/show Save, no duplicate save/retry. Screenshot saved in visualization root. Details retain all55 historical timeline entries; UI history disclosure only collapsed in temporary test tab.
 - App checklist now current; disk checkpoint remains full evidence/lessons record. Shared Echo gateway maintenance question stillpending; model restart stilldeclined, Rook/Mind/autowork remainoff, live Codex generation/productionbinding/laptop/AIbox/finalacceptance incomplete. Goal active; original scope unchanged.
+
+## 2026-11-10: production worker connection audit
+
+The dedicated native adapter is implemented, but `server.mjs` currently creates
+its team runner without `nativeWorker` or `nativeObserver`. That source path uses
+Relay handoffs. The standalone real-provider startup success does not qualify
+this full production team route. Nims already has the existing `nims` identity;
+Agent workspace connection status is a separate observation.
+
+Focused assignment, receipt, retirement and Nims recovery checks passed 35/35
+using local synthetic fixtures and guarded HTTP routes. No real task was sent.
+The current adapter creates sessions with a 50-turn limit; the earlier real
+file-only diagnostic used four turns. These are different qualification scopes.
+
+Evidence and ordered remaining work:
+`integrations/native-production-binding-readiness.json`. Next implement the
+explicit, disabled-by-default binding and qualify its exact profile before
+requesting any further live task. Rook and Mind remain off.

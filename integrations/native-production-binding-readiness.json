@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-10T18:51:12.311987+00:00",
+  "sourceCommit": "e5a5ccc",
+  "status": "production_binding_not_installed",
+  "activationAuthorized": false,
+  "liveDispatchPerformed": false,
+  "sourceHashes": {
+    "server.mjs": "b59cb3e956147c5ceebab3ec52223b160fcdba5af75bb8d345344c81da0fe371",
+    "lib/workroom-automation.mjs": "206f22404820c00ed07c964457b6e076863c313662a28e4a2b872c4f8c999076",
+    "lib/workroom-local-sessions.mjs": "d819666ab3e68df8cdbb769bd0348638591d6b127145a535c66b044ef4264be4",
+    "lib/nims-link.mjs": "8ca392d08aa45db1c804e1e0d2a62fc3f2a0ff64795ad25af772528de136e0b0"
+  },
+  "findings": [
+    {
+      "source": "server.mjs:175",
+      "fact": "startApp constructs createTeamRunner without nativeWorker or nativeObserver. This is source wiring evidence, not an attestation of the running process source."
+    },
+    {
+      "source": "lib/workroom-automation.mjs:4",
+      "fact": "Both native options default to null; dedicated dispatch is used only when nativeWorker is supplied. Otherwise the worker handoff uses Relay."
+    },
+    {
+      "source": "lib/workroom-automation.mjs:10",
+      "fact": "Dedicated native route requires Echo as builder and Nims as independent reviewer. Existing native sends remain held without verified writer quiescence; no Relay fallback."
+    },
+    {
+      "source": "lib/nims-link.mjs",
+      "fact": "Existing Nims identity is nims, backed by the Codex client; do not create another Codex/Nims identity. Agent workspace service status is not this route readiness."
+    },
+    {
+      "source": "lib/workroom-local-sessions.mjs",
+      "fact": "Current dedicated session creation sets max_turns to 50; the completed real-provider diagnostic qualified a file-only four-turn request, not this complete production contract."
+    }
+  ],
+  "verification": {
+    "command": "node --test --test-timeout=30000 test/workroom-automation.test.mjs test/workroom-native-receipts.test.mjs test/nims-recovery.test.mjs",
+    "exitCode": 0,
+    "passed": 35,
+    "failed": 0,
+    "boundary": "Local synthetic fixtures and guarded HTTP routes; no real provider task. Initial restricted run passed 33 with two loopback EACCES failures; rerun with loopback permitted passed all 35."
+  },
+  "remaining": [
+    "Implement a disabled-by-default server binding using the existing native adapter; select a reviewed exact workspace and closed profile without credential reuse or broader grants.",
+    "Connect read observation and verified retirement to the same adapter; preserve saved task, stage, session and submission identities across restart.",
+    "Prove the configured profile including toolsets, turn limit and writer lifetime against the actual native runtime before any live task.",
+    "Review one concrete end-to-end pilot scope and obtain separate approval for any further real-provider task; all three diagnostic tasks are consumed.",
+    "Verify builder completion, retirement, independent Nims review and card result before considering Rook activation."
+  ],
+  "unchanged": [
+    "Rook off",
+    "Mind live access off",
+    "No model-service restart",
+    "Existing 22 untracked integration files untouched"
+  ],
+  "liveServiceObservation": {
+    "observedAt": "2026-11-10T18:51:25.246Z",
+    "services": [
+      {
+        "id": "relay",
+        "status": "fresh",
+        "source": "live_relay_http"
+      },
+      {
+        "id": "inference",
+        "status": "not_configured",
+        "source": "none"
+      },
+      {
+        "id": "agent",
+        "status": "not_configured",
+        "source": "none"
+      },
+      {
+        "id": "mind",
+        "status": "not_configured",
+        "source": "none"
+      }
+    ],
+    "readOnly": true,
+    "modelDispatch": false,
+    "interpretation": "Confirms current Relay HTTP observation only. Agent workspace not_configured does not establish Nims review route availability."
+  }
+}
