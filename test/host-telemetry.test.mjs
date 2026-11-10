@@ -1,5 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {sampleCpuTimes,cpuLoadPercent} from '../lib/host-cpu.mjs';
+
+test('host CPU uses weighted cumulative time across every logical processor',()=>{
+  const cpu=(user,idle)=>({times:{user,nice:0,sys:0,idle,irq:0}});
+  const before=sampleCpuTimes(()=>[cpu(100,900),cpu(100,900)]);
+  const after=sampleCpuTimes(()=>[cpu(120,980),cpu(180,1020)]);
+  assert.equal(cpuLoadPercent(before,after),33.3);
+  assert.equal(cpuLoadPercent(before,sampleCpuTimes(()=>[cpu(100,1000),cpu(100,1000)])),0);
+  assert.equal(cpuLoadPercent(before,sampleCpuTimes(()=>[cpu(200,900),cpu(200,900)])),100);
+});
+
+test('missing or malformed host CPU readings remain unknown rather than zero',()=>{
+  for(const read of [()=>[],()=>null,()=>{throw Error('unavailable');},()=>[{times:{idle:10}}],()=>[{times:{user:NaN,nice:0,sys:0,idle:10,irq:0}}]])assert.equal(sampleCpuTimes(read),null);
+  assert.equal(cpuLoadPercent(null,{count:1,idle:1,total:2}),null);
+});
+
+test('CPU counter reset, changed topology and zero sampling time cannot report utilization',()=>{
+  const before={count:2,idle:200,total:400};
+  for(const after of [{...before},{count:1,idle:210,total:500},{count:2,idle:100,total:500},{count:2,idle:400,total:500},{count:2,idle:300,total:200},{count:2,idle:Infinity,total:500}])assert.equal(cpuLoadPercent(before,after),null);
+});
 
 test('shared host readings age, clear on failure and never invoke model controls', async () => {
   const originals = Object.fromEntries(['document','fetch','setInterval','setTimeout','clearTimeout'].map(key => [key, globalThis[key]]));

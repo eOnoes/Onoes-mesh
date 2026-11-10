@@ -1,4 +1,5 @@
 import {parseGpuMetrics} from './lib/gpu-metrics.mjs';
+import {sampleCpuTimes,cpuLoadPercent} from './lib/host-cpu.mjs';
 import {createSummaryReader} from './lib/summary-cache.mjs';
 import { tailscaleAccess } from './lib/tailscale-access.mjs';
 import {requestAudit,auditReason} from './lib/request-audit.mjs';
@@ -223,6 +224,9 @@ async function strataHealth() {
 const readInferenceSummary = createSummaryReader(inferenceSummary);
 
 async function inferenceSummary() {
+  // Windows can omit Win32_Processor.LoadPercentage. Sample cumulative host CPU
+  // times across the existing collector work instead of adding a process or timer.
+  const cpuBefore=sampleCpuTimes();
   // One PowerShell pass for everything the OS knows, one nvidia-smi call for the card,
   // and the service probes in parallel. Four separate PowerShell launches took ~2s; this
   // takes ~300ms.
@@ -270,7 +274,7 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
     os: psOut.os, osVersion: psOut.osVersion,
     uptimeSec: psOut.uptimeSec,
     cpuName: psOut.cpuName, cpuCores: psOut.cpuCores, cpuThreads: psOut.cpuThreads,
-    cpuLoadPct: psOut.cpuLoad ?? null,
+    cpuLoadPct: cpuLoadPercent(cpuBefore,sampleCpuTimes()),
     node: process.version,
   } : null;
 
