@@ -7,6 +7,8 @@ import subprocess
 import sys
 import uuid
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 
 LOCAL_NATIVE_HEAD='2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19'
 LOCAL_BASELINES={
@@ -21,6 +23,7 @@ def prepare_local(native):
     from integrations.prepare_hermes_writer_scope import read_tracking_candidate
     from integrations.prepare_native_local_lookup import local_receipt_candidate
     from integrations.prepare_native_assignment_process import assignment_process_candidate
+    from integrations.native_header_startup_candidate import header_startup_candidate, HEADER_BASELINES
     native=Path(native).resolve()
     if subprocess.check_output(['git','-C',str(native),'rev-parse','HEAD'],text=True).strip()!=LOCAL_NATIVE_HEAD:
         raise RuntimeError('Native local-session source revision changed; review before qualification')
@@ -39,6 +42,8 @@ def prepare_local(native):
     originals.update(assignment_originals);modules.update(assignment_modules)
     read_originals,read_modules=read_tracking_candidate(source)
     originals.update(read_originals);modules.update(read_modules)
+    header_originals,header_modules=header_startup_candidate(source)
+    originals.update(header_originals);modules.update(header_modules)
     file_path='tools/file_tools.py';raw=(source/file_path).read_bytes()
     if hashlib.sha256(raw).hexdigest()!=LOCAL_BASELINES[file_path]:raise RuntimeError('Current native file source changed')
     original=raw.decode('utf-8').replace('\r\n','\n')
@@ -56,7 +61,7 @@ def prepare_local(native):
     for name in ['fixture-home','appdata','localappdata','temp','workspace']:(root/name).mkdir()
     (root/'manifest.json').write_text(json.dumps({'state':'isolated_local_session_candidate','nativeHead':LOCAL_NATIVE_HEAD,
         'source':str(source),'home':str(root/'fixture-home'),'files':{n:hashlib.sha256(t.encode()).hexdigest() for n,t in modules.items()},
-        'baselines':LOCAL_BASELINES,'liveInstallation':False,'wholeWorkerReleaseQualified':False},indent=2))
+        'baselines':{**LOCAL_BASELINES,**HEADER_BASELINES},'liveInstallation':False,'wholeWorkerReleaseQualified':False},indent=2))
     return root
 
 

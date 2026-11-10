@@ -28,6 +28,9 @@ Evidence: `integrations/live-source-custody-qualification.json`.
   enrollment, terminal tools or the complete automatic board/team workflow.
   See integrations/native-startup-batch-qualification.json and
   integrations/native-header-startup-qualification.json.
+  The updated disposable fixture also passes with all nine bridge/header files
+  byte-identical to the installed implementation; its provider remains synthetic.
+  See integrations/native-header-fixture-qualification.json.
 - Explicit openai-codex closed-profile preflight is implemented and tested.
   One live unsubmitted session's public policy matched the requested file/terminal
   toolsets and workspace, with zero admissions. After bridge installation, its
@@ -47,7 +50,8 @@ Evidence: `integrations/live-source-custody-qualification.json`.
   reporting transport, one scheduler owner and deployed integration checks.
 - The in-app parent goal retains all six original stages: two done, three working
   and one blocked; owner review remains pending. Its saved evidence is current
-  through the 449-check baseline. The complete build goal remains open.
+  through startup milestone 57397b0 and the prior 449-check baseline. The complete
+  build goal remains open.
 - Mind live database/keys/access remain OFF. Eddie owns; Echo and Nims operate.
   Canonical store identity must be established before connection. Shared memory,
   skills and MCP tools remain unfinished. Model-service maintenance was declined.
