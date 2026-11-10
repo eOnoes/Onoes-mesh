@@ -1,27 +1,12 @@
 --- a/hermes_cli/version_info.py
 +++ b/hermes_cli/version_info.py
-@@ -126,7 +126,7 @@
-     return p if p.is_file() else None
- 
- 
+@@ -129 +129 @@
 -def _stamp_version_info() -> VersionInfo | None:
 +def _stamp_version_info(*, check_git: bool = True) -> VersionInfo | None:
-     """Read provenance from a build-time install stamp."""
-     stamp_file = _resolve_stamp_file()
-     if stamp_file is None:
-@@ -163,7 +163,7 @@
-         # All-zero placeholder = fallback stamp, not real provenance.
-         return None
-     stamp_source = str(data.get("source") or "")
+@@ -166 +166 @@
 -    if stamp_source == "git" and (stamp_file.parent / ".git").exists():
 +    if check_git and stamp_source == "git" and (stamp_file.parent / ".git").exists():
-         live_commit = _run_git(stamp_file.parent, "rev-parse", "HEAD")
-         if live_commit and live_commit != commit:
-             return None
-@@ -363,3 +363,17 @@
-         return stamp.commit
-     repo_dir = _resolve_repo_dir()
-     return _run_git(repo_dir, "rev-parse", "HEAD") if repo_dir is not None else None
+@@ -365,0 +366,14 @@
 +
 +def get_request_version() -> str:
 +    """Request-header identity without launching Git in compute-only workers.

@@ -24,5 +24,6 @@
   "rootEvidence": "Second diagnostic main-thread stack waits in version_info._run_git while constructing Codex headers",
   "testCorrection": "Source project metadata is a0.0.0 placeholder; installed distribution metadata0.21. Final fix uses canonical cache/stamp only, otherwise unknown; live stamped0.23 preserved.",
   "installedSourceBackup": "E:\\App-Backups\\Onoes-Mesh-Native-Bridge\\2026-11-10_18-08-00_UTC_codex-header-startup-fix\\installed",
-  "regressionCommand": "python integrations/verify_native_request_headers.py"
+  "regressionCommand": "python integrations/verify_native_request_headers.py",
+  "patchApplication": "git apply --unidiff-zero; verify exact source against qualification manifest"
 }
