@@ -10,6 +10,7 @@ import {createSupervisedInference} from './lib/supervised-inference.mjs';
 import {createSupervisorObservation} from './lib/supervisor-observation.mjs';
 import http from 'node:http';
 import {createTeamRunner} from './lib/workroom-automation.mjs';
+import {createNativeWorkerBinding} from './lib/workroom-native-binding.mjs';
 import {withNims} from './lib/nims-link.mjs';
 import { releaseInfo } from './lib/release-info.mjs';
 import {requestAudit} from './lib/request-audit.mjs';
@@ -99,7 +100,7 @@ async function activity(registryPath) {
     return await readWorkerActivity({ registryPath, nowIso: new Date().toISOString(), staleAfterMs: 600000 });
   } catch { return snapshot('unavailable'); }
 }
-export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
+export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, nativeWorkerOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
   // Process configuration only. Standalone wins over ambient Relay enablement
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
@@ -121,6 +122,11 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   if (inferenceTestReader !== undefined && typeof inferenceTestReader !== 'function') throw new Error('Invalid test observation reader.');
   if (typeof relayEnabled !== 'boolean') throw new Error('Invalid Relay mode.');
   if (standalone) relayEnabled = false;
+  // Trusted process injection, never HTTP/CLI/environment configuration. The
+  // normal launcher supplies nothing, so production enrollment stays off.
+  if (nativeWorkerOptions !== undefined && !relayEnabled)
+    throw new Error('Native worker connections require Mesh team routing; standalone cannot enroll one.');
+  const nativeWorker = createNativeWorkerBinding(nativeWorkerOptions);
   // Trusted fixture seam only. No HTTP/CLI/environment adapter selection.
   if (localInferenceTestOptions !== undefined && (!localInferenceTestOptions ||
       Object.keys(localInferenceTestOptions).some(k => !['adapter', 'now'].includes(k)) ||
@@ -181,7 +187,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     })
     : await createRelayLink({ root: ROOT, directory, confine: confinedPath, store, enabled: relayEnabled });
   const relay=relayEnabled&&!standalone&&process.env.MESH_NIMS==='1'?withNims(baseRelay,{root:ROOT,workroom:store.workroom}):baseRelay;
-  const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:ROOT,simpleFlow:process.env.MESH_SIMPLE_FLOW==='1'}):null;
+  const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:ROOT,simpleFlow:process.env.MESH_SIMPLE_FLOW==='1',nativeWorker,nativeObserver:nativeWorker}):null;
   // Only hashes of fixed source code/CSS authorize the existing native HTML.
   // srcdoc receives that HTML via an admitted API read, never a public route.
   let relayScriptHashes = '', relayStyleHashes = '';
@@ -491,12 +497,16 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     else socket.destroy();
   });
   try { await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }); }
-  catch (e) { await rookRuntime?.close();await localInference.close?.();modelDatabase?.close();await relay.close(); store?.close(); throw e; }
+  catch (e) { await nativeWorker?.close().catch(()=>{});await teamRunner?.close();await rookRuntime?.close();await localInference.close?.();modelDatabase?.close();await relay.close(); store?.close(); throw e; }
   guard = createTrialHttpGuard({ manager, port: server.address().port });
   rookRuntime?.start();
   return { server, rookRuntime, mode: standalone ? 'standalone' : 'mesh', url: `http://127.0.0.1:${server.address().port}`, close: async () => {
     const closed = new Promise((resolve, reject) => server.close(e => e ? reject(e) : resolve()));
-    server.closeAllConnections(); await closed; await rookRuntime?.close();await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]);await localInference.close?.();modelDatabase?.close(); store?.close();
+    server.closeAllConnections(); await closed;
+    let nativeCloseFailed=false;
+    try { await nativeWorker?.close(); } catch { nativeCloseFailed=true; }
+    await rookRuntime?.close();await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]);await localInference.close?.();modelDatabase?.close(); store?.close();
+    if(nativeCloseFailed)throw new Error('Native worker transport cleanup could not be confirmed.');
   } };
 }
 

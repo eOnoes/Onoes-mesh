@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-10T19:03:52.269379+00:00",
+  "qualification": "PASS",
+  "scope": "Trusted server injection and closed-profile holds through the admitted automation HTTP route; local synthetic transport only",
+  "sourceBaseCommit": "12fe595",
+  "sourceHashes": {
+    "server.mjs": "1c9d1babeed436bf5316950003d3c1d2fba5949b6df8585102c9ad40a986415e",
+    "lib/workroom-native-binding.mjs": "b2c5885b69151c5b09181fca7487bc46025d3d47e7c288901bf7abbfa499705e",
+    "test/workroom-native-binding.test.mjs": "4669d1a9a98480ecf7865555c5f72fc350f8e2fc7011167324be123407451816",
+    "package.json": "926d7983509e62fd66b82e7b7b4c6474503234ab93acb189b77ce75e8e56f23e"
+  },
+  "checks": {
+    "workroom": {
+      "command": "npm run test:workroom",
+      "passed": 201,
+      "exitCode": 0
+    },
+    "fullGate": {
+      "command": "npm test",
+      "nodePassed": 358,
+      "pythonPassed": 97,
+      "totalPassed": 455,
+      "exitCode": 0,
+      "staticDesignGate": "PASS"
+    },
+    "actualHttp": {
+      "configuredNativeCreateCount": 1,
+      "profileMismatchHeld": true,
+      "promptSubmissions": 0,
+      "relayPosts": 0,
+      "originalStagePersisted": true,
+      "disconnectCount": 1
+    },
+    "bindingGuards": [
+      "default absent",
+      "standalone and Relay-disabled refusal before RPC",
+      "closed profile and original transport pinned against configuration mutation",
+      "locked Echo-build/Nims-review route and exact absolute workspace",
+      "foreign profile denied",
+      "revoked access denies new and late RPC result",
+      "close is idempotent; failed disconnect never reopens authority"
+    ]
+  },
+  "failureHistory": [
+    "Initial HTTP test expected one lookup; the observer legitimately performed a second read-only lookup. Final assertion requires exactly one create, at least one lookup, all remaining calls lookup-only, zero prompt submission and zero Relay POST."
+  ],
+  "deployment": {
+    "liveServerRestarted": false,
+    "productionEnrollment": false,
+    "normalLauncherSuppliesBinding": false,
+    "realProviderTasksSubmitted": 0,
+    "credentialsReadOrChanged": false,
+    "RookActivated": false,
+    "MindActivated": false,
+    "modelServiceRestarted": false
+  },
+  "remaining": [
+    "Implement the approved local gateway transport/bootstrap that supplies nativeWorkerOptions; this constructor seam does not enroll an identity by itself.",
+    "Review the exact enrolled profile/workspace and lifecycle against the installed native runtime. Existing adapter limit remains 50; real file-only diagnostic was four turns.",
+    "Obtain separate approval before a further real-provider task; verify complete builder retirement and independent Nims review before Rook activation."
+  ]
+}

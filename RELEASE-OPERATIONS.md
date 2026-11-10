@@ -9,10 +9,13 @@ Evidence: `integrations/live-source-custody-qualification.json`.
 - Local/phone: Eddie confirmed card creation, editing, movement, saved review/Done,
   both themes, background/resume, rotation with an unsaved draft and network recovery.
   The full end-to-end production worker workflow still requires acceptance.
-- Latest full local gate: `npm test` passed 449 checks (352 Node + 97 Python),
-  with static/design checks. The current checkout also passed all 195 Workroom
-  tests after reconciliation with Echo's Rook handoff. See
-  `integrations/draft-harness-qualification.json` and the project checkpoint.
+- Latest full local gate: `npm test` passed 455 checks (358 Node + 97 Python),
+  with static/design checks; all 201 Workroom tests passed. The server now accepts
+  an explicit native worker connection and uses it for dispatch, observation and
+  verified retirement. An actual admitted HTTP test proved a mismatched profile
+  holds without a prompt or Relay fallback. This used a synthetic transport;
+  the normal launcher still supplies no binding and enrollment remains off. See
+  `integrations/native-server-binding-qualification.json` and the project checkpoint.
 - Main-PC health: live read-only CPU/RAM/GPU and fixed supervisor observations
   verified, including shared concurrent refreshes and honest unloaded/unknown states.
   Responsive UI and selected-workspace reload verified. Model lifecycle controls,
