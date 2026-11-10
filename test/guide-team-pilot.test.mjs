@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import {openTaskStore} from '../lib/task-store.mjs';
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
@@ -29,6 +30,22 @@ test('preparation submits nothing; missing approval cannot create an attempt or 
   await assert.rejects(runGuideTeamPilot(ready.path),/Separate owner approval/);
   await assert.rejects(runGuideTeamPilot(ready.path,{ownerApproved:true}),/exact approved scope hash/);
   assert.equal(existsSync(join(dirname(ready.path),'attempt.json')),false);
+});
+
+test('prepared anchored patch preserves every original byte and exact newline placement',()=>{
+ const ready=prepareGuideTeamPilot({fixture:true}),p=validateGuideTeamPilot(ready.path);
+ const store=openTaskStore(join(dirname(ready.path),'tasks.sqlite'));let task;
+ try{task=store.workroom.get(p.taskId);}finally{store.close();}
+ const patch=JSON.parse(task.plan.spec.split('Exact patch JSON: ')[1].split('\n')[0]);
+ const original=readFileSync(join(p.workspace,'MESH-QUICK-START.md'));
+ assert.equal(patch.mode,'replace');assert.equal(patch.path,'MESH-QUICK-START.md');
+ assert.equal(original.toString('utf8').split(patch.old_string).length,2);
+ assert.equal(patch.new_string,patch.old_string+p.suffix);
+ const actual=Buffer.from(original.toString('utf8').replace(patch.old_string,patch.new_string));
+ assert.deepEqual(actual,Buffer.concat([original,Buffer.from(p.suffix)]));
+ assert.equal(createHash('sha256').update(actual).digest('hex'),p.expectedSha256);
+ assert.match(task.plan.checks,/report the existing step as blocked/);
+ assert.equal(existsSync(join(dirname(ready.path),'attempt.json')),false);
 });
 
 test('changed guide and task/source intent cannot pass the prepared scope check',()=>{

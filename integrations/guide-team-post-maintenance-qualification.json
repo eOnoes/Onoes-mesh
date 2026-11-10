@@ -130,5 +130,48 @@
     ],
     "sourceBindingAudit": "workroom-automation.mjs was already included; no new source-binding change needed.",
     "newProviderTasks": 0
+  },
+  "exactGuidePreparation": {
+    "qualification": "PREPARED_NOT_RUN",
+    "fileOperationEvidence": {
+      "qualification": "PASS_NATIVE_FILE_OPERATIONS_WITH_TEST_BACKEND",
+      "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-guide-file-ops-4ffb4a0a-df90-4149-942d-1de59b10ca2d",
+      "nativeSourceSha256": "d33e0bc43516f9c5da4dd1ab75bd57b03837034c5c4accb91df1d78b92131b51",
+      "results": [
+        {
+          "operation": "write_file",
+          "bytes": 6160,
+          "sha256": "50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f",
+          "exactMatch": true
+        },
+        {
+          "operation": "patch_replace",
+          "bytes": 6160,
+          "sha256": "50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f",
+          "exactMatch": true
+        }
+      ],
+      "providerTasks": 0,
+      "serviceRestarts": 0,
+      "boundary": "Actual native file operation implementation; test-owned Git Bash adapter, not a worker session or full native transport qualification."
+    },
+    "planChange": "Exact unique-tail patch replace arguments supplied; final byte count/SHA and all original bytes unchanged. Correct mismatches in the same authorized attempt or report blocked.",
+    "newPreparation": {
+      "path": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-a52c6cdf-0707-42f3-9071-ebe3ed0b37be\\pilot.json",
+      "review": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-a52c6cdf-0707-42f3-9071-ebe3ed0b37be\\REVIEW.txt",
+      "scopeHash": "8cc6bb1b865bfcf2054d84f15f852948fd6a56ef3c7853135e94cb63d45c29fc",
+      "taskId": "498c0e93-a2b5-443b-8b9b-3ac5ebdccf55"
+    },
+    "tests": {
+      "command": "npm test",
+      "exitCode": 0,
+      "nodePassed": 379,
+      "pythonPassed": 114,
+      "totalPassed": 493,
+      "focusedPassed": 9
+    },
+    "codeIndex": "register_edit2files/reindexcompleted",
+    "newProviderTasks": 0,
+    "approvalRequired": "One fresh Echo-role file-only gpt-6-luna build max50 then one Nims read-only review, no retries. Earlier attempt approvals consumed."
   }
 }
