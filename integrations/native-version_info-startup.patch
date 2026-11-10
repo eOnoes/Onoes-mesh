@@ -1,0 +1,38 @@
+--- a/hermes_cli/version_info.py
++++ b/hermes_cli/version_info.py
+@@ -126,7 +126,7 @@
+     return p if p.is_file() else None
+ 
+ 
+-def _stamp_version_info() -> VersionInfo | None:
++def _stamp_version_info(*, check_git: bool = True) -> VersionInfo | None:
+     """Read provenance from a build-time install stamp."""
+     stamp_file = _resolve_stamp_file()
+     if stamp_file is None:
+@@ -163,7 +163,7 @@
+         # All-zero placeholder = fallback stamp, not real provenance.
+         return None
+     stamp_source = str(data.get("source") or "")
+-    if stamp_source == "git" and (stamp_file.parent / ".git").exists():
++    if check_git and stamp_source == "git" and (stamp_file.parent / ".git").exists():
+         live_commit = _run_git(stamp_file.parent, "rev-parse", "HEAD")
+         if live_commit and live_commit != commit:
+             return None
+@@ -363,3 +363,17 @@
+         return stamp.commit
+     repo_dir = _resolve_repo_dir()
+     return _run_git(repo_dir, "rev-parse", "HEAD") if repo_dir is not None else None
++
++def get_request_version() -> str:
++    """Request-header identity without launching Git in compute-only workers.
++
++    Reuse canonical cached identity or the installed build stamp. Unstamped,
++    uncached provenance stays unknown; full CLI/update resolution is unchanged.
++    """
++    if _cached_version_info is not None:
++        return _cached_version_info.base_version
++    try:
++        info = _stamp_version_info(check_git=False)
++    except RuntimeError:
++        info = None
++    return info.base_version if info is not None else "unknown"

@@ -1,0 +1,28 @@
+{
+  "schema": "mesh-native-header-startup-fix/v1",
+  "testsPassed": 8,
+  "headerVersion": "0.23.0",
+  "gitRefusedDuringHeaderConstruction": true,
+  "canonicalGitFreshnessRetained": true,
+  "customIdentityUnchanged": true,
+  "unknownProvenanceHonest": true,
+  "liveInstalled": true,
+  "backup": "E:\\App-Backups\\Onoes-Mesh-Native-Bridge\\2026-11-10_18-08-00_UTC_codex-header-startup-fix",
+  "files": {
+    "hermes_cli/version_info.py": {
+      "beforeSha256": "c9063a4a9b0ae7dd7027bf58955f3890b0ac671caa9be5fbd3f5bce02bcea0da",
+      "candidateSha256": "58cb1d906f923496d063c81b80634f1bb6cf8bd7b0b65a7a51fa2e35e0334085"
+    },
+    "agent/codex_headers.py": {
+      "beforeSha256": "54d165f64bb3988c16254f587a5dccac2efa988e57e86027714bf98f16bbbca9",
+      "candidateSha256": "4558a890e3980dee3a3e2a21716537724f32148dbf021dffeb2faf23e2346a5d"
+    }
+  },
+  "scopedStackCaptureRemoved": true,
+  "workerTimingSourceSha256": "91d7d57dabb61e628bcbe1e1eedc418902262d665a9d23fbe9dbbe20aca0294f",
+  "serviceRestarted": false,
+  "rootEvidence": "Second diagnostic main-thread stack waits in version_info._run_git while constructing Codex headers",
+  "testCorrection": "Source project metadata is a0.0.0 placeholder; installed distribution metadata0.21. Final fix uses canonical cache/stamp only, otherwise unknown; live stamped0.23 preserved.",
+  "installedSourceBackup": "E:\\App-Backups\\Onoes-Mesh-Native-Bridge\\2026-11-10_18-08-00_UTC_codex-header-startup-fix\\installed",
+  "regressionCommand": "python integrations/verify_native_request_headers.py"
+}

@@ -1,6 +1,6 @@
 # Mesh private release candidate
 
-## Current readiness - 2026-11-09
+## Current readiness - 2026-11-10
 
 Running Mesh build `114cf18da16a` was reconciled with saved source on 2026-11-09.
 All 23 data tables and 14 cards were preserved; shared services were unchanged.
@@ -17,14 +17,17 @@ Evidence: `integrations/live-source-custody-qualification.json`.
   verified, including shared concurrent refreshes and honest unloaded/unknown states.
   Responsive UI and selected-workspace reload verified. Model lifecycle controls,
   per-model resource attribution and the other two machines remain unqualified.
-- Native worker bridge: disposable native builder-to-real-Nims independent review
-  passed; the builder provider was synthetic. Positive review was checked against
-  five actual artifact hashes and read-only check output. Production enrollment
-  and real Codex generation remain unqualified.
-  The first real builder trial stalled at startup and was deliberately cancelled;
-  its worker exited and both guide copies stayed unchanged. Safe diagnostic
-  comparisons pass outside that worker path; its root cause is still unproven.
-  See `integrations/native-real-guide-qualification.json`.
+- Native worker bridge: the finite file-only real Codex path passed on November 10.
+  Two bounded trials exposed about 80 seconds in client construction: a Git
+  version lookup used by request headers. A targeted two-file fix preserves
+  Hermes identity and canonical CLI provenance checks while removing Git from
+  header construction. Final real worker construction took 1.566 seconds; the
+  task completed, its exact requested append was independently verified, all
+  original guide bytes were preserved, and the worker exited. No restart.
+  This qualifies the tested file-only/max-four-turn path, not production
+  enrollment, terminal tools or the complete automatic board/team workflow.
+  See integrations/native-startup-batch-qualification.json and
+  integrations/native-header-startup-qualification.json.
 - Explicit openai-codex closed-profile preflight is implemented and tested.
   One live unsubmitted session's public policy matched the requested file/terminal
   toolsets and workspace, with zero admissions. After bridge installation, its
@@ -37,7 +40,7 @@ Evidence: `integrations/live-source-custody-qualification.json`.
   Health, installed hashes, unchanged Mesh/model processes and zero-prompt public
   policy readback passed. Initial cold startup exceeded its first health window;
   configured MCP startup errors remain a separate finding. Production worker
-  enrollment/generation and Rook activation are still unqualified. See
+  enrollment and Rook activation are still unqualified. See
   `integrations/native-bridge-maintenance-qualification.json`.
 - Rook candidate ede8e4ae is already included in this checkout. Its local tests
   are not deployed acceptance. Rook remains OFF pending its own approved identity,

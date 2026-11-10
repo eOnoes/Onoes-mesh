@@ -1,0 +1,212 @@
+{
+  "schema": "mesh-native-startup-batch-qualification/v1",
+  "approval": "Eddie approved up to three disposable-guide diagnostics November10",
+  "tasksUsed": 3,
+  "tasksRemaining": 0,
+  "trials": [
+    {
+      "number": 1,
+      "sessionId": "local-b4951239ba0a3143ac419ad46a52d1ebbb227351e7eeeecbaa2b1b07702e9d29",
+      "admissionId": "efa778b8ea7849888a56e45a9e0a528e",
+      "profileVerified": true,
+      "observation": {
+        "found": true,
+        "status": "terminal",
+        "outcome": "interrupted",
+        "receiptOutcome": "interrupted",
+        "processScope": null,
+        "finalResponse": "Stopped before this turn started. Your message was not processed."
+      },
+      "timings": [
+        {
+          "pid": 36480,
+          "routeMilliseconds": 9.5554,
+          "factoryMilliseconds": 81314.5803
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "sessionId": "local-dbe2d1551f55d5eee6790d073d8e407d02025c04aa24bd06a3da779ebedbbc57",
+      "admissionId": "7cb43bc53c044a5e98dd4fdfe4aefdee",
+      "profileVerified": true,
+      "observation": {
+        "found": true,
+        "status": "terminal",
+        "outcome": "interrupted",
+        "receiptOutcome": "interrupted",
+        "processScope": null,
+        "finalResponse": "Stopped before this turn started. Your message was not processed."
+      },
+      "timings": [
+        {
+          "pid": 42892,
+          "routeMilliseconds": 9.8263,
+          "factoryMilliseconds": 80444.5104
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "sessionId": "local-830e20172978307d2cbe365c2f5c95f563056476ad1ac44ebe48792280327cb7",
+      "admissionId": "49d39d4334be40d29799ceef4c976922",
+      "profileVerified": true,
+      "observation": {
+        "found": true,
+        "status": "terminal",
+        "outcome": "completed",
+        "receiptOutcome": "completed",
+        "processScope": null,
+        "finalResponse": "Appended the requested section to `MESH-QUICK-START.md`; existing content was left unchanged. No tests were run."
+      },
+      "timings": [
+        {
+          "pid": 26812,
+          "routeMilliseconds": 9.9913,
+          "factoryMilliseconds": 1565.8281
+        }
+      ]
+    }
+  ],
+  "artifactReview": {
+    "originalBytesPreserved": true,
+    "onlyWorkspaceFile": "MESH-QUICK-START.md",
+    "exactRequestedAppendVerified": true,
+    "finalSha256": "ad8d6cf95e6477d8021759a8d793ab6ba9a22a6d9fd08e81c1ecec3add56f1e4",
+    "workerExitVerified": true
+  },
+  "rootFinding": "Git subprocess for Codex header version lookup blocked constructor; Git-free stamped request version resolves startup in final trial",
+  "liveFactoryMilliseconds": 1565.8281,
+  "gatewayHealth": {
+    "status": "ok",
+    "platform": "hermes-agent",
+    "version": "0.23.0"
+  },
+  "sourceFixEvidence": "integrations/native-header-startup-qualification.json",
+  "qualification": "PASS_FOR_THIS_FINITE_FILE_ONLY_REAL_PROVIDER_PATH",
+  "remainingLimits": "No production identity enrollment, Rook/Mind activation, terminal-tool qualification, model-service restart or three-machine integration claimed.",
+  "reviewCorrection": "Initial assertion incorrectly demanded In progress text not in approved prompt; actual stronger review compares exact requested appended bytes.",
+  "blockingStackEvidence": [
+    {
+      "file": "managed_worker.py",
+      "line": 373,
+      "function": "execute"
+    },
+    {
+      "file": "managed_worker.py",
+      "line": 489,
+      "function": "main"
+    },
+    {
+      "file": "managed_worker.py",
+      "line": 501,
+      "function": "<module>"
+    },
+    {
+      "file": "subprocess.py",
+      "line": 1614,
+      "function": "_readerthread"
+    },
+    {
+      "file": "subprocess.py",
+      "line": 1614,
+      "function": "_readerthread"
+    },
+    {
+      "file": "managed_worker.py",
+      "line": 91,
+      "function": "read_frame"
+    },
+    {
+      "file": "managed_worker.py",
+      "line": 202,
+      "function": "read"
+    },
+    {
+      "file": "subprocess.py",
+      "line": 1662,
+      "function": "_communicate"
+    },
+    {
+      "file": "subprocess.py",
+      "line": 1221,
+      "function": "communicate"
+    },
+    {
+      "file": "subprocess.py",
+      "line": 566,
+      "function": "run"
+    },
+    {
+      "file": "version_info.py",
+      "line": 63,
+      "function": "_run_git"
+    },
+    {
+      "file": "version_info.py",
+      "line": 167,
+      "function": "_stamp_version_info"
+    },
+    {
+      "file": "version_info.py",
+      "line": 287,
+      "function": "_stamp_or_none"
+    },
+    {
+      "file": "version_info.py",
+      "line": 299,
+      "function": "get_version_info"
+    },
+    {
+      "file": "codex_headers.py",
+      "line": 45,
+      "function": "codex_cloudflare_headers"
+    },
+    {
+      "file": "agent_init.py",
+      "line": 969,
+      "function": "factory"
+    },
+    {
+      "file": "agent_init.py",
+      "line": 752,
+      "function": "_explicit_client_kwargs"
+    },
+    {
+      "file": "agent_init.py",
+      "line": 910,
+      "function": "_init_openai_client"
+    },
+    {
+      "file": "agent_init.py",
+      "line": 959,
+      "function": "_build_client"
+    },
+    {
+      "file": "agent_init.py",
+      "line": 2220,
+      "function": "init_agent"
+    },
+    {
+      "file": "managed_worker.py",
+      "line": 455,
+      "function": "_construct_agent"
+    },
+    {
+      "file": "managed_worker.py",
+      "line": 373,
+      "function": "execute"
+    },
+    {
+      "file": "managed_worker.py",
+      "line": 489,
+      "function": "main"
+    },
+    {
+      "file": "managed_worker.py",
+      "line": 501,
+      "function": "<module>"
+    }
+  ],
+  "regressionCommand": "python integrations/verify_native_request_headers.py"
+}

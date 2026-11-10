@@ -61,6 +61,31 @@ def instrument_constructor(source: bytes) -> bytes:
     return text.encode('utf-8')
 
 
+def instrument_constructor_stacks(source: bytes, session_id: str, *, seconds: int = 15) -> bytes:
+    """Arm no-locals stack capture before construction, only for a named diagnostic session."""
+    if not re.fullmatch(r'local-[0-9a-f]{64}', session_id) or seconds not in (1, 15):
+        raise ValueError('invalid_diagnostic_stack_scope')
+    text = source.decode('utf-8')
+    anchor = '        _mesh_startup_agent = factory(**{**kwargs, **_mesh_startup_route})\n'
+    if '_mesh_startup_faults' in text or text.count(anchor) != 1:
+        raise ValueError('unexpected_or_instrumented_factory_seam')
+    replacement = (
+        '        _mesh_startup_faults = None\n'
+        '        if frame.get("scope", {}).get("session_id") == ' + repr(session_id) + ':\n'
+        '            import faulthandler as _mesh_startup_faults\n'
+        '            _mesh_startup_faults.dump_traceback_later(' + str(seconds)
+        + ', repeat=True, file=__import__("sys").stderr)\n'
+        '        try:\n'
+        '    ' + anchor +
+        '        finally:\n'
+        '            if _mesh_startup_faults is not None:\n'
+        '                _mesh_startup_faults.cancel_dump_traceback_later()\n'
+    )
+    text = text.replace(anchor, replacement)
+    ast.parse(text)
+    return text.encode('utf-8')
+
+
 def constructor_timings(log: str) -> list[dict]:
     """Only accept complete, ordered per-process timing records."""
     groups = {}

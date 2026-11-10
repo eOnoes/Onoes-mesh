@@ -22,23 +22,23 @@
     "platform": "hermes-agent",
     "version": "0.23.0"
   },
-  "trialState": "terminal_interrupted",
+  "trialState": "final_approved_trial_completed",
   "sessionCreated": true,
   "promptSent": true,
   "approvalGuardVerified": true,
   "constructorEvidence": "integrations/native-constructor-startup-qualification.json",
-  "qualification": "NOT_QUALIFIED_FOR_REAL_WORKER",
-  "blocker": "Approved single trial showed construction-stage delay; final log reached ready, but guide task interrupted. Root cause unproven.",
-  "liveWorkerRootCause": "UNPROVEN",
-  "trialEvidence": "integrations/native-worker-construction-trial.json",
+  "qualification": "PASS_FINITE_FILE_ONLY_REAL_PROVIDER_PATH",
+  "blocker": null,
+  "liveWorkerRootCause": "Blocking Git version lookup during Codex request-header construction; fixed for measured path",
+  "trialEvidence": "integrations/native-startup-batch-qualification.json",
   "constructorTimingInstallation": "integrations/native-constructor-timing-installation.json",
   "currentWorkerSourceSha256": "91d7d57dabb61e628bcbe1e1eedc418902262d665a9d23fbe9dbbe20aca0294f",
   "timingQualification": "integrations/native-constructor-timing-qualification.json",
   "nextBatch": {
     "maxTasks": 3,
-    "state": "prepared_awaiting_owner_approval",
-    "allGuardsVerified": true,
-    "newSessions": 0,
-    "newModelRequests": 0
-  }
+    "tasksUsed": 3,
+    "tasksRemaining": 0,
+    "state": "consumed_all_terminal"
+  },
+  "headerFix": "integrations/native-header-startup-qualification.json"
 }

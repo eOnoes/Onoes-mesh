@@ -1,0 +1,14 @@
+--- a/agent/codex_headers.py
++++ b/agent/codex_headers.py
+@@ -40,9 +40,9 @@
+     OAuth JWT (see :func:`codex_account_headers`).
+     """
+     if is_official_codex_base_url(base_url):
+-        from hermes_cli.version_info import get_version_info
++        from hermes_cli.version_info import get_request_version
+         headers = {
+-            "User-Agent": f"HermesAgent/{get_version_info().base_version}",
++            "User-Agent": f"HermesAgent/{get_request_version()}",
+             "originator": "hermes-agent",
+         }
+     else:
