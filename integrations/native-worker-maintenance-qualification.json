@@ -1,0 +1,85 @@
+{
+  "schema": "mesh-native-worker-maintenance-readiness/v1",
+  "status": "PREPARED_NOT_INSTALLED",
+  "prepared": {
+    "schema": "mesh-native-worker-maintenance/v1",
+    "preparedAt": "2026-11-10T20:27:40.356567+00:00",
+    "directory": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-worker-maintenance-77de841f-ae34-428a-b143-f55b6e1d64ed",
+    "status": "PREPARED_NOT_INSTALLED",
+    "files": {
+      "gateway/session_controls.py": {
+        "before": "a242ba17ac0105fac760812b322236e744ccc63bb19f48d2da0fa24932d214a8",
+        "after": "aa4acaf3488f803743a30c7aa15fa851f3cb37911af4063b377a43546a3a9008"
+      },
+      "tui_gateway/contracts/canonical.py": {
+        "before": "3dc5c762256ccc9d357c20f627797c232265ce4c8fbe2f4afbd00d8ef1f6e880",
+        "after": "c1f50320ca9ca6bed97ef5cba3ede1a172b76ebe31e9f6c48e3e0a06e5ffb2ff"
+      },
+      "gateway-service/Hermes_Gateway.vbs": {
+        "before": "485eb282c27762c1ec26f9079a00694db25bad255ab6ad99417cded2212525e4",
+        "after": "f819c63dd14ba8fb1558819f3cc97ca21f660e2b1647d254b2540b5dfa7abe91"
+      }
+    },
+    "topology": "Existing single gateway owner; no second gateway or lock override",
+    "setting": "MESH_LOCAL_PROCESS_SCOPE=1 in existing launcher process environment",
+    "credentialsCopied": false,
+    "restartPerformed": false,
+    "modelTasksSent": 0,
+    "activationAuthorized": false,
+    "remaining": [
+      "Explicit shared-gateway maintenance approval",
+      "Recheck all original hashes and active-work state before any installation",
+      "Verify owner health and read-only capability after authorized restart",
+      "Separate approval for a new disposable team trial; never replay the held trial"
+    ]
+  },
+  "liveReadOnly": {
+    "schema": "mesh-installed-native-profile/v1",
+    "observedAt": "2026-11-10T20:25:02.616955+00:00",
+    "qualification": "HELD",
+    "sessionId": "local-6f1ebbba1031d275569e5eb116415678955ac534f21019dfa99c9afb6eec8eba",
+    "profile": {
+      "model": "gpt-6-luna",
+      "provider": "openai-codex",
+      "base_url": null,
+      "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-live-policy-965f634e97df4409a87b90f4ed72d959",
+      "toolsets": [
+        "file",
+        "terminal"
+      ],
+      "safe_mode": true,
+      "ignore_user_config": true,
+      "follow_profile": false,
+      "source": "tool",
+      "max_turns": 50,
+      "terminal_backend": "local",
+      "closed": true,
+      "api_key_configured": false
+    },
+    "admissionCount": 0,
+    "promptsSubmitted": 0,
+    "workerReadiness": {
+      "processScopeSupported": false,
+      "status": "HELD",
+      "workerRetirementVerified": false,
+      "productionEnrollment": false
+    },
+    "productionEnrollment": false,
+    "credentialsExported": false
+  },
+  "topologySourceHashes": {
+    "gateway/host_rendezvous.py": "52d4e5a5ee3d1802f0a4d0fd06a482ff46c783b5befe3d85a2ecd155fe7cc903",
+    "gateway/status.py": "56a9c945d1c73a9419353fb3d063ec44584ea84fbcf618236e8fb9926053bf23"
+  },
+  "topologyEvidence": "Installed source permits one gateway owner per OS user and multiplexes profiles. A second gateway under another home/port is not the supported isolation path. This is installed-source evidence, not attestation of loaded source.",
+  "tests": {
+    "command": "npm test",
+    "exitCode": 0,
+    "nodePassed": 369,
+    "pythonPassed": 114,
+    "totalPassed": 483,
+    "originalProfileChecksRetained": true
+  },
+  "servicesRestarted": false,
+  "newProviderTasks": 0
+}

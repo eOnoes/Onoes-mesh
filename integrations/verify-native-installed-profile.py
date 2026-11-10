@@ -3,6 +3,7 @@
 No session creation, prompt submission, credential export or enrollment.
 """
 import asyncio
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import re
@@ -40,7 +41,50 @@ def validate(snapshot, intent):
     return {key: profile[key] for key in PUBLIC_FIELDS}
 
 
-async def main():
+def readiness(snapshot):
+    # A truthy string or a terminal reply cannot prove native process tracking.
+    supported = snapshot.get('process_scope_supported') is True
+    return {'processScopeSupported': supported,
+            'status': 'CAPABILITY_CONFIRMED' if supported else 'HELD',
+            'workerRetirementVerified': False,
+            'productionEnrollment': False}
+
+
+async def read_gateway(home, intent):
+    from aiohttp import ClientSession
+    from hermes_cli.gateway_client import _session_ticket, gateway_ws_target
+    from hermes_cli.gateway_runtime import discover_gateway_endpoint
+    discovery = await asyncio.to_thread(discover_gateway_endpoint, home, timeout=5)
+    if discovery.state != 'ready':
+        raise RuntimeError('Existing gateway unavailable')
+    origin = urlsplit(discovery.endpoint.api_origin)
+    if (origin.scheme != 'http' or origin.hostname not in ('127.0.0.1', '::1', 'localhost')
+            or origin.username is not None or origin.password is not None):
+        raise RuntimeError('Expected existing loopback gateway before authentication')
+    ticket = await asyncio.to_thread(_session_ticket, home, discovery.endpoint,
+                                    purpose='interactive')
+    url, protocols = gateway_ws_target(discovery.endpoint, ticket)
+    parsed = urlsplit(url)
+    if (parsed.scheme != 'ws' or parsed.hostname not in ('127.0.0.1', '::1', 'localhost')
+            or parsed.username is not None or parsed.password is not None):
+        raise RuntimeError('Expected existing loopback gateway')
+    async with asyncio.timeout(20):
+        async with ClientSession() as client:
+            async with client.ws_connect(url, protocols=protocols, max_msg_size=65536) as ws:
+                await ws.send_json({'jsonrpc': '2.0', 'id': 1, 'method': 'prompt.lookup',
+                                    'params': {'session_id': intent['sessionId'],
+                                               'submission_id': 'codex-never-submitted'}})
+                while True:
+                    reply = await ws.receive_json()
+                    if reply.get('id') != 1:
+                        continue
+                    if 'error' in reply:
+                        raise RuntimeError('Installed profile lookup refused; no prompt submitted')
+                    snapshot = reply['result']
+                    return snapshot, validate(snapshot, intent)
+
+
+async def main(require_process_scope=False):
     root = Path(__file__).resolve().parents[1]
     intent = json.loads((root / 'data/native-live-explicit-policy.json').read_text())
     workspace = Path(intent['workspace']).resolve()
@@ -55,9 +99,6 @@ async def main():
         raise RuntimeError('Existing fixed probe intent required; no replacement session created')
     home = Path('C:/Users/eMitchell109/AppData/Local/hermes')
     sys.path.insert(0, str(home / 'hermes-agent'))
-    from aiohttp import ClientSession
-    from hermes_cli.gateway_client import _session_ticket, gateway_ws_target
-    from hermes_cli.gateway_runtime import discover_gateway_endpoint
     from hermes_state_local import POLICY_PREFIX
     with sqlite3.connect((home / 'state.db').as_uri() + '?mode=ro', uri=True) as db:
         db.execute('PRAGMA query_only=ON')
@@ -67,42 +108,28 @@ async def main():
         if (receipt.get('request_id') != intent['requestId']
                 or receipt.get('session_id') != intent['sessionId']):
             raise RuntimeError('Native receipt does not bind this exact saved probe intent')
-    discovery = await asyncio.to_thread(discover_gateway_endpoint, home, timeout=5)
-    if discovery.state != 'ready':
-        raise RuntimeError('Existing gateway unavailable')
-    ticket = await asyncio.to_thread(_session_ticket, home, discovery.endpoint,
-                                    purpose='interactive')
-    url, protocols = gateway_ws_target(discovery.endpoint, ticket)
-    parsed = urlsplit(url)
-    if parsed.scheme != 'ws' or parsed.hostname != '127.0.0.1':
-        raise RuntimeError('Expected existing loopback gateway')
-    async with asyncio.timeout(20):
-        async with ClientSession() as client:
-            async with client.ws_connect(url, protocols=protocols, max_msg_size=65536) as ws:
-                await ws.send_json({'jsonrpc': '2.0', 'id': 1, 'method': 'prompt.lookup',
-                                    'params': {'session_id': intent['sessionId'],
-                                               'submission_id': 'codex-never-submitted'}})
-                while True:
-                    reply = await ws.receive_json()
-                    if reply.get('id') != 1:
-                        continue
-                    if 'error' in reply:
-                        raise RuntimeError('Installed profile lookup refused; no prompt submitted')
-                    profile = validate(reply['result'], intent)
-                    break
+    snapshot, profile = await read_gateway(home, intent)
     with sqlite3.connect((home / 'state.db').as_uri() + '?mode=ro', uri=True) as db:
         db.execute('PRAGMA query_only=ON')
         admissions = db.execute('SELECT count(*) FROM session_admissions WHERE target_session_id=?',
                                (intent['sessionId'],)).fetchone()[0]
     if admissions != 0:
         raise RuntimeError('Probe unexpectedly has admissions; do not submit or replay')
-    result = {'schema': 'mesh-installed-native-profile/v1', 'qualification': 'PASS',
+    state = readiness(snapshot)
+    result = {'schema': 'mesh-installed-native-profile/v1',
+              'observedAt': datetime.now(timezone.utc).isoformat(),
+              'qualification': 'HELD' if require_process_scope and state['status'] == 'HELD' else 'PASS',
               'sessionId': intent['sessionId'], 'profile': profile,
               'admissionCount': admissions, 'promptsSubmitted': 0,
+              'workerReadiness': state,
               'productionEnrollment': False, 'credentialsExported': False}
-    (root / 'data/native-installed-profile.json').write_text(json.dumps(result, indent=2) + '\n')
+    filename = 'native-worker-readiness.json' if require_process_scope else 'native-installed-profile.json'
+    (root / 'data' / filename).write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps(result))
+    return 2 if result['qualification'] == 'HELD' else 0
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    if sys.argv[1:] not in ([], ['--require-process-scope']):
+        raise SystemExit('Only --require-process-scope is supported; no alternate session or endpoint accepted')
+    raise SystemExit(asyncio.run(main('--require-process-scope' in sys.argv)))
