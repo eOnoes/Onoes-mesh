@@ -40,7 +40,7 @@ test('changed guide and task/source intent cannot pass the prepared scope check'
   assert.throws(()=>validateGuideTeamPilot(another.path),/Pilot scope changed/);
 });
 
-test('actual server pilot builds once, retires, reviews once and reloads without recording owner approval',{timeout:60000},async()=>{
+for(const incomplete of [false,true])test(incomplete?'actual server pauses a retired incomplete native report without importing or dispatching review':'actual server pilot builds once, retires, reviews once and reloads without recording owner approval',{timeout:60000},async()=>{
   const ready=prepareGuideTeamPilot({fixture:true}),p=validateGuideTeamPilot(ready.path),file=join(p.workspace,'MESH-QUICK-START.md');
   const token='disposable-pilot-token',tokenFile=join(dirname(ready.path),'synthetic-key');writeFileSync(tokenFile,token);
   const messages=[],calls=[];let submitted=false,request,workerPosts=0,reviewPosts=0,now=Date.now();
@@ -71,13 +71,13 @@ test('actual server pilot builds once, retires, reviews once and reloads without
       calls.push(method);
       if(method==='session.create')return {session_id:sid};
       if(method==='prompt.submit'){
-        assert.equal(submitted,false);submitted=true;now+=300001;writeFileSync(file,Buffer.concat([readFileSync(file),Buffer.from(p.suffix)]));return {};
+        assert.equal(submitted,false);submitted=true;now+=300001;writeFileSync(file,Buffer.concat([readFileSync(file),Buffer.from(incomplete?p.suffix.slice(1):p.suffix)]));return {};
       }
       assert.equal(method,'prompt.lookup');
       if(!submitted)return {found:false,session_id:params.session_id,submission_id:params.submission_id,outcome:null,profile_contract:contract,process_scope_supported:true};
       const task=(await request('/api/workroom/'+p.taskId)).task;
       const update={schema:'workroom-update/v1',taskId:p.taskId,sendId:task.automation.workerSendId,goal:task.progress.goal,
-        checklist:task.progress.checklist.map(s=>({...s,status:'done'})),result:'Exact append made to guide copy',evidence:'Synthetic native file operation'};
+        checklist:task.progress.checklist.map(s=>({...s,status:incomplete?'pending':'done'})),result:incomplete?'Read-back has a byte-length mismatch':'Exact append made to guide copy',evidence:'Synthetic native file operation'};
       return {found:true,session_id:params.session_id,submission_id:params.submission_id,outcome:'completed',profile_contract:contract,process_scope_supported:true,
         receipt:{admission_id:aid,ref:{profile_id:profileId,session_id:sid},authority_epoch:1,execution_generation:1,status:'terminal',
           result:{final_response:'```workroom-update\n'+JSON.stringify(update)+'\n```'}},
@@ -86,6 +86,22 @@ test('actual server pilot builds once, retires, reviews once and reloads without
           writer_quiescence:false,execution_closed:true,authority_writes_drained:true,worker_resources_idle:true}};
     }};
   try {
+    if(incomplete){
+      await assert.rejects(runGuideTeamPilot(ready.path,{fixture,deadlineMs:40000}),/Pilot not complete/);
+      const result=JSON.parse(readFileSync(join(dirname(ready.path),'result.json'),'utf8')),task=result.task;
+      assert.equal(result.qualification,'HELD');assert.equal(task.automation.state,'paused');
+      assert.match(task.automation.reason,/finished with an incomplete report/);
+      assert.equal(task.messages.length,1);assert.equal(task.messages[0].nativeLocal.writerQuiescence,true);
+      assert.equal(task.messages[0].nativeLocal.nativeOutcome,'completed');
+      assert.equal(task.agentUpdates.length,1);assert.equal(task.agentUpdates[0].applied,false);
+      assert.equal(task.progress.checklist[0].status,'pending');assert.equal(task.progress.result,'');
+      assert.equal(task.plan.state,'locked');assert.equal(task.agentReviews.length,0);
+      assert.equal(task.progress.decision,'pending');assert.notEqual(task.status,'done');
+      assert.equal(calls.filter(c=>c==='session.create').length,1);assert.equal(calls.filter(c=>c==='prompt.submit').length,1);
+      assert.equal(workerPosts,0);assert.equal(reviewPosts,0);
+      const before=calls.length;await assert.rejects(runGuideTeamPilot(ready.path,{fixture}),/already has an attempt/);assert.equal(calls.length,before);
+      return;
+    }
     const result=await runGuideTeamPilot(ready.path,{fixture,deadlineMs:40000});
     assert.equal(result.qualification,'PASS');assert.equal(result.source,'disposable_fixture');
     assert.equal(result.worker.writerQuiescence,true);assert.equal(result.reviewer.independentNativeReviewQualified,false);

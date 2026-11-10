@@ -110,5 +110,25 @@
     },
     "providerRerun": false,
     "deployment": "DEPLOYED named Mesh PID7176 healthy; admission401/201/200,14savedcards,logoutPASS"
+  },
+  "httpIncompleteRegression": {
+    "qualification": "PASS_SYNTHETIC_HTTP_ONLY",
+    "focusedPassed": 8,
+    "fullTests": {
+      "exitCode": 0,
+      "nodePassed": 378,
+      "pythonPassed": 114,
+      "totalPassed": 492
+    },
+    "assertions": [
+      "verified native retirement",
+      "incomplete report pauses promptly",
+      "unapplied report and original locked scope retained",
+      "zero reviewer sends",
+      "zero retries",
+      "exclusive attempt cannot relaunch"
+    ],
+    "sourceBindingAudit": "workroom-automation.mjs was already included; no new source-binding change needed.",
+    "newProviderTasks": 0
   }
 }
