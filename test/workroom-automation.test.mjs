@@ -308,3 +308,17 @@ test('Nims cannot replace a saved native thread identity while resuming',async()
  const {client,sent}=reviewProtocol({...verifiedReviewPolicy(),thread:{id:'other-thread'}});let rebound=false;
  try{await assert.rejects(client.run({threadId:'review-thread',text:'Review',onBinding:()=>{rebound=true;}}),/different native thread identity/);assert.equal(rebound,false);assert.equal(sent.some(m=>m.method==='turn/start'),false);}finally{await client.close();}
 });
+
+
+test('retired native incomplete reports pause immediately without importing or reviewing; streaming reports keep waiting',async()=>{
+ for(const native of [true,false])for(const checklist of [[],[{id:'one',status:'pending'}],[{id:'one',status:'working'}]]){
+  const a={taskId:'fixture',state:'active',revision:1,planRevision:1,operations:1,phase:'worker',workerSendId:'work',reviewerSendId:'review'};
+  const send={id:'work',state:'accepted',agentId:'echo',conversationId:'e',at:new Date().toISOString(),...(native?{nativeLocal:{writerQuiescence:true,nativeOutcome:'completed'}}:{})};
+  const task={id:'fixture',status:'open',plan:{state:'locked',revision:1,workerId:'echo',reviewerId:'nims'},progress:{decision:'pending'},messages:[send],agentUpdates:[{sendId:'work',applied:false,update:{checklist,result:'Unfinished result',evidence:'Read-back mismatch'}}]};
+  let imports=0,sends=0;const original=structuredClone(task);
+  const workroom={get:()=>task,captureReplies:()=>{},applyAgentUpdate:()=>{imports++;},automation:{read:()=>a,active:()=>a.state==='active'?[{...a}]:[],transition:(id,revision,change)=>{assert.equal(id,'fixture');assert.equal(revision,a.revision);Object.assign(a,change);a.revision++;}}};
+  const relay={nativeRead:async()=>({messages:[]}),taskMessage:async()=>{sends++;}};
+  const runner=createTeamRunner({workroom,relay,root:process.cwd(),intervalMs:600000});
+  try{await runner.tick();assert.equal(a.state,native?'paused':'active');if(native)assert.match(a.reason,/finished with an incomplete report/);await runner.tick();assert.equal(imports,0);assert.equal(sends,0);assert.deepEqual(task,original);}finally{await runner.close();}
+ }
+});

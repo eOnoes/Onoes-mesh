@@ -69,10 +69,46 @@
     "path": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-685016c7-70ff-4b86-a86d-49f906500907\\pilot.json",
     "review": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-685016c7-70ff-4b86-a86d-49f906500907\\REVIEW.txt",
     "scopeHash": "b94bbf7fc7fb38d3a4065ba20d43cd69d356847ed7f0353fe3a22dfe90aec233",
-    "qualification": "PREPARED_NOT_RUN",
+    "qualification": "ATTEMPTED_HELD",
     "taskId": "c805a857-6029-482f-93a1-639a2c71bc15",
     "meshSourceFiles": 11,
     "nativeSourceFiles": 9,
     "approvalRequired": "One new builder attempt plus one independent read-only Nims review, no retries. Previous trial approval consumed."
+  },
+  "followupExecution": {
+    "qualification": "HELD",
+    "ownerApproval": "call_c8742d20c2ea4ce89f76a305ed6a4747: Approve this one team trial",
+    "builderAttemptsUsed": 1,
+    "reviewerAttemptsUsed": 0,
+    "workerSendId": "98723f01-fc4f-4818-92a4-8248c6dc7278",
+    "plannedReviewSendId": "bfbc8574-10ee-45b0-82c3-a499a9f61590",
+    "sessionId": "local-5b0c102a48b4dd88e2ae59cce8cb644c64506e13f3fdcc6845ab25d92561b48d",
+    "submissionId": "mesh-local-submit-9f084e14f666957e0167acf1b3b8e92e20d396ec5c587dca63cc0f48e868465c",
+    "admissionId": "e997e978708f406e920295546e02b551",
+    "nativeOutcome": "completed",
+    "writerQuiescence": true,
+    "retirementHash": "9393687871e3b5738c28c452d79c6e465ae136b9aad5b7aa8a7381a52dd459fc",
+    "actualBytes": 6159,
+    "actualSha256": "eeb4801e516a7edd9e6088023c01a3e5cad1d37c61ea8feb9fbbbb6cd710c912",
+    "reportChecklistId": "guide",
+    "reportChecklistStatus": "pending",
+    "reportAcknowledgesLengthMismatch": true,
+    "reason": "Terminal worker report remains incomplete; runner waits for progress and reaches 480-second trial deadline. No reviewer, retry or repair.",
+    "savedAutomationState": "active",
+    "runnerProcess": "terminal exit1; isolated app closed",
+    "nextCorrection": "Pause incomplete final native reports immediately after exact verified retirement; preserve report and task scope."
+  },
+  "terminalIncompleteCorrection": {
+    "behavior": "Immediately pause incomplete reports only after exact completed native retirement; preserve raw report and task. Streaming reports retain bounded wait.",
+    "focusedPassed": 22,
+    "fullTests": {
+      "command": "npm test",
+      "exitCode": 0,
+      "nodePassed": 377,
+      "pythonPassed": 114,
+      "totalPassed": 491
+    },
+    "providerRerun": false,
+    "deployment": "DEPLOYED named Mesh PID7176 healthy; admission401/201/200,14savedcards,logoutPASS"
   }
 }
