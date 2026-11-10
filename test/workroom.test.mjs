@@ -34,6 +34,30 @@ test('structured reports reject wrong identity, prose, approval fields, duplicat
     fencedReport({...valid,checklist:[{id:'one',text:'Do work',status:'approved'}]})])assert.equal(parseAgentUpdate(reply,ids),null);
 });
 
+test('bare native JSON requires explicit opt-in and the same strict report contract',()=>{
+ const ids={taskId:randomUUID(),sendId:randomUUID()},valid=agentReport(ids.taskId,ids.sendId);
+ assert.equal(parseAgentUpdate(JSON.stringify(valid),ids),null);
+ const native={...ids,allowUnfenced:true};
+ assert.deepEqual(parseAgentUpdate(JSON.stringify(valid),native),parseAgentUpdate(fencedReport(valid),ids));
+ for(const value of [{...valid,taskId:'other'},{...valid,sendId:'other'},{...valid,decision:'approved'},
+  {...valid,checklist:[valid.checklist[0],valid.checklist[0]]}])assert.equal(parseAgentUpdate(JSON.stringify(value),native),null);
+ for(const value of ['Finished: '+JSON.stringify(valid),JSON.stringify(valid)+' trailing prose',
+  JSON.stringify(valid)+'\n'+JSON.stringify(valid),fencedReport(valid)+'\n'+fencedReport(valid)])
+  assert.equal(parseAgentUpdate(value,native),null);
+});
+
+test('ordinary Relay JSON cannot opt itself into native report recognition',()=>{
+ const store=openTaskStore(database());try{
+  const task=store.create({title:'Ordinary Relay is not native'}),body=message();
+  const send=store.workroom.reserve(task.id,body);store.workroom.settle(body.id,'accepted');
+  store.workroom.captureReplies(task.id,body.id,[{id:body.id,k:'you',t:send.payload},
+   {id:'native-looking-reply',k:'ag',t:JSON.stringify(agentReport(task.id,body.id))}]);
+  const current=store.workroom.get(task.id);
+  assert.equal(current.replies.length,1);assert.equal(current.agentUpdates.length,0);
+  assert.equal(current.progress.decision,'pending');
+ }finally{store.close();}
+});
+
 test('agent reports apply once, stay pending review and keep provenance across restart',()=>{
   const filename=database();let store=openTaskStore(filename);const task=store.create({title:'Agent report acceptance'});store.workroom.save(task.id,metadata());
   const {selection}=offerFixture(store,task);const first=store.workroom.applyAgentUpdate(task.id,selection);

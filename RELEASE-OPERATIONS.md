@@ -1,6 +1,27 @@
 # Mesh private release candidate
 
-## Verified current readiness - 2026-11-10
+## Current native-report handoff milestone - 2026-11-10
+
+Native worker reports returned as whole JSON are now recognized only for the exact
+saved native result message. Ordinary Relay messages still require the explicit
+fenced format. Task/send/schema, saved goal/checklist and independent review guards
+remain enforced. Retired native results without a usable report pause promptly.
+
+All503 local checks passed (389 Node +114 Python;229 Workroom), plus npm run check
+and diff checks. Disposable actual HTTP cases verify raw/fenced native completion
+through one synthetic review and restart persistence; incomplete/malformed reports
+stop with no review/retry/Done. These are local integration checks, not a passing
+real native builder-to-Nims team trial. The original live trial remains HELD.
+
+Mesh-only restart verified: API build a17048843222, source SHA256
+a1704884322221d525aafd95334279f3c346e857c4cf1c36cbd67593de565594,
+started2026-11-10T23:38:11.069Z;14 saved cards. Rook/production native workers/live
+Mind remain off. Shared gateway/model service untouched. Current checkpoint and
+parent progress revision61 record evidence and remaining requirements. First local
+release remains12/21; full app goal remains active. No provider calls or retries
+were made to implement this correction.
+
+## Earlier readiness snapshot - before native-report handoff correction
 
 This is a private release candidate, not an owner-accepted production release.
 The application code milestone is `601c463`. The running API reports version
