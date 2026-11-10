@@ -81,5 +81,41 @@
     "originalProfileChecksRetained": true
   },
   "servicesRestarted": false,
-  "newProviderTasks": 0
+  "newProviderTasks": 0,
+  "maintenanceApproval": {
+    "owner": "Eddie",
+    "decision": "Approve maintenance when idle",
+    "scope": "Prepared three-file update and brief shared Hermes gateway restart only; no model-service restart or new builder trial",
+    "currentStatus": "WAITING_FOR_IDLE"
+  },
+  "activityObservation": {
+    "observedAt": "2026-11-10T20:49:09.825365+00:00",
+    "sameOwner": true,
+    "ownerPid": 6080,
+    "activeAgents": 1,
+    "workItems": 1,
+    "items": [
+      {
+        "fieldNames": [
+          "current_tool",
+          "elapsed_s",
+          "idle_s",
+          "kind",
+          "model",
+          "pid",
+          "session"
+        ],
+        "kind": "chat",
+        "status": "not-exported"
+      }
+    ],
+    "restartPerformed": false
+  },
+  "coordination": {
+    "marker": "MESH_IDLE_COORD_20261110",
+    "freshReplyObserved": true,
+    "sourceClaim": "Echo identifies active-work as the live owner control verb, notes incomplete child-process coverage and fail-open counter paths. pause-for-update can force shutdown after a timeout; not an idle-only gate. No drain or restart requested.",
+    "independentlyVerified": "Same-owner active-work response currently reports one active chat item. Saved status and health are insufficient idle proof.",
+    "screenshot": "echo-idle-coordination-20261110.png"
+  }
 }

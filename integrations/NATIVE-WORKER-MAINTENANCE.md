@@ -80,3 +80,22 @@ Only after owner health and read-only readiness pass should a new disposable
 one-build/one-review trial be proposed for separate approval. Verify actual process
 retirement, exact artifact, independent review and saved card state before any
 production worker enrollment or Rook activation.
+
+
+### Current approved maintenance observation (2026-11-10)
+
+Eddie approved the prepared three-file maintenance **when idle**. That approval
+remains valid; it does not authorize interrupting active work. Nothing is installed.
+The fresh same-owner `active-work` control response reports one active chat item.
+Wait for that work to finish; do not force it or start a second gateway.
+
+`query_gateway_control(home, "status")` answers live but reads saved status data.
+Its fresh answer timestamp does not make its activity counter a live aggregate.
+The `/health` response exposes only status/platform/version. Neither proves idle.
+Use the supported `active-work` verb and bind its PID to the same `identify` owner;
+unavailable/malformed replies remain unknown. Echo also reports incomplete child
+process coverage and counter-error gaps, so a zero response alone is not a complete
+all-writers-ended proof. Before any maintenance, resolve those remaining checks
+and confirm the restart method will not force timed-out work. The standard
+`pause-for-update` request is not an indefinite wait-or-refuse guarantee. No drain,
+shutdown or restart was requested during this observation.
