@@ -62,6 +62,17 @@
     "reportImport": "Reject changed locked goal/checklist ID/text/count/order before canonical progress mutation; retain raw report.",
     "pilotSourceBinding": "Also pin workroom.mjs and workroom-updates.mjs.",
     "liveTrialRerun": false,
-    "liveAppDeployment": "NOT DEPLOYED: existing PowerShell launcher invocation was refused by execution policy; no restart attempted by alternate route."
+    "liveAppDeployment": "DEPLOYED: normal named launcher succeeded with required host permissions, without execution-policy change. Verified owner PID20732 healthy, admission401/201/200, all14cards, logout. Main teams closed/needs_review and all5Nims runs completed before restart.",
+    "deploymentEvidence": "data/report-guard-deployment-20261110.json"
+  },
+  "followupPreparation": {
+    "path": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-685016c7-70ff-4b86-a86d-49f906500907\\pilot.json",
+    "review": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-685016c7-70ff-4b86-a86d-49f906500907\\REVIEW.txt",
+    "scopeHash": "b94bbf7fc7fb38d3a4065ba20d43cd69d356847ed7f0353fe3a22dfe90aec233",
+    "qualification": "PREPARED_NOT_RUN",
+    "taskId": "c805a857-6029-482f-93a1-639a2c71bc15",
+    "meshSourceFiles": 11,
+    "nativeSourceFiles": 9,
+    "approvalRequired": "One new builder attempt plus one independent read-only Nims review, no retries. Previous trial approval consumed."
   }
 }
