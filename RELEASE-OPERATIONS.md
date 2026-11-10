@@ -9,13 +9,21 @@ Evidence: `integrations/live-source-custody-qualification.json`.
 - Local/phone: Eddie confirmed card creation, editing, movement, saved review/Done,
   both themes, background/resume, rotation with an unsaved draft and network recovery.
   The full end-to-end production worker workflow still requires acceptance.
-- Latest full local gate: `npm test` passed 455 checks (358 Node + 97 Python),
-  with static/design checks; all 201 Workroom tests passed. The server now accepts
+- Latest full local gate: `npm test` passed 465 checks (364 Node + 101 Python),
+  with static/design checks; all 207 Workroom tests passed. The server now accepts
   an explicit native worker connection and uses it for dispatch, observation and
   verified retirement. An actual admitted HTTP test proved a mismatched profile
   holds without a prompt or Relay fallback. This used a synthetic transport;
   the normal launcher still supplies no binding and enrollment remains off. See
   `integrations/native-server-binding-qualification.json` and the project checkpoint.
+- Native gateway transport: hidden, lazy local helper implemented using existing
+  discovery/private-control ticket helpers; remote targets are refused before
+  authentication. A real read-only check looked up the existing unsubmitted probe
+  twice in 539 ms, using one helper that exited cleanly. Admissions stayed zero;
+  no session creation or prompt submission. Synthetic process/WebSocket tests
+  cover uncertain disconnect, no automatic reconnect/resend and sanitized errors.
+  The trusted bootstrap helper is available, but the normal launcher remains off.
+  See `integrations/native-gateway-transport-qualification.json`.
 - Main-PC health: live read-only CPU/RAM/GPU and fixed supervisor observations
   verified, including shared concurrent refreshes and honest unloaded/unknown states.
   Responsive UI and selected-workspace reload verified. Model lifecycle controls,

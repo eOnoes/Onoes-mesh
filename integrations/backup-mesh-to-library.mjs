@@ -24,6 +24,7 @@ for(const item of readdirSync(join(root,'test'),{withFileTypes:true}))if(item.is
 for(const name of ['integrations/relay_writer_observation.py','integrations/prepare_relay_writer_observation.py','integrations/relay-writer-observation.patch'])entries.push(name);
 for(const name of ['integrations/qualify_hermes_runtime.py','integrations/hermes-runtime-qualification.json'])entries.push(name);
 entries.push('integrations/verify-native-installed-profile.py');
+for(const name of ['integrations/native_gateway_transport.py','integrations/native-gateway-transport-qualification.json','integrations/native-server-binding-qualification.json'])entries.push(name);
 for(const name of ['integrations/native-codex_headers-startup.patch','integrations/native-version_info-startup.patch','integrations/native-header-startup-qualification.json','integrations/native-startup-batch-qualification.json','integrations/verify_native_request_headers.py'])entries.push(name);
 entries.sort();
 // Keep the operational contracts with the UI/code they describe.

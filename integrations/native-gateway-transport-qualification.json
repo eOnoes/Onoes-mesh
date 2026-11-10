@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-10T19:17:52.385483+00:00",
+  "qualification": "PASS",
+  "scope": "Lazy private native transport; synthetic write-shaped protocol tests plus actual read-only existing native probe",
+  "sourceBaseCommit": "b21a955",
+  "sourceHashes": {
+    "lib/native-gateway-transport.mjs": "70775caf509dff1bb6a0453144de9154a2d4bde85350898ef50bb31703fd2867",
+    "integrations/native_gateway_transport.py": "8e48dd250696a4264e0a2da7c50b819745469f14582870a55d101734669408df",
+    "test/native-gateway-transport.test.mjs": "93454224bc8c80130b7a60ece282085d00740a84107138c4aeeb995dc3ede310",
+    "test/native_gateway_transport_test.py": "2a10f7dd0b869cb446a820cbad1bc3c1749f8a112552789a18e94f6ac2271b7d",
+    "package.json": "03e68ce7e834ddfa7d59b9f99a5a2df3dbd7c7db59c1da9ae233e67bb3716794",
+    "integrations/backup-mesh-to-library.mjs": "21d0f31243fb4dbc68f662787a9cd5e57cfc296ce34819eedecc2d2bc2a49de1"
+  },
+  "checks": {
+    "command": "npm test",
+    "exitCode": 0,
+    "nodePassed": 364,
+    "pythonPassed": 101,
+    "totalPassed": 465,
+    "workroomPassed": 207,
+    "staticDesignGate": "PASS",
+    "syntheticTransportChecks": 10,
+    "realProcessWebSocketFixture": "PASS",
+    "remoteDiscoveryRefusedBeforeTicket": "PASS",
+    "noAutomaticReconnectOrReplay": "PASS",
+    "ownedHelperExit": "PASS"
+  },
+  "liveRead": {
+    "observedAt": "2026-11-10T19:14:16.804Z",
+    "qualification": "PASS",
+    "scope": "Two read-only lookups of the existing unsubmitted fixed probe",
+    "sessionId": "local-6f1ebbba1031d275569e5eb116415678955ac534f21019dfa99c9afb6eec8eba",
+    "lookups": 2,
+    "helperStarts": 1,
+    "helperExits": 1,
+    "elapsedMs": 539,
+    "profile": {
+      "model": "gpt-6-luna",
+      "provider": "openai-codex",
+      "closed": true,
+      "maxTurns": 50,
+      "tools": [
+        "file",
+        "terminal"
+      ],
+      "apiKeyConfigured": false
+    },
+    "sessionCreates": 0,
+    "promptSubmissions": 0,
+    "productionEnrollment": false,
+    "credentialsExported": false,
+    "beforeAdmissionCount": 0,
+    "afterAdmissionCount": 0
+  },
+  "construction": {
+    "lazy": true,
+    "startsGateway": false,
+    "hiddenChild": true,
+    "shell": false,
+    "ambientProviderSecretsForwarded": false,
+    "normalInterpreterPackagesPreserved": true,
+    "methods": [
+      "session.create",
+      "prompt.submit",
+      "prompt.lookup"
+    ],
+    "pendingLimit": 32,
+    "frameLimitBytes": 1048576,
+    "defaultTimeoutMs": 30000
+  },
+  "deployment": {
+    "normalLauncherEnabled": false,
+    "productionEnrollment": false,
+    "servicesRestarted": false,
+    "RookActivated": false,
+    "MindActivated": false,
+    "newProviderTasks": 0
+  },
+  "failureHistory": [
+    "The initial PYTHONNOUSERSITE isolation hid the selected interpreter installed aiohttp package. Independent import check: disabled user-site exit1, normal package access exit0. Removed that setting; ambient provider secrets and PYTHONPATH remain excluded. Synthetic round-trip and real installed native read then passed."
+  ],
+  "remaining": [
+    "Prepare a concrete one-builder/one-independent-reviewer guide-copy pilot using trusted nativeGatewayWorkerOptions injection; no production activation inferred from read-only success.",
+    "Qualify the whole Workroom build/retirement/Nims-review path with separately approved real-provider scope. Prior three diagnostic tasks remain consumed.",
+    "Review actual identity/profile/workspace enrollment before enabling the normal launcher or Rook."
+  ]
+}
