@@ -4,7 +4,23 @@ import http from 'node:http';
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload} from '../integrations/guide-team-pilot.mjs';
+import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline} from '../integrations/guide-team-pilot.mjs';
+
+const baselineFixture=()=>{
+ const header={'gateway/session_controls.py':'old-controls','tui_gateway/contracts/canonical.py':'old-contract','unchanged.py':'unchanged'};
+ const capability={baselineHashes:{'gateway/session_controls.py':'old-controls','tui_gateway/contracts/canonical.py':'old-contract'},candidateHashes:{'gateway/session_controls.py':'new-controls','tui_gateway/contracts/canonical.py':'new-contract'}};
+ return {header,capability,deployment:{installed:true,processScopeSupported:true,installedSourceFiles:{...header,...capability.candidateHashes}}};
+};
+test('new pilot uses only the reviewed deployed patch and retains unchanged native hashes',()=>{
+ const f=baselineFixture(),original=structuredClone(f.header);
+ assert.deepEqual(reviewedNativeBaseline(f.header,f.capability,f.deployment),f.deployment.installedSourceFiles);
+ assert.deepEqual(f.header,original);
+});
+test('uninstalled, unverified, stale or broadened native baselines cannot prepare a live trial',()=>{
+ for(const change of [f=>f.deployment.installed=false,f=>f.deployment.processScopeSupported='true',f=>f.deployment.installedSourceFiles=f.header,f=>f.capability.baselineHashes['gateway/session_controls.py']='other',f=>f.capability.candidateHashes['unreviewed.py']='new']){
+  const f=baselineFixture();change(f);assert.throws(()=>reviewedNativeBaseline(f.header,f.capability,f.deployment));
+ }
+});
 
 test('preparation submits nothing; missing approval cannot create an attempt or connection',async()=>{
   const ready=prepareGuideTeamPilot({fixture:true}),p=validateGuideTeamPilot(ready.path);

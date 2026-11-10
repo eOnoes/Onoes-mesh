@@ -1,6 +1,6 @@
 {
   "schema": "mesh-native-worker-maintenance-readiness/v1",
-  "status": "PREPARED_NOT_INSTALLED",
+  "status": "DEPLOYED_READ_ONLY_VERIFIED",
   "prepared": {
     "schema": "mesh-native-worker-maintenance/v1",
     "preparedAt": "2026-11-10T20:27:40.356567+00:00",
@@ -86,7 +86,7 @@
     "owner": "Eddie",
     "decision": "Approve maintenance when idle",
     "scope": "Prepared three-file update and brief shared Hermes gateway restart only; no model-service restart or new builder trial",
-    "currentStatus": "WAITING_FOR_IDLE"
+    "currentStatus": "COMPLETED_WHEN_IDLE"
   },
   "activityObservation": {
     "observedAt": "2026-11-10T20:49:09.825365+00:00",
@@ -117,5 +117,86 @@
     "sourceClaim": "Echo identifies active-work as the live owner control verb, notes incomplete child-process coverage and fail-open counter paths. pause-for-update can force shutdown after a timeout; not an idle-only gate. No drain or restart requested.",
     "independentlyVerified": "Same-owner active-work response currently reports one active chat item. Saved status and health are insufficient idle proof.",
     "screenshot": "echo-idle-coordination-20261110.png"
+  },
+  "deployment": {
+    "installed": true,
+    "processScopeSupported": true,
+    "installedSourceFiles": {
+      "gateway/session_controls.py": "aa4acaf3488f803743a30c7aa15fa851f3cb37911af4063b377a43546a3a9008",
+      "tui_gateway/contracts/canonical.py": "c1f50320ca9ca6bed97ef5cba3ede1a172b76ebe31e9f6c48e3e0a06e5ffb2ff",
+      "gateway/session_managed_worker.py": "47a2df49a34f45de16db3309588e920b5cd5b1a5c3d315b0de4b91ef75b25712",
+      "gateway/mesh_assignment_process.py": "16a62f3e2cfa99d15bcab33358bfac59212c1fa4502b9614fac7fe65f64bfe76",
+      "gateway/mesh_windows_process.py": "7b1240ae253affa3fad557b7577f2945b0281c605b267b413165c1c885677a33",
+      "tools/file_tools_read_tracking.py": "c2ca50e625178fb663faa46677713ba915946294dc19fbef849ea40342977e4d",
+      "hermes_cli/version_info.py": "58cb1d906f923496d063c81b80634f1bb6cf8bd7b0b65a7a51fa2e35e0334085",
+      "agent/codex_headers.py": "4558a890e3980dee3a3e2a21716537724f32148dbf021dffeb2faf23e2346a5d",
+      "tools/file_tools.py": "1bc8b91716d6fac41861f706f4024381484d6fbdfb64fa3381688ab1cf5aa85e"
+    },
+    "gatewayOwner": {
+      "at": "2026-11-10T21:24:16.972970+00:00",
+      "responded": true,
+      "pid": 47220,
+      "instance": "7e25cbc75c434c0ca73bc88b9be400a5",
+      "state": "ready",
+      "gatewayState": "running"
+    },
+    "changes": {
+      "installed": true,
+      "files": [
+        "gateway/session_controls.py",
+        "tui_gateway/contracts/canonical.py",
+        "gateway-service/Hermes_Gateway.vbs"
+      ],
+      "hashes": {
+        "gateway/session_controls.py": "aa4acaf3488f803743a30c7aa15fa851f3cb37911af4063b377a43546a3a9008",
+        "tui_gateway/contracts/canonical.py": "c1f50320ca9ca6bed97ef5cba3ede1a172b76ebe31e9f6c48e3e0a06e5ffb2ff",
+        "gateway-service/Hermes_Gateway.vbs": "f819c63dd14ba8fb1558819f3cc97ca21f660e2b1647d254b2540b5dfa7abe91"
+      },
+      "originalOwnerExitConfirmed": true,
+      "newProviderTasks": 0,
+      "modelServiceRestarted": false
+    },
+    "readOnlyProbe": {
+      "schema": "mesh-installed-native-profile/v1",
+      "observedAt": "2026-11-10T21:24:27.345713+00:00",
+      "qualification": "PASS",
+      "sessionId": "local-6f1ebbba1031d275569e5eb116415678955ac534f21019dfa99c9afb6eec8eba",
+      "profile": {
+        "model": "gpt-6-luna",
+        "provider": "openai-codex",
+        "base_url": null,
+        "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-live-policy-965f634e97df4409a87b90f4ed72d959",
+        "toolsets": [
+          "file",
+          "terminal"
+        ],
+        "safe_mode": true,
+        "ignore_user_config": true,
+        "follow_profile": false,
+        "source": "tool",
+        "max_turns": 50,
+        "terminal_backend": "local",
+        "closed": true,
+        "api_key_configured": false
+      },
+      "admissionCount": 0,
+      "promptsSubmitted": 0,
+      "workerReadiness": {
+        "processScopeSupported": true,
+        "status": "CAPABILITY_CONFIRMED",
+        "workerRetirementVerified": false,
+        "productionEnrollment": false
+      },
+      "productionEnrollment": false,
+      "credentialsExported": false
+    },
+    "newBuilderTasks": 0,
+    "newReviewTasks": 0,
+    "oldHeldTrialReleased": false,
+    "normalMeshBindingEnabled": false,
+    "RookEnabled": false,
+    "MindEnabled": false,
+    "initialReadinessTimeout": "New process was confirmed live/starting; monitored same owner without relaunch until ready",
+    "busyDrain": "Rejected before execution; unused offline prototype archived, no live drain marker created; actual zero-work window used under original approval"
   }
 }

@@ -1,0 +1,34 @@
+{
+  "schema": "mesh-guide-post-maintenance-preparation/v1",
+  "qualification": "PREPARED_NOT_RUN",
+  "prepared": {
+    "path": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-03369aa8-d418-4058-9d2d-99faa9df87b1\\pilot.json",
+    "review": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-03369aa8-d418-4058-9d2d-99faa9df87b1\\REVIEW.txt",
+    "scopeHash": "130ac317259e6dfc7fd37bc6396ab74bdd71c3a06c353f1a3ed91518dcddd878"
+  },
+  "taskId": "60693867-827d-46c8-80f9-aa3581add3c8",
+  "nativeFileCount": 9,
+  "originalBytes": 5972,
+  "expectedSha256": "50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f",
+  "limits": {
+    "builderAttempts": 1,
+    "builderMaxTurns": 50,
+    "builderTools": [
+      "file"
+    ],
+    "reviewerAttempts": 1,
+    "reviewer": "nims",
+    "reviewerMode": "read-only",
+    "automaticRetries": false,
+    "automaticDone": false
+  },
+  "tests": {
+    "command": "npm test",
+    "exitCode": 0,
+    "nodePassed": 374,
+    "pythonPassed": 114,
+    "totalPassed": 488
+  },
+  "newProviderTasks": 0,
+  "approvalRequired": "One new Echo-role file-only build plus one Nims read-only review; no retries. Original failed trial remains held."
+}

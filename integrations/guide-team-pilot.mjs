@@ -25,12 +25,26 @@ function owned(path) {
   let next=ROOT;
   for(const part of relative.split(/[\\/]/)){next=join(next,part);assert.equal(lstatSync(next).isSymbolicLink(),false,'Pilot paths cannot contain links');}
 }
+export function reviewedNativeBaseline(header,capability,deployment) {
+  const changed=['gateway/session_controls.py','tui_gateway/contracts/canonical.py'];
+  assert.deepEqual(Object.keys(capability.candidateHashes).sort(),changed.slice().sort(),'Unreviewed native patch files');
+  for(const path of changed)assert.equal(capability.baselineHashes[path],header[path],'Native patch baseline differs');
+  const expected={...header,...capability.candidateHashes};
+  assert.equal(deployment?.installed,true,'Native capability update is not installed');
+  assert.equal(deployment?.processScopeSupported,true,'Native process capability is not verified');
+  assert.deepEqual(deployment.installedSourceFiles,expected,'Installed native source record differs');
+  return expected;
+}
 function nativeHashes() {
-  const expected=JSON.parse(readFileSync(join(ROOT,'integrations/native-header-fixture-qualification.json'),'utf8')).candidateFiles;
+  const header=JSON.parse(readFileSync(join(ROOT,'integrations/native-header-fixture-qualification.json'),'utf8')).candidateFiles;
+  const capability=JSON.parse(readFileSync(join(ROOT,'integrations/native-process-capability-qualification.json'),'utf8'));
+  const maintenance=JSON.parse(readFileSync(join(ROOT,'integrations/native-worker-maintenance-qualification.json'),'utf8'));
+  const expected=reviewedNativeBaseline(header,capability,maintenance.deployment);
   for(const [path,digest] of Object.entries(expected))assert.equal(hashFile(join(runtime.nativeRoot,path)),digest,'Installed native bridge changed: '+path);
   return expected;
 }
 export function prepareGuideTeamPilot({fixture=false}={}) {
+  const installedHashes=fixture?{}:nativeHashes();
   const id=randomUUID(),dataDir='data/guide-team-state-'+id,workspace=join(ROOT,'data','guide-team-work-'+id);
   mkdirSync(workspace);mkdirSync(join(ROOT,dataDir));owned(workspace);owned(join(ROOT,dataDir));
   const original=readFileSync(join(ROOT,'MESH-QUICK-START.md'));
@@ -50,7 +64,7 @@ export function prepareGuideTeamPilot({fixture=false}={}) {
   } finally {store.close();}
   const intent={schema:'mesh-guide-team-pilot/v1',id,preparedAt:new Date().toISOString(),fixture,dataDir,workspace,taskId:task.id,
     beforeSha256,expectedSha256,originalBytes:original.length,suffix,preparedTaskSha256:fingerprint(task),
-    sourceHashes:Object.fromEntries(codeFiles.map(file=>[file,hashFile(join(ROOT,file))])),nativeImplementationHashes:fixture?{}:nativeHashes(),
+    sourceHashes:Object.fromEntries(codeFiles.map(file=>[file,hashFile(join(ROOT,file))])),nativeImplementationHashes:installedHashes,
     profile:{profileRef:'guide-pilot-'+id,identityRef:'guide-pilot-'+id,provider:'openai-codex',model:'gpt-6-luna',workspace},
     limits:{builderAttempts:1,builderMaxTurns:50,builderTools:['file'],reviewerAttempts:1,reviewer:'nims',reviewerMode:'read-only',automaticRetries:false,automaticDone:false}};
   intent.scopeHash=sha(JSON.stringify(intent));

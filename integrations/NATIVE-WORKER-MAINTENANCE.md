@@ -1,7 +1,8 @@
 # Mesh native worker maintenance
 
-Status: prepared only. No installation, gateway restart, new agent task, Rook
-activation or Mind access is authorized by this document.
+Status: installed under Eddie's explicit idle-only maintenance approval. The new
+gateway is ready and the never-submitted read-only probe confirms process tracking.
+No new agent trial, production worker enrollment, Rook or Mind activation occurred.
 
 ## Supported owner arrangement
 
@@ -82,7 +83,7 @@ retirement, exact artifact, independent review and saved card state before any
 production worker enrollment or Rook activation.
 
 
-### Current approved maintenance observation (2026-11-10)
+### Pre-maintenance observation (historical, 2026-11-10)
 
 Eddie approved the prepared three-file maintenance **when idle**. That approval
 remains valid; it does not authorize interrupting active work. Nothing is installed.
@@ -99,3 +100,32 @@ all-writers-ended proof. Before any maintenance, resolve those remaining checks
 and confirm the restart method will not force timed-out work. The standard
 `pause-for-update` request is not an indefinite wait-or-refuse guarantee. No drain,
 shutdown or restart was requested during this observation.
+
+
+### Completed maintenance and next qualification
+
+A later genuine idle window was confirmed by repeated same-owner active-work reads:
+zero agents and zero work items immediately before the native pause request. The
+original process exited after accepting pause-for-update; no operator force-kill
+was issued. Exactly the three reviewed candidates were installed, then the existing
+hidden Hermes_Gateway launcher was started once. The new owner PID47220, instance
+7e25cbc75c434c0ca73bc88b9be400a5, initially reported starting and later ready. The
+readiness timeout did not cause another launch or replacement process.
+
+The existing never-submitted probe returned process_scope_supported=true, the
+exact closed Codex contract and zero admissions. All nine native implementation
+hashes match the original reviewed bridge plus the two approved capability changes.
+The separate model supervisor answers health (idle, loaded=false, servable=true);
+no model service restart/load/unload was requested, and pre-maintenance residency
+was not recorded. Normal Mesh production binding remains off.
+
+The earlier busy-gateway external-drain command was rejected before execution. It
+never created a live marker. Its unused offline prototype and five simulated tests
+are archived under data/native-drain-offline-candidate-20261110, outside normal app
+operation. The authorized idle-only maintenance was used instead.
+
+A new guide-copy trial is prepared with the deployed nine-file baseline and stricter
+exact-append instructions. Preparation sent no model request. It needs separate
+approval for one new builder and one independent reviewer, with no retries. The
+previous failed trial remains held; this maintenance does not prove its writer
+retirement or approve any card.
