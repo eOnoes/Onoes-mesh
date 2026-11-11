@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
 import {sampleCpuTimes,cpuLoadPercent} from '../lib/host-cpu.mjs';
 
 test('host CPU uses weighted cumulative time across every logical processor',()=>{
@@ -91,5 +93,29 @@ test('shared host readings age, clear on failure and never invoke model controls
 
   } finally {
     Object.assign(globalThis, originals);
+  }
+});
+
+
+test('summary CPU warning follows the displayed sample even when Windows disagrees', async () => {
+  const source=await readFile(new URL('../serve.mjs',import.meta.url),'utf8').then(text=>text.replaceAll('\r\n','\n'));
+  const start=source.indexOf('async function inferenceSummary() {');
+  const end=source.indexOf('\n}\n',start)+2;
+  assert.ok(start>=0&&end>start,'summary function must be present');
+  for(const [displayed,windows,expected] of [[9.9,99,false],[85,0,true],[100,0,true],[84.9,99,false],[null,99,false]]){
+    const requests=[];
+    const context=vm.createContext({
+      process:{version:'test',platform:'test',arch:'test',env:{}},
+      sampleCpuTimes:()=>null,cpuLoadPercent:()=>displayed,
+      run:async(command)=>{requests.push(command);return {stdout:command==='powershell'?JSON.stringify({cpuLoad:windows}):''};},
+      parseGpuMetrics:()=>null,supervisorObservationEnabled:false,
+      strataHealth:async()=>null,ollamaStatus:async()=>({reachable:false}),
+      lmStudioStatus:async()=>({reachable:false}),comfyStatus:async()=>({reachable:false}),
+      readSupervisorModels:async()=>null,
+    });
+    const summary=await vm.runInContext(source.slice(start,end)+'; inferenceSummary()',context);
+    assert.equal(summary.system.cpuLoadPct,displayed);
+    assert.equal(summary.hints.some(hint=>hint.startsWith('CPU is above 85%')),expected,`displayed=${displayed}, Windows=${windows}`);
+    assert.deepEqual(requests,['powershell','nvidia-smi'],'only read-only collectors are used');
   }
 });

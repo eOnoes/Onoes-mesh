@@ -298,7 +298,7 @@ $disks = @(Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -ne $null
   if (!lmstudio.reachable) hints.push('LM Studio is not answering on 1234.');
   if (!comfyui.reachable) hints.push('ComfyUI is not answering on 8188.');
   if (gpu && gpu.vramPct >= 90) hints.push('GPU memory is above 90%. Check available memory before loading another model.');
-  if (psOut && psOut.cpuLoad >= 85) hints.push('CPU is above 85%; other work may compete for processing.');
+  if (system?.cpuLoadPct >= 85) hints.push('CPU is above 85%; other work may compete for processing.');
 
   return {
     schema: 'mesh-inference/live-v2',
