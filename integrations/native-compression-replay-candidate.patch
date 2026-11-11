@@ -9,3 +9,43 @@
              # The _force_user_leading layout keeps the live request on the
              # carrier itself, after the marker. Already actionable.
              return compressed
+--- /dev/null
++++ b/tests/agent/test_mesh_nested_replay.py
+@@ -0,0 +1,37 @@
++"""A nested historical handoff cannot stand in for the current request."""
++from unittest.mock import patch
++
++import pytest
++
++from agent.context_compressor import (
++    COMPRESSED_SUMMARY_HAS_USER_TURN_KEY,
++    COMPRESSED_SUMMARY_METADATA_KEY,
++    ContextCompressor,
++    SUMMARY_PREFIX,
++    _INFLIGHT_TASK_REPLAY_HEADER,
++    _SUMMARY_END_MARKER,
++)
++
++
++@pytest.mark.parametrize('old_replay', [False, True])
++def test_latest_boundary_gets_the_real_current_request(old_replay):
++    with patch('agent.context_compressor.get_model_context_length', return_value=100_000):
++        compressor = ContextCompressor(model='test', quiet_mode=True)
++    old = 'OLD_SYNTHETIC_REQUEST: check a maintenance note.'
++    current = 'CURRENT_SYNTHETIC_REQUEST: check a Rook note.'
++    historical = SUMMARY_PREFIX + '\nEarlier handoff\n' + _SUMMARY_END_MARKER
++    if old_replay:
++        historical += '\n' + _INFLIGHT_TASK_REPLAY_HEADER + '\n' + old
++    carrier = {
++        'role': 'user',
++        'content': historical + '\nQuoted context ends.\n' + SUMMARY_PREFIX
++                   + '\nCurrent handoff\n' + _SUMMARY_END_MARKER,
++        COMPRESSED_SUMMARY_METADATA_KEY: True,
++        COMPRESSED_SUMMARY_HAS_USER_TURN_KEY: True,
++    }
++    request = {'role': 'user', 'content': current}
++    result = compressor._reappend_inflight_user_task([carrier], request)
++    live = result[-1]['content'].rsplit(_SUMMARY_END_MARKER, 1)[1]
++    assert current in live
++    assert old not in live
++    assert compressor._has_merged_inflight_replay(result[-1])

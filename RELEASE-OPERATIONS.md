@@ -40,13 +40,15 @@ regression open alongside full live team acceptance.
 A related nested-marker defect now has an uninstalled one-line candidate:
 `integrations/native-compression-replay-candidate.patch`. The replay guard reads
 after the first end marker while its sibling recognizes the last boundary. A
-frozen-method synthetic diagnostic fails on baseline and passes on the candidate
-(five narrow checks). This is not native integration acceptance and does not
-prove that the earlier live incident is repaired. Installed source/runtime were
-not changed. See `integrations/NATIVE-COMPRESSION-REPLAY-CANDIDATE.md` for source
-pins, evidence paths, limitations and required native behavior tests before any
-installation. The existing 503-check Mesh gate remains historical unchanged-code
-evidence; these five diagnostics are separate.
+frozen-method synthetic diagnostic first reproduced the issue. Normal native
+behavior regression now fails both cases on baseline; the candidate passes355
+tests across11files through native scripts/run_tests.sh, with no retries or
+provider calls. Exact patch application against the pinned baseline passes; its
+line endings are pinned toLF. Installed source/runtime were not changed. This
+is scoped native qualification, not proof that the earlier live incident is
+repaired. See `integrations/NATIVE-COMPRESSION-REPLAY-CANDIDATE.md` for source
+pins, coverage, limitations and remaining deployment/maintenance gates. Mesh's
+historical503-check gate is separate from this355-test native qualification.
 
 ## Earlier readiness snapshot - before native-report handoff correction
 

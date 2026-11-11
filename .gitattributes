@@ -4,3 +4,4 @@ integrations/relay-writer-observation.patch text eol=lf
 integrations/native-version_info-startup.patch text eol=lf
 integrations/native-codex_headers-startup.patch text eol=lf
 integrations/native-process-scope-capability.patch text eol=lf
+integrations/native-compression-replay-candidate.patch text eol=lf
