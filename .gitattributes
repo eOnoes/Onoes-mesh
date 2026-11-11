@@ -5,3 +5,5 @@ integrations/native-version_info-startup.patch text eol=lf
 integrations/native-codex_headers-startup.patch text eol=lf
 integrations/native-process-scope-capability.patch text eol=lf
 integrations/native-compression-replay-candidate.patch text eol=lf
+# Preserve this patch's original CRLF context and intentional context whitespace.
+integrations/relay-notify-clock.patch -text -whitespace

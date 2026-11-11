@@ -1,6 +1,9 @@
 # Historical worker recovery — proposal for review
 
-Status: prepared for review, NOT approved for execution. No live hold release or PC restart is authorized by Eddie's approval of further testing.
+Status: PARKED at Eddie's clarification. A PC restart is not required to continue
+the Mesh build. The briefly scheduled 7:00 a.m. restart automation was deleted;
+no Windows power command was queued or executed. Do not recreate it from older
+instructions. Further testing grants no live hold release or PC restart authority.
 
 ## What testing established
 
@@ -77,7 +80,13 @@ The PC modes do not restart anything. Capture records the Windows boot time, has
 
 Four guard tests passed, including invalid/missing evidence, same/older boot, wrong machine, changed source/board/holds and preserved records. Actual live rehearsal rejected the same Windows boot and capture overwrite, and the original Mesh-only modes passed using separate fixture receipts. The full local code gate passed 514 checks. A real post-PC-reboot success remains NOT RUN. Use a fresh capture only when an actual maintenance window is approved; the rehearsal capture is historical test evidence, not that window's baseline.
 
-Read-only Windows checks found that Workroom recovery, the native gateway and the model supervisor use `Interactive` logon tasks. Automatic Windows login is disabled. A restart must therefore not be treated as an unattended phone-access recovery: someone needs an existing way to sign into this PC afterward. No password was read and no login setting was changed. Eddie has been asked about login availability only; that question grants no restart permission.
+Read-only Windows checks found that Workroom recovery, the native gateway and the
+model supervisor use `Interactive` logon tasks. Automatic Windows login is disabled.
+A restart must not be treated as unattended phone-access recovery: someone needs an
+existing way to sign in afterward. No password was read and no login setting changed.
+Eddie confirmed he can sign in when home, then clarified that a restart should not
+be scheduled just to continue app work. The one-time 7:00 a.m. automation was deleted.
+Login availability is not an outstanding question or permission to restart.
 
 The installed DSH plugin's actual `apply` function was mounted twice with synthetic persistent tasks and real ephemeral `127.0.0.1` HTTP listeners. Both mounts preserved completed and working task readback, rejected incorrect authentication and reported zero active agents. Only fixture listeners were closed. This covers the standalone bridge branch with a minimal service context, not the complete DSH CLI/profile startup or a live restart. A restored `WORKING` task record is historical state, not evidence of a currently running agent.
 
