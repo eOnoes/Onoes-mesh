@@ -517,6 +517,9 @@ function localInferenceControls() {
   const fresh = s?.observedAt && Date.now() - Date.parse(s.observedAt) >= 0 &&
     Date.now() - Date.parse(s.observedAt) < s.freshForMs &&
     probeTick() - localInferenceReceivedAt < s.freshForMs;
+  $('local-inference-state').textContent = s
+    ? `[${s.state}] · this-pc · ${s.source} · observation ${s.observedAt ?? 'UNAVAILABLE'} · ${fresh ? s.freshness : 'EXPIRED · Refresh local status.'}`
+    : 'UNAVAILABLE · Start a local session and refresh local status.';
   const reason = locked ? 'Start a local session; wait for the current request to finish.' :
     (['NATIVE_QUALIFICATION_REQUIRED','NEMOTRON_QUALIFICATION_REQUIRED'].includes(s?.controls?.reason)
       ? 'Local model controls are not qualified yet. PC readings above remain available.'
@@ -546,9 +549,6 @@ export function renderLocalInference(snapshot) {
     ['qwen38-flash-next-q6','nemotron-bolt-local'].includes(snapshot.profile?.id) && snapshot.controls;
   localInferenceSnapshot = valid ? snapshot : undefined;
   localInferenceReceivedAt = probeTick();
-  $('local-inference-state').textContent = valid
-    ? `[${snapshot.state}] · this-pc · ${snapshot.source} · observation ${snapshot.observedAt ?? 'UNAVAILABLE'} · ${snapshot.freshness}`
-    : 'UNAVAILABLE · Start a local session and refresh local status.';
   $('local-inference-profile').textContent = valid && ['RUNNING','OWNED'].includes(snapshot.state) && ['VERIFIED','OWNED'].includes(snapshot.runtime?.status)
     ? `${snapshot.profile.model} · ${snapshot.runtimeId}${snapshot.runtime.status==='OWNED'?' · owned process; health unverified':''}`
     : valid && snapshot.profile.id==='nemotron-bolt-local' && snapshot.source==='none' &&

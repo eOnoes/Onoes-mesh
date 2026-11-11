@@ -119,3 +119,22 @@ test('summary CPU warning follows the displayed sample even when Windows disagre
     assert.deepEqual(requests,['powershell','nvidia-smi'],'only read-only collectors are used');
   }
 });
+
+test('model freshness heading ages with control gating and recovers on a new reading',async()=>{
+  const source=(await readFile(new URL('../public/app.js',import.meta.url),'utf8')).replaceAll('\r\n','\n');
+  const start=source.indexOf('function localInferenceControls() {');
+  const end=source.indexOf('\n}\n',start)+2;
+  assert.ok(start>=0&&end>start);
+  const nodes=new Map();const node=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',replaceChildren(){}});return nodes.get(id);};
+  const now=Date.now();let wall=now,tick=100;
+  const snapshot={state:'STOPPED',source:'qualified_native',observedAt:new Date(now).toISOString(),freshForMs:5000,freshness:'FRESH',profile:{id:'nemotron-bolt-local'},controls:{load:true}};
+  const context=vm.createContext({$:node,localModelObservation:undefined,localInferenceSnapshot:snapshot,localInferenceReceivedAt:100,localInferenceProposal:undefined,busy:false,lifecycleSuspended:false,admitted:true,navigator:{onLine:true},Date:{now:()=>wall,parse:Date.parse},probeTick:()=>tick});
+  vm.runInContext(source.slice(start,end),context);
+  const render=()=>vm.runInContext('localInferenceControls()',context);
+  render();assert.match(node('local-inference-state').textContent,/FRESH$/);assert.equal(node('local-inference-load').disabled,false);
+  wall=now+5000;render();assert.match(node('local-inference-state').textContent,/EXPIRED/);assert.doesNotMatch(node('local-inference-state').textContent,/FRESH/);assert.equal(node('local-inference-load').disabled,true);
+  wall=now;tick=5100;render();assert.match(node('local-inference-state').textContent,/EXPIRED/);assert.equal(node('local-inference-load').disabled,true);
+  tick=100;wall=now-1;render();assert.match(node('local-inference-state').textContent,/EXPIRED/);assert.equal(node('local-inference-load').disabled,true);
+  wall=now;render();assert.match(node('local-inference-state').textContent,/FRESH$/);assert.equal(node('local-inference-load').disabled,false);
+  context.localInferenceSnapshot=undefined;render();assert.match(node('local-inference-state').textContent,/UNAVAILABLE/);assert.equal(node('local-inference-load').disabled,true);
+});
