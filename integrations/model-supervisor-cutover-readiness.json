@@ -1,7 +1,7 @@
 {
   "schema": "mesh-model-supervisor-cutover-readiness/v1",
   "at": "2026-11-11T09:40:45.582213+00:00",
-  "state": "PREPARED_NOT_AUTHORIZED",
+  "state": "INSTALLED_BOUNDED_LIVE_TEST_PASS",
   "task": {
     "name": "DSH Local Model Supervisor",
     "path": "\\",
@@ -48,14 +48,20 @@
     "One cancellation chat with authoritative readback",
     "One exact-owner unload"
   ],
-  "currentlyAuthorized": false,
+  "currentlyAuthorized": true,
   "pcRestartRequired": false,
-  "liveChangesApplied": false,
+  "liveChangesApplied": true,
   "activeControlsEnabled": false,
   "separateRemainingGates": [
     "Exact maintenance approval",
     "Fresh idle/source/identity preflight",
     "Actual lifecycle/GPU/cancellation acceptance",
     "Ordinary Mesh control qualification and enablement"
+  ],
+  "approvalScope": "Only the first prepared maintenance window and one bounded model trial, now completed",
+  "remainingQualification": [
+    "Installed-bridge restart/stale-request recovery, not yet approved or performed",
+    "Full exact-source qualification before ordinary controls",
+    "Physical-phone inference acceptance"
   ]
 }

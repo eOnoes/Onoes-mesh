@@ -1,0 +1,50 @@
+{
+  "schema": "mesh-native-model-maintenance-qualification/v1",
+  "at": "2026-11-11T10:24:37.906254+00:00",
+  "authorization": "Eddie approved the model-service maintenance test; one named restart and bounded model attempts",
+  "state": "INSTALLED_BOUNDED_LIVE_TEST_PASS_NOT_FULLY_QUALIFIED",
+  "source": {
+    "supervisorSha256": "719cb53c01eacc67da3a7f87162f68fb1ebb5038d25c870e5bb3ddb144f84f12",
+    "bridgeSha256": "7b823cd6a07fad21c7471142e999e3122d26c880cfbcd9c0f4acfe8cc6874116",
+    "launcherDependencySha256": "6fd787c304938a8b41a2ba74d58dcdd324ee28765bf1bb2e7105cf25e66db4a0",
+    "executableSha256": "6a4635aeb35656153d4bfeeddf761d24ed84aada9c9108d580737cbed465141b"
+  },
+  "installation": {
+    "namedTask": "DSH Local Model Supervisor",
+    "oldOwnerExitConfirmed": true,
+    "taskDefinitionChanged": false,
+    "taskStartAttempts": 1,
+    "fourNewListenersSameOwner": true,
+    "otherServicesUnchanged": true,
+    "pcRestart": false
+  },
+  "checks": {
+    "load": "COMPLETED, native readBackVerified true",
+    "modelHealthAlias": "PASS",
+    "retainedOwnerAndGpuMapping": "VERIFIED",
+    "shortChat": "MESH_OK",
+    "cancellation": "Observed processing, aborted original caller, confirmed slots idle and bridge active null with same owner",
+    "unload": "COMPLETED, native readBackVerified true, final slot verified empty",
+    "lostResponse": "Unload body deliberately discarded after202; same-ID result recovered, zero resends",
+    "installedBridgeRestartRecovery": "NOT RUN; installation restart preceded first bridge boot"
+  },
+  "attempts": {
+    "load": 1,
+    "shortChat": 1,
+    "cancelChat": 1,
+    "unload": 1,
+    "retries": 0
+  },
+  "final": {
+    "resident": "empty",
+    "allFourEndpoints": "idle",
+    "ordinaryMeshModelControls": "disabled",
+    "fullQualificationRecordWritten": false
+  },
+  "remaining": [
+    "One separately approved empty-service restart and original-binding/stale-request rejection readback",
+    "Only then assess exact-source full qualification and ordinary Mesh control enablement",
+    "Physical-phone inference controls acceptance"
+  ],
+  "boundary": "This is real bounded native acceptance, not a full production release or approval for more model operations, Rook, Mind, worker enrollment or GitHub publication."
+}
