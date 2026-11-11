@@ -1,5 +1,6 @@
 import {parseGpuMetrics} from './lib/gpu-metrics.mjs';
 import {sampleCpuTimes,cpuLoadPercent} from './lib/host-cpu.mjs';
+import {mainboardNativeConnection} from './lib/native-mainboard.mjs';
 import {createSummaryReader} from './lib/summary-cache.mjs';
 import { tailscaleAccess } from './lib/tailscale-access.mjs';
 import {requestAudit,auditReason} from './lib/request-audit.mjs';
@@ -25,7 +26,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { startApp } from './server.mjs';
+import { startApp, ROOT } from './server.mjs';
 import {createSupervisorObservation} from './lib/supervisor-observation.mjs';
 import {supervisorControlView} from './public/control-models.mjs';
 
@@ -385,7 +386,10 @@ const token = gateToken();
 // mid-thought, which disabled the whole UI including the Relay prompt. The cookie's
 // Max-Age is derived from this TTL, so raising one raises both.
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
-const app = await startApp({ dataDir: DATA_DIR, sessionTtlMs: SESSION_TTL_MS });
+const nativeConnection=mainboardNativeConnection({root:ROOT});
+if(nativeConnection.state!=='disabled')console.log(JSON.stringify({event:'native_worker_enrollment',state:nativeConnection.state,reason:nativeConnection.reason}));
+const app = await startApp({ dataDir: DATA_DIR, sessionTtlMs: SESSION_TTL_MS,
+  ...(nativeConnection.options?{nativeWorkerOptions:nativeConnection.options}:{}) });
 const backend = new URL(app.url);
 
 const server = http.createServer(async (req, res) => {
