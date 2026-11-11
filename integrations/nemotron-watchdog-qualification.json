@@ -1,0 +1,43 @@
+{
+  "schema": "mesh-nemotron-watchdog-qualification/v1",
+  "at": "2026-11-11T09:37:25.497655+00:00",
+  "state": "ISOLATED_PASS_NOT_LIVE_QUALIFIED",
+  "candidateSupervisorSha256": "719cb53c01eacc67da3a7f87162f68fb1ebb5038d25c870e5bb3ddb144f84f12",
+  "bridgeSha256": "7b823cd6a07fad21c7471142e999e3122d26c880cfbcd9c0f4acfe8cc6874116",
+  "exercised": [
+    "Actual prepared Supervisor.idle_watchdog loop and Supervisor.unload implementation",
+    "Real Mesh gate and chat transport sharing the supervisor lock",
+    "No idle eviction while a chat holds the lock",
+    "Chat completion renews last_used and prevents a waiting watchdog from premature unload",
+    "No unload just before the renewed idle threshold; unload at the exact threshold",
+    "Only the retained fake child receives terminate/wait, with no kill escalation or explicit model command"
+  ],
+  "fixture": {
+    "modelProcess": "Fake object only; no Popen or real process termination",
+    "clock": "Controlled module-local clock; normal idle default asserted 5400 seconds, test threshold shortened to10 seconds to stay inside separate40-second chat deadline",
+    "loops": "Queues advance exact watchdog iterations; test joins both owned threads"
+  },
+  "tests": {
+    "command": "python -m unittest test.supervisor_candidate_http_test -v",
+    "passed": 7,
+    "failed": 0,
+    "staticChecks": "npm run check and git diff --check PASS",
+    "priorMainGate": "514 PASS from preceding code milestone; not rerun for this optional-test-only addition"
+  },
+  "failedEvidence": "First fixture advanced5401 seconds and exceeded the independent chat deadline; preserved clock-fixture failure, corrected the test setup without product changes.",
+  "currentRuntime": {
+    "fourSupervisorHealthEndpoints": "HTTP200, idle, loaded=false, loading=false",
+    "singleSupervisorOwnerPid": 7196,
+    "bridgeModuleExists": false,
+    "sourcePinsUnchanged": true
+  },
+  "notQualified": [
+    "Live Nemotron load/unload/chat/cancel and GPU attribution",
+    "Shared service cutover/rollback procedure and approval",
+    "Other machines or any Qwen lifecycle"
+  ],
+  "liveFilesChanged": false,
+  "modelOperations": 0,
+  "restarts": 0,
+  "historicalHoldReleases": 0
+}

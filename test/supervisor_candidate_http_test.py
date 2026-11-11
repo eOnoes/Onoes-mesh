@@ -4,6 +4,7 @@ import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
+import queue
 from pathlib import Path
 import sys
 import select
@@ -13,6 +14,7 @@ import threading
 import time
 import types
 import unittest
+from unittest.mock import patch
 import urllib.error
 import urllib.request
 import uuid
@@ -262,6 +264,95 @@ class CandidateHTTPTests(unittest.TestCase):
             backend.shutdown()
             backend.server_close()
             backend_thread.join(timeout=2)
+
+    def test_real_watchdog_waits_for_chat_and_unloads_only_after_renewed_idle_deadline(self):
+        clock, ticks, completed = [10000.0], queue.Queue(), queue.Queue()
+        started, release = threading.Event(), threading.Event()
+        errors, replies, cleanup = [], [], []
+        lock = threading.RLock()
+
+        class StopWatchdog(Exception): pass
+        class Child:
+            pid, returncode = 123, None
+            def poll(self): return self.returncode
+            def terminate(self): cleanup.append('terminate-original'); self.returncode = 0
+            def wait(self, timeout): cleanup.append(('wait-original', timeout)); return self.returncode
+            def kill(self): raise AssertionError('Graceful fake-child exit must not escalate')
+        class Connection:
+            sock = None
+            def connect(self): pass
+            def close(self): pass
+            def request(self, *args, **kwargs): pass
+            def getresponse(self):
+                started.set()
+                if not release.wait(3): raise TimeoutError('Fixture chat was not released')
+                return types.SimpleNamespace(status=200, read=lambda count:
+                    b'{"choices":[{"message":{"content":"fixture answer"}}]}', close=lambda: None)
+
+        iterations = [0]
+        def next_tick(seconds):
+            self.assertEqual(seconds,15)
+            completed.put(iterations[0])
+            if ticks.get(timeout=3) == 'stop': raise StopWatchdog()
+            iterations[0] += 1
+        fake_time = types.SimpleNamespace(monotonic=lambda: clock[0], sleep=next_tick)
+        self.assertEqual(self.module.IDLE_UNLOAD_S,5400.0)
+        with patch.object(self.module,'time',fake_time), patch.object(self.guard,'time',fake_time), \
+             patch.object(self.module,'_LOCK',lock), patch.object(self.module,'log',lambda *args: None), \
+             patch.object(self.module,'IDLE_UNLOAD_S',10.0):
+            supervisor = self.module.Supervisor()
+            child = Child()
+            supervisor.proc, supervisor.port, supervisor.last_used = child, 8099, 0
+            owner = types.SimpleNamespace(capture=lambda: self.owner, supervisor=supervisor)
+            chat = self.guard.NemotronSupervisorChat(owner, Connection, lambda: True)
+            gate = self.guard.MeshControlGate(lock, owner.capture,
+                lambda *args: self.fail('No explicit control dispatch expected'), self.queue.append,
+                chat=chat.send, chat_settled=chat.settled)
+            body = {'id':str(uuid.uuid4()),'expected':gate.status()['expected'],'prompt':'watchdog fixture'}
+            def run_chat():
+                try: replies.append(gate.chat(body))
+                except Exception as error: errors.append(error)
+            def run_watchdog():
+                try: supervisor.idle_watchdog()
+                except StopWatchdog: pass
+                except Exception as error: errors.append(error)
+            worker = threading.Thread(target=run_chat,daemon=True)
+            watchdog = threading.Thread(target=run_watchdog,daemon=True)
+            try:
+                worker.start()
+                self.assertTrue(started.wait(2))
+                clock[0] += self.module.IDLE_UNLOAD_S+1
+                watchdog.start()
+                self.assertEqual(completed.get(timeout=2),0)
+                ticks.put('tick')
+                self.assertFalse(lock.acquire(timeout=0.05), 'Actual watchdog must share the active chat lock')
+                self.assertEqual(cleanup,[])
+                release.set()
+                worker.join(timeout=2)
+                self.assertFalse(worker.is_alive())
+                self.assertEqual(completed.get(timeout=2),1)
+                self.assertEqual(supervisor.last_used,clock[0])
+                self.assertEqual(cleanup,[])
+                clock[0] = supervisor.last_used+self.module.IDLE_UNLOAD_S-1
+                ticks.put('tick')
+                self.assertEqual(completed.get(timeout=2),2)
+                self.assertEqual(cleanup,[])
+                clock[0] += 1
+                ticks.put('tick')
+                self.assertEqual(completed.get(timeout=2),3)
+                self.assertEqual(cleanup,['terminate-original',('wait-original',25)])
+                self.assertIsNone(supervisor.proc)
+                self.assertIsNone(supervisor.port)
+                self.assertEqual(errors,[])
+                self.assertEqual(len(replies),1)
+                self.assertEqual(self.queue,[])
+            finally:
+                release.set()
+                ticks.put('stop')
+                worker.join(timeout=2)
+                if watchdog.ident is not None: watchdog.join(timeout=2)
+                self.assertFalse(worker.is_alive())
+                self.assertFalse(watchdog.is_alive())
 
 
 if __name__ == "__main__":
