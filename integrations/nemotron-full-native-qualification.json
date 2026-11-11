@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "mesh-nemotron-qualification/v1",
+  "createdAt": "2026-11-11T12:17:15.500Z",
+  "modelId": "nemotron-3.5-bolt-74b-a9b",
+  "adapterSha256": "1eb21e7d6af7ae5cfcc0507db517d6415f02f81f9ff99b49ee96c69da4f16eab",
+  "moduleSha256": "7b823cd6a07fad21c7471142e999e3122d26c880cfbcd9c0f4acfe8cc6874116",
+  "supervisorSha256": "719cb53c01eacc67da3a7f87162f68fb1ebb5038d25c870e5bb3ddb144f84f12",
+  "executableSha256": "6a4635aeb35656153d4bfeeddf761d24ed84aada9c9108d580737cbed465141b",
+  "checks": {
+    "load": true,
+    "unload": true,
+    "chat": true,
+    "cancel": true,
+    "restart": true,
+    "lostResponse": true,
+    "gpuMapping": true,
+    "sourceBinding": true
+  }
+}

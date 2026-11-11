@@ -2,7 +2,7 @@
   "schema": "mesh-native-model-maintenance-qualification/v1",
   "at": "2026-11-11T10:24:37.906254+00:00",
   "authorization": "Eddie approved the model-service maintenance test; one named restart and bounded model attempts",
-  "state": "INSTALLED_BOUNDED_LIVE_TEST_PASS_NOT_FULLY_QUALIFIED",
+  "state": "FIXED_NATIVE_PROFILE_QUALIFIED",
   "source": {
     "supervisorSha256": "719cb53c01eacc67da3a7f87162f68fb1ebb5038d25c870e5bb3ddb144f84f12",
     "bridgeSha256": "7b823cd6a07fad21c7471142e999e3122d26c880cfbcd9c0f4acfe8cc6874116",
@@ -26,7 +26,7 @@
     "cancellation": "Observed processing, aborted original caller, confirmed slots idle and bridge active null with same owner",
     "unload": "COMPLETED, native readBackVerified true, final slot verified empty",
     "lostResponse": "Unload body deliberately discarded after202; same-ID result recovered, zero resends",
-    "installedBridgeRestartRecovery": "NOT RUN; installation restart preceded first bridge boot"
+    "installedBridgeRestartRecovery": "PASS: changed boot, old request OWNER_CHANGED409, no operation/receipt created; native client NATIVE_BOOT_CHANGED"
   },
   "attempts": {
     "load": 1,
@@ -38,13 +38,22 @@
   "final": {
     "resident": "empty",
     "allFourEndpoints": "idle",
-    "ordinaryMeshModelControls": "disabled",
-    "fullQualificationRecordWritten": false
+    "ordinaryMeshModelControls": "qualified guarded controls available; model STOPPED",
+    "fullQualificationRecordWritten": true
   },
   "remaining": [
-    "One separately approved empty-service restart and original-binding/stale-request rejection readback",
-    "Only then assess exact-source full qualification and ordinary Mesh control enablement",
-    "Physical-phone inference controls acceptance"
+    "Physical-phone inference controls acceptance",
+    "Cross-panel runtime/GPU observation reconciliation"
   ],
-  "boundary": "This is real bounded native acceptance, not a full production release or approval for more model operations, Rook, Mind, worker enrollment or GitHub publication."
+  "boundary": "This is real bounded native acceptance, not a full production release or approval for more model operations, Rook, Mind, worker enrollment or GitHub publication.",
+  "recoveryCheck": {
+    "ownerApproval": "Eddie approved final empty-service recovery check",
+    "extraNamedRestarts": 1,
+    "sourceChanged": false,
+    "extraModelLoads": 0,
+    "extraModelChats": 0,
+    "staleCommandAttempts": 1,
+    "oldReceiptBindingRejected": "NATIVE_BOOT_CHANGED",
+    "finalResident": "empty"
+  }
 }
