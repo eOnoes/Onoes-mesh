@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
+import {DatabaseSync} from 'node:sqlite';
+import {resolve} from 'node:path';
 import {startApp} from '../server.mjs';
 import {supervisedModelFixture} from './supervised-model-fixture.mjs';
 async function admit(app){
@@ -38,4 +40,32 @@ test('standalone wins over supplied native fixture and never constructs its oper
   const app=await startApp({dataDir:'data/supervised-standalone-'+randomUUID(),relayEnabled:false,supervisedInferenceTestOptions:f.options});
   try{const headers=await admit(app),r=await fetch(app.url+'/api/inference/status',{headers}),body=await r.json();assert.equal(body.state,'UNAVAILABLE');assert.equal(body.controls.reason,'STANDALONE_NOT_CONFIGURED');assert.equal(reads,0);assert.equal(f.calls.length,0);}
   finally{await app.close();f.db.close();if(before===undefined)delete process.env.MESH_STANDALONE;else process.env.MESH_STANDALONE=before;}
+});
+
+
+test('completed load and unload receipts remain in the app database after restart without retaining chat',async()=>{
+  const f=supervisedModelFixture(),dataDir='data/supervised-cycle-'+randomUUID();
+  let app=await startApp({dataDir,relayEnabled:false,supervisedInferenceTestOptions:f.options});
+  let headers=await admit(app);
+  const request=async(path,body)=>{const r=await fetch(app.url+path,{headers,method:body?'POST':'GET',...(body?{body:JSON.stringify(body)}:{})});assert.ok(r.ok,`${path}: ${r.status}`);return r.json();};
+  const ids=[];
+  try{
+    for(const action of ['load','unload']){
+      const proposed=await request('/api/inference/propose-'+action,{});
+      const accepted=await request('/api/inference/approve',{proposalId:proposed.proposal.id,confirm:true});
+      ids.push(accepted.receipt.id);f.finish(accepted.receipt.id);
+      const status=await request('/api/inference/status');assert.equal(status.state,action==='load'?'RUNNING':'STOPPED');
+      if(action==='load')assert.equal((await request('/api/inference/chat',{prompt:'private-chat-sentinel'})).response,'Fixture answer');
+    }
+    assert.equal(f.calls.length,2);
+    const rows=()=>{const db=new DatabaseSync(resolve(dataDir,'tasks.sqlite'),{readOnly:true});try{return db.prepare('SELECT id,state,binding,envelope,events FROM model_operations ORDER BY rowid').all();}finally{db.close();}};
+    const before=rows();assert.deepEqual(before.map(row=>row.id),ids);assert.ok(before.every(row=>row.state==='COMPLETED'));
+    assert.deepEqual(before.map(row=>JSON.parse(row.binding).command.action),['load','unload']);
+    assert.equal(JSON.stringify(before).includes('private-chat-sentinel'),false);
+    assert.equal(JSON.stringify(before).includes('Fixture answer'),false);
+    await app.close();app=await startApp({dataDir,relayEnabled:false,supervisedInferenceTestOptions:f.options});headers=await admit(app);
+    assert.equal((await request('/api/inference/status')).state,'STOPPED');
+    for(const id of ids){const row=(await request('/api/inference/receipt/'+id)).receipt;assert.equal(row.id,id);assert.equal(row.state,'COMPLETED');}
+    assert.deepEqual(rows(),before);assert.equal(f.calls.length,2,'restart and receipt reads cannot resend either command');
+  }finally{await app.close();f.db.close();}
 });
