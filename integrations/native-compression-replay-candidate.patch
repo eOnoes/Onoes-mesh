@@ -1,0 +1,11 @@
+--- a/agent/context_compressor.py
++++ b/agent/context_compressor.py
+@@ -4803,7 +4803,7 @@
+         carrier_text = _content_text_for_contains(carrier.get("content"))
+         if _SUMMARY_END_MARKER not in carrier_text:
+             return compressed
+-        if carrier_text.split(_SUMMARY_END_MARKER, 1)[1].strip():
++        if carrier_text.rsplit(_SUMMARY_END_MARKER, 1)[1].strip():
+             # The _force_user_leading layout keeps the live request on the
+             # carrier itself, after the marker. Already actionable.
+             return compressed

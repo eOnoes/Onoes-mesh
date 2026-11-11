@@ -37,6 +37,17 @@ future diagnostic handoffs must include absolute evidence paths. Fresh ordinary
 coordination succeeded, but this does not repair or qualify compression. Keep this
 regression open alongside full live team acceptance.
 
+A related nested-marker defect now has an uninstalled one-line candidate:
+`integrations/native-compression-replay-candidate.patch`. The replay guard reads
+after the first end marker while its sibling recognizes the last boundary. A
+frozen-method synthetic diagnostic fails on baseline and passes on the candidate
+(five narrow checks). This is not native integration acceptance and does not
+prove that the earlier live incident is repaired. Installed source/runtime were
+not changed. See `integrations/NATIVE-COMPRESSION-REPLAY-CANDIDATE.md` for source
+pins, evidence paths, limitations and required native behavior tests before any
+installation. The existing 503-check Mesh gate remains historical unchanged-code
+evidence; these five diagnostics are separate.
+
 ## Earlier readiness snapshot - before native-report handoff correction
 
 This is a private release candidate, not an owner-accepted production release.
