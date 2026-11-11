@@ -1,0 +1,61 @@
+{
+  "schema": "mesh-model-supervisor-cutover-readiness/v1",
+  "at": "2026-11-11T09:40:45.582213+00:00",
+  "state": "PREPARED_NOT_AUTHORIZED",
+  "task": {
+    "name": "DSH Local Model Supervisor",
+    "path": "\\",
+    "action": "C:/Python314/pythonw.exe <fixed local_supervisor.py>",
+    "restartCount": 0,
+    "multipleInstances": "IgnoreNew",
+    "logonType": "Interactive"
+  },
+  "candidate": [
+    {
+      "path": "local_supervisor.py",
+      "sha256": "719cb53c01eacc67da3a7f87162f68fb1ebb5038d25c870e5bb3ddb144f84f12"
+    },
+    {
+      "path": "supervisor_mesh_control.py",
+      "sha256": "7b823cd6a07fad21c7471142e999e3122d26c880cfbcd9c0f4acfe8cc6874116"
+    }
+  ],
+  "rollback": {
+    "directory": "E:\\App-Backups\\Local-Model-Supervisor\\2026-11-11_09-39-04-152_UTC_Mesh-bridge-preinstall",
+    "files": [
+      {
+        "file": "local_supervisor.py",
+        "sha256": "2fc20c496075115757b2673a86a96df5903fb929a4bd04647819395a4ff8c241"
+      },
+      {
+        "file": "launch_local.py",
+        "sha256": "6fd787c304938a8b41a2ba74d58dcdd324ee28765bf1bb2e7105cf25e66db4a0"
+      }
+    ],
+    "bridgeOriginallyAbsent": true,
+    "sourceRestore": "Two source hashes and syntax PASS in disposable folder",
+    "serviceRestore": "NOT RUN"
+  },
+  "changesPlanned": [
+    "Replace pinned local_supervisor.py",
+    "Add pinned supervisor_mesh_control.py",
+    "Stop/start unchanged named task once with old/new owner evidence",
+    "Read-only exact bridge and four-endpoint acceptance"
+  ],
+  "liveTestProposed": [
+    "One fixed Nemotron load",
+    "One short chat",
+    "One cancellation chat with authoritative readback",
+    "One exact-owner unload"
+  ],
+  "currentlyAuthorized": false,
+  "pcRestartRequired": false,
+  "liveChangesApplied": false,
+  "activeControlsEnabled": false,
+  "separateRemainingGates": [
+    "Exact maintenance approval",
+    "Fresh idle/source/identity preflight",
+    "Actual lifecycle/GPU/cancellation acceptance",
+    "Ordinary Mesh control qualification and enablement"
+  ]
+}
