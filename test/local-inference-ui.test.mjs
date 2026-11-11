@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createLocalInference } from '../lib/local-inference.mjs';
+import { createPendingNemotronInference } from '../lib/supervised-inference.mjs';
 import { localFixture } from './local-inference-fixture.mjs';
 
 import {mockUI,response,html,flush,bodyFor} from './app-ui-fixture.mjs';
-function uiSetup() {
-  const fixture = localFixture(), control = createLocalInference({ adapter: fixture.adapter, now: fixture.now });
+function uiSetup({control:override}={}) {
+  const fixture = localFixture(), control = override??createLocalInference({ adapter: fixture.adapter, now: fixture.now });
   let chatDelay;
   async function respond(route, options) {
     const body = options.body ? JSON.parse(options.body) : null;
@@ -34,6 +35,16 @@ function uiSetup() {
   return { ids, fixture, control, storage, events, intervals, requests, context, click,
     holdChat: promise => { chatDelay = promise; } };
 }
+
+test('UI shows selected Nemotron as unqualified and never exposes execution controls', async () => {
+  const ui=uiSetup({control:createPendingNemotronInference()}),el=id=>ui.ids.get('local-inference-'+id);
+  await ui.click('demo-start');
+  assert.match(el('profile').textContent,/Nemotron 3\.5 Bolt.*selected for qualification; no verified model connection/);
+  assert.match(el('reason').textContent,/not qualified/);
+  for(const id of ['load','stop','unload','recover','send'])assert.equal(el(id).disabled,true,id);
+  assert.ok(ui.requests.filter(r=>r.route.startsWith('/api/inference/')).every(r=>(r.options.method||'GET')==='GET'));
+  assert.equal(ui.fixture.calls.start.length,0);assert.equal(ui.fixture.calls.stop.length,0);
+});
 
 test('UI fixture: every local control has a handler and reason; Load/Stop/Unload confirm and read receipts', async () => {
   const ui = uiSetup(), el = id => ui.ids.get('local-inference-' + id);

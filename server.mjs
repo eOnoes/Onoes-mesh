@@ -6,7 +6,7 @@ import {createNemotronClient} from './lib/nemotron-client.mjs';
 import {createNemotronRuntime} from './lib/nemotron-runtime.mjs';
 import {DatabaseSync} from 'node:sqlite';
 import {createModelOperationStore} from './lib/model-operation-store.mjs';
-import {createSupervisedInference} from './lib/supervised-inference.mjs';
+import {createSupervisedInference,createPendingNemotronInference} from './lib/supervised-inference.mjs';
 import {createSupervisorObservation} from './lib/supervisor-observation.mjs';
 import http from 'node:http';
 import {createTeamRunner} from './lib/workroom-automation.mjs';
@@ -135,8 +135,9 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       Object.keys(localInferenceTestOptions).some(k => !['adapter', 'now'].includes(k)) ||
       localInferenceTestOptions.adapter?.source !== 'disposable_fixture')) throw new Error('Invalid inference fixture.');
   const observeSupervisor = createSupervisorObservation({enabled:!standalone && process.env.MESH_MODEL_OBSERVATION==='1'});
-  let localInference = createLocalInference(standalone
-    ? { adapter: createDisabledLocalAdapter('STANDALONE_NOT_CONFIGURED') } : localInferenceTestOptions);
+  let localInference = standalone
+    ? createLocalInference({adapter:createDisabledLocalAdapter('STANDALONE_NOT_CONFIGURED')})
+    : localInferenceTestOptions ? createLocalInference(localInferenceTestOptions) : createPendingNemotronInference();
   if(supervisedInferenceTestOptions && (supervisedInferenceTestOptions.qualification?.source!=='disposable_fixture'||Object.keys(supervisedInferenceTestOptions).some(k=>!['client','qualification','verifyResident','chatImpl','now'].includes(k))))throw Error('Invalid supervised model fixture');
   // Trusted in-process tests only; HTTP cannot supply any probe configuration.
   if (nodeProbeTestOptions !== undefined && (!nodeProbeTestOptions ||
@@ -172,7 +173,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       if(!qualification)throw Error('Qualification required');
       const client=createNemotronClient(qualification),runtime=createNemotronRuntime({client});
       localInference=createSupervisedInference({operations:createModelOperationStore(modelDatabase),client,qualification,...runtime});
-    }catch{modelDatabase?.close();modelDatabase=undefined;localInference=createLocalInference({adapter:createDisabledLocalAdapter('NEMOTRON_QUALIFICATION_REQUIRED')});}
+    }catch{modelDatabase?.close();modelDatabase=undefined;localInference=createPendingNemotronInference();}
   }
   // Gate G2 = A: the shell talks to the LIVE Relay over HTTP instead of driving a
   // modified copy of it. Staged behind an explicit flag so the default path is

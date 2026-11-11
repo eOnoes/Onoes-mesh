@@ -26,6 +26,35 @@ test('default native adapter is unavailable and cannot launch from environment o
   await rejects(() => control.propose('load', {}, 'session', admitted), 409);
 });
 
+test('live defaults and missing native qualification expose only pending Nemotron selection with no control authority', async () => {
+  const previous=process.env.MESH_NEMOTRON_CONTROL;
+  try {
+    for(const flag of [undefined,'1']){
+      if(flag===undefined)delete process.env.MESH_NEMOTRON_CONTROL;else process.env.MESH_NEMOTRON_CONTROL=flag;
+      const app=await startApp({dataDir:`test/app03-nemotron-pending-${randomUUID()}`,relayEnabled:false});
+      try {
+        const proof=await admit(app);
+        const status=(await request(app,'/api/inference/status',{headers:proof})).json();
+        assert.equal(status.profile.id,'nemotron-bolt-local');
+        assert.equal(status.profile.model,'Nemotron 3.5 Bolt 74B A9B');
+        assert.equal(status.runtimeId,'nemotron-llama-b11669');
+        assert.equal(status.state,'UNAVAILABLE');assert.equal(status.source,'none');
+        assert.equal(status.runtime.status,'UNKNOWN');assert.equal(status.observedAt,null);
+        assert.equal(status.controls.reason,'NEMOTRON_QUALIFICATION_REQUIRED');
+        for(const key of ['load','stop','unload','recover','chat'])assert.equal(status.controls[key],false);
+        assert.equal('executable' in status.profile,false);assert.equal('executableSha256' in status.profile,false);
+        for(const [route,body] of [['propose-load',{}],['propose-unload',{}],['propose-recover',{}],
+          ['approve',{proposalId:randomUUID(),confirm:true}],['chat',{prompt:'must not run'}]]){
+          const denied=await request(app,'/api/inference/'+route,{method:'POST',body:JSON.stringify(body),
+            headers:{...proof,Origin:app.url,'Content-Type':'application/json'}});
+          assert.equal(denied.status,409,route);
+        }
+        assert.equal((await request(app,'/api/inference/receipt/'+randomUUID(),{headers:proof})).status,404);
+      } finally {await app.close();}
+    }
+  } finally {if(previous===undefined)delete process.env.MESH_NEMOTRON_CONTROL;else process.env.MESH_NEMOTRON_CONTROL=previous;}
+});
+
 test('proposal never executes; approval is explicit, fixed, session-bound, expiring and single-use', async () => {
   const { fixture, control, propose, approve } = setup();
   await rejects(() => control.approve({ proposalId: 'missing', confirm: true }, 'session', admitted), 409);

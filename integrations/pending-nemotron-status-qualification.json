@@ -1,0 +1,45 @@
+{
+  "schema": "mesh-pending-nemotron-status-qualification/v1",
+  "result": "DEPLOYED_STATUS_ONLY_CONTROLS_DISABLED",
+  "release": {
+    "schemaVersion": "mesh-release/v1",
+    "version": "0.1.0",
+    "build": "26614422ee81",
+    "sourceSha256": "26614422ee817ba79b0d752fc2ec480dcd5a856408e0ae419d507bc631aedffb",
+    "startedAt": "2026-11-11T10:01:24.080Z",
+    "database": "data/workroom-preview/tasks.sqlite",
+    "qualification": "candidate",
+    "note": "Private release candidate. Physical-phone acceptance and inference qualification remain open."
+  },
+  "before": "Production default/qualification-error path reused an unavailable legacy Qwen Flash-Next/llama.cpp fixture profile. UI already hid its unverified model name.",
+  "after": "Dedicated non-executing pending-Nemotron controller; approved model selection metadata only, no executable identity, observation or control authority. Existing qualified supervisor path and legacy fixture unchanged.",
+  "verification": {
+    "mainGate": "514 PASS (400 Node + 114 Python)",
+    "focusedInference": "28 PASS; separate from main gate",
+    "static": "PASS",
+    "completeBoardAcrossMeshRestart": "14 records identical",
+    "historicalHolds": 8,
+    "actualDisabledProposalHTTP": 409,
+    "runtimeSourceMatchesDisk": true,
+    "browser": "Private HTTPS Inference tab shows pending Nemotron and disabled controls in both themes; desktop only",
+    "sharedOwners": "Model supervisor7196/gateway47220/Relay39624/DSH48180 original start times unchanged"
+  },
+  "inventory": {
+    "Nemotron3.5Bolt": "Owner-selected first control lane; bundled llama.cpp b11669; pending real qualification",
+    "QwenFlashNextAnd35BA3B": "Owner-locked UnbiasedStrata; read-only reported availability, no alternate engine wired",
+    "Qwen27B": "Existing llama.cpp lane; supervisor reports missing model files",
+    "customEngineCandidates": "Separate source/build qualification still required; none substituted or activated"
+  },
+  "notClaimed": [
+    "Model loaded or ready to chat",
+    "Live bridge installed",
+    "Model/GPU custody or lifecycle qualified",
+    "Physical-phone model-control acceptance",
+    "Native workers/Rook/Mind activated"
+  ],
+  "firstReleaseRegister": {
+    "closed": 15,
+    "total": 21,
+    "D1": "Inventory/profile reconciliation only; D2/D3/D4 remain open"
+  }
+}

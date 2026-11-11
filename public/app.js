@@ -551,6 +551,9 @@ export function renderLocalInference(snapshot) {
     : 'UNAVAILABLE · Start a local session and refresh local status.';
   $('local-inference-profile').textContent = valid && ['RUNNING','OWNED'].includes(snapshot.state) && ['VERIFIED','OWNED'].includes(snapshot.runtime?.status)
     ? `${snapshot.profile.model} · ${snapshot.runtimeId}${snapshot.runtime.status==='OWNED'?' · owned process; health unverified':''}`
+    : valid && snapshot.profile.id==='nemotron-bolt-local' && snapshot.source==='none' &&
+      snapshot.controls.reason==='NEMOTRON_QUALIFICATION_REQUIRED'
+      ? `${snapshot.profile.model} · selected for qualification; no verified model connection.`
     : 'No verified model connection. PC readings above remain available.';
   $('local-inference-identity').textContent = valid ? 'Runtime identity: ' + details(snapshot.runtime) : 'Runtime identity UNKNOWN';
   if(valid && snapshot.profile.id==='nemotron-bolt-local' && snapshot.operation)$('local-inference-receipt').textContent=details(snapshot.operation);
