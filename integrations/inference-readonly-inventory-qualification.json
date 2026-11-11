@@ -1,0 +1,61 @@
+{
+  "schema": "mesh-inference-readonly-inventory/v1",
+  "at": "2026-11-11T09:19:09.620821+00:00",
+  "scope": "Current main-PC observation and exact approved binary metadata only",
+  "result": "OBSERVATION_PASS_LIFECYCLE_UNQUALIFIED",
+  "model": "nemotron-3.5-bolt-74b-a9b",
+  "supervisor": {
+    "reachable": true,
+    "loaded": false,
+    "loading": false,
+    "meshControlBridgeInstalled": false
+  },
+  "mesh": {
+    "schema": "mesh-inference/live-v2",
+    "modelObservation": "fresh",
+    "reportedLoaded": false,
+    "controls": false,
+    "hardwareMetricsAvailable": true,
+    "gpuAttribution": "unverified"
+  },
+  "approvedBinaries": [
+    {
+      "path": "E:\\Echo-DB\\tools\\UnbiasedStrata\\build\\bin\\unbiased-strata.exe",
+      "length": 7639040,
+      "lastWriteUtc": "2026-11-01T15:04:04.0000000Z",
+      "sha256": "3a6922d44834e84675f55e3253375a11deb1e818100ef0b8d145a36360d8e7b9"
+    },
+    {
+      "path": "E:\\Echo-DB\\tools\\UnbiasedStrata\\build\\bin\\strata.exe",
+      "length": 63554560,
+      "lastWriteUtc": "2026-11-01T17:47:32.0000000Z",
+      "sha256": "b5e9cacacd40635817d47ca263bb03471c13e259a19da693cdcf298ecf456cd9"
+    },
+    {
+      "path": "E:\\Echo-DB\\tools\\UnbiasedStrata\\build\\bin\\strata-poly.exe",
+      "length": 66721792,
+      "lastWriteUtc": "2026-11-01T15:04:02.0000000Z",
+      "sha256": "c294bc75e3a75169f17bf052b635a0cb96ec02f4ceffcc491f98a1c84ab508a6"
+    }
+  ],
+  "staleDocumentation": "Engine lock and skill still say Windows binaries are not built; exact current approved paths exist. Presence/hash is not build provenance or runtime acceptance.",
+  "localTests": {
+    "command": "node --test test/summary-cache.test.mjs test/gpu-metrics.test.mjs test/supervisor-observation.test.mjs",
+    "passed": 13,
+    "failed": 0
+  },
+  "notPerformed": [
+    "binary execution",
+    "model load/unload/chat",
+    "PC or service restart",
+    "control bridge installation",
+    "credential access",
+    "historical hold release"
+  ],
+  "remaining": [
+    "verify binary build provenance against approved source lock",
+    "review prepared Nemotron bridge against current supervisor source and watchdog/cancellation contract",
+    "separately authorized shared-service cutover and lifecycle qualification",
+    "laptop and AI-box integration"
+  ]
+}
