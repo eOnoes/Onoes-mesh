@@ -2,9 +2,19 @@
 
 ## Current release status - 2026-11-11
 
-First local release16/21. The fixed Nemotron/b11669 native lane is qualified from actual bounded lifecycle/GPU/cancellation and recovery evidence. Standard exact-source qualification is saved; named Mesh launch enables only the existing guarded model controller. Current stateSTOPPED: ProposeLoad available, chat/stop/unload unavailable until appropriate state. A proposal does not execute; explicit confirmation remains required. No extra model load/chat was performed during the final empty-service recovery check.
+First local release: **16/21 checks complete**. Running app build `f350b2822702`, source SHA256 `f350b28227028970a90221f7f3fbcbdace76d9be8acf653baddc25e29f7f9035`, version0.1.0 candidate. Normal admitted live readback confirms qualified_native/STOPPED, Propose Load available, and chat/stop/unload disabled until the appropriate state. A proposal does not execute; explicit confirmation remains required.
 
-Appsource26614422ee81;14cards/eight historical holds retained; parent75 and Dstageworking. Latest model-regression29PASS, static/parserPASS; prior main514/focused28 code gates remain separate. C1/C4/D2/D4/E2, phone inference acceptance and later shared memory/skills/MCP/three-machine work remain unfinished. Rook/native workers/liveMind off; no PC restart/GitHub publication. Historical counts below describe their snapshots.
+The fixed Nemotron/b11669 native lane passed actual load/chat/cancellation/unload, retained runtime/GPU ownership, response-body-loss lookup and empty-service restart/stale-binding rejection. Qualification is exact-source-bound. Control and Inference agree for the empty slot; whole-device telemetry does not imply per-model GPU attribution. CPU warnings now follow the displayed sample, and expired model readings visibly expire with their controls. Read-only Refresh restores fresh status without executing a model command.
+
+Current complete local test gate: **516PASS (402Node +114Python)**, plus static/diff checks. Workspace92PASS is part of that total, not additional. Parent saved progress76;14cards and all8historical assignment holds preserved. Manual/milestone E backups only; latest pointer is authoritative and snapshots include verified isolated restore results. Local commits are saved. Exact GitHub publication approval is pending for the10commits through `aeee363`; later local documentation is outside that exact push scope.
+
+Still open: C1 useful physical-phone workflow without rescue; C4 final release/owner acceptance; D2 loaded-runtime cross-panel observation; D4 actual phone inference controls; E2 production bounded team execution. Rook, production native workers and live Mind remain off. Canonical Mind store/identity/scope, shared context/skills/MCP and the laptop/AI-box integrations remain unfinished. No PC restart is scheduled.
+
+### Current team connection boundary
+
+The isolated bounded Echo-role build and independent Nims review passed, as recorded below; this does not enroll a production worker. Eight historical writer holds still lack exact original whole-writer retirement evidence. A completed task, elapsed time, unrelated successful trial or service restart cannot release them. Do not repeat the same negative original-store queries, invent mappings, retry old sends or clear holds. The next team step needs authoritative original-worker evidence or a separately reviewed operator recovery decision. Preserve the single-writer rule and explicit enrollment boundary.
+
+Current live readback: `data/operations-guide-current-state-20261111.json`; full test log: `data/milestone-publication-tests-20261111.log`; saved parent proof: `data/checklist-sync-after-20261111.json`. These are private local evidence references, not publication payloads. Historical sections below retain their original counts and state.
 
 ## Earlier bounded guide team qualification - 2026-11-11
 
@@ -52,7 +62,7 @@ parent progress revision61 record evidence and remaining requirements. First loc
 release remains12/21; full app goal remains active. No provider calls or retries
 were made to implement this correction.
 
-## Current local custody evidence - 2026-11-11 UTC
+## Earlier local custody evidence - 2026-11-11 UTC
 
 Read-only checks verified the named Mesh process, present source digest and
 startup-reported builda17048843222. Both loopback and the actual private8453HTTPS
