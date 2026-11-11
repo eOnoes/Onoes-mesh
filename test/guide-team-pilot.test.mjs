@@ -5,7 +5,20 @@ import {openTaskStore} from '../lib/task-store.mjs';
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline} from '../integrations/guide-team-pilot.mjs';
+import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput} from '../integrations/guide-team-pilot.mjs';
+
+test('native review input permits only empty text-element metadata without changing the frozen request',()=>{
+ const expected='Exact frozen review request';
+ for(const content of [[{type:'text',text:expected}],[{type:'text',text:expected,text_elements:[]}]])
+  assert.doesNotThrow(()=>assertPilotReviewInput(content,expected));
+ for(const content of [null,expected,[],[{type:'text',text:expected+' changed',text_elements:[]}],
+  [{type:'text',text:expected,text_elements:[{start:0}]}],
+  [{type:'text',text:expected,text_elements:null}],
+  [{type:'image',text:expected,text_elements:[]}],
+  [{type:'text',text:expected,text_elements:[],unknown:true}],
+  [{type:'text',text:expected},{type:'text',text:'extra request'}]])
+  assert.throws(()=>assertPilotReviewInput(content,expected));
+});
 
 const baselineFixture=()=>{
  const header={'gateway/session_controls.py':'old-controls','tui_gateway/contracts/canonical.py':'old-contract','unchanged.py':'unchanged'};

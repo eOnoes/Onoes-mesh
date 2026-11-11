@@ -1,6 +1,31 @@
 # Mesh private release candidate
 
-## Current native-report handoff milestone - 2026-11-10
+## Latest bounded guide team qualification - 2026-11-11
+
+The approved isolated guide trial completed one Echo-role native gpt-6-luna build
+and one independent Nims read-only approved review. The host and native reviewer
+verified6160bytes and exact complete-file SHA256
+50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f.
+The worker retired quiescent; the original guide and other workspace files were
+preserved. Reopening the isolated board preserved both sends and the review.
+
+The original runner result remains HELD on a readback-shape assertion: Codex
+added empty text_elements metadata. The verifier now accepts only that empty
+optional field, retaining exact input/type/identity checks. Supplementary reads
+verified the SAME completed native turn, its actual successful read-only commands
+and saved verdict without another build/review attempt. The original failure
+was not overwritten or retrospectively relabeled.
+
+All504 local checks pass (390Node+114Python;230Workroom), plus npm run check and
+diff checks. Evidence: data/guide-team-state-2f9d68af-aa25-4e9e-a442-2519a5e4948b/
+verification.json and its original/supplementary receipts. This qualifies the
+bounded isolated flow, not production-worker enrollment or whole-app acceptance.
+The isolated card is still open/needs_review, owner decisionpending; no automatic
+Done. Main Mesh needs no restart for this helper-only correction. Gateway patch
+installation remains separately unapproved; model service/Rook/Mind unchanged.
+First local release remains12/21 and the full project remains unfinished.
+
+## Earlier native-report handoff milestone - 2026-11-10
 
 Native worker reports returned as whole JSON are now recognized only for the exact
 saved native result message. Ordinary Relay messages still require the explicit

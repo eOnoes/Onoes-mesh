@@ -122,7 +122,19 @@ export function readPilotReviewPayload(p,sendId) {
     return row.payload;
   } finally {db.close();}
 }
-async function reviewReadback(task,fixture,p) {
+export function assertPilotReviewInput(content,expected) {
+  assert.ok(Array.isArray(content));
+  const normalized=content.map(part=>{
+    if(part&&typeof part==='object'&&Object.hasOwn(part,'text_elements')){
+      const {text_elements,...text}=part;
+      assert.deepEqual(text_elements,[],'Native input contains unexpected text elements');
+      return text;
+    }
+    return part;
+  });
+  assert.deepEqual(normalized,[{type:'text',text:expected}]);
+}
+export async function reviewReadback(task,fixture,p) {
   if(fixture)return {source:'disposable_fixture',independentNativeReviewQualified:false};
   const send=task.messages.find(m=>m.id===task.automation.reviewerSendId),run=send?.nims;
   assert.equal(run?.state,'completed');assert.ok(run.threadId&&run.turnId);
@@ -135,7 +147,7 @@ async function reviewReadback(task,fixture,p) {
     assert.ok(turn.items.every(item=>['userMessage','agentMessage','reasoning','commandExecution'].includes(item.type)
       &&(item.type!=='commandExecution'||item.status==='completed'&&item.exitCode===0)));
     const users=turn.items.filter(item=>item.type==='userMessage');assert.equal(users.length,1);
-    assert.deepEqual(users[0].content,[{type:'text',text:expected}]);
+    assertPilotReviewInput(users[0].content,expected);
     return {source:'native_thread_readback',threadId:run.threadId,turnId:run.turnId,status:turn.status,itemTypes:turn.items.map(item=>item.type)};
   } finally {await client.close();}
 }
