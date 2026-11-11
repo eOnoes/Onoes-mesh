@@ -55,7 +55,7 @@ const helper=`    def _mesh_control(self):
         code, value = _MESH_ROUTES.handle(self.port, self.command, self.path, body, self.headers.get("Content-Type"), self.connection)
         try:
             self._json(code, value)
-        except (BrokenPipeError, ConnectionResetError):
+        except ConnectionError:
             self.close_connection = True
         return True
 

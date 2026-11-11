@@ -1,0 +1,40 @@
+{
+  "schema": "mesh-nemotron-disconnect-qualification/v1",
+  "at": "2026-11-11T09:29:56.648521+00:00",
+  "state": "PREPARED_ONLY_NOT_INSTALLED",
+  "problem": "Windows ConnectionAbortedError escaped while replying to a caller that deliberately disconnected after starting chat.",
+  "fix": "Catch ConnectionError only around the final Mesh response write; control/owner/idle-readback behavior unchanged.",
+  "regression": {
+    "before": "FAIL: ConnectionAbortedError captured from actual prepared HTTP handler",
+    "after": "PASS: handler disconnect cancels original fake-backend socket; active claim and unload hold remain until idle readback; then settle without model operations",
+    "ports": "disposable loopback ports only; fake model"
+  },
+  "tests": {
+    "fullMesh": 514,
+    "fullBreakdown": "400 Node + 114 Python",
+    "coreSupervisor": 27,
+    "preparedCandidateHTTP": 6,
+    "staticChecks": "PASS",
+    "note": "Separate suites are not added to the main count; the optional prepared-candidate suite is not in npm test."
+  },
+  "candidate": {
+    "supervisorSha256": "719cb53c01eacc67da3a7f87162f68fb1ebb5038d25c870e5bb3ddb144f84f12",
+    "bridgeSha256": "7b823cd6a07fad21c7471142e999e3122d26c880cfbcd9c0f4acfe8cc6874116",
+    "liveSupervisorBaselineSha256": "2fc20c496075115757b2673a86a96df5903fb929a4bd04647819395a4ff8c241"
+  },
+  "release": {
+    "build": "eed12cbec65d",
+    "sourceSha256": "eed12cbec65d3cf0c0def22856c3d906fef9606af51731869d911e195922874f",
+    "diskFingerprintUnchanged": true,
+    "liveReleaseGET": "401; not claimed as fresh authenticated release acceptance"
+  },
+  "limitations": [
+    "The first restricted socket test stalled and was interrupted through its own tool session; host-supported isolated rerun passed.",
+    "Actual Nemotron lifecycle/cancellation and shared-service installation are not qualified by fake-model tests.",
+    "Real supervisor watchdog implementation was not independently exercised here; existing tests verify shared owner lock and last_used updates."
+  ],
+  "changedLiveFiles": false,
+  "modelOperations": 0,
+  "serviceRestarts": 0,
+  "historicalHoldsReleased": 0
+}

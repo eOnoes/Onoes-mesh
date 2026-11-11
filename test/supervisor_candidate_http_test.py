@@ -1,11 +1,16 @@
 """Actual candidate Handler, disposable HTTP port, fake owner; no model calls."""
 import hashlib
+import http.client
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
 from pathlib import Path
 import sys
+import select
+import socket
 import tempfile
 import threading
+import time
 import types
 import unittest
 import urllib.error
@@ -173,6 +178,90 @@ class CandidateHTTPTests(unittest.TestCase):
         finally:
             self.owner_lock.release()
         self.assertEqual(self.calls,[])
+
+    def test_phone_disconnect_through_actual_handler_keeps_controls_held_until_idle_readback(self):
+        started, disconnected, finish, idle = (threading.Event() for _ in range(4))
+        handler_error = threading.Event()
+        handler_errors = []
+        def capture_handler_error(*args):
+            handler_errors.append(type(sys.exc_info()[1]).__name__)
+            handler_error.set()
+        self.server.handle_error = capture_handler_error
+        idle.set()
+
+        class Backend(BaseHTTPRequestHandler):
+            def log_message(self, *args): pass
+            def do_POST(self):
+                self.rfile.read(int(self.headers['Content-Length']))
+                idle.clear()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Connection', 'close')
+                self.end_headers()
+                self.wfile.flush()
+                started.set()
+                try:
+                    while not finish.wait(0.02):
+                        ready, _, _ = select.select([self.connection], [], [], 0)
+                        if ready and self.connection.recv(1, socket.MSG_PEEK) == b'':
+                            disconnected.set()
+                            break
+                except OSError:
+                    disconnected.set()
+                # Socket closure deliberately does not establish idle readback.
+                finish.wait(4)
+
+        backend = ThreadingHTTPServer(('127.0.0.1', 0), Backend)
+        backend.daemon_threads = True
+        backend_thread = threading.Thread(target=backend.serve_forever, daemon=True)
+        backend_thread.start()
+        owner = types.SimpleNamespace(capture=lambda: self.owner,
+            supervisor=types.SimpleNamespace(proc=types.SimpleNamespace(poll=lambda: None), last_used=0))
+        transport = self.guard.NemotronSupervisorChat(owner,
+            connection_factory=lambda: http.client.HTTPConnection('127.0.0.1', backend.server_port, timeout=3),
+            slots_reader=idle.is_set)
+        self.gate = self.guard.MeshControlGate(self.owner_lock, lambda: self.owner,
+            lambda *args: self.fail('Cancellation must not unload or load a model'), self.queue.append,
+            chat=transport.send, chat_settled=transport.settled)
+        self.module._MESH_ROUTES = self.guard.MeshSupervisorRoutes(self.gate,
+            supervisor_sha256=next(x['sha256'] for x in self.manifest['files'] if x['path']=='local_supervisor.py'))
+        caller = socket.create_connection(self.server.server_address, timeout=3)
+        try:
+            status = self.request('/mesh/v1/status')[1]
+            body = json.dumps({'id':str(uuid.uuid4()), 'expected':status['expected'],
+                               'prompt':'disposable cancellation test'}).encode()
+            caller.sendall(('POST /mesh/v1/chat HTTP/1.1\r\nHost: localhost\r\n'
+                'Content-Type: application/json\r\nContent-Length: '+str(len(body))+'\r\n\r\n').encode()+body)
+            self.assertTrue(started.wait(2))
+            self.assertFalse(self.owner_lock.acquire(timeout=0.05))
+            caller.shutdown(socket.SHUT_RDWR)
+            caller.close()
+            self.assertTrue(disconnected.wait(3), 'Handler must cancel its original backend socket')
+            deadline = time.monotonic()+3
+            while time.monotonic()<deadline:
+                code, held = self.request('/mesh/v1/status')
+                if code==200: break
+                finish.wait(0.02)
+            self.assertEqual(code,200)
+            self.assertIsNotNone(held['active'])
+            self.assertFalse(held['unload'])
+            self.assertIsNotNone(transport.pending)
+            idle.set()
+            settled = self.request('/mesh/v1/status')[1]
+            self.assertIsNone(settled['active'])
+            self.assertTrue(settled['unload'])
+            self.assertIsNone(transport.pending)
+            self.assertGreater(owner.supervisor.last_used,0)
+            self.assertEqual(self.queue,[])
+            handler_error.wait(0.5)
+            self.assertEqual(handler_errors,[], 'An expected phone disconnect must not crash the handler')
+        finally:
+            finish.set()
+            idle.set()
+            caller.close()
+            backend.shutdown()
+            backend.server_close()
+            backend_thread.join(timeout=2)
 
 
 if __name__ == "__main__":
