@@ -21,6 +21,26 @@ parent progress revision61 record evidence and remaining requirements. First loc
 release remains12/21; full app goal remains active. No provider calls or retries
 were made to implement this correction.
 
+## Current local custody evidence - 2026-11-11 UTC
+
+Read-only checks verified the named Mesh process, present source digest and
+startup-reported builda17048843222. Both loopback and the actual private8453HTTPS
+route served entry bytes matching disk and the same14savedcardIDs. SQLite
+integrity/foreign-key checks passed. The named process receipt matches its
+executable, command, creation time and4320listener; the HTTPS Serve rule targets
+that backend and has no Funnel allow entry for thishost. This is bounded custody
+evidence, not independent attestation of every loaded byte or physical-phone
+acceptance. No route or service configuration changed.
+
+The selected E snapshot's archive hashes and all23logical database tables match.
+Initial source comparison found only checkpoint notes written after that snapshot
+(302/303matched); that discrepancy is retained. Final snapshots must follow all
+source/checkpoint and goal-card edits. Their exact final custody result belongs
+in ignored `data/release-custody-20261111/backup-final.json` and the human-facing
+`E:/App-Backups/ONOes-Mesh/LATEST.txt`, so adding a receipt does not itself change
+the archived source. No private rows or credentials are exported by these audit
+receipts. C4/owner release acceptance and the full goal remain open.
+
 ## Open Relay compression mismatch - read-only evidence
 
 A selected ordinary Echo question reached its exact canonical API admission with
