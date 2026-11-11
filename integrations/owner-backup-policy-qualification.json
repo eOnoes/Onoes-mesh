@@ -1,0 +1,42 @@
+{
+  "schema": "mesh-owner-backup-policy-qualification/v1",
+  "at": "2026-11-11T09:46:57.561156+00:00",
+  "result": "CURRENT_OWNER_SELECTED_LOCAL_POLICY_COMPLETE",
+  "ownerDecisions": {
+    "destination": "E:/App-Backups, clearly labelled by app",
+    "schedule": "Manual and milestone backups only for now"
+  },
+  "currentPolicy": {
+    "appFolder": "E:/App-Backups/ONOes-Mesh",
+    "creation": "Fresh dated unique snapshot",
+    "retention": "Existing snapshots retained; no automatic pruning",
+    "latest": "Updated after all data/source/isolated HTTP verification passes",
+    "automaticSchedule": false,
+    "offDevice": false
+  },
+  "scope": [
+    "Mesh source",
+    "Workroom SQLite tasks/progress/reviews/messages and recorded outcomes"
+  ],
+  "verifiedSnapshot": {
+    "createdAt": "2026-11-11T09:40:46.159Z",
+    "taskCount": 14,
+    "sourceFiles": 306,
+    "verification": {
+      "sqliteIntegrity": "ok",
+      "foreignKeys": "ok",
+      "isolatedDataRestore": "PASS",
+      "sourceExtraction": "PASS",
+      "sourceHashes": "PASS",
+      "sourceSyntax": "PASS",
+      "restoredSourceHTTP": "PASS"
+    }
+  },
+  "notClaimed": [
+    "Off-device protection",
+    "Other app runtime/model/Relay backups",
+    "Actual disaster recovery over the live store"
+  ],
+  "basis": "Owner chose this PC/E drive for now and manual/milestone only; original off-device release-planning suggestion is deferred, not achieved.",
+  "runtimeChanges": false
+}

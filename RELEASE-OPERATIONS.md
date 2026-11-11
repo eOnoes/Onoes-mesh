@@ -1,6 +1,12 @@
 # Mesh private release candidate
 
-## Latest bounded guide team qualification - 2026-11-11
+## Current release status - 2026-11-11
+
+First local release:14/21 acceptance items closed under the owner's selected scope. C5 manual/milestone E-drive backup policy is implemented and restore-verified; off-device protection remains deferred. Main app candidate eed12cbec65d,14cards/eight historical holds retained. Latest full code gate514PASS; separate uninstalled model-candidate HTTP/watchdog fixture7PASS. Parent progress72 reflects current evidence.
+
+PC restart is cancelled. Model-service maintenance and exact GitHub publication await their pending approvals. Native enrollment, Rook and live Mind remainoff; model lifecycle/GPU qualification, phone release acceptance and the later memory/skills/MCP/three-machine objective are unfinished. Historical milestone counts below describe their dated snapshots; use this section and WORKROOM-AB-CHECKPOINT.md for current state.
+
+## Earlier bounded guide team qualification - 2026-11-11
 
 The approved isolated guide trial completed one Echo-role native gpt-6-luna build
 and one independent Nims read-only approved review. The host and native reviewer
@@ -944,3 +950,14 @@ If installation or read-only acceptance fails, rollback is limited to the exact 
 Only after the new bridge has passed read-only identity/custody checks may the separately approved live test proceed: one fixed Nemotron load, exact health/model/retained-process/GPU readback, one short chat, one cancellation chat with authoritative idle/original-handle readback, then one exact-owner unload. No blind retry or engine/model substitution. A socket close alone never proves cancellation; uncertain operation stays held and cannot proceed to another destructive control. Keep ordinary Mesh model controls disabled until qualification is actually proven; no Rook/native-worker/Mind activation.
 
 Rollback sources are in the human-labelled E:/App-Backups/Local-Model-Supervisor folder selected by data/model-supervisor-preinstall-backup-20261111.json. Two source files were copied, SHA256 checked, restored into an isolated folder and parsed successfully; exact task XML exported read-only. This does not prove actual task stop/start or live rollback. Current all-four health-idle observation is in data/model-service-cutover-readiness-20261111.json and must be refreshed at execution. Eddie previously said to keep the service running; that remains binding until he approves this specific window.
+
+
+## 2026-11-11: owner-selected local backup policy completed
+
+C5 now follows Eddie's explicit decisions: “This PC for now” at E:/App-Backups, app-labelled folders, and “Manual and milestone backups only for now.” Existing publisher creates new unique dated snapshots, retains old ones without pruning, and publishes latest only after SQLite integrity/FK, all-table restore fidelity, extracted source hashes/syntax and isolated restored-source HTTP acceptance pass. Actual14-card/306-file latest manifest and restore guide were inspected. This completes the selected LOCAL policy; it does not establish off-device protection, other-app backups or a live disaster restore.
+
+The original planning criterion was: “Decide backup retention/scheduling and an off-device destination, then implement and rehearse the selected policy.” Off-device was a planning recommendation superseded for this current local-release slice by Eddie's chosen on-PC destination; it remains a deferred future protection, not a completed claim. No new schedule, pruning, upload or deletion was introduced. Qualification: integrations/owner-backup-policy-qualification.json.
+
+Live parent progress updated through normal revision-checked API and reread at revision72. Six original stage IDs/text/statuses, pending review, card stage and all13other cards preserved;14cards/all8historical holds remain. First-release count14/21; C1/C4 and D/E2 remain open, full memory/skills/MCP/other-machine objective remains open. Actual release GET200 reports eed12cbec65d/sourceeed12cbec65d3cf0c0def22856c3d906fef9606af51731869d911e195922874f. Previous401diagnostic reads omitted X-Trial-CSRF, which current() rechecks even for reads. Reusing the established backup-rehearsal header contract resolved them; no auth guard or credential changed. Evidence data/backup-policy-goal-readback-20261111.json; earlier refused-request evidence preserved.
+
+Previous goal turn PROGRESS: prepared exact model-service cutover/rollback, verified source backup and restore. Current turn PROGRESS: verified owner-selected C5 policy, reconciled stale criterion, synced live saved checklist. Pending exact GitHub/model-service approvals remain unexecuted; no new service/model/worker/Mind/Rook action. Next: proceed with the prepared model-service window only on its explicit approval; continue independent authorized local fixes meanwhile. Final manual E milestone follows these notes; no unnecessary regression rerun for this evidence/doc-only reconciliation.
