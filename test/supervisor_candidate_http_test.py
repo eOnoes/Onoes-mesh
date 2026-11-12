@@ -265,6 +265,49 @@ class CandidateHTTPTests(unittest.TestCase):
             backend.server_close()
             backend_thread.join(timeout=2)
 
+    def test_successful_load_renews_idle_deadline_before_exposing_ready(self):
+        clock, terminated = [0.0], []
+        class StopWatchdog(Exception): pass
+        class Child:
+            pid, returncode = 123, None
+            def poll(self): return self.returncode
+            def terminate(self): terminated.append(clock[0]); self.returncode = 0
+            def wait(self, timeout): return self.returncode
+            def kill(self): raise AssertionError('No force kill expected')
+        child = Child()
+        ticks = []
+        def sleep(seconds):
+            self.assertEqual(seconds,15)
+            if not ticks: raise StopWatchdog()
+            target = ticks.pop(0)
+            if len(ticks) == 0: self.assertEqual(terminated,[],'freshly loaded model must retain its whole idle window')
+            clock[0] = target
+        fake_time = types.SimpleNamespace(monotonic=lambda: clock[0],sleep=sleep)
+        with patch.object(self.module,'time',fake_time), patch.object(self.module,'log',lambda *a: None), \
+             patch.object(self.module,'preflight',lambda port:(True,'ok')), \
+             patch.object(self.module,'resources',lambda:{'gpu_free_MiB':32000,'gpu_used_MiB':24000}), \
+             patch.object(self.module,'unsupported_flags',lambda *a:[]), \
+             patch.object(self.module,'MODELS',{'nemotron-3.5-bolt-74b-a9b':{'build':'fixture'}}), \
+             patch.object(self.module,'save',lambda *a:None), \
+             patch.object(self.module.subprocess,'Popen',lambda *a,**kw:child):
+            supervisor = self.module.Supervisor()
+            clock[0] = self.module.IDLE_UNLOAD_S + 100
+            def ready(port):
+                self.assertTrue(supervisor.loading)
+                clock[0] += 50
+                return True
+            supervisor._wait_ready = ready
+            try:
+                ok, _ = supervisor.ensure(8099)
+                self.assertTrue(ok)
+                self.assertEqual(supervisor.last_used,clock[0],"successful load must not inherit yesterday's idle timestamp")
+                ticks.extend([clock[0]+self.module.IDLE_UNLOAD_S-1,clock[0]+self.module.IDLE_UNLOAD_S])
+                with self.assertRaises(StopWatchdog): supervisor.idle_watchdog()
+                self.assertEqual(len(terminated),1)
+                self.assertIsNone(supervisor.proc)
+            finally:
+                if supervisor.log_f: supervisor.log_f.close()
+
     def test_real_watchdog_waits_for_chat_and_unloads_only_after_renewed_idle_deadline(self):
         clock, ticks, completed = [10000.0], queue.Queue(), queue.Queue()
         started, release = threading.Event(), threading.Event()

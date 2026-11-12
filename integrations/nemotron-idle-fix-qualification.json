@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "mesh-nemotron-idle-fix/v1",
+  "at": "2026-11-12T20:29:14.997839+00:00",
+  "state": "PREPARED_ONLY_NOT_INSTALLED",
+  "ownerPhoneAcceptance": "Eddie confirmed correct Mesh8453 Inference page, successful load/chat/unload and final STOPPED",
+  "diagnostic": {
+    "loadAttempts": 1,
+    "chatAttempts": 0,
+    "unloadAttempts": 0,
+    "retries": 0,
+    "loadReceipt": "COMPLETED/readBackVerified; persisted in actual Mesh SQLite",
+    "outcome": "Watchdog unloaded newly ready runtime using stale1929-minute idle age; final empty/idle, original child gone",
+    "earlierPhoneReceiptGap": "Unexplained; do not fabricate historical receipts"
+  },
+  "model": {
+    "name": "Nemotron 3.5 Bolt 74B A9B",
+    "mainFileBytes": 22018326528,
+    "companionFileBytes": 1733692736
+  },
+  "cause": "Successful native ensure did not refresh last_used; watchdog inherited time since service initialization/previous activity",
+  "fix": "Renew monotonic last_used on successful readiness BEFORE clearing loading; retain90-minute policy",
+  "installedSupervisorSha256": "719cb53c01eacc67da3a7f87162f68fb1ebb5038d25c870e5bb3ddb144f84f12",
+  "candidateSupervisorSha256": "f824f638777db226c1d4f00cc37fc7849ae0ab3c1def5a234b4a639598b73786",
+  "bridgeSha256": "7b823cd6a07fad21c7471142e999e3122d26c880cfbcd9c0f4acfe8cc6874116",
+  "tests": {
+    "oldCandidateRegression": "FAIL: last_used0 vs5550 after simulated cold load",
+    "candidateHttpAndWatchdogPassed": 8,
+    "fullMeshPassed": 517,
+    "static": "PASS",
+    "diff": "PASS"
+  },
+  "activation": "Requires separately approved shared-service maintenance and new exact-source qualification; ordinary historic qualification is not new-source proof"
+}
