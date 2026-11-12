@@ -26,6 +26,24 @@ test('normal launcher leaves native workers absent without explicit record and h
   assert.equal(result.state,'disabled');assert.equal(result.options,undefined);assert.equal(factories,0);
 });
 
+test('build-check tools require an explicit hash-approved profile and cannot replace file-only authority',async()=>{
+  const f=fixture();let calls=0;
+  const makeOptions=options=>({profile:options.profile,authorized:options.authorized,rpc:async()=>{calls++;return {found:false};}});
+  const original=mainboardNativeConnection({...f,makeOptions});
+  assert.equal(original.state,'configured');assert.equal(Object.hasOwn(original.options.profile,'toolProfile'),false);
+  const originalBinding=createNativeWorkerBinding(original.options);
+  f.record.profile.toolProfile='build-check-v1';const bytes=JSON.stringify(f.record);writeFileSync(f.file,bytes);
+  await assert.rejects(originalBinding.rpc('session.create',{}),/not authorized/);assert.equal(calls,0);await originalBinding.close();
+  f.env.MESH_NATIVE_WORKER_RECORD_SHA256=createHash('sha256').update(bytes).digest('hex');
+  const explicit=mainboardNativeConnection({...f,makeOptions});assert.equal(explicit.state,'configured');
+  assert.equal(explicit.options.profile.toolProfile,'build-check-v1');
+  const binding=createNativeWorkerBinding(explicit.options);assert.deepEqual(await binding.rpc('prompt.lookup',{}),{found:false});
+  f.record.profile.toolProfile='all-tools';const widened=JSON.stringify(f.record);writeFileSync(f.file,widened);
+  f.env.MESH_NATIVE_WORKER_RECORD_SHA256=createHash('sha256').update(widened).digest('hex');
+  assert.equal(mainboardNativeConnection({...f,makeOptions}).state,'held');
+  await assert.rejects(binding.rpc('session.create',{}),/not authorized/);assert.equal(calls,1);await binding.close();
+});
+
 test('invalid requested live enrollment holds the native lane before any transport or Relay fallback',async()=>{
   for(const change of [f=>delete f.env.MESH_NATIVE_WORKER_RECORD_SHA256,
     f=>f.env.MESH_NATIVE_WORKER_RECORD_SHA256='0'.repeat(64),

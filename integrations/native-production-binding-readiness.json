@@ -1,84 +1,77 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-11-10T18:51:12.311987+00:00",
-  "sourceCommit": "e5a5ccc",
-  "status": "production_binding_not_installed",
+  "observedAt": "2026-11-12T23:15:15.013494+00:00",
+  "status": "held_production_enrollment_not_activated",
   "activationAuthorized": false,
   "liveDispatchPerformed": false,
   "sourceHashes": {
-    "server.mjs": "b59cb3e956147c5ceebab3ec52223b160fcdba5af75bb8d345344c81da0fe371",
-    "lib/workroom-automation.mjs": "206f22404820c00ed07c964457b6e076863c313662a28e4a2b872c4f8c999076",
-    "lib/workroom-local-sessions.mjs": "d819666ab3e68df8cdbb769bd0348638591d6b127145a535c66b044ef4264be4",
-    "lib/nims-link.mjs": "8ca392d08aa45db1c804e1e0d2a62fc3f2a0ff64795ad25af772528de136e0b0"
+    "serve.mjs": "fbac48b8f1b90e838d9997f1e1e5e56482876b5319a0bcec859079b2809a4647",
+    "lib/native-mainboard.mjs": "e4f4630d48ced2a11c5710f398de1fb59e71e7aac98cbfb2729000872206a8b9",
+    "lib/workroom-local-sessions.mjs": "316d509a853513e61ed950d512e74127e234561757ac07e94ac4b52c52ae6ca7",
+    "lib/workroom-automation-store.mjs": "e6a66c1aa78b3a68ea156ea10562d115eab245a374a088e57da5c97b13eba36d",
+    "test/native-mainboard.test.mjs": "7cd1e7c6c3e499cc182eaa12c5f55b8bf30dab88ae70ff938a854104b1dc994a"
   },
-  "findings": [
-    {
-      "source": "server.mjs:175",
-      "fact": "startApp constructs createTeamRunner without nativeWorker or nativeObserver. This is source wiring evidence, not an attestation of the running process source."
-    },
-    {
-      "source": "lib/workroom-automation.mjs:4",
-      "fact": "Both native options default to null; dedicated dispatch is used only when nativeWorker is supplied. Otherwise the worker handoff uses Relay."
-    },
-    {
-      "source": "lib/workroom-automation.mjs:10",
-      "fact": "Dedicated native route requires Echo as builder and Nims as independent reviewer. Existing native sends remain held without verified writer quiescence; no Relay fallback."
-    },
-    {
-      "source": "lib/nims-link.mjs",
-      "fact": "Existing Nims identity is nims, backed by the Codex client; do not create another Codex/Nims identity. Agent workspace service status is not this route readiness."
-    },
-    {
-      "source": "lib/workroom-local-sessions.mjs",
-      "fact": "Current dedicated session creation sets max_turns to 50; the completed real-provider diagnostic qualified a file-only four-turn request, not this complete production contract."
-    }
-  ],
-  "verification": {
-    "command": "node --test --test-timeout=30000 test/workroom-automation.test.mjs test/workroom-native-receipts.test.mjs test/nims-recovery.test.mjs",
-    "exitCode": 0,
-    "passed": 35,
-    "failed": 0,
-    "boundary": "Local synthetic fixtures and guarded HTTP routes; no real provider task. Initial restricted run passed 33 with two loopback EACCES failures; rerun with loopback permitted passed all 35."
+  "implemented": {
+    "trustedLauncherBinding": "serve.mjs already supplies mainboardNativeConnection options to startApp; older missing-wiring finding is superseded.",
+    "closedEnrollment": "Exact external owner record and hash; loopback native runtime, no caller-selected profile/credentials; authorization rechecked around calls.",
+    "fileOnlyDefault": "Omitted toolProfile preserves file-only behavior.",
+    "explicitBuildCheck": "Optional toolProfile=build-check-v1 selects existing closed file+terminal profile; arbitrary values or extra fields rejected. Explicit new record hash required; existing file-only authority cannot be upgraded."
   },
-  "remaining": [
-    "Implement a disabled-by-default server binding using the existing native adapter; select a reviewed exact workspace and closed profile without credential reuse or broader grants.",
-    "Connect read observation and verified retirement to the same adapter; preserve saved task, stage, session and submission identities across restart.",
-    "Prove the configured profile including toolsets, turn limit and writer lifetime against the actual native runtime before any live task.",
-    "Review one concrete end-to-end pilot scope and obtain separate approval for any further real-provider task; all three diagnostic tasks are consumed.",
-    "Verify builder completion, retirement, independent Nims review and card result before considering Rook activation."
-  ],
-  "unchanged": [
-    "Rook off",
-    "Mind live access off",
-    "No model-service restart",
-    "Existing 22 untracked integration files untouched"
-  ],
-  "liveServiceObservation": {
-    "observedAt": "2026-11-10T18:51:25.246Z",
-    "services": [
-      {
-        "id": "relay",
-        "status": "fresh",
-        "source": "live_relay_http"
-      },
-      {
-        "id": "inference",
-        "status": "not_configured",
-        "source": "none"
-      },
-      {
-        "id": "agent",
-        "status": "not_configured",
-        "source": "none"
-      },
-      {
-        "id": "mind",
-        "status": "not_configured",
-        "source": "none"
-      }
+  "qualified": {
+    "isolatedFileOnlyTeam": "PASS actual approved guide build, verified worker retirement, independent read-only Nims approval, original trace and restart. Scope6a39a2f6997dfafd2aab04c3262b991a88722594db60083ef210513974e855a6.",
+    "fullRegressionBeforeThisChange": {
+      "total": 520,
+      "node": 406,
+      "python": 114
+    },
+    "currentFocusedRegression": {
+      "command": "node --test --test-timeout=30000 test/native-mainboard.test.mjs test/workroom-native-binding.test.mjs test/workroom-plan.test.mjs test/workroom-automation.test.mjs",
+      "passed": 63,
+      "exitCode": 0,
+      "static": "PASS",
+      "diff": "PASS"
+    },
+    "redGreen": "New explicit build-check enrollment regression failed before loader change, passed afterward.",
+    "boundary": "Synthetic enrollment/binding checks do not qualify real-provider terminal execution or production activation."
+  },
+  "currentMainBoard": {
+    "taskCount": 14,
+    "historicalHolds": 8,
+    "sameWorkspaceHolds": 3,
+    "unknownWorkspaceHolds": 5,
+    "nativeBoundHistoricalHolds": 0,
+    "states": [
+      "accepted"
     ],
-    "readOnly": true,
-    "modelDispatch": false,
-    "interpretation": "Confirms current Relay HTTP observation only. Agent workspace not_configured does not establish Nims review route availability."
-  }
+    "managedFlowEnabled": false,
+    "evidence": "data/production-connection-hold-scope-20261112.json"
+  },
+  "nextSmallestSlice": [
+    "Prepare isolated code-and-test qualification using explicit build-check-v1, exact allowed source/test files, one builder capped at50 and existing Nims independent read-only review.",
+    "Run local fixture/transport checks first; freeze the concrete scope and obtain exact approval before any real provider work.",
+    "For the main board, preserve existing8holds until authoritative original writer evidence or a separately reviewed legacy-closure procedure is approved and verified. No age/Done/restart-based release.",
+    "Before activation, review exact external enrollment record, native identity/config references and workspace; live tool access and enrollment need separate explicit authorization."
+  ],
+  "candidateConnectionForReviewOnly": {
+    "workspace": "C:/Users/eMitchell109/Documents/ChatGPT/Nims Chat/mesh-workroom-ab",
+    "builderAgentId": "echo",
+    "reviewerAgentId": "nims",
+    "provider": "openai-codex",
+    "model": "gpt-6-luna",
+    "toolProfile": "build-check-v1",
+    "maxTurns": 50,
+    "ownerRecordPath": null,
+    "ownerRecordHash": null,
+    "identityReferenceConfirmed": false,
+    "installed": false
+  },
+  "unchanged": [
+    "No trusted owner record created or installed",
+    "No process environment activation",
+    "No source/service deployment",
+    "No provider task",
+    "No old hold released",
+    "Rook and live Mind off"
+  ],
+  "note": "This review proposes the practical build/test profile rather than presenting file-only guide success as qualification to build applications."
 }
