@@ -254,7 +254,7 @@
         "diff": "PASS",
         "regression": "New missing-peer test failed before fix and passes after; all three absent-peer combinations leave complete task state unchanged."
       },
-      "deployment": "Not restarted/deployed in this no-service-restart trial window.",
+      "deployment": "DEPLOYED after trial ended: named Mesh-only restart, exact14task board and8holds equivalent, Echo/Nims visible, finalSTOPPED; no trial replay.",
       "nextStep": "Restore/verify existing Relay connection and Echo peer through its established launcher ownership; do not rerun this marked attempt or bypass source pins."
     }
   },
@@ -331,5 +331,17 @@
     },
     "approval": "Fresh one-trial question pending; prior marked attempt preserved.",
     "newProviderTasks": 0
+  },
+  "missingPeerFixDeployment": {
+    "qualification": "PASS",
+    "at": "2026-11-12T22:07:35.498592+00:00",
+    "before": "data/missing-peer-deploy-before-20261112.json",
+    "after": "data/missing-peer-deploy-after-20261112.json",
+    "activeTeamsBefore": 0,
+    "savedBoardEquivalent": true,
+    "historicalHoldsEquivalent": true,
+    "modelOperation": false,
+    "relayRestart": false,
+    "trialRetried": false
   }
 }
