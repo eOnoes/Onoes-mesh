@@ -17,6 +17,17 @@ const file=()=>join(mkdtempSync(join(tmpdir(),'mesh-auto-')),'tasks.sqlite');
 const agents=[{id:'echo',backend:'hermes',status:'idle',conversation_id:'e'},{id:'dsh',backend:'a2a',status:'idle',conversation_id:'d'}];
 function ready(store,reviewerId='dsh'){let t=store.create({title:'Automatic fixture',description:'Only one named fixture artifact',owner:'echo'});t=store.workroom.save(t.id,{project:'Fixture',criteria:'Independent checks pass',owner:'echo',team:'local_build',stage:'ready',revision:1});t=store.workroom.saveProgress(t.id,{goal:'Bounded artifact',checklist:[{id:'one',text:'Implement and verify fixture',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision});return store.workroom.savePlan(t.id,{lead:'echo',spec:'One artifact',workspace:process.cwd(),allowedFiles:'data/fixture-only.mjs',checks:'node --check data/fixture-only.mjs',boundaries:'No other changes or network',workerId:'echo',reviewerId,state:'locked',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision}).task;}
 const action=(t,kind='start')=>({action:kind,revision:t.automation?.revision??0,planRevision:t.plan.revision,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision});
+test('missing saved peers report connection failure and leave team reservations unchanged',()=>{
+ const store=openTaskStore(file());
+ try{
+  const t=ready(store),before=store.workroom.get(t.id);
+  for(const available of [[],[agents[0]],[agents[1]]]){
+   assert.throws(()=>store.workroom.automation.action(t.id,action(t),available,process.cwd()),
+    error=>error.status===409&&/saved builder or reviewer is unavailable/.test(error.message));
+   assert.deepEqual(store.workroom.get(t.id),before);
+  }
+ }finally{store.close();}
+});
 function fakeRelay(store,{lost=false,incomplete=false}={}){const sends=[];return {sends,agents:async()=>agents,nativeRead:async route=>{
  if(route==='/api/mesh-capabilities')return {taskSessionBinding:1};const messages=[];
  for(const s of sends){const taskId=/Workroom task ([a-f0-9-]+):/.exec(s.text)[1],t=store.workroom.get(taskId);let report;

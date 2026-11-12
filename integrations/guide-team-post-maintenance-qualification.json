@@ -207,7 +207,7 @@
     }
   },
   "freshCurrentSourcePreparation": {
-    "qualification": "PREPARED_VALIDATED_NOT_RUN",
+    "qualification": "ATTEMPTED_HELD_BEFORE_DISPATCH",
     "path": "data/guide-team-state-dde02646-4a13-447a-8f10-c7e80949341d/pilot.json",
     "review": "data/guide-team-state-dde02646-4a13-447a-8f10-c7e80949341d/REVIEW.txt",
     "scopeHash": "5e17f394cd98a3522c86554be97231b47b3f07bb67680f93ca43dd54980a34a9",
@@ -216,7 +216,7 @@
     "nativeSourceFiles": 9,
     "validation": "Existing validateGuideTeamPilot passed exact source/native hashes, scope, original/copy bytes, and isolated saved task fingerprint. No attempt marker.",
     "newProviderTasks": 0,
-    "approval": "Fresh exact trial question pending; previous approvals consumed.",
+    "approval": "Eddie: Approve this team trial. Fresh approval recorded in isolated owner-approval.json.",
     "limits": {
       "builderAttempts": 1,
       "builderMaxTurns": 50,
@@ -228,6 +228,34 @@
       "reviewerMode": "read-only",
       "automaticRetries": false,
       "automaticDone": false
+    },
+    "execution": {
+      "at": "2026-11-12T21:56:59.191959+00:00",
+      "result": "HELD",
+      "stage": "HTTP team-start route",
+      "httpStatus": 409,
+      "reason": "Relay port8787 has no listener; actual admitted Mesh peer read returned only existing nims/codex, no Echo. Saved plan is Echo builder/Nims reviewer. Missing peer fell through to misleading lane-qualification409.",
+      "builderAttemptsUsed": 0,
+      "reviewerAttemptsUsed": 0,
+      "sends": 0,
+      "nativeReceipts": 0,
+      "automationRows": 0,
+      "guideUnchanged": true,
+      "runner": "terminal exit1; isolated app closed by finally",
+      "retryPerformed": false,
+      "evidence": "data/guide-team-state-dde02646-4a13-447a-8f10-c7e80949341d/pre-dispatch-refusal-proof.json",
+      "runnerAttemptsUsed": 1,
+      "connectionObservation": "Live Nov12 readonly; no Relay source/process/service operation performed.",
+      "correction": "Added explicit missing saved builder/reviewer refusal before role-policy check, retaining all reservation/retirement/role guards.",
+      "focusedTests": {
+        "guideFixtureTests": 12,
+        "assignmentClaimReceiptPolicyTests": 45,
+        "static": "PASS",
+        "diff": "PASS",
+        "regression": "New missing-peer test failed before fix and passes after; all three absent-peer combinations leave complete task state unchanged."
+      },
+      "deployment": "Not restarted/deployed in this no-service-restart trial window.",
+      "nextStep": "Restore/verify existing Relay connection and Echo peer through its established launcher ownership; do not rerun this marked attempt or bypass source pins."
     }
   }
 }
