@@ -257,5 +257,79 @@
       "deployment": "Not restarted/deployed in this no-service-restart trial window.",
       "nextStep": "Restore/verify existing Relay connection and Echo peer through its established launcher ownership; do not rerun this marked attempt or bypass source pins."
     }
+  },
+  "relayRecovery": {
+    "qualification": "PASS_READONLY_CONNECTION_AFTER_EXISTING_SERVICE_START",
+    "at": "2026-11-12T22:04:34.168899+00:00",
+    "before": "Named helper Running=false Healthy=false Starting=false UnownedPort=false; port8787 absent.",
+    "action": "Existing integrations/relay-service.ps1 -Action Start once; hidden, no source/config/credential change.",
+    "launcherId": 44512,
+    "listenerId": 36668,
+    "after": {
+      "at": "2026-11-12T22:04:34.168899+00:00",
+      "agents": [
+        {
+          "id": "echo",
+          "backend": "hermes",
+          "status": "idle",
+          "conversationBound": true
+        },
+        {
+          "id": "cyony",
+          "backend": "a2a",
+          "status": "idle",
+          "conversationBound": true
+        },
+        {
+          "id": "tripp",
+          "backend": "openclaw",
+          "status": "waiting",
+          "conversationBound": true
+        },
+        {
+          "id": "dsh",
+          "backend": "a2a",
+          "status": "done",
+          "conversationBound": true
+        },
+        {
+          "id": "nims",
+          "backend": "codex",
+          "status": "idle",
+          "conversationBound": true
+        }
+      ],
+      "cards": 14,
+      "holds": 8,
+      "inferenceState": "STOPPED",
+      "trialRetried": false,
+      "agentMessageSent": false
+    },
+    "databaseSnapshot": "E:/App-Backups/Onoes-Relay/2026-11-12_22-03-59_UTC_Pre-recovery",
+    "databaseIntegrity": "ok",
+    "causeOfPriorExit": "Unknown; service restoration does not establish why it previously exited.",
+    "nativeGatewayRestarted": false,
+    "modelServiceRestarted": false,
+    "failedTrialRetried": false
+  },
+  "postRecoveryPreparation": {
+    "qualification": "PREPARED_VALIDATED_NOT_RUN",
+    "path": "data/guide-team-state-f9c0ea00-1007-4047-bd7c-e5c563901117/pilot.json",
+    "scopeHash": "9f5d9d4f4c7c306eec1dc49dc19afe6db835d577f88afa56c234126fb2c388f0",
+    "taskId": "b2acfa51-6feb-4329-8bf8-6ac65490d635",
+    "limits": {
+      "builderAttempts": 1,
+      "builderMaxTurns": 50,
+      "builderTools": [
+        "file"
+      ],
+      "reviewerAttempts": 1,
+      "reviewer": "nims",
+      "reviewerMode": "read-only",
+      "automaticRetries": false,
+      "automaticDone": false
+    },
+    "approval": "Fresh one-trial question pending; prior marked attempt preserved.",
+    "newProviderTasks": 0
   }
 }
