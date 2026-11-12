@@ -1,6 +1,6 @@
 {
   "schema": "mesh-guide-post-maintenance-qualification/v1",
-  "qualification": "HELD",
+  "qualification": "PASS_CURRENT_ISOLATED_LIVE_NATIVE_ONLY",
   "prepared": {
     "path": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-03369aa8-d418-4058-9d2d-99faa9df87b1\\pilot.json",
     "review": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-03369aa8-d418-4058-9d2d-99faa9df87b1\\REVIEW.txt",
@@ -395,7 +395,7 @@
     "productionServiceChanges": 0
   },
   "fixedReviewerPreparation": {
-    "qualification": "PREPARED_VALIDATED_NOT_RUN",
+    "qualification": "PASS_LIVE_NATIVE",
     "path": "data/guide-team-state-87ec3e98-4003-4797-822a-0bfb3ccc5268/pilot.json",
     "scopeHash": "6a39a2f6997dfafd2aab04c3262b991a88722594db60083ef210513974e855a6",
     "taskId": "6f10b8df-d854-4198-9ffa-357a16e810ae",
@@ -411,7 +411,51 @@
       "automaticRetries": false,
       "automaticDone": false
     },
-    "approval": "Fresh exact trial question pending; no prior attempt replay or evidence erasure.",
-    "newProviderTasks": 0
+    "approval": "Eddie: Approve the fixed-reviewer trial. One builder and one reviewer attempt consumed, no retries.",
+    "newProviderTasks": 2,
+    "execution": {
+      "qualification": "PASS",
+      "source": "live_native",
+      "workerSendId": "0895e392-adb5-460d-b591-79cdf420bfd7",
+      "nativeOutcome": "completed",
+      "writerQuiescence": true,
+      "retirementHash": "b0e1563dbd252ee45662982329ed7dc29d4d82b95efa49831ec2a50af56ebd34",
+      "reviewerThreadId": "01a1d200-12cd-7422-9ea3-59a25a422b94",
+      "reviewerTurnId": "01a1d200-1dea-7871-96b4-6537d5e212aa",
+      "independentReviewVerdict": "approved",
+      "strictOriginalTracePassed": true,
+      "successfulReviewCommands": 2,
+      "failedReviewCommands": 0,
+      "exactFrozenReviewInputMatched": true,
+      "guideSha256": "50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f",
+      "guideBytes": 6160,
+      "preservedAcrossRestart": true,
+      "ownerReviewRecorded": false,
+      "automaticDone": false,
+      "builderAttemptsUsed": 1,
+      "reviewerAttemptsUsed": 1,
+      "retries": 0,
+      "evidence": "data/guide-team-state-87ec3e98-4003-4797-822a-0bfb3ccc5268",
+      "boundary": "Actual isolated live-native team workflow; not production workspace enrollment, Rook activation, historical writer closure or full local release acceptance."
+    }
+  },
+  "historicalFirstAttemptQualification": "HELD",
+  "productionEnrolled": false,
+  "latestLocalRegression": {
+    "command": "npm test",
+    "exitCode": 0,
+    "nodePassed": 406,
+    "pythonPassed": 114,
+    "totalPassed": 520,
+    "log": "data/fixed-reviewer-milestone-full-tests-20261112.log",
+    "codeChangedDuringRun": false
+  },
+  "mainBoardMilestone": {
+    "parentProgressRevision": 83,
+    "other13CardsUnchanged": true,
+    "historicalHolds": 8,
+    "inferenceState": "STOPPED",
+    "productionDispatchEnabled": false,
+    "evidence": "data/fixed-reviewer-mainboard-isolation-20261112.json"
   }
 }
