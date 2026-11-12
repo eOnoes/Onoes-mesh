@@ -134,6 +134,16 @@ export function assertPilotReviewInput(content,expected) {
   });
   assert.deepEqual(normalized,[{type:'text',text:expected}]);
 }
+export function assertPilotReviewTrace(turn) {
+  assert.equal(turn.status,'completed');
+  assert.ok(Array.isArray(turn.items),'Native review items are unavailable');
+  for(const item of turn.items){
+    assert.ok(['userMessage','agentMessage','reasoning','commandExecution'].includes(item.type),
+      'Native review contains an unsupported item type: '+String(item.type));
+    if(item.type==='commandExecution')assert.ok(item.status==='completed'&&item.exitCode===0,
+      'Native review contains a failed or incomplete command; inspect the original trace before qualification');
+  }
+}
 export async function reviewReadback(task,fixture,p) {
   if(fixture)return {source:'disposable_fixture',independentNativeReviewQualified:false};
   const send=task.messages.find(m=>m.id===task.automation.reviewerSendId),run=send?.nims;
@@ -143,9 +153,7 @@ export async function reviewReadback(task,fixture,p) {
   try {
     const native=await client.readThread(run.threadId);assert.equal(native.thread.id,run.threadId);
     const matches=native.thread.turns.filter(t=>t.id===run.turnId);assert.equal(matches.length,1);
-    const turn=matches[0];assert.equal(turn.status,'completed');
-    assert.ok(turn.items.every(item=>['userMessage','agentMessage','reasoning','commandExecution'].includes(item.type)
-      &&(item.type!=='commandExecution'||item.status==='completed'&&item.exitCode===0)));
+    const turn=matches[0];assertPilotReviewTrace(turn);
     const users=turn.items.filter(item=>item.type==='userMessage');assert.equal(users.length,1);
     assertPilotReviewInput(users[0].content,expected);
     return {source:'native_thread_readback',threadId:run.threadId,turnId:run.turnId,status:turn.status,itemTypes:turn.items.map(item=>item.type)};

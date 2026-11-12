@@ -313,7 +313,7 @@
     "failedTrialRetried": false
   },
   "postRecoveryPreparation": {
-    "qualification": "PREPARED_VALIDATED_NOT_RUN",
+    "qualification": "ATTEMPTED_HELD_AFTER_APPROVED_REVIEW",
     "path": "data/guide-team-state-f9c0ea00-1007-4047-bd7c-e5c563901117/pilot.json",
     "scopeHash": "9f5d9d4f4c7c306eec1dc49dc19afe6db835d577f88afa56c234126fb2c388f0",
     "taskId": "b2acfa51-6feb-4329-8bf8-6ac65490d635",
@@ -329,8 +329,40 @@
       "automaticRetries": false,
       "automaticDone": false
     },
-    "approval": "Fresh one-trial question pending; prior marked attempt preserved.",
-    "newProviderTasks": 0
+    "approval": "Eddie approved the recovered-connection trial via async answer; one runner execution consumed, no retries.",
+    "newProviderTasks": 2,
+    "execution": {
+      "taskId": "b2acfa51-6feb-4329-8bf8-6ac65490d635",
+      "workerSendId": "d10787cc-eac0-4fa0-a057-21cecc4479b1",
+      "reviewerSendId": "c4e51f0b-2de2-4419-b55a-8a8964664ead",
+      "builderAttemptsUsed": 1,
+      "reviewerAttemptsUsed": 1,
+      "nativeOutcome": "completed",
+      "writerQuiescence": true,
+      "retirementHash": "32bacc30ff90fb9a4c6bda155fa44613f376186a005cf8290ed00fa2db79a8f7",
+      "reviewVerdict": "approved",
+      "guideBytes": 6160,
+      "guideSha256": "50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f",
+      "originalGuideUnchanged": true,
+      "sourcePinsUnchangedBeforeVerifierEdit": true,
+      "frozenReviewInputAndOriginalThreadTurnMatched": true,
+      "traceItemTypesAllSupported": true,
+      "failedCommands": 1,
+      "failedCommandReason": "PowerShell ParserError caused by smart-quote handling; later command in same original turn completed all read-only guide checks.",
+      "strictQualification": "HELD; original verifier requires every command completed with exit0. Do not silently remove failed evidence or label original run PASS.",
+      "isolatedReopenings": 2,
+      "completeSavedTaskEquivalent": true,
+      "ownerReviewPending": true,
+      "automaticDone": false,
+      "retries": 0,
+      "evidenceDirectory": "data/guide-team-state-f9c0ea00-1007-4047-bd7c-e5c563901117",
+      "runnerTerminal": "exit1; isolated app closed in finally",
+      "diagnosticCorrection": "Explicitly distinguish failed/incomplete command from unsupported item, without broadening acceptance.",
+      "focusedGuideTestsPassed": 13,
+      "staticCheck": "PASS",
+      "diffCheck": "PASS",
+      "nextStep": "Review qualification policy for a recovered read-only parser failure and prepare deterministic reviewer checks before requesting any new provider attempt. Production enrollment remains unqualified."
+    }
   },
   "missingPeerFixDeployment": {
     "qualification": "PASS",

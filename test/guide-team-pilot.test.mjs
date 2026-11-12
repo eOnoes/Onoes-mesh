@@ -5,7 +5,17 @@ import {openTaskStore} from '../lib/task-store.mjs';
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput} from '../integrations/guide-team-pilot.mjs';
+import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput,assertPilotReviewTrace} from '../integrations/guide-team-pilot.mjs';
+
+test('review trace distinguishes failed commands from unsupported items and retains both holds',()=>{
+ const good={status:'completed',items:[{type:'userMessage'},{type:'commandExecution',status:'completed',exitCode:0},{type:'agentMessage'}]};
+ assert.doesNotThrow(()=>assertPilotReviewTrace(good));
+ // A later successful correction does not silently erase the earlier failure.
+ assert.throws(()=>assertPilotReviewTrace({...good,items:[{type:'commandExecution',status:'failed',exitCode:1},...good.items]}),/failed or incomplete command/);
+ assert.throws(()=>assertPilotReviewTrace({...good,items:[{type:'commandExecution',status:'inProgress',exitCode:0}]}),/failed or incomplete command/);
+ assert.throws(()=>assertPilotReviewTrace({...good,items:[{type:'fileChange'}]}),/unsupported item type/);
+ assert.throws(()=>assertPilotReviewTrace({...good,status:'inProgress'}));
+});
 
 test('native review input permits only empty text-element metadata without changing the frozen request',()=>{
  const expected='Exact frozen review request';
