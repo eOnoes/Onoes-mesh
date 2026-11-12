@@ -132,7 +132,7 @@
     "newProviderTasks": 0
   },
   "exactGuidePreparation": {
-    "qualification": "PREPARED_NOT_RUN",
+    "qualification": "ATTEMPTED_HELD",
     "fileOperationEvidence": {
       "qualification": "PASS_NATIVE_FILE_OPERATIONS_WITH_TEST_BACKEND",
       "workspace": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\native-guide-file-ops-4ffb4a0a-df90-4149-942d-1de59b10ca2d",
@@ -171,7 +171,63 @@
       "focusedPassed": 9
     },
     "codeIndex": "register_edit2files/reindexcompleted",
+    "newProviderTasks": 1,
+    "approvalRequired": "Previous exact-guide trial approval was consumed. No automatic rerun; any new provider attempt needs its own concrete owner approval.",
+    "executionEvidence": {
+      "reconciledAt": "2026-11-12T21:42:45.279809+00:00",
+      "taskId": "498c0e93-a2b5-443b-8b9b-3ac5ebdccf55",
+      "startedAt": "2026-11-10T23:22:45.100Z",
+      "scopeHash": "8cc6bb1b865bfcf2054d84f15f852948fd6a56ef3c7853135e94cb63d45c29fc",
+      "qualification": "HELD",
+      "builderAttempts": 1,
+      "reviewerAttempts": 0,
+      "reviewCount": 0,
+      "guideBytes": 6160,
+      "guideSha256": "50860ecae6d4bdeca38a13632781bdc1e7514a7f39734e61318e94b7f49dde0f",
+      "matchesExpected": true,
+      "originalGuideUnchanged": true,
+      "worker": [
+        {
+          "sendId": "55285bea-23db-41a9-adee-baca03995b75",
+          "nativeOutcome": "completed",
+          "writerQuiescence": true,
+          "retirementHash": "d16530592b296592134ac52f2d975ef4629c19e6fa938b5beab2bfc01bcdc6fc"
+        }
+      ],
+      "reason": "Pilot not complete; original worker identities remain held\n+ actual - expected\n\n+ 'active'\n- 'needs_review'\n",
+      "retries": 0,
+      "automaticDone": false,
+      "evidenceDirectory": "data/guide-team-state-a52c6cdf-0707-42f3-9071-ebe3ed0b37be",
+      "evidenceSha256": {
+        "attempt.json": "157b36d854e9b58ca9107f52bf42b182e3a1152bd9ef4f4d14dbd88533ccb0a9",
+        "verification.json": "f6516714e525ed64ef0c651cc7bc1df3c4429e0cf9d981218f381f1b581ce810",
+        "result.json": "32dac5ac17159de7beac7ce4581728eb68b1d91811932e61ebf2f65fb96764d0"
+      },
+      "boundary": "Historical isolated attempt evidence only; does not qualify a complete team, current running worker state, production enrollment, or release of any other hold."
+    }
+  },
+  "freshCurrentSourcePreparation": {
+    "qualification": "PREPARED_VALIDATED_NOT_RUN",
+    "path": "data/guide-team-state-dde02646-4a13-447a-8f10-c7e80949341d/pilot.json",
+    "review": "data/guide-team-state-dde02646-4a13-447a-8f10-c7e80949341d/REVIEW.txt",
+    "scopeHash": "5e17f394cd98a3522c86554be97231b47b3f07bb67680f93ca43dd54980a34a9",
+    "taskId": "ad5862ec-058b-48be-bd2c-56c5e9144c34",
+    "meshSourceFiles": 11,
+    "nativeSourceFiles": 9,
+    "validation": "Existing validateGuideTeamPilot passed exact source/native hashes, scope, original/copy bytes, and isolated saved task fingerprint. No attempt marker.",
     "newProviderTasks": 0,
-    "approvalRequired": "One fresh Echo-role file-only gpt-6-luna build max50 then one Nims read-only review, no retries. Earlier attempt approvals consumed."
+    "approval": "Fresh exact trial question pending; previous approvals consumed.",
+    "limits": {
+      "builderAttempts": 1,
+      "builderMaxTurns": 50,
+      "builderTools": [
+        "file"
+      ],
+      "reviewerAttempts": 1,
+      "reviewer": "nims",
+      "reviewerMode": "read-only",
+      "automaticRetries": false,
+      "automaticDone": false
+    }
   }
 }
