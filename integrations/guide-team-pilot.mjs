@@ -43,6 +43,22 @@ function nativeHashes() {
   for(const [path,digest] of Object.entries(expected))assert.equal(hashFile(join(runtime.nativeRoot,path)),digest,'Installed native bridge changed: '+path);
   return expected;
 }
+export function pilotReviewCommand(workspace,expectedSha256,expectedBytes) {
+  assert.equal(typeof workspace,'string');assert.ok(workspace.length);
+  assert.match(expectedSha256,/^[a-f0-9]{64}$/);
+  assert.ok(Number.isSafeInteger(expectedBytes)&&expectedBytes>0&&expectedBytes<=65536);
+  const path64=Buffer.from(workspace,'utf8').toString('base64');
+  const script=`$ErrorActionPreference='Stop';[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);`+
+    `$r=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${path64}'));`+
+    `$f=@(Get-ChildItem -LiteralPath $r -Force);`+
+    `if($f.Count -ne 1 -or $f[0].PSIsContainer -or $f[0].Name -cne 'MESH-QUICK-START.md' -or ($f[0].Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Unexpected workspace entries'};$p=$f[0].FullName;`+
+    `$b=[IO.File]::ReadAllBytes($p);$s=[Security.Cryptography.SHA256]::Create();try{$h=[BitConverter]::ToString($s.ComputeHash($b)).Replace('-','').ToLowerInvariant()}finally{$s.Dispose()};`+
+    `if($b.Length -ne ${expectedBytes} -or $h -cne '${expectedSha256}'){throw 'Guide bytes or hash mismatch'};`+
+    `[pscustomobject]@{Bytes=$b.Length;SHA256=$h;OnlyAllowedFile=$true}|ConvertTo-Json;`+
+    `[Console]::WriteLine([Text.Encoding]::UTF8.GetString($b));`;
+  assert.match(script,/^[\x00-\x7f]+$/);
+  return {script,command:'powershell.exe -NoProfile -NonInteractive -EncodedCommand '+Buffer.from(script,'utf16le').toString('base64')};
+}
 export function prepareGuideTeamPilot({fixture=false}={}) {
   const installedHashes=fixture?{}:nativeHashes();
   const id=randomUUID(),dataDir='data/guide-team-state-'+id,workspace=join(ROOT,'data','guide-team-work-'+id);
@@ -55,6 +71,7 @@ export function prepareGuideTeamPilot({fixture=false}={}) {
   assert.equal(Buffer.from(originalText).equals(original),true,'Guide must round-trip as UTF-8');
   assert.equal(originalText.split(tail).length,2,'Guide tail must be a unique replacement anchor');
   const patch={mode:'replace',path:'MESH-QUICK-START.md',old_string:tail,new_string:tail+suffix};
+  const reviewCheck=pilotReviewCommand(workspace,expectedSha256,original.length+Buffer.byteLength(suffix));
   const store=openTaskStore(join(ROOT,dataDir,'tasks.sqlite'));let task;
   try {
     task=store.create({title:'Guide team pilot — phone recovery notes',description:'One isolated guide-copy build followed by one independent review. No live app changes.',owner:'echo'});
@@ -62,7 +79,7 @@ export function prepareGuideTeamPilot({fixture=false}={}) {
     task=store.workroom.saveProgress(task.id,{goal:'Append the verified phone recovery note to the isolated guide copy and independently verify the exact result.',
       checklist:[{id:'guide',text:'Append exactly the supplied note and read the guide copy back',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision});
     task=store.workroom.savePlan(task.id,{lead:'echo',spec:'Read MESH-QUICK-START.md first. Use the file patch tool in replace mode with the decoded JSON arguments below, replacing the unique existing tail with itself plus the exact note. Do not use V4A or reconstruct the whole file.\nExact patch JSON: '+JSON.stringify(patch)+'\nPreserve all original '+original.length+' bytes, both added leading newlines and the final newline. Expected final length '+(original.length+Buffer.byteLength(suffix))+' bytes. Expected complete-file SHA-256: '+expectedSha256,
-      workspace,allowedFiles:'MESH-QUICK-START.md',checks:'Builder: apply the supplied anchored replacement, then read it back. A mismatch is unfinished work: correct the same allowed file within this attempt and read it back again; if unable, report the existing step as blocked with the actual mismatch. Mark the guide step done only after the required file edit/read-back succeeds. Do not claim an unavailable SHA/terminal/directory check; those checks belong to the independent reviewer and host, not your worker checklist. Reviewer and host: independently verify all original bytes plus the exact append, final SHA-256 '+expectedSha256+', and no other files in the workspace. Reviewer may use read-only commands; do not write a checker or any file.',
+      workspace,allowedFiles:'MESH-QUICK-START.md',checks:'Builder: apply the supplied anchored replacement, then read it back. A mismatch is unfinished work: correct the same allowed file within this attempt and read it back again; if unable, report the existing step as blocked with the actual mismatch. Mark the guide step done only after the required file edit/read-back succeeds. Do not claim an unavailable SHA/terminal/directory check; those checks belong to the independent reviewer and host, not your worker checklist. Reviewer and host: independently verify all original bytes plus the exact append, final SHA-256 '+expectedSha256+', and no other files in the workspace. Reviewer may use read-only commands; do not write a checker or any file. Reviewer: execute this exact read-only command verbatim to verify the inventory, byte count and full hash and read the complete guide; do not reconstruct quoted guide text:\n'+reviewCheck.command,
       boundaries:'Guide-copy-only qualification. No other files, databases, memory, credentials, external messages, workers, service operations, commits, purchases or scope expansion. Ask if unclear. Builder file tools only; Nims independently reviews read-only. Do not mark Done or record owner approval.',
       workerId:'echo',reviewerId:'nims',state:'locked',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision}).task;
   } finally {store.close();}
@@ -74,6 +91,7 @@ export function prepareGuideTeamPilot({fixture=false}={}) {
   intent.scopeHash=sha(JSON.stringify(intent));
   const path=join(ROOT,dataDir,'pilot.json');writeFileSync(path,JSON.stringify(intent,null,2)+'\n',{flag:'wx'});
   writeFileSync(join(ROOT,dataDir,'REVIEW.txt'),`Onoes-Mesh guide team trial — PREPARED ONLY\n\nScope: ${intent.scopeHash}\nWorkspace: ${workspace}\nOnly editable file: MESH-QUICK-START.md\nOne Echo-role native Codex build (gpt-6-luna, file tools only, 50-turn ceiling), then one existing Nims read-only review (current configured Codex model, 180-second connector turn deadline). Existing ChatGPT Codex sign-in; no API-key billing.\nNo retries or automatic Done. Isolated board; no live board changes, service restart, Rook/Mind activation or production enrollment.\n\nExact append:${suffix}\nOriginal SHA-256: ${beforeSha256}\nExpected final SHA-256: ${expectedSha256}\n\nLive execution requires separate owner approval. Preparing this copied no credentials and submitted no model work.\n`,{flag:'wx'});
+  appendFileSync(join(ROOT,dataDir,'REVIEW.txt'),'\nRead-only reviewer check (decoded for inspection):\n'+reviewCheck.script+'\n\nExact command:\n'+reviewCheck.command+'\n');
   return {path,review:join(ROOT,dataDir,'REVIEW.txt'),scopeHash:intent.scopeHash};
 }
 

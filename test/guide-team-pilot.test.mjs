@@ -2,10 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import {openTaskStore} from '../lib/task-store.mjs';
-import {readFileSync,writeFileSync,existsSync} from 'node:fs';
+import {readFileSync,writeFileSync,existsSync,mkdtempSync,mkdirSync,readdirSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {spawnSync} from 'node:child_process';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput,assertPilotReviewTrace} from '../integrations/guide-team-pilot.mjs';
+import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput,assertPilotReviewTrace,pilotReviewCommand} from '../integrations/guide-team-pilot.mjs';
+
+test('actual PowerShell reviewer check handles quoted Unicode paths and refuses changed bytes or extra files',{skip:process.platform!=='win32',timeout:30000},()=>{
+ const root=mkdtempSync(join(tmpdir(),'mesh-review-')),workspace=join(root,"quoted ' \u201creview\u201d");mkdirSync(workspace);
+ const guide=join(workspace,'MESH-QUICK-START.md'),bytes=Buffer.from("Read \u201cDone\u201d; Eddie's guide.\n");writeFileSync(guide,bytes);
+ const hash=createHash('sha256').update(bytes).digest('hex'),check=pilotReviewCommand(workspace,hash,bytes.length);
+ assert.match(check.command,/^[\x00-\x7f]+$/);assert.match(check.script,/^[\x00-\x7f]+$/);
+ const run=()=>spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',check.command.split(' ').at(-1)],{encoding:'utf8',windowsHide:true,timeout:10000});
+ let outcome=run();assert.equal(outcome.status,0,outcome.stderr);assert.ok(outcome.stdout.includes(hash));assert.ok(outcome.stdout.includes(bytes.toString()));
+ assert.deepEqual(readFileSync(guide),bytes);assert.deepEqual(readdirSync(workspace),['MESH-QUICK-START.md']);
+ const changed=Buffer.from(bytes);changed[0]^=1;writeFileSync(guide,changed);outcome=run();assert.notEqual(outcome.status,0);assert.match(outcome.stderr,/Guide bytes or hash mismatch/);assert.deepEqual(readFileSync(guide),changed);
+ writeFileSync(guide,bytes);writeFileSync(join(workspace,'.extra'),'unexpected');outcome=run();assert.notEqual(outcome.status,0);assert.match(outcome.stderr,/Unexpected workspace entries/);
+ for(const [digest,size] of [['invalid',bytes.length],[hash,0],[hash,65537]])assert.throws(()=>pilotReviewCommand(workspace,digest,size));
+});
 
 test('review trace distinguishes failed commands from unsupported items and retains both holds',()=>{
  const good={status:'completed',items:[{type:'userMessage'},{type:'commandExecution',status:'completed',exitCode:0},{type:'agentMessage'}]};

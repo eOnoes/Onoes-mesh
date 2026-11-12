@@ -375,5 +375,43 @@
     "modelOperation": false,
     "relayRestart": false,
     "trialRetried": false
+  },
+  "deterministicReviewerCheck": {
+    "qualification": "PASS_LOCAL_POWERSHELL_AND_FIXTURES_ONLY",
+    "implementation": "pilotReviewCommand in integrations/guide-team-pilot.mjs",
+    "behavior": "Frozen ASCII command, decoded script shown in REVIEW.txt; encoded literal workspace, built-in .NET SHA256, exact byte count and only-file inventory, full UTF8 guide read. No checker file or write.",
+    "observedFailuresCorrected": [
+      "Windows 8.3 TEMP alias expands to full path in file listing; select the one verified allowed file instead of comparing unnormalized aliases.",
+      "Windows PowerShell inherited environment lacks Get-FileHash; use built-in .NET SHA256 without module dependence."
+    ],
+    "tests": {
+      "guidePilotPassed": 14,
+      "actualPowerShell": "PASS correct guide under spaces/apostrophe/smart-quote Unicode path; changed same-length bytes and hidden extra file rejected; guide unchanged by checker",
+      "static": "PASS",
+      "diff": "PASS"
+    },
+    "strictTraceGuard": "UNCHANGED; failed command still prevents strict qualification even after a later success.",
+    "newProviderTasks": 0,
+    "productionServiceChanges": 0
+  },
+  "fixedReviewerPreparation": {
+    "qualification": "PREPARED_VALIDATED_NOT_RUN",
+    "path": "data/guide-team-state-87ec3e98-4003-4797-822a-0bfb3ccc5268/pilot.json",
+    "scopeHash": "6a39a2f6997dfafd2aab04c3262b991a88722594db60083ef210513974e855a6",
+    "taskId": "6f10b8df-d854-4198-9ffa-357a16e810ae",
+    "limits": {
+      "builderAttempts": 1,
+      "builderMaxTurns": 50,
+      "builderTools": [
+        "file"
+      ],
+      "reviewerAttempts": 1,
+      "reviewer": "nims",
+      "reviewerMode": "read-only",
+      "automaticRetries": false,
+      "automaticDone": false
+    },
+    "approval": "Fresh exact trial question pending; no prior attempt replay or evidence erasure.",
+    "newProviderTasks": 0
   }
 }
