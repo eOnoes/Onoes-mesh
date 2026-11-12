@@ -1,7 +1,7 @@
 {
   "schemaVersion": "mesh-nemotron-idle-fix/v1",
   "at": "2026-11-12T20:29:14.997839+00:00",
-  "state": "PREPARED_ONLY_NOT_INSTALLED",
+  "state": "INSTALLED_AND_REQUALIFIED",
   "ownerPhoneAcceptance": "Eddie confirmed correct Mesh8453 Inference page, successful load/chat/unload and final STOPPED",
   "diagnostic": {
     "loadAttempts": 1,
@@ -29,5 +29,17 @@
     "static": "PASS",
     "diff": "PASS"
   },
-  "activation": "Requires separately approved shared-service maintenance and new exact-source qualification; ordinary historic qualification is not new-source proof"
+  "activation": "Requires separately approved shared-service maintenance and new exact-source qualification; ordinary historic qualification is not new-source proof",
+  "completedAt": "2026-11-12T20:45:27.937555+00:00",
+  "maintenance": {
+    "supervisorRestarts": 2,
+    "nativeLoadCycles": 1,
+    "meshLoadCycles": 1,
+    "retries": 0,
+    "final": "STOPPED; native empty; four endpoints idle",
+    "otherCardsUnchanged": true,
+    "historicalHolds": 8
+  },
+  "newSourceQualification": "All8predicates requalified, including actual GPU, chat, cancellation, same-ID response-loss recovery and restart rejection",
+  "appAcceptance": "One complete load/chat/unload with two persistent COMPLETED receipts; loaded cross-panel agreement verified"
 }

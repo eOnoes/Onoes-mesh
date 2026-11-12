@@ -2,25 +2,13 @@
 
 ## Current release status - 2026-11-12
 
-First local release: **15/21 checks complete**; D3 reopened for a verified cold-load idle-timer defect. Running app build `f350b2822702`, source SHA256 `f350b28227028970a90221f7f3fbcbdace76d9be8acf653baddc25e29f7f9035`, version0.1.0 candidate. Normal admitted live readback confirms qualified_native/STOPPED, Propose Load available, and chat/stop/unload disabled until the appropriate state. A proposal does not execute; explicit confirmation remains required.
+First local release: **18/21 complete**. Idle-timer fix installed and all eight exact-source Nemotron qualification checks passed. Final actual Mesh load/chat/unload saved both completed command receipts and ended STOPPED; native slot empty and all four model endpoints idle. The model is unloaded.
 
-The earlier bounded Nemotron/b11669 qualification passed actual load/chat/cancellation/unload, retained runtime/GPU ownership, response-body-loss lookup and empty-service restart/stale-binding rejection. Qualification is exact-source-bound. Control and Inference agree for the empty slot; whole-device telemetry does not imply per-model GPU attribution. CPU warnings now follow the displayed sample, and expired model readings visibly expire with their controls. Read-only Refresh restores fresh status without executing a model command.
+Main-PC first Nemotron lane D1-D4 is accepted: owner phone load/chat/unload plus actual backend receipt trace and loaded Inference/Control runtime/GPU agreement. Whole-device meters remain separate from verified model ownership. Other profiles are disabled/unqualified; laptop/AI-box work remains later. Earlier phone receipts are not fabricated or backfilled.
 
-Current complete local test gate: **517PASS (403Node +114Python)**, plus static/diff checks. Workspace92PASS is part of that total, not additional. Parent saved progress79;14cards and all8historical assignment holds preserved. Manual/milestone E backups only; latest pointer is authoritative and snapshots include verified isolated restore results. Local commits are saved. The10commits through `aeee363` were explicitly approved and published; later local changes remain unpublished.
+Full code gate517PASS and optional supervisor candidate8PASS remain applicable. No PC/gateway/Relay/DSH restart, paid agent job, historical hold release or Mind/Rook activation. C1 useful phone workflow without rescue, C4 final release/custody/owner acceptance and E2 production bounded team enrollment remain open. Full shared Mind/context/skills/MCP and three-machine objective is unfinished. Local changes after publishedaeee363 remain unpublished. Latest E backup pointer is authoritative.
 
-Still open: C1 useful physical-phone workflow without rescue; C4 final release/owner acceptance; D2 loaded-runtime cross-panel observation; D4 backend receipt correlation after owner-confirmed phone success; E2 production bounded team execution. Rook, production native workers and live Mind remain off. Canonical Mind store/identity/scope, shared context/skills/MCP and the laptop/AI-box integrations remain unfinished. No PC restart is scheduled.
-
-### Current model maintenance boundary - 2026-11-12
-
-The approved one-load diagnostic found a real defect: after a long idle period, the supervisor immediately unloads a newly ready model using the old idle timestamp. The original load receipt was correctly persisted and completed; watchdog cleanup confirmed the diagnostic child gone and final native slot empty. No diagnostic chat/unload or retry was sent. Eddie's earlier phone success remains confirmed, but its missing historical receipts are not reconstructed.
-
-An uninstalled candidate renews the idle timer after successful readiness, before clearing the loading flag; the existing90-minute policy remains. Old-source regression failed as expected; fixed candidate8PASS, fresh fullMesh517PASS(403Node+114Python), static/diffPASS. Record: integrations/nemotron-idle-fix-qualification.json. Installation and exact-source requalification require a separately approved model-service window; no PC restart. The prior current-status paragraphs describe the historical qualified source. Parent progress now tracks this reopened D3 and the remaining C1/C4/D2/D4/E2 gates. Latest backup pointer remains authoritative. Local head after preparation is ahead of the already published aeee363; no later push is authorized.
-
-### Current team connection boundary
-
-The isolated bounded Echo-role build and independent Nims review passed, as recorded below; this does not enroll a production worker. Eight historical writer holds still lack exact original whole-writer retirement evidence. A completed task, elapsed time, unrelated successful trial or service restart cannot release them. Do not repeat the same negative original-store queries, invent mappings, retry old sends or clear holds. The next team step needs authoritative original-worker evidence or a separately reviewed operator recovery decision. Preserve the single-writer rule and explicit enrollment boundary.
-
-Current live readback: `data/operations-guide-current-state-20261111.json`; full test log: `data/milestone-publication-tests-20261111.log`; saved parent proof: `data/checklist-sync-after-20261111.json`. These are private local evidence references, not publication payloads. Historical sections below retain their original counts and state.
+Current exact-source qualification: integrations/nemotron-full-native-qualification.json and integrations/nemotron-idle-fix-qualification.json. Historical sections below retain prior states and counts.
 
 ## Earlier bounded guide team qualification - 2026-11-11
 
