@@ -457,5 +457,43 @@
     "inferenceState": "STOPPED",
     "productionDispatchEnabled": false,
     "evidence": "data/fixed-reviewer-mainboard-isolation-20261112.json"
+  },
+  "codeAndTestPreparation": {
+    "qualification": "PREPARED_VALIDATED_NOT_RUN",
+    "path": "data/guide-team-state-9ff97698-93db-4db6-9c41-4ae9e460d5ef/pilot.json",
+    "scopeHash": "70838f62e80cb860c3eca6396d0249920da176673e80d023086004e81190b158",
+    "taskId": "3673e977-6e9a-451b-b76b-15f3a5f2091a",
+    "kind": "build-check-v1",
+    "allowedEdit": "board-column.mjs",
+    "immutableTests": "board-column.test.mjs",
+    "tools": [
+      "file",
+      "terminal"
+    ],
+    "limits": {
+      "builderAttempts": 1,
+      "builderMaxTurns": 50,
+      "builderTools": [
+        "file",
+        "terminal"
+      ],
+      "reviewerAttempts": 1,
+      "reviewer": "nims",
+      "reviewerMode": "read-only",
+      "automaticRetries": false,
+      "automaticDone": false
+    },
+    "localTests": {
+      "guideAndCodePilotPassed": 16,
+      "static": "PASS",
+      "diff": "PASS",
+      "log": "data/build-check-pilot-local-tests-20261112.log",
+      "scope": "Synthetic native team + real local PowerShell/Node execution; no live provider work"
+    },
+    "implementation": "Reuses guide-team-pilot single-attempt runner with explicit build-check kind; old file-only mode unchanged. Golden module and immutable tests checked before host execution; both tests must actually run.",
+    "evidenceBoundary": "Host test execution, reviewer command execution, native tool-profile availability and builder-reported test execution are distinct. Inspect original native evidence before claiming the builder actually invoked a terminal; prose alone is insufficient. Production terminal enrollment remains unqualified.",
+    "approval": "Fresh code-and-test trial question pending. Prior successful guide approval was file-only.",
+    "newProviderTasks": 0,
+    "liveServicesChanged": false
   }
 }

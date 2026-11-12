@@ -7,7 +7,26 @@ import {tmpdir} from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput,assertPilotReviewTrace,pilotReviewCommand} from '../integrations/guide-team-pilot.mjs';
+import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput,assertPilotReviewTrace,pilotReviewCommand,BUILD_CHECK_SOURCE,verifyBuildCheckArtifacts} from '../integrations/guide-team-pilot.mjs';
+
+test('code pilot freezes terminal scope and immutable tests before executing only the expected module',{timeout:30000},()=>{
+ const ready=prepareGuideTeamPilot({fixture:true,buildCheck:true}),p=validateGuideTeamPilot(ready.path);
+ assert.equal(p.kind,'build-check-v1');assert.equal(p.profile.toolProfile,'build-check-v1');assert.deepEqual(p.limits.builderTools,['file','terminal']);
+ assert.equal(existsSync(join(dirname(ready.path),'attempt.json')),false);
+ const moduleFile=join(p.workspace,'board-column.mjs'),testFile=join(p.workspace,'board-column.test.mjs'),tests=readFileSync(testFile);
+ assert.throws(()=>verifyBuildCheckArtifacts(p),/Code or tests changed/);
+ writeFileSync(testFile,Buffer.concat([tests,Buffer.from('// changed')]));assert.throws(()=>validateGuideTeamPilot(ready.path),/Immutable tests changed/);writeFileSync(testFile,tests);
+ writeFileSync(moduleFile,BUILD_CHECK_SOURCE);const checked=verifyBuildCheckArtifacts(p);assert.equal(checked.exitCode,0);assert.match(checked.stdoutHash,/^[a-f0-9]{64}$/);
+ if(process.platform==='win32'){
+  const store=openTaskStore(join(dirname(ready.path),'tasks.sqlite'));let task;try{task=store.workroom.get(p.taskId);}finally{store.close();}
+  const command=task.plan.checks.split('\n').at(-1);assert.match(command,/^powershell.exe -NoProfile -NonInteractive -EncodedCommand [A-Za-z0-9+/=]+$/);
+  const env={...process.env};delete env.NODE_TEST_CONTEXT;
+  const actual=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',command.split(' ').at(-1)],{env,encoding:'utf8',windowsHide:true,timeout:10000});assert.equal(actual.status,0,actual.stderr);assert.match(actual.stdout,/pass 2/);
+ }
+ writeFileSync(moduleFile,'import fs from "node:fs";fs.writeFileSync("unexpected","x");\n'+BUILD_CHECK_SOURCE);
+ assert.throws(()=>verifyBuildCheckArtifacts(p),/Code or tests changed/);assert.equal(existsSync(join(p.workspace,'unexpected')),false);
+ assert.deepEqual(readFileSync(testFile),tests);
+});
 
 test('actual PowerShell reviewer check handles quoted Unicode paths and refuses changed bytes or extra files',{skip:process.platform!=='win32',timeout:30000},()=>{
  const root=mkdtempSync(join(tmpdir(),'mesh-review-')),workspace=join(root,"quoted ' \u201creview\u201d");mkdirSync(workspace);
@@ -95,9 +114,9 @@ test('changed guide and task/source intent cannot pass the prepared scope check'
   assert.throws(()=>validateGuideTeamPilot(another.path),/Pilot scope changed/);
 });
 
-for(const format of ['fenced','raw','incomplete','invalid'])test(`actual server native ${format} report ${['incomplete','invalid'].includes(format)?'pauses without review':'reviews once and reloads'}`,{timeout:60000},async()=>{
+for(const format of ['fenced','raw','incomplete','invalid','build'])test(`actual server native ${format} report ${['incomplete','invalid'].includes(format)?'pauses without review':'reviews once and reloads'}`,{timeout:60000},async()=>{
   const incomplete=format==='incomplete',invalid=format==='invalid';
-  const ready=prepareGuideTeamPilot({fixture:true}),p=validateGuideTeamPilot(ready.path),file=join(p.workspace,'MESH-QUICK-START.md');
+  const ready=prepareGuideTeamPilot({fixture:true,buildCheck:format==='build'}),p=validateGuideTeamPilot(ready.path),file=join(p.workspace,p.kind?'board-column.mjs':'MESH-QUICK-START.md');
   const token='disposable-pilot-token',tokenFile=join(dirname(ready.path),'synthetic-key');writeFileSync(tokenFile,token);
   const messages=[],calls=[];let submitted=false,request,workerPosts=0,reviewPosts=0,now=Date.now();
   const peer=http.createServer(async(req,res)=>{
@@ -120,14 +139,14 @@ for(const format of ['fenced','raw','incomplete','invalid'])test(`actual server 
   });
   await new Promise(resolve=>peer.listen(0,'127.0.0.1',resolve));
   const sid='local-'+'a'.repeat(64),aid='b'.repeat(32),profileId='synthetic-pilot';
-  const contract={model:p.profile.model,provider:'openai-codex',base_url:null,workspace:p.workspace,toolsets:['file'],
+  const contract={model:p.profile.model,provider:'openai-codex',base_url:null,workspace:p.workspace,toolsets:p.kind?['file','terminal']:['file'],
     safe_mode:true,ignore_user_config:true,follow_profile:false,source:'tool',max_turns:50,terminal_backend:'local',closed:true,api_key_configured:false};
   const fixture={source:'disposable_fixture',relayUrl:'http://127.0.0.1:'+peer.address().port,tokenFile,sessionNow:()=>now,
     connected:async value=>{request=value.request;},rpc:async(method,params)=>{
       calls.push(method);
       if(method==='session.create')return {session_id:sid};
       if(method==='prompt.submit'){
-        assert.equal(submitted,false);submitted=true;now+=300001;writeFileSync(file,Buffer.concat([readFileSync(file),Buffer.from(incomplete?p.suffix.slice(1):p.suffix)]));return {};
+        assert.equal(submitted,false);submitted=true;now+=300001;writeFileSync(file,p.kind?BUILD_CHECK_SOURCE:Buffer.concat([readFileSync(file),Buffer.from(incomplete?p.suffix.slice(1):p.suffix)]));return {};
       }
       assert.equal(method,'prompt.lookup');
       if(!submitted)return {found:false,session_id:params.session_id,submission_id:params.submission_id,outcome:null,profile_contract:contract,process_scope_supported:true};
@@ -162,6 +181,7 @@ for(const format of ['fenced','raw','incomplete','invalid'])test(`actual server 
     assert.equal(result.qualification,'PASS');assert.equal(result.source,'disposable_fixture');
     assert.equal(result.worker.writerQuiescence,true);assert.equal(result.reviewer.independentNativeReviewQualified,false);
     assert.equal(result.preservedAcrossRestart,true);assert.equal(result.ownerReviewRecorded,false);assert.equal(result.done,false);
+    if(p.kind){assert.equal(result.worker.profileContract.toolsets.join(','),'file,terminal');assert.equal(result.buildVerification.exitCode,0);}
     assert.equal(calls.filter(c=>c==='session.create').length,1);assert.equal(calls.filter(c=>c==='prompt.submit').length,1);
     assert.equal(workerPosts,0);assert.equal(reviewPosts,1);
     assert.equal(readPilotReviewPayload(p,messages[0].id),messages[0].t);

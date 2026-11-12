@@ -8,6 +8,7 @@ import {startApp,ROOT} from '../server.mjs';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {nativeGatewayWorkerOptions} from '../lib/native-gateway-transport.mjs';
 import {createCodexClient} from '../lib/codex-client.mjs';
+import {spawnSync} from 'node:child_process';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const fingerprint=t=>sha(JSON.stringify({id:t.id,title:t.title,description:t.description,status:t.status,
@@ -59,38 +60,69 @@ export function pilotReviewCommand(workspace,expectedSha256,expectedBytes) {
   assert.match(script,/^[\x00-\x7f]+$/);
   return {script,command:'powershell.exe -NoProfile -NonInteractive -EncodedCommand '+Buffer.from(script,'utf16le').toString('base64')};
 }
-export function prepareGuideTeamPilot({fixture=false}={}) {
+export const BUILD_CHECK_SOURCE="export function boardColumn(stage) {\n  switch (stage) {\n    case 'backlog': case 'ready': return 'To do';\n    case 'working': case 'needs_you': return 'In progress';\n    case 'done': return 'Done';\n    default: throw new TypeError('Unknown stage');\n  }\n}\n";
+const BUILD_CHECK_STUB="export function boardColumn() { throw new Error('Not implemented'); }\n";
+const BUILD_CHECK_TEST="import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport {boardColumn} from './board-column.mjs';\ntest('saved stages map to the three visible lanes',()=>{\n  for (const [stage,lane] of [['backlog','To do'],['ready','To do'],['working','In progress'],['needs_you','In progress'],['done','Done']]) assert.equal(boardColumn(stage),lane);\n});\ntest('unknown values do not invent a lane',()=>{\n  for (const value of ['unknown','toString','',null,undefined,1,{}]) assert.throws(()=>boardColumn(value),TypeError);\n});\n";
+const buildFiles=['board-column.mjs','board-column.test.mjs'];
+function buildReviewCommand(workspace) {
+  const root=Buffer.from(workspace).toString('base64');
+  const script="$ErrorActionPreference='Stop';[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);"+
+    `$r=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${root}'));$f=@(Get-ChildItem -LiteralPath $r -Force);`+
+    "if($f.Count -ne 2 -or @($f|Where-Object {$_.PSIsContainer -or ($_.Attributes -band [IO.FileAttributes]::ReparsePoint)}).Count){throw 'Unexpected workspace entries'};"+
+    "function Get-PilotHash($p){$s=[Security.Cryptography.SHA256]::Create();try{[BitConverter]::ToString($s.ComputeHash([IO.File]::ReadAllBytes($p))).Replace('-','').ToLowerInvariant()}finally{$s.Dispose()}};"+
+    buildFiles.map((name,i)=>`$p=Join-Path $r '${name}';if((Get-PilotHash $p) -cne '${sha(i?BUILD_CHECK_TEST:BUILD_CHECK_SOURCE)}'){throw 'Code or tests changed'};[Console]::WriteLine([IO.File]::ReadAllText($p));`).join('')+
+    "Set-Location -LiteralPath $r;$pilotOutput=& node --test board-column.test.mjs;if($LASTEXITCODE -ne 0){throw 'Build checks failed'};$pilotOutput|ForEach-Object {[Console]::WriteLine($_)};";
+  return {script,command:'powershell.exe -NoProfile -NonInteractive -EncodedCommand '+Buffer.from(script,'utf16le').toString('base64')};
+}
+export function verifyBuildCheckArtifacts(p) {
+  assert.equal(p.kind,'build-check-v1');assert.deepEqual(readdirSync(p.workspace).sort(),buildFiles);
+  for(const name of buildFiles){owned(join(p.workspace,name));assert.equal(hashFile(join(p.workspace,name)),sha(name===buildFiles[0]?BUILD_CHECK_SOURCE:BUILD_CHECK_TEST),'Code or tests changed');}
+  // Only execute the exact pre-reviewed module and tests after checking both hashes.
+  const env={...process.env};delete env.NODE_TEST_CONTEXT;
+  const checked=spawnSync(process.execPath,['--test',buildFiles[1]],{cwd:p.workspace,env,encoding:'utf8',windowsHide:true,timeout:10000});
+  assert.equal(checked.status,0,'Fixed code checks failed: '+String(checked.stderr).slice(0,500));
+  assert.match(checked.stdout,/pass 2\b/,'Expected both fixed tests to actually run');
+  return {command:'node --test board-column.test.mjs',exitCode:0,stdoutHash:sha(checked.stdout),sourceAndTestsMatched:true};
+}
+export function prepareGuideTeamPilot({fixture=false,buildCheck=false}={}) {
+  assert.equal(typeof buildCheck,'boolean');
   const installedHashes=fixture?{}:nativeHashes();
   const id=randomUUID(),dataDir='data/guide-team-state-'+id,workspace=join(ROOT,'data','guide-team-work-'+id);
   mkdirSync(workspace);mkdirSync(join(ROOT,dataDir));owned(workspace);owned(join(ROOT,dataDir));
-  const original=readFileSync(join(ROOT,'MESH-QUICK-START.md'));
+  const original=buildCheck?Buffer.from(BUILD_CHECK_STUB):readFileSync(join(ROOT,'MESH-QUICK-START.md'));
   assert.ok(original.length<65536);assert.equal(original.includes(Buffer.from(suffix)),false);
-  writeFileSync(join(workspace,'MESH-QUICK-START.md'),original,{flag:'wx'});
-  const beforeSha256=sha(original),expectedSha256=sha(Buffer.concat([original,Buffer.from(suffix)]));
+  const artifactName=buildCheck?buildFiles[0]:'MESH-QUICK-START.md';
+  writeFileSync(join(workspace,artifactName),original,{flag:'wx'});
+  if(buildCheck)writeFileSync(join(workspace,buildFiles[1]),BUILD_CHECK_TEST,{flag:'wx'});
+  const beforeSha256=sha(original),expectedSha256=sha(buildCheck?BUILD_CHECK_SOURCE:Buffer.concat([original,Buffer.from(suffix)]));
   const originalText=original.toString('utf8'),tail=originalText.slice(-400);
   assert.equal(Buffer.from(originalText).equals(original),true,'Guide must round-trip as UTF-8');
   assert.equal(originalText.split(tail).length,2,'Guide tail must be a unique replacement anchor');
-  const patch={mode:'replace',path:'MESH-QUICK-START.md',old_string:tail,new_string:tail+suffix};
-  const reviewCheck=pilotReviewCommand(workspace,expectedSha256,original.length+Buffer.byteLength(suffix));
+  const patch={mode:'replace',path:artifactName,old_string:tail,new_string:buildCheck?BUILD_CHECK_SOURCE:tail+suffix};
+  const reviewCheck=buildCheck?buildReviewCommand(workspace):pilotReviewCommand(workspace,expectedSha256,original.length+Buffer.byteLength(suffix));
+  const buildSpec='Read both supplied files. Replace only the stub in board-column.mjs with the exact implementation below; do not edit board-column.test.mjs. This implements the five saved Workroom stages as three visible lanes and rejects unknown stages.\nExact patch JSON: '+JSON.stringify(patch);
+  const buildChecks='Builder: run node --test board-column.test.mjs; preserve tests and report actual output/exit. Report blocked on failure. Reviewer: read both files and run this exact hash-check/test command:\n'+reviewCheck.command;
+  const buildBoundary='Isolated code-and-test qualification only. Edit only board-column.mjs; tests are immutable. Terminal commands limited to local read/syntax/test commands in this workspace. No network, installs, package manager, services, credentials, memory, other workers, commits, purchases or scope expansion. Nims reviews read-only. No automatic Done or owner approval.';
   const store=openTaskStore(join(ROOT,dataDir,'tasks.sqlite'));let task;
   try {
-    task=store.create({title:'Guide team pilot — phone recovery notes',description:'One isolated guide-copy build followed by one independent review. No live app changes.',owner:'echo'});
-    task=store.workroom.save(task.id,{project:'Onoes-Mesh pilot',criteria:'Preserve every original byte; append only the exact supplied recovery note; independent review approves.',owner:'echo',team:'local_build',stage:'ready',revision:1});
-    task=store.workroom.saveProgress(task.id,{goal:'Append the verified phone recovery note to the isolated guide copy and independently verify the exact result.',
-      checklist:[{id:'guide',text:'Append exactly the supplied note and read the guide copy back',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision});
-    task=store.workroom.savePlan(task.id,{lead:'echo',spec:'Read MESH-QUICK-START.md first. Use the file patch tool in replace mode with the decoded JSON arguments below, replacing the unique existing tail with itself plus the exact note. Do not use V4A or reconstruct the whole file.\nExact patch JSON: '+JSON.stringify(patch)+'\nPreserve all original '+original.length+' bytes, both added leading newlines and the final newline. Expected final length '+(original.length+Buffer.byteLength(suffix))+' bytes. Expected complete-file SHA-256: '+expectedSha256,
-      workspace,allowedFiles:'MESH-QUICK-START.md',checks:'Builder: apply the supplied anchored replacement, then read it back. A mismatch is unfinished work: correct the same allowed file within this attempt and read it back again; if unable, report the existing step as blocked with the actual mismatch. Mark the guide step done only after the required file edit/read-back succeeds. Do not claim an unavailable SHA/terminal/directory check; those checks belong to the independent reviewer and host, not your worker checklist. Reviewer and host: independently verify all original bytes plus the exact append, final SHA-256 '+expectedSha256+', and no other files in the workspace. Reviewer may use read-only commands; do not write a checker or any file. Reviewer: execute this exact read-only command verbatim to verify the inventory, byte count and full hash and read the complete guide; do not reconstruct quoted guide text:\n'+reviewCheck.command,
-      boundaries:'Guide-copy-only qualification. No other files, databases, memory, credentials, external messages, workers, service operations, commits, purchases or scope expansion. Ask if unclear. Builder file tools only; Nims independently reviews read-only. Do not mark Done or record owner approval.',
+    task=store.create({title:buildCheck?'Code-and-test team pilot — board lane mapping':'Guide team pilot — phone recovery notes',description:'One isolated bounded build followed by one independent review. No live app changes.',owner:'echo'});
+    task=store.workroom.save(task.id,{project:'Onoes-Mesh pilot',criteria:buildCheck?'Exact supplied module implemented, unchanged local tests pass, independent review approves.':'Preserve every original byte; append only the exact supplied recovery note; independent review approves.',owner:'echo',team:'local_build',stage:'ready',revision:1});
+    task=store.workroom.saveProgress(task.id,{goal:buildCheck?'Implement the exact supplied board-lane module and run its unchanged local tests.':'Append the verified phone recovery note to the isolated guide copy and independently verify the exact result.',
+      checklist:[{id:'guide',text:buildCheck?'Implement the supplied module and run node --test board-column.test.mjs':'Append exactly the supplied note and read the guide copy back',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision});
+    task=store.workroom.savePlan(task.id,{lead:'echo',spec:buildCheck?buildSpec:'Read MESH-QUICK-START.md first. Use the file patch tool in replace mode with the decoded JSON arguments below, replacing the unique existing tail with itself plus the exact note. Do not use V4A or reconstruct the whole file.\nExact patch JSON: '+JSON.stringify(patch)+'\nPreserve all original '+original.length+' bytes, both added leading newlines and the final newline. Expected final length '+(original.length+Buffer.byteLength(suffix))+' bytes. Expected complete-file SHA-256: '+expectedSha256,
+      workspace,allowedFiles:buildCheck?'board-column.mjs':'MESH-QUICK-START.md',checks:buildCheck?buildChecks:'Builder: apply the supplied anchored replacement, then read it back. A mismatch is unfinished work: correct the same allowed file within this attempt and read it back again; if unable, report the existing step as blocked with the actual mismatch. Mark the guide step done only after the required file edit/read-back succeeds. Do not claim an unavailable SHA/terminal/directory check; those checks belong to the independent reviewer and host, not your worker checklist. Reviewer and host: independently verify all original bytes plus the exact append, final SHA-256 '+expectedSha256+', and no other files in the workspace. Reviewer may use read-only commands; do not write a checker or any file. Reviewer: execute this exact read-only command verbatim to verify the inventory, byte count and full hash and read the complete guide; do not reconstruct quoted guide text:\n'+reviewCheck.command,
+      boundaries:buildCheck?buildBoundary:'Guide-copy-only qualification. No other files, databases, memory, credentials, external messages, workers, service operations, commits, purchases or scope expansion. Ask if unclear. Builder file tools only; Nims independently reviews read-only. Do not mark Done or record owner approval.',
       workerId:'echo',reviewerId:'nims',state:'locked',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision}).task;
   } finally {store.close();}
   const intent={schema:'mesh-guide-team-pilot/v1',id,preparedAt:new Date().toISOString(),fixture,dataDir,workspace,taskId:task.id,
-    beforeSha256,expectedSha256,originalBytes:original.length,suffix,preparedTaskSha256:fingerprint(task),
+    beforeSha256,expectedSha256,originalBytes:original.length,suffix:buildCheck?'':suffix,preparedTaskSha256:fingerprint(task),
+    ...(buildCheck?{kind:'build-check-v1',testSha256:sha(BUILD_CHECK_TEST),originalGuideSha256:hashFile(join(ROOT,'MESH-QUICK-START.md'))}:{}),
     sourceHashes:Object.fromEntries(codeFiles.map(file=>[file,hashFile(join(ROOT,file))])),nativeImplementationHashes:installedHashes,
-    profile:{profileRef:'guide-pilot-'+id,identityRef:'guide-pilot-'+id,provider:'openai-codex',model:'gpt-6-luna',workspace},
-    limits:{builderAttempts:1,builderMaxTurns:50,builderTools:['file'],reviewerAttempts:1,reviewer:'nims',reviewerMode:'read-only',automaticRetries:false,automaticDone:false}};
+    profile:{profileRef:'guide-pilot-'+id,identityRef:'guide-pilot-'+id,provider:'openai-codex',model:'gpt-6-luna',workspace,...(buildCheck?{toolProfile:'build-check-v1'}:{})},
+    limits:{builderAttempts:1,builderMaxTurns:50,builderTools:buildCheck?['file','terminal']:['file'],reviewerAttempts:1,reviewer:'nims',reviewerMode:'read-only',automaticRetries:false,automaticDone:false}};
   intent.scopeHash=sha(JSON.stringify(intent));
   const path=join(ROOT,dataDir,'pilot.json');writeFileSync(path,JSON.stringify(intent,null,2)+'\n',{flag:'wx'});
-  writeFileSync(join(ROOT,dataDir,'REVIEW.txt'),`Onoes-Mesh guide team trial — PREPARED ONLY\n\nScope: ${intent.scopeHash}\nWorkspace: ${workspace}\nOnly editable file: MESH-QUICK-START.md\nOne Echo-role native Codex build (gpt-6-luna, file tools only, 50-turn ceiling), then one existing Nims read-only review (current configured Codex model, 180-second connector turn deadline). Existing ChatGPT Codex sign-in; no API-key billing.\nNo retries or automatic Done. Isolated board; no live board changes, service restart, Rook/Mind activation or production enrollment.\n\nExact append:${suffix}\nOriginal SHA-256: ${beforeSha256}\nExpected final SHA-256: ${expectedSha256}\n\nLive execution requires separate owner approval. Preparing this copied no credentials and submitted no model work.\n`,{flag:'wx'});
+  writeFileSync(join(ROOT,dataDir,'REVIEW.txt'),buildCheck?`Onoes-Mesh CODE AND TEST trial - PREPARED ONLY\n\nScope: ${intent.scopeHash}\nWorkspace: ${workspace}\nOnly editable file: board-column.mjs. Immutable tests: board-column.test.mjs.\nOne Echo-role gpt-6-luna builder, explicit build-check-v1 file+terminal tools, max50 turns; one existing Nims read-only review. No retries, Done, production enrollment, service restart or model load.\n${buildBoundary}\nModule SHA256: ${expectedSha256}\nTest SHA256: ${sha(BUILD_CHECK_TEST)}\nSeparate exact owner approval required before any live provider task.\n`:`Onoes-Mesh guide team trial — PREPARED ONLY\n\nScope: ${intent.scopeHash}\nWorkspace: ${workspace}\nOnly editable file: MESH-QUICK-START.md\nOne Echo-role native Codex build (gpt-6-luna, file tools only, 50-turn ceiling), then one existing Nims read-only review (current configured Codex model, 180-second connector turn deadline). Existing ChatGPT Codex sign-in; no API-key billing.\nNo retries or automatic Done. Isolated board; no live board changes, service restart, Rook/Mind activation or production enrollment.\n\nExact append:${suffix}\nOriginal SHA-256: ${beforeSha256}\nExpected final SHA-256: ${expectedSha256}\n\nLive execution requires separate owner approval. Preparing this copied no credentials and submitted no model work.\n`,{flag:'wx'});
   appendFileSync(join(ROOT,dataDir,'REVIEW.txt'),'\nRead-only reviewer check (decoded for inspection):\n'+reviewCheck.script+'\n\nExact command:\n'+reviewCheck.command+'\n');
   return {path,review:join(ROOT,dataDir,'REVIEW.txt'),scopeHash:intent.scopeHash};
 }
@@ -110,10 +142,22 @@ export function validateGuideTeamPilot(path,{readTask=true}={}) {
   assert.equal(sha(JSON.stringify(body)),scopeHash,'Pilot scope changed');
   assert.deepEqual(Object.keys(p.sourceHashes),codeFiles);
   for(const file of codeFiles)assert.equal(hashFile(join(ROOT,file)),p.sourceHashes[file],'Pilot source changed: '+file);
-  assert.equal(p.suffix,suffix);assert.deepEqual(readdirSync(p.workspace),['MESH-QUICK-START.md']);
-  assert.equal(hashFile(join(p.workspace,'MESH-QUICK-START.md')),p.beforeSha256,'Prepared copy changed');
-  assert.equal(hashFile(join(ROOT,'MESH-QUICK-START.md')),p.beforeSha256,'Original guide changed');
-  assert.equal(sha(Buffer.concat([readFileSync(join(p.workspace,'MESH-QUICK-START.md')),Buffer.from(suffix)])),p.expectedSha256);
+  assert.ok(p.kind===undefined||p.kind==='build-check-v1','Unsupported pilot kind');
+  assert.equal(p.profile.toolProfile,p.kind?'build-check-v1':undefined,'Tool profile differs from artifact scope');
+  assert.deepEqual(p.limits.builderTools,p.kind?['file','terminal']:['file']);
+  if(p.kind){
+    assert.equal(p.suffix,'');assert.equal(p.beforeSha256,sha(BUILD_CHECK_STUB));assert.equal(p.expectedSha256,sha(BUILD_CHECK_SOURCE));
+    assert.deepEqual(readdirSync(p.workspace).sort(),buildFiles);assert.equal(p.testSha256,sha(BUILD_CHECK_TEST));
+    for(const file of buildFiles)owned(join(p.workspace,file));
+    assert.equal(hashFile(join(p.workspace,buildFiles[0])),p.beforeSha256,'Prepared code changed');
+    assert.equal(hashFile(join(p.workspace,buildFiles[1])),p.testSha256,'Immutable tests changed');
+    assert.equal(hashFile(join(ROOT,'MESH-QUICK-START.md')),p.originalGuideSha256,'Original guide changed');
+  }else{
+    assert.equal(p.suffix,suffix);assert.deepEqual(readdirSync(p.workspace),['MESH-QUICK-START.md']);
+    assert.equal(hashFile(join(p.workspace,'MESH-QUICK-START.md')),p.beforeSha256,'Prepared copy changed');
+    assert.equal(hashFile(join(ROOT,'MESH-QUICK-START.md')),p.beforeSha256,'Original guide changed');
+    assert.equal(sha(Buffer.concat([readFileSync(join(p.workspace,'MESH-QUICK-START.md')),Buffer.from(suffix)])),p.expectedSha256);
+  }
   if(!p.fixture)assert.deepEqual(nativeHashes(),p.nativeImplementationHashes);
   if(readTask)checkPreparedTask(p);
   return p;
@@ -227,9 +271,13 @@ export async function runGuideTeamPilot(path,{ownerApproved=false,approvedScopeH
     assert.equal(worker?.nativeOutcome,'completed');assert.equal(worker.writerQuiescence,true);assert.ok(worker.retirementHash);
     assert.equal(task.messages.length,2);assert.equal(task.agentReviews.length,1);assert.equal(task.agentReviews[0].review.verdict,'approved');
     const reviewer=await reviewReadback(task,fixture,p);
-    assert.deepEqual(readdirSync(p.workspace),['MESH-QUICK-START.md']);
-    assert.equal(hashFile(join(p.workspace,'MESH-QUICK-START.md')),p.expectedSha256);
-    assert.equal(hashFile(join(ROOT,'MESH-QUICK-START.md')),p.beforeSha256);
+    let buildVerification;
+    if(p.kind)buildVerification=verifyBuildCheckArtifacts(p);
+    else{
+      assert.deepEqual(readdirSync(p.workspace),['MESH-QUICK-START.md']);
+      assert.equal(hashFile(join(p.workspace,'MESH-QUICK-START.md')),p.expectedSha256);
+    }
+    assert.equal(hashFile(join(ROOT,'MESH-QUICK-START.md')),p.kind?p.originalGuideSha256:p.beforeSha256);
     for(const file of codeFiles)assert.equal(hashFile(join(ROOT,file)),p.sourceHashes[file]);
     assert.equal(task.progress.decision,'pending');assert.notEqual(task.status,'done');
     await stop();
@@ -237,7 +285,7 @@ export async function runGuideTeamPilot(path,{ownerApproved=false,approvedScopeH
     app=await startApp({dataDir:p.dataDir,relayEnabled:false});
     const reloaded=(await(await admitted(app))(route)).task;assert.deepEqual(reloaded,task,'Pilot results changed across restart');
     result={qualification:'PASS',source:fixture?'disposable_fixture':'live_native',scopeHash:p.scopeHash,taskId:p.taskId,
-      worker,reviewer,preservedAcrossRestart:true,expectedSha256:p.expectedSha256,ownerReviewRecorded:false,done:false};
+      worker,reviewer,...(p.kind?{kind:p.kind,buildVerification}:{}),preservedAcrossRestart:true,expectedSha256:p.expectedSha256,ownerReviewRecorded:false,done:false};
     return result;
   } catch(error) {
     result={qualification:'HELD',scopeHash:p.scopeHash,taskId:p.taskId,reason:String(error.message).slice(0,1000),task,
@@ -256,7 +304,8 @@ export async function runGuideTeamPilot(path,{ownerApproved=false,approvedScopeH
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   const [action,path,approval,approvedScopeHash]=process.argv.slice(2);
-  if(action==='prepare'&&!path)console.log(JSON.stringify(prepareGuideTeamPilot(),null,2));
+  if(action==='prepare-build-check'&&!path)console.log(JSON.stringify(prepareGuideTeamPilot({buildCheck:true}),null,2));
+  else if(action==='prepare'&&!path)console.log(JSON.stringify(prepareGuideTeamPilot(),null,2));
   else if(action==='run'&&path&&approval==='--owner-approved'&&approvedScopeHash)console.log(JSON.stringify(await runGuideTeamPilot(path,{ownerApproved:true,approvedScopeHash}),null,2));
   else throw Error('Use prepare, or run <prepared pilot.json> --owner-approved <approved scope hash> only after separate owner approval.');
 }
