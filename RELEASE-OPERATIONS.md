@@ -1182,3 +1182,45 @@ The manual backup source allowlist now includes the new hidden login launcher
 and Relay result-evidence helper/README. This keeps the new Python diagnostic
 test's imported helper inside the restored source archive. Actual E backup and
 restored diagnostic verification follow; core577-test proof is unchanged.
+
+
+### Recovery plan sequencing and transaction visibility (2026-11-13)
+
+Fixed two reproduced operator-path defects before proposing a real window.
+First, the frozen board digest included the paused gate's process-private
+holder nonce, so acquiring the new post-restart lease looked like changed data.
+Only that singleton paused-gate nonce is now normalized; generation, state,
+other fields/rows and all task/history data remain hashed. The real opaque
+lease remains required and independently validates its actual holder.
+
+Second, a lease owned by another SQLite connection could miss the committing
+connection's uncommitted holder/admission changes. Canonical recovery now passes
+its actual database view into the hold check at entry and through the synchronous
+final boundary. Both connections must name the same persistent file and show
+the exact paused generation/holder with zero active admissions. Substitution
+inside the transaction rolls back every provisional recovery row and event.
+
+Five new regression tests include the plan-before-hold order, preserved data and
+generation binding, open-gate behavior, final same-generation substitution, and
+cross-connection holder/admission substitution. Focused41 and full582 checks
+PASS (461Node+121Python), selected tested hashes unchanged. A static sanitized
+source review found no definite blocker, conditional on the admission state
+column being NOT NULL; the actual current initializer and rejected NULL insert
+verified that condition in a disposable database. No malformed legacy schema
+or live recovery is qualified by this result. Earlier577/579 proofs remain
+historical rather than being inflated into a combined total.
+
+Fresh read-only comparison with the verified15-card backup matched the entire
+saved board and exact8original rows. No live dispatch/recovery tables were
+created. Private evidence: data/recovery-view-full-test-proof-20261113.json,
+recovery-view-static-review-assessment-20261113.json and
+recovery-view-live-preservation-20261113.json.
+
+Eddie now explicitly declares the old jobs used only Echo/DSH on this desktop.
+This selects the operator scope; it is not retirement or maintenance approval.
+The current known startup inventory includes the newly requested DSH web login
+shortcut. A real recovery still needs the reviewed startup/replay provider and
+one-shot trusted operator assembly; the existing planner exposes only prepare
+and inspect. No pause/restart/apply/enrollment is authorized or performed here.
+
+Backup closure: also include integrations/legacy-recovery-plan.mjs, imported by the retained recovery tests; the source archive must carry that helper as well as the new diagnostic/startup files. Restored-source recovery checks are verified separately from live maintenance.

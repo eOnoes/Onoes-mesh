@@ -32,6 +32,7 @@ for(const name of ['integrations/prepare-native-worker-maintenance.py','integrat
 entries.push('integrations/workroom-backup-qualification.json');
 entries.push('integrations/guide-team-post-maintenance-qualification.json');
 for(const name of ['integrations/relay-result-evidence/relay_native_receipts.py','integrations/relay-result-evidence/README.md','integrations/dsh-web-autostart/start-dsh-web.ps1','integrations/dsh-web-autostart/start-hidden.vbs','integrations/dsh-web-autostart/README.md'])entries.push(name);
+entries.push('integrations/legacy-recovery-plan.mjs');
 entries.sort();
 // Keep the operational contracts with the UI/code they describe.
 for(const name of ['MIND-CONTRACT.md','RELAY-INTEGRATION.md','MESH-QUICK-START.md'])if(existsSync(join(root,name)))entries.push(name);

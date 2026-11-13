@@ -308,6 +308,52 @@ test('actual approval-file revocation at the final boundary rolls back all provi
   } finally { f.close(); }
 });
 
+test('pre-restart paused snapshot survives acquiring a fresh private maintenance hold', async () => {
+  const f=await fixture({hold:false});let held;
+  try {
+    f.store.workroom.dispatch.pause();
+    const before=f.snapshot();
+    const plan=makeLegacyRecoveryPlan({...before,bootedAt:'2020-01-01T00:00:00Z',observedAt:new Date(Date.now()-120000).toISOString()});
+    const originals=f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all();
+    assert.equal(f.db.prepare('SELECT holder FROM workroom_dispatch_gate WHERE id=1').get().holder,null);
+    // A private lease cannot survive a reboot. Acquire its replacement AFTER the frozen snapshot.
+    held=f.store.workroom.dispatch.hold();
+    assert.ok(f.db.prepare('SELECT holder FROM workroom_dispatch_gate WHERE id=1').get().holder);
+    assert.equal(f.snapshot().boardSha256,before.boardSha256);
+    const owner={...f.options().authorize(),planHash:plan.planHash};
+    const verifyFence=(p,o)=>({...f.boundary(p,o),planHash:p.planHash});
+    const permit=await issueLegacyRecoveryPermit({...f.options(),plan,meshLease:held,authorize:()=>owner,verifyFence,
+      commitGuard:(p,o)=>({owner,boundary:verifyFence(p,o)})});
+    const receipt=await f.store.workroom.legacyRecovery.commit(permit);
+    assert.equal(receipt.duplicate,false);
+    assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),originals);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length,0);
+    assert.equal(assertDispatchHold(held,plan).dispatchPaused,true);
+    assert.equal(f.store.workroom.get(f.old.id).messages[0].legacyRecovery.workerRetirementEstablished,false);
+  } finally {held?.release();f.close();}
+});
+
+test('paused snapshot still binds gate generation and task data; a replaced holder invalidates its live lease', async () => {
+  const f=await fixture({hold:false});let held,gate;
+  try {
+    f.store.workroom.dispatch.pause();const before=f.snapshot();
+    held=f.store.workroom.dispatch.hold();
+    gate=f.db.prepare('SELECT * FROM workroom_dispatch_gate WHERE id=1').get();
+    f.db.prepare('UPDATE workroom_dispatch_gate SET generation=generation+1 WHERE id=1').run();
+    assert.notEqual(f.snapshot().boardSha256,before.boardSha256);
+    assert.throws(()=>assertDispatchHold(held,f.plan),/no longer current/);
+    f.db.prepare('UPDATE workroom_dispatch_gate SET generation=? WHERE id=1').run(gate.generation);
+    f.db.prepare('UPDATE tasks SET description=? WHERE id=?').run('Changed request',f.old.id);
+    assert.notEqual(f.snapshot().boardSha256,before.boardSha256);
+    f.db.prepare('UPDATE workroom_dispatch_gate SET holder=? WHERE id=1').run('forged-holder');
+    assert.throws(()=>assertDispatchHold(held,f.plan),/no longer current/);
+    f.db.prepare('UPDATE workroom_dispatch_gate SET holder=? WHERE id=1').run(gate.holder);
+  } finally {
+    if(gate)f.db.prepare('UPDATE workroom_dispatch_gate SET generation=?,holder=? WHERE id=1').run(gate.generation,gate.holder);
+    held?.release();f.close();
+  }
+});
+
 test('real Mesh and native resource holds plus pinned approval commit synthetic recovery', async () => {
   const f=await fixture({hold:false});let held;
   try {
@@ -335,11 +381,28 @@ test('real Mesh and native resource holds plus pinned approval commit synthetic 
   } finally { held?.release();f.close(); }
 });
 
+test('open gate owner representation remains hash-significant and an open owned gate is invalid', async () => {
+  const f=await fixture({hold:false});
+  try {
+    f.store.workroom.dispatch.pause();
+    f.store.workroom.dispatch.resume(f.store.workroom.dispatch.status().generation);
+    const absent=f.snapshot().boardSha256;
+    f.db.prepare("UPDATE workroom_dispatch_gate SET holder='' WHERE id=1").run();
+    assert.notEqual(f.snapshot().boardSha256,absent);
+    f.db.prepare('UPDATE workroom_dispatch_gate SET holder=? WHERE id=1').run('invalid-open-owner');
+    assert.throws(()=>f.snapshot(),/maintenance state is invalid/);
+  } finally {
+    f.db.prepare('UPDATE workroom_dispatch_gate SET holder=NULL WHERE id=1').run();
+    f.close();
+  }
+});
+
  test('missing, copied, foreign or released Mesh holds cannot authorize recovery', async () => {
   const f=await fixture(),g=await fixture();
   try {
     for (const meshLease of [undefined, {...f.options().meshLease}, g.options().meshLease])
       await assert.rejects(issueLegacyRecoveryPermit({...f.options(),meshLease}), /authentic|does not match/);
+    assert.throws(()=>assertDispatchHold(f.options().meshLease,f.plan,g.db),/does not match recovery/);
     const permit=await issueLegacyRecoveryPermit(f.options());
     f.resumeDispatch();
     await assert.rejects(f.store.workroom.legacyRecovery.commit(permit), /no longer current/);
@@ -363,6 +426,65 @@ test('loss of the Mesh hold during the final synchronous guard rolls back provis
     assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length,8);
     assert.equal(assertDispatchHold(f.options().meshLease,f.plan).dispatchPaused,true);
   } finally { f.close(); }
+});
+
+test('same-generation holder replacement in the final commit guard rolls back all recovery writes', async () => {
+  const f=await fixture();
+  try {
+    const original=f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all();
+    const gate=f.db.prepare('SELECT * FROM workroom_dispatch_gate WHERE id=1').get();
+    let reached=false;
+    const commitGuard=(plan,observation)=>{
+      reached=true;
+      assert.equal(ledgerCount(f.db,'workroom_legacy_recovery_sends'),8);
+      f.db.prepare('UPDATE workroom_dispatch_gate SET holder=? WHERE id=1').run('substituted-owner');
+      assert.equal(f.db.prepare('SELECT generation FROM workroom_dispatch_gate WHERE id=1').get().generation,gate.generation);
+      return {owner:f.options().authorize(),boundary:f.boundary(plan,observation)};
+    };
+    const permit=await issueLegacyRecoveryPermit({...f.options(),commitGuard});
+    await assert.rejects(createLegacyRecoveryStore(f.db).commit(permit),/no longer current/);
+    assert.equal(reached,true);
+    assert.equal(ledgerCount(f.db,'workroom_legacy_recoveries'),0);
+    assert.equal(ledgerCount(f.db,'workroom_legacy_recovery_sends'),0);
+    assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n,0);
+    assert.deepEqual(f.db.prepare('SELECT * FROM workroom_dispatch_gate WHERE id=1').get(),gate);
+    assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),original);
+    assert.equal(assertDispatchHold(f.options().meshLease,f.plan).dispatchPaused,true);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length,8);
+  } finally {f.close();}
+});
+
+test('final validation sees uncommitted holder and admission changes through another connection', async () => {
+ for(const mutation of ['holder','admission']) {
+  const f=await fixture({hold:false});let held,gate;
+  try {
+    f.store.workroom.dispatch.pause();held=f.store.workroom.dispatch.hold();
+    const plan=makeLegacyRecoveryPlan({...f.snapshot(),bootedAt:'2020-01-01T00:00:00Z',observedAt:new Date(Date.now()-120000).toISOString()});
+    gate=f.db.prepare('SELECT * FROM workroom_dispatch_gate WHERE id=1').get();
+    const original=f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all();
+    const owner={...f.options().authorize(),planHash:plan.planHash};
+    const verifyFence=(p,o)=>({...f.boundary(p,o),planHash:p.planHash});
+    const commitGuard=(p,o)=>{
+      assert.equal(ledgerCount(f.db,'workroom_legacy_recovery_sends'),8);
+      if(mutation==='holder')f.db.prepare('UPDATE workroom_dispatch_gate SET holder=? WHERE id=1').run('uncommitted-substitution');
+      else f.db.prepare("INSERT INTO workroom_dispatch_admissions VALUES('new-admission','synthetic',1,'admitted',?,NULL)").run(new Date().toISOString());
+      return {owner,boundary:verifyFence(p,o)};
+    };
+    const permit=await issueLegacyRecoveryPermit({...f.options(),plan,meshLease:held,authorize:()=>owner,verifyFence,commitGuard});
+    await assert.rejects(createLegacyRecoveryStore(f.db).commit(permit),/no longer current/);
+    assert.deepEqual(f.db.prepare('SELECT * FROM workroom_dispatch_gate WHERE id=1').get(),gate);
+    assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),original);
+    assert.equal(ledgerCount(f.db,'workroom_legacy_recoveries'),0);
+    assert.equal(ledgerCount(f.db,'workroom_legacy_recovery_sends'),0);
+    assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_dispatch_admissions WHERE state!='finished'").get().n,0);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length,8);
+  } finally {
+    // Restore only this synthetic row if a failing assertion interrupted the expected rollback.
+    if(gate)f.db.prepare('UPDATE workroom_dispatch_gate SET generation=?,holder=? WHERE id=1').run(gate.generation,gate.holder);
+    held?.release();
+    f.close();
+  }
+ }
 });
 
 

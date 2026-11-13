@@ -158,3 +158,30 @@ Next: finish the operator scope/startup/replay/restore record, then obtain exact
 window authority. No restart, hold release, Rook/Mind activation or paid team
 trial is granted. Preserve unknown outcomes and original eight hold records.
 Evidence: data/native-review-corrective-assessment-20261113.json.
+
+
+## 2026-11-13: current owner scope and real sequencing corrections
+
+Owner now declares only Echo/DSH on this desktop. DSH web login startup is now
+explicitly installed at the owner's request; include its named shortcut with
+the existing DSH A2A shortcut, Hermes_Gateway and Onoes Deep Watchdog owners in
+any reviewed pause/restoration recipe. Current profile metadata and API listener
+were matched read-only. This is scoped configuration evidence, not retirement.
+
+The canonical snapshot now excludes only the paused singleton gate's ephemeral
+holder nonce so a pre-restart plan can precede its post-restart private lease.
+The canonical transaction separately checks the real holder in both its own
+committing view and the lease's connection. Real disposable tests reproduced
+both prior failures and prove final holder/admission substitution rolls back.
+Full582 checks PASS, static source review accepted for the current valid schema;
+no actual restart or live recovery. Old plans/fingerprints are historical and
+must not be applied to the current15-card board or changed source.
+
+Next required implementation: a thin trusted one-shot operator assembly and
+source-backed startup/replay fence provider using the existing authorization,
+observation, actual native and database capabilities. Do not replace coverage
+with JSON booleans, add an HTTP apply route, or ask for restart/apply authority
+as though that assembly is already implemented. Keep exact8 outcomes unknown,
+retain source/data before/after evidence and restore exact approved startup
+settings separately. Only request the real operator window after this is
+concrete, reviewed and qualified on disposable data.

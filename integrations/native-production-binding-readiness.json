@@ -49,11 +49,11 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 577,
-      "node": 456,
+      "total": 582,
+      "node": 461,
       "python": 121,
       "exitCode": 0,
-      "evidence": "data/inprocess-native-recovery-full-test-proof-20261113.json"
+      "evidence": "data/recovery-view-full-test-proof-20261113.json"
     },
     "postFullSuiteFormattingOnly": {
       "files": [
@@ -68,6 +68,20 @@
       "includedInLatest569": true
     },
     "currentRecoverySourceReview": {
+      "observedAt": "2026-11-13T22:23:18.549837+00:00",
+      "sendId": "d8b90c55-ae22-4f4f-9336-2fd625d5c65f",
+      "runId": "run_35c50a66f4674ae090a8ebb9c9c35fdd",
+      "scope": "Sanitized static diff review only",
+      "acceptedForCurrentValidSchema": true,
+      "verdict": "No definite blocking defect found in normalization/dual-view design; stated NOT NULL condition verified with the actual current initializer on disposable SQLite.",
+      "activationApproved": false,
+      "evidence": [
+        "data/recovery-view-static-review-reply-20261113.json",
+        "data/recovery-view-admission-schema-proof-20261113.json",
+        "data/recovery-view-full-test-proof-20261113.json"
+      ]
+    },
+    "previousRecoverySourceReview": {
       "observedAt": "2026-11-13T15:51:49.820224+00:00",
       "status": "accepted_source_review_only",
       "sendId": "b59bfdec-6893-46dc-848d-30d2fe611950",
@@ -79,6 +93,19 @@
       "activationApproved": false,
       "workerRetirementEstablished": false,
       "evidence": "data/native-review-corrective-assessment-20261113.json"
+    },
+    "recoverySnapshotLeaseSequencing": {
+      "status": "PASS_LOCAL_FIXTURE",
+      "focusedTests": 41,
+      "newRegressionCases": 5,
+      "crossConnectionMutationScenarios": [
+        "holder",
+        "admission"
+      ],
+      "snapshotHolderNonceOnlyExcludedWhenPaused": true,
+      "actualCommitViewChecked": true,
+      "actualColdBootPerformed": false,
+      "liveRecoveryPerformed": false
     }
   },
   "currentMainBoard": {
