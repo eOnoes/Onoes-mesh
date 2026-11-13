@@ -106,5 +106,43 @@
     "evidence": "data/legacy-echo-evidence-review-20261112.json",
     "next": "Prepare a concrete reviewed legacy-recovery procedure; do not repeat identical empty native lookups or infer retirement from turn completion.",
     "oneQuestionAccepted": true
+  },
+  "legacyRecoverySourceReview": {
+    "observedAt": "2026-11-13T03:00:09.318263+00:00",
+    "status": "incomplete_not_executable",
+    "maintenanceAuthorized": false,
+    "sourcePins": {
+      "gateway/platforms/api_server_runs.py": "6f29c01f5d44d1456041df819080d6e0ed8dc9f3f0215afce094e9ab610c295f",
+      "gateway/platforms/api_server_run_idempotency.py": "4ad0c20dfe220cf0aac8b340702b54621f7ecdb075799816407406c5cd733c03"
+    },
+    "verifiedHermesApiSubset": [
+      {
+        "symbol": "gateway/platforms/api_server_runs.py::_initialize_run_state",
+        "lines": "216-238",
+        "finding": "Creates the durable store and fresh empty live owner/agent/task/status maps. This function does not relaunch persisted jobs."
+      },
+      {
+        "symbol": "gateway/platforms/api_server_runs.py::_replay_or_conflict",
+        "lines": "493-501",
+        "finding": "Existing matching idempotency record returns the original accepted response; this function does not submit a worker."
+      },
+      {
+        "symbol": "gateway/platforms/api_server_runs.py::_durable_run_status",
+        "lines": "410-441",
+        "finding": "Canonical projection is checked first. Fallback durable status may write interrupted when the old owner is absent. GET-shaped observation is not necessarily database-read-only; interrupted is not child-writer retirement."
+      },
+      {
+        "symbol": "gateway/platforms/api_server_runs.py::_mark_shutdown_interrupted_runs",
+        "lines": "295-304",
+        "finding": "Persists interrupted status before cooperative interruption/teardown. Status alone is not evidence that teardown finished."
+      }
+    ],
+    "limits": [
+      "Source review of these functions is not a complete startup/replay or live restart qualification.",
+      "Canonical runtime authority branch, ordinary gateway jobs, cron/background work, Relay handoff outbox and DSH A2A persistence are not qualified by these findings.",
+      "Legacy native admission without a tracked process scope must remain unbound; current native receipt observer always returns writerQuiescence=false.",
+      "No source, queues, holds, services, credentials or worker state changed; no native status endpoint invoked for this audit."
+    ],
+    "next": "Inspect Relay handoff queue and DSH saved-task/cancellation startup behavior before proposing a concrete maintenance plan; retain all eight holds."
   }
 }
