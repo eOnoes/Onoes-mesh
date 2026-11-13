@@ -185,3 +185,59 @@ as though that assembly is already implemented. Keep exact8 outcomes unknown,
 retain source/data before/after evidence and restore exact approved startup
 settings separately. Only request the real operator window after this is
 concrete, reviewed and qualified on disposable data.
+
+
+## 2026-11-13: assembled one-shot operator candidate
+
+`integrations/legacy-recovery-operator.mjs` now composes the existing canonical
+recovery store, owner-record reader, real Windows native holds and Mesh dispatch
+lease in one process. There is no HTTP endpoint, scheduler, automatic pause,
+resume, startup modification or restart action. This is a local candidate, not
+live-recovery acceptance. Independent review of this new assembly remains pending.
+
+Operator CLI (from the exact reviewed workspace):
+
+```text
+node integrations/legacy-recovery-operator.mjs prepare <absolute-scope.json> <reviewed-scope-sha256> <new-plan.json>
+node integrations/legacy-recovery-operator.mjs inspect <absolute-scope.json> <reviewed-scope-sha256> <plan.json>
+node integrations/legacy-recovery-operator.mjs apply <absolute-scope.json> <reviewed-scope-sha256> <plan.json> <absolute-owner-record.json> <reviewed-owner-sha256>
+```
+
+Scope contract `mesh/legacy-operator-scope/v1`: owner Eddie; locality
+`desktop_echo_dsh_only`; exact workspace/database; nativeResources with the
+reviewed Hermes gateway.lock and both loopback families on3081/4123/8642;
+relay/hermes database paths and file identities; DSH task-store path; exactly
+eight bindings (sendId/agentId/conversationId plus six unique admissionId and two
+unique nativeTaskId); each binding's nativeFingerprint hashes its exact selected
+metadata projection. Startup contains the two named scheduled tasks with action/
+principal fingerprints and two original/parked DSH shortcuts with pinned bytes.
+Additional reviewed source files may extend, never replace, required source pins.
+The scope file and operator source are themselves pinned in the frozen plan.
+No credentials or chat contents belong in the scope or approval record.
+
+Prepare requires an already paused, drained, unheld Mesh gate and verified
+startup/replay controls. Freeze before the later same-machine boot, then acquire
+fresh private holds after boot. Apply requires the exact unexpired owner record,
+unchanged complete board/source/identity, actual held capabilities, disabled
+nonrunning scheduled owners, absent original login shortcuts and pinned parked
+files. It independently reads accepted Relay receipts, terminal Echo admissions
+and completed DSH task metadata, and refuses any uncertain queue state. It
+rechecks controls/sources/owner/capabilities at COMMIT and leaves dispatch paused
+on success or failure. No original send is retried, changed or marked successful;
+its historical outcome remains unknown. Rerunning after a committed board change
+is not a substitute for inspecting the saved canonical recovery receipt.
+
+Evidence:56 focused checks and full587 checks PASS (466 Node/121 Python). Actual
+Windows native holds and disposable databases were used; fixture boot/task
+observations were simulated through an import-only test seam unavailable to CLI
+JSON, flags or environment. Actual read-only PC inspection correctly refused
+the currently enabled scheduled restart owners. No live scope/plan/approval was
+created, no startup owner was paused and no holds were cleared.
+
+New blocker: actual Relay has2 retrying deliveries (DSH and Cyony, older than the
+selected Workroom eight); Hermes has1 unknown admission from another conversation.
+They were inspected as IDs/status metadata only and left unchanged. Do not hide,
+requeue, retire or delete them merely to make recovery pass. Next: obtain exact
+authoritative reconciliation evidence and a reviewed disposition for those
+records, review the composed operator and exact scope, then request the real
+login-capable maintenance window. No restart is scheduled or approved now.

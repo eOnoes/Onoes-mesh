@@ -1224,3 +1224,16 @@ one-shot trusted operator assembly; the existing planner exposes only prepare
 and inspect. No pause/restart/apply/enrollment is authorized or performed here.
 
 Backup closure: also include integrations/legacy-recovery-plan.mjs, imported by the retained recovery tests; the source archive must carry that helper as well as the new diagnostic/startup files. Restored-source recovery checks are verified separately from live maintenance.
+
+
+## Recovery operator candidate — 2026-11-13
+
+The one-shot local operator is implemented and passes587 local checks; see
+`integrations/LEGACY-WORKER-RECOVERY-PLAN.md` for its exact CLI and scope contract.
+It is not a deployed worker or approved live recovery. It cannot pause/resume
+services or reboot this PC. Its real read-only checks currently refuse the
+enabled startup owners and three unresolved native/Relay queue records. Original
+eight holds and all15 cards remain intact. Do not clear unrelated queues to pass
+this gate. New operator source is included in manual/milestone source backups.
+Independent assembled-source review, reviewed runtime scope, exact queue
+reconciliation and separately approved maintenance remain open.
