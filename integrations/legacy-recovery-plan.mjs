@@ -16,6 +16,7 @@ const id = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(v
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const time = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
 const same = (a, b) => canonical(a) === canonical(b);
+export const legacyRecoveryFingerprint = value => sha(canonical(value));
 
 function validateSnapshot(snapshot) {
   if (!snapshot || !isAbsolute(snapshot.workspace || '') || !isAbsolute(snapshot.databasePath || '') ||
@@ -80,12 +81,20 @@ export function assessLegacyRecovery(plan, observation) {
 }
 
 export function readLegacyRows(databasePath, sendIds) {
-  if (!Array.isArray(sendIds) || sendIds.length !== 8 || new Set(sendIds).size !== 8 || !sendIds.every(id)) {
-    throw Error('Exactly eight original send IDs are required.');
-  }
   const db = new DatabaseSync(databasePath, { readOnly: true });
   try {
     db.exec('PRAGMA query_only=ON; BEGIN;');
+    const result = captureLegacyRecoveryRows(db, sendIds);
+    db.exec('COMMIT;');
+    return result;
+  } finally { db.close(); }
+}
+
+// Callers that write must hold their existing BEGIN IMMEDIATE transaction.
+export function captureLegacyRecoveryRows(db, sendIds) {
+  if (!Array.isArray(sendIds) || sendIds.length !== 8 || new Set(sendIds).size !== 8 || !sendIds.every(id)) {
+    throw Error('Exactly eight original send IDs are required.');
+  }
     const rows = sendIds.map(sendId => {
       const row = db.prepare('SELECT * FROM workroom_sends WHERE id=?').get(sendId);
       if (!row) throw Error('An original legacy send is missing.');
@@ -103,9 +112,7 @@ export function readLegacyRows(databasePath, sendIds) {
     }
     const boardSha256 = sha(canonical(board));
     const taskCount = db.prepare('SELECT COUNT(*) AS count FROM tasks').get().count;
-    db.exec('COMMIT;');
     return { targets: rows, otherWorkSendIds, boardSha256, taskCount };
-  } finally { db.close(); }
 }
 
 export async function observeLegacyRecovery({ workspace, databasePath, sendIds, sourceFiles }) {
@@ -129,6 +136,7 @@ export function legacyRecoverySources(workspace) {
   return {
     meshClaimPolicy: resolve(workspace, 'lib/workroom-claim-policy.mjs'),
     meshWorkroom: resolve(workspace, 'lib/workroom.mjs'),
+    legacyRecoveryStore: resolve(workspace, 'lib/workroom-legacy-recovery.mjs'),
     recoveryPlanner: resolve(workspace, 'integrations/legacy-recovery-plan.mjs'),
     pcCustodyVerifier: resolve(workspace, 'integrations/verify-live-release.mjs'),
     relayStore: 'D:/Dev/Onoes-Relay/relay_sessions.py', relayServer: 'D:/Dev/Onoes-Relay/relay_server.py',

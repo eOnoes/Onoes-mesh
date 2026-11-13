@@ -6,7 +6,7 @@ First local release: **18/21 complete**. Idle-timer fix installed and all eight 
 
 Main-PC first Nemotron lane D1-D4 is accepted: owner phone load/chat/unload plus actual backend receipt trace and loaded Inference/Control runtime/GPU agreement. Whole-device meters remain separate from verified model ownership. Other profiles are disabled/unqualified; laptop/AI-box work remains later. Earlier phone receipts are not fabricated or backfilled.
 
-The latest full local code gate passed **523 checks (409 Node + 114 Python)**. The approved isolated file-and-terminal trial passed: the builder changed only the allowed module, its original native transcript proves the two supplied tests ran successfully, and Nims independently approved the result. The result survived reopening the isolated board. This qualifies that bounded trial; production workers are not enrolled. The recorded parent-repository instruction search means this is not an OS filesystem read-isolation claim.
+The latest full local code gate passed **534 checks (420 Node + 114 Python)**. The approved isolated file-and-terminal trial passed: the builder changed only the allowed module, its original native transcript proves the two supplied tests ran successfully, and Nims independently approved the result. The result survived reopening the isolated board. This qualifies that bounded trial; production workers are not enrolled. The recorded parent-repository instruction search means this is not an OS filesystem read-isolation claim.
 
 Automatic assignments remain off. Eight historical accepted work sends lack original worker-retirement proof: three name the Mesh workspace and five have unknown workspace. Echo's read-only coordination reply supplied no new authoritative binding; the same eight empty run/admission lookups were independently checked. Empty results, a completed reply, a card in Done, elapsed time or a restart alone do not release these holds. Current retirement interfaces cannot retroactively enroll an untracked legacy worker. A recovery procedure must address original workers and durable replay before any closure; no such maintenance is scheduled or activated.
 
@@ -21,6 +21,14 @@ Eddie approved preparation and testing for the exact eight historical sends. The
 Commands: `node integrations/legacy-recovery-plan.mjs prepare <private-scope.json> <new-plan.json>` and `node integrations/legacy-recovery-plan.mjs inspect <plan.json> <new-assessment.json>`. Output files are created exclusively; existing evidence is not overwritten. There is no apply command. Even a successful assessment only reaches operator review and always returns canRelease=false. It does not establish worker retirement or clear a hold.
 
 Actual read-only preparation left all 25 live user tables unchanged and refused the current same-boot recovery. All 251 Workroom checks passed, including five new planning tests; static checks passed. The first restricted run hit loopback EACCES; the host-permitted run passed. The previous full 523-check gate remains separate. Durable adjudication and live maintenance are not implemented or authorized by this preparation milestone.
+
+## Guarded durable legacy recovery candidate (not active)
+
+The candidate adds a separate durable recovery ledger and privately branded message projections. It preserves original accepted sends and task data, appends explicit unknown-outcome recovery history, and never changes nativeLocal.writerQuiescence. Only a private permit with exact live-application authority and qualified machine/fence providers can commit all eight records. Preparation approval, copied JSON, stale observations, different databases, extra work, revocation and concurrent edits are refused. A mid-write failure rolls back the entire recovery. Old attempts cannot be reused as new results or new handoffs; new/native/active-team holds remain protected.
+
+Six new store tests and all 534 local checks passed. The running database still has its original 25 tables with unchanged contents; no recovery tables have been created there. No Mesh/PC restart or old hold release occurred. On a future approved Mesh source installation, the two empty additive ledger tables will be created; this alone clears nothing. No production authority/fence provider or apply CLI is enrolled.
+
+Echo's source-review run completed, but its reply carried a previous question's marker and did not review this candidate. That reply is not acceptance evidence. Preserve it; do not infer approval or replay the request. Runtime provider qualification and a reviewed, specifically approved maintenance procedure remain before live recovery.
 
 ## Earlier bounded guide team qualification - 2026-11-11
 

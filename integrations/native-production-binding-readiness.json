@@ -49,8 +49,8 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 523,
-      "node": 409,
+      "total": 534,
+      "node": 420,
       "python": 114,
       "exitCode": 0
     }
@@ -286,5 +286,46 @@
     },
     "guardBoundary": "No apply/release command, database mutation, browser endpoint, source deployment, restart or worker dispatch. Reuses existing assertPcRecovery custody check without converting it to worker retirement.",
     "next": "Implement the guarded durable recovery record and disposable integration acceptance before any live-maintenance request."
+  },
+  "legacyDurableCandidate": {
+    "status": "implemented_and_locally_qualified_not_runtime_enrolled",
+    "preparationAuthorized": true,
+    "runtimeApplicationAuthorized": false,
+    "newStoreTests": 6,
+    "focusedPlanStoreClaimTests": 25,
+    "fullLocalRegression": {
+      "total": 534,
+      "node": 420,
+      "python": 114,
+      "exitCode": 0
+    },
+    "guards": [
+      "Private permit requires exact apply_exact_eight authorization; preparation authority refused",
+      "Fresh boot/host/source/db/board/row and trusted covered-writer/replay-fence callbacks; no production provider enrolled",
+      "BEGIN IMMEDIATE rechecks whole saved board after asynchronous inspection",
+      "Eight ledger references/events written atomically, raw sends and task data unchanged; no native quiescence fabricated",
+      "Read/reopen validates durable proof and original row; opaque projections cannot be forged by JSON or moved to another database",
+      "Fresh work and active teams stay held; old attempts cannot be replayed, reapproved or applied as new results"
+    ],
+    "isolation": "All25live user tables unchanged, no recovery schema on the running database. Source candidate not loaded by a Mesh restart.",
+    "remaining": [
+      "Trusted operator approval-file loader and native writer-boundary/replay-fence integration",
+      "Reviewed concrete maintenance procedure and explicit live application approval",
+      "Independent current-candidate review: Echo returned a previous-question marker; it is not accepted as a review"
+    ],
+    "review": {
+      "status": "mismatched_reply_not_accepted",
+      "originalNativeRunTerminal": true,
+      "originalNativeStatus": "completed",
+      "currentSourcePinsStillMatch": true,
+      "newPromptFoundInSelectedNativeTranscript": false,
+      "boundary": "Selected state.db exact-session/marker lookup was empty; this does not prove non-delivery or identify the native profile. No broad transcript scan or resend performed."
+    },
+    "evidence": [
+      "data/legacy-recovery-durable-full-test-proof-20261112.json",
+      "data/legacy-durable-live-isolation-20261112.json",
+      "data/legacy-durable-review-question-20261112-readback.json"
+    ],
+    "next": "Qualify the operator/runtime fence integration while preserving the rejected review evidence; do not request or perform a PC restart yet."
   }
 }
