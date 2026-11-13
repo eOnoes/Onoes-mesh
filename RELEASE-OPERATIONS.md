@@ -1166,3 +1166,19 @@ test processes retired or that every old assignment was desktop-local. No old
 card/hold deletion or release. The requested startup change supersedes the old
 DSH-web-start-method question; include this new known startup owner in future
 approved recovery preparation. Local first-release register remains18/21.
+
+
+### Real startup build recorded in Workroom (2026-11-13)
+
+Added DSH web - quiet start at sign-in as a normal saved card, led by Nims,
+stage needs_you, review pending, with five completed steps and the next ordinary
+Windows sign-in still pending. It truthfully records a manual build in this chat,
+not a Workroom-dispatched team. Fresh separate local admission readback verified
+the saved card and explicit logoutHTTP204. Original14card observations and all
+8historical holds matched before/after; new card has0messages/dispatches.
+CardID16e44a1f-96df-45d1-ab60-4a42afc29710. No prior card was edited or removed.
+
+The manual backup source allowlist now includes the new hidden login launcher
+and Relay result-evidence helper/README. This keeps the new Python diagnostic
+test's imported helper inside the restored source archive. Actual E backup and
+restored diagnostic verification follow; core577-test proof is unchanged.
