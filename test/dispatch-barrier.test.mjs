@@ -13,6 +13,7 @@ import { openTaskStore } from '../lib/task-store.mjs';
 import { sendTaskMessage } from '../lib/workroom.mjs';
 import { dispatchLocalSession } from '../lib/workroom-local-sessions.mjs';
 import { startApp } from '../server.mjs';
+import { databaseFileIdentity } from '../lib/database-identity.mjs';
 
 const fixture = () => {
   const path = join(mkdtempSync(join(tmpdir(), 'mesh-dispatch-')), 'fixture.sqlite');
@@ -20,6 +21,28 @@ const fixture = () => {
   return { path, db, gate: createDispatchBarrier(db) };
 };
 const status = code => error => error.status === code;
+const binding = path => ({ databasePath: path, databaseIdentity: databaseFileIdentity(path) });
+
+test('held dispatch proof refuses a different database binding', () => {
+  const f=fixture(), other=fixture();
+  try {
+    f.gate.pause();const held=f.gate.hold();
+    assert.throws(()=>assertDispatchHold(held,{databasePath:other.path,databaseIdentity:'f'.repeat(64)}),/database/);
+    assert.throws(()=>assertDispatchHold(held,{databasePath:other.path,databaseIdentity:binding(f.path).databaseIdentity}),/database/);
+    assert.throws(()=>assertDispatchHold(held,{databasePath:f.path,databaseIdentity:'f'.repeat(64)}),/database/);
+    assert.throws(()=>assertDispatchHold(held),/database binding/);
+    assert.equal(assertDispatchHold(held,binding(f.path)).databaseIdentity,binding(f.path).databaseIdentity);
+    held.release();
+  } finally { f.db.close();other.db.close(); }
+});
+
+test('an in-memory database cannot mint a persistent maintenance hold', () => {
+  const db=new DatabaseSync(':memory:'),gate=createDispatchBarrier(db);
+  try {
+    gate.pause();assert.throws(()=>gate.hold(),status(503));
+    assert.equal(gate.status().state,'paused');assert.equal(gate.status().held,false);
+  } finally { db.close(); }
+});
 
 test('barrier reads create no schema; pause persists across independent connections', async () => {
   const f = fixture(); let peer;
@@ -44,11 +67,11 @@ test('pause drains original admissions before a held lease; release never resume
     await assert.rejects(f.gate.run(() => assert.fail('new dispatch')), status(503));
     finish('accepted'); await original;
     const held = f.gate.hold();
-    assert.equal(assertDispatchHold(held).scope, 'mesh_admissions_only');
-    assert.throws(() => assertDispatchHold(JSON.parse(JSON.stringify(held))), status(503));
+    assert.equal(assertDispatchHold(held,binding(f.path)).scope, 'mesh_admissions_only');
+    assert.throws(() => assertDispatchHold(JSON.parse(JSON.stringify(held)),binding(f.path)), status(503));
     assert.throws(() => f.gate.resume(f.gate.status().generation), status(409));
     held.release(); assert.equal(f.gate.status().state, 'paused');
-    assert.throws(() => assertDispatchHold(held), status(409));
+    assert.throws(() => assertDispatchHold(held,binding(f.path)), status(409));
     assert.throws(() => f.gate.resume(f.gate.status().generation - 1), status(409));
   } finally { f.db.close(); }
 });
@@ -61,7 +84,7 @@ test('a lost sender or maintenance owner stays unresolved after reopen; no timer
     assert.equal(gate.status().held, true);
     assert.throws(() => gate.hold(), status(409));
     assert.throws(() => gate.resume(gate.status().generation), status(409));
-    assert.throws(() => assertDispatchHold(held));
+    assert.throws(() => assertDispatchHold(held,binding(f.path)));
     // Separate synthetic crashed-sender database; no retirement is inferred.
     const lost = fixture();
     try {
@@ -81,11 +104,11 @@ test('failed sends drain admission only and never produce worker-retirement proo
     await assert.rejects(f.gate.run(() => { throw Error('uncertain transport'); }), /uncertain transport/);
     assert.equal(f.gate.status().activeAdmissions, 0);
     f.gate.pause(); const held = f.gate.hold();
-    assert.equal(assertDispatchHold(held).writerQuiescence, undefined);
-    assert.equal(assertDispatchHold(held).coveredLocalWriters, undefined);
+    assert.equal(assertDispatchHold(held,binding(f.path)).writerQuiescence, undefined);
+    assert.equal(assertDispatchHold(held,binding(f.path)).coveredLocalWriters, undefined);
     f.db.exec('BEGIN IMMEDIATE;');
     assert.throws(() => held.release(), status(409));
-    assert.equal(assertDispatchHold(held).dispatchPaused, true);
+    assert.equal(assertDispatchHold(held,binding(f.path)).dispatchPaused, true);
     f.db.exec('ROLLBACK;'); held.release();
   } finally { f.db.close(); }
 });
@@ -200,7 +223,7 @@ test('actual Relay proxy drains sends, preserves GET access and remains paused a
     const held=gate.hold();assert.equal((await request('GET')).status,200);
     await stop(app.child);app=await preview(env);
     assert.equal((await request('POST')).status,503);assert.equal(sent,1);
-    assert.equal(assertDispatchHold(held).dispatchPaused,true);
+    assert.equal(assertDispatchHold(held,binding(join(dir,'tasks.sqlite'))).dispatchPaused,true);
     held.release();gate.resume(paused.generation);
     assert.equal((await request('POST')).status,200);assert.equal(sent,2);
     assert.deepEqual(db.prepare('SELECT * FROM tasks WHERE id=?').get(task.id),before);

@@ -49,8 +49,8 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 557,
-      "node": 443,
+      "total": 562,
+      "node": 448,
       "python": 114,
       "exitCode": 0
     }
@@ -469,13 +469,71 @@
     "notEstablished": [
       "all-PC or external-application writer retirement",
       "direct Telegram/Hermes/DSH admission exclusion",
-      "native replay qualification beyond the prior source-specific fixtures",
-      "live recovery provider binding to exact database/plan and concrete maintenance authorization"
+      "production covered-writer/replay provider enrollment",
+      "concrete reviewed and authorized live maintenance"
     ],
     "evidence": [
       "data/dispatch-barrier-restart-full-test-proof-20261112.json",
       "data/dispatch-barrier-live-preservation-20261112.json",
       "test/dispatch-barrier.test.mjs"
+    ],
+    "databaseBoundRecovery": {
+      "status": "implemented_locally_qualified_not_live_enrolled",
+      "binding": "Canonical file path and persistent database file identity; in-memory or different database refused",
+      "mandatoryRuntimeChecks": "Real private meshLease required at permit creation, commit entry, before provisional writes and synchronous pre-COMMIT boundary",
+      "historicalProof": "Stored Mesh-only hold proof tied to exact plan and database identity; remains inspectable after deliberate lease release/resume, without granting new dispatch authority",
+      "focusedTests": 27,
+      "fullLocalRegression": {
+        "total": 562,
+        "node": 448,
+        "python": 114,
+        "exitCode": 0
+      },
+      "evidence": [
+        "data/recovery-held-commit-full-test-proof-20261113.json",
+        "data/recovery-held-commit-live-preservation-20261113.json"
+      ],
+      "nativeCoverageQualified": false
+    }
+  },
+  "nativeOwnershipComponentQualification": {
+    "status": "component_pass_not_production_coverage",
+    "predicatesPassed": 11,
+    "evidence": "data/hermes-maintenance-lock-qualification-20261113.json",
+    "actualInstalledLockBodies": true,
+    "fixtureOnly": [
+      "profile directories",
+      "PID record metadata",
+      "directory creation helper without ACL grants"
+    ],
+    "notEstablished": [
+      "all native entrypoints use this ownership mechanism",
+      "live profile enrollment",
+      "old writer retirement",
+      "production maintenance approval"
     ]
+  },
+  "legacyNativePauseDiscovery": {
+    "sendId": "0393970b-a5c4-47e9-9480-87a4bc0926e4",
+    "runId": "run_af0fbfb42c654b6189acbec002a401c7",
+    "reply": 242,
+    "status": "terminal_exact_marker_matched",
+    "boundary": "Echo source findings, not whole-runtime independent acceptance",
+    "findings": [
+      "Hermes pause-for-update drains toward restart; not a full-window hold",
+      "DSH admin disable reported to deny new A2A sends but not existing work or direct UI",
+      "Stopped service labels and local-model supervisor identity do not prove native owner absence"
+    ],
+    "evidence": "data/native-pause-discovery-replies-20261112.json"
+  },
+  "latestLegacyPreparation": {
+    "plan": "data/legacy-recovery-plan-v8-20261113.json",
+    "planHash": "8cfa19f451afe74453af26f45709443f369ae4c62e553c3b600bdda79e695f33",
+    "assessment": "data/legacy-recovery-assessment-v8-20261113.json",
+    "canRelease": false,
+    "reasons": [
+      "later_pc_boot_not_verified"
+    ],
+    "remainingSeparateGates": "Native writer/replay coverage, independent current-source review and exact live owner approval"
   }
 }

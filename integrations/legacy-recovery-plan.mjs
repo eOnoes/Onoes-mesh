@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto';
-import { readFile, realpath, writeFile, stat } from 'node:fs/promises';
+import { readFile, realpath, writeFile } from 'node:fs/promises';
+import { databaseFileIdentity } from '../lib/database-identity.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { DatabaseSync } from 'node:sqlite';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { homedir } from 'node:os';
-import {makeLegacyRecoveryPlan,assessLegacyRecovery,captureLegacyRecoveryRows,legacyRecoveryFingerprint,validateLegacyRecoverySnapshot,legacyMachineIdentity} from '../lib/workroom-legacy-evidence.mjs';
+import {makeLegacyRecoveryPlan,assessLegacyRecovery,captureLegacyRecoveryRows,validateLegacyRecoverySnapshot,legacyMachineIdentity} from '../lib/workroom-legacy-evidence.mjs';
 
 const run = promisify(execFile);
 const sha = value => createHash('sha256').update(value).digest('hex');
@@ -26,9 +27,7 @@ export async function observeLegacyRecovery({ workspace, databasePath, sendIds, 
     String.raw`$ErrorActionPreference='Stop'; $o=Get-CimInstance Win32_OperatingSystem; $p=Get-CimInstance Win32_ComputerSystemProduct; $g=(Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name MachineGuid).MachineGuid; @{host=$o.CSName;bootedAt=$o.LastBootUpTime.ToUniversalTime().ToString("o");windowsMachineGuid=$g;hardwareUuid=$p.UUID} | ConvertTo-Json -Compress`],
   { windowsHide: true, timeout: 15000, maxBuffer: 8192 });
   const machine = JSON.parse(stdout.trim());
-  const file = await stat(databasePath, { bigint: true });
-  if (!file.isFile() || file.ino <= 0n || file.birthtimeNs <= 0n) throw Error('Database file identity is unavailable.');
-  const databaseIdentity = legacyRecoveryFingerprint({ device: String(file.dev), file: String(file.ino), created: String(file.birthtimeNs) });
+  const databaseIdentity = databaseFileIdentity(databasePath);
   const snapshot = { workspace: await realpath(workspace), databasePath: await realpath(databasePath), databaseIdentity,
     host: machine.host, machineIdentity: legacyMachineIdentity(machine), bootedAt: machine.bootedAt, observedAt: new Date().toISOString(), sources: {},
     ...readLegacyRows(databasePath, sendIds) };
@@ -48,6 +47,7 @@ export function legacyRecoverySources(workspace) {
     legacyAuthorization: resolve(workspace, 'lib/workroom-legacy-authorization.mjs'),
     writerStates: resolve(workspace, 'lib/workroom-writer-states.mjs'),
     meshDispatchBarrier: resolve(workspace, 'lib/workroom-dispatch-barrier.mjs'),
+    databaseIdentity: resolve(workspace, 'lib/database-identity.mjs'),
     meshServer: resolve(workspace, 'server.mjs'),
     meshServingProxy: resolve(workspace, 'serve.mjs'),
     meshFlow: resolve(workspace, 'lib/workroom-flow.mjs'),
