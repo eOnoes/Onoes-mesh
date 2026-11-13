@@ -4,7 +4,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { makeLegacyRecoveryPlan, assessLegacyRecovery, readLegacyRows } from '../integrations/legacy-recovery-plan.mjs';
+import {makeLegacyRecoveryPlan,assessLegacyRecovery} from '../lib/workroom-legacy-evidence.mjs';
+import {readLegacyRows} from '../integrations/legacy-recovery-plan.mjs';
 
 const snapshot = () => ({ workspace: resolve('synthetic-mesh'), databasePath: resolve('synthetic.sqlite'), databaseIdentity: 'd'.repeat(64), boardSha256: 'f'.repeat(64), taskCount: 14, host: 'SYNTHETIC',
   bootedAt: '2026-10-30T16:43:37.000Z', observedAt: '2026-11-13T03:00:00.000Z',

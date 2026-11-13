@@ -292,10 +292,10 @@
     "preparationAuthorized": true,
     "runtimeApplicationAuthorized": false,
     "newStoreTests": 7,
-    "focusedPlanStoreClaimTests": "25 passed before upgrade regression; 15 plan/store/backup cases passed after migration fix",
+    "focusedPlanStoreClaimTests": "20 plan/store/PC/bundle/backup cases passed after packaging correction",
     "fullLocalRegression": {
-      "total": 535,
-      "node": 421,
+      "total": 536,
+      "node": 422,
       "python": 114,
       "exitCode": 0
     },
@@ -325,7 +325,8 @@
       "data/legacy-recovery-durable-full-test-proof-20261112.json",
       "data/legacy-durable-live-isolation-20261112.json",
       "data/legacy-durable-review-question-20261112-readback.json",
-      "data/legacy-recovery-lazy-full-test-proof-20261112.json"
+      "data/legacy-recovery-lazy-full-test-proof-20261112.json",
+      "data/legacy-runtime-packaging-full-test-proof-20261112.json"
     ],
     "next": "Qualify the operator/runtime fence integration while preserving the rejected review evidence; do not request or perform a PC restart yet.",
     "startupSchemaCorrection": {
@@ -336,6 +337,13 @@
       "regression": "Opening and reading an older database failed table-set equality before correction; passed afterward.",
       "fix": "No schema changes at startup/read. Tables are initialized only after authorization and final evidence checks inside the same all-eight transaction; rollback also rolls back table creation.",
       "backupRetest": "Outcome is recorded after capture in data/legacy-durable-corrected-milestone-receipt-20261112.json and the library latest verified pointer; this source record does not declare PASS."
+    },
+    "runtimePackagingCorrection": {
+      "failedAttempt": "E:/App-Backups/ONOes-Mesh/2026-11-13_04-31-36-902_UTC_18ee84ee",
+      "reason": "Runtime depended on operator CLI excluded from restored source",
+      "fix": "Pure evidence and custody functions moved to lib; runtime imports no preparation CLI",
+      "regression": "Minimal packaged data layer starts with lib/public/config and no integrations scripts",
+      "backupRetest": "Not yet run for corrected packaging"
     }
   }
 }

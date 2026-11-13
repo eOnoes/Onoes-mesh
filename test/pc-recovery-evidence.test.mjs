@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {assertPcRecovery} from '../integrations/verify-live-release.mjs';
+import {assertPcRecovery} from '../lib/pc-recovery-evidence.mjs';
 const snapshot=()=>({schema:'mesh-pc-recovery/v1',taskCount:14,bootTime:'2026-01-01T00:00:00Z',machineSha256:'a'.repeat(64),boardSha256:'b'.repeat(64),holdsSha256:'c'.repeat(64),sourceSha256:'d'.repeat(64)});
 const later=before=>({...before,bootTime:'2026-01-02T00:00:00Z'});
 

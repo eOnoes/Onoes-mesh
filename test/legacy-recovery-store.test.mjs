@@ -7,7 +7,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { openTaskStore } from '../lib/task-store.mjs';
 import { writerQuiescenceBlockers } from '../lib/workroom-claim-policy.mjs';
 import { issueLegacyRecoveryPermit, isLegacyRecovered } from '../lib/workroom-legacy-recovery.mjs';
-import { makeLegacyRecoveryPlan, readLegacyRows, legacyRecoveryFingerprint as hash } from '../integrations/legacy-recovery-plan.mjs';
+import {makeLegacyRecoveryPlan,legacyRecoveryFingerprint as hash} from '../lib/workroom-legacy-evidence.mjs';
+import {readLegacyRows} from '../integrations/legacy-recovery-plan.mjs';
 
 const ledgerCount = (db, name) => db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)
   ? db.prepare(`SELECT COUNT(*) AS n FROM "${name.replaceAll('"', '""')}"`).get().n : 0;
