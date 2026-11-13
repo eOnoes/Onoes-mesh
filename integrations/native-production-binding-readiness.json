@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-11-13T14:21:29.739288+00:00",
+  "observedAt": "2026-11-13T15:05:47.156145+00:00",
   "status": "held_production_enrollment_not_activated",
   "activationAuthorized": false,
   "liveDispatchPerformed": false,
@@ -49,11 +49,11 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 569,
-      "node": 448,
+      "total": 577,
+      "node": 456,
       "python": 121,
       "exitCode": 0,
-      "evidence": "data/native-transport-hold-full-test-proof-20261113.json"
+      "evidence": "data/inprocess-native-recovery-full-test-proof-20261113.json"
     },
     "postFullSuiteFormattingOnly": {
       "files": [
@@ -540,15 +540,17 @@
     "evidence": "data/native-pause-discovery-replies-20261112.json"
   },
   "latestLegacyPreparation": {
-    "plan": "data/legacy-recovery-plan-v9-20261113.json",
-    "planHash": "d241fbf8462fb98370b19c62aa57ca3ff0660c4da38b6067db966acb64a5d67d",
-    "assessment": "data/legacy-recovery-assessment-v9-20261113.json",
+    "plan": "data/legacy-recovery-plan-v11-20261113.json",
+    "planHash": "68ca9d5fe6316cf59fbfaf1dff155c4b00a3e1f60b2311770f6b12c2a0cafec3",
+    "nativeResourceScope": "880f834b65fe1550ea1c1e78660d6602f5b16228b936819355228e29fd2e80b9",
+    "resourceDeclaration": "data/native-resources-candidate-20261113.json",
+    "assessment": "data/legacy-recovery-assessment-v11-20261113.json",
     "canRelease": false,
+    "nativeCoverageQualified": false,
     "reasons": [
       "later_pc_boot_not_verified"
     ],
-    "remainingSeparateGates": "Native writer/replay coverage, independent current-source review and exact live owner approval",
-    "preservation": "data/publication-v9-live-preservation-20261113.json"
+    "remainingSeparateGates": "Correct independent current-source review; declared whole-writer/replay coverage; exact window/config/owner authorization; actual later boot and held resources before application"
   },
   "dshAdmissionControlQualification": {
     "status": "component_verified_insufficient_for_recovery",
@@ -653,5 +655,48 @@
     "githubWorkflowsAfterPush": 0,
     "evidence": "data/publication-through-c388062-20261113.json",
     "newTransportWorkPublished": false
+  },
+  "inProcessNativeRecoveryConnection": {
+    "status": "implemented_and_locally_qualified_not_live_approved",
+    "source": "lib/windows-native-maintenance.mjs",
+    "binding": "Exact Koffi3.3.8 dev dependency; no lifecycle scripts; lazy Windows x64 System32 bindings",
+    "sameProcess": true,
+    "runtimeRequirements": [
+      "Private database-bound Mesh lease",
+      "Private actual profile-byte-lock and exclusive non-listening socket lease",
+      "Exact native resource fingerprint in plan.sources.nativeResourceScope",
+      "Final synchronous recheck after provisional rows immediately before COMMIT"
+    ],
+    "scope": "Declared local profile locks/TCP endpoints only; whole-writer/replay coverage still separately required",
+    "focusedCases": 25,
+    "fullSuite": 577,
+    "evidence": [
+      "data/inprocess-native-recovery-focused-20261113.log",
+      "data/inprocess-native-recovery-full-test-proof-20261113.json",
+      "data/inprocess-native-recovery-live-preservation-20261113.json"
+    ],
+    "failureChecks": [
+      "Released native lease rolls back all canonical provisional records/references/events",
+      "Abrupt owner exit rolls back SQLite and kernel releases both locks/ports",
+      "Foreign listener/profile owner preserved",
+      "No copied proof accepted as runtime authority"
+    ],
+    "historicalProof": "Plan-bound descriptor retained; no active handle/filesystem required to inspect historical receipts",
+    "bareStartup": "PASS data layer starts without loading Koffi/operator scripts",
+    "offlineDependencyRestore": "data/native-binding-offline-restore-proof-20261113.json",
+    "productionResourcesHeld": false,
+    "productionEnrollment": false
+  },
+  "inProcessReviewCorrelation": {
+    "sendId": "c868f5ed-eaa9-47d6-8b9c-86b0bb1f7453",
+    "runId": "run_0e6d1b3ab0144456ac732a545d97616b",
+    "terminal": true,
+    "writerQuiescence": false,
+    "questionMatched": true,
+    "sourceHashesStillMatch": true,
+    "replyMarkerMatched": false,
+    "accepted": false,
+    "evidence": "data/inprocess-native-fence-review-assessment-20261113.json",
+    "next": "Trace submitted prompt, exact native run/result and Relay display association; do not infer routing cause or retry until mismatch is understood"
   }
 }

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile, realpath, writeFile } from 'node:fs/promises';
 import { databaseFileIdentity } from '../lib/database-identity.mjs';
+import { nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { DatabaseSync } from 'node:sqlite';
@@ -21,7 +22,7 @@ export function readLegacyRows(databasePath, sendIds) {
   } finally { db.close(); }
 }
 
-export async function observeLegacyRecovery({ workspace, databasePath, sendIds, sourceFiles }) {
+export async function observeLegacyRecovery({ workspace, databasePath, sendIds, sourceFiles, nativeResources }) {
   if (process.platform !== 'win32') throw Error('The live collector requires this Windows PC.');
   const { stdout } = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
     String.raw`$ErrorActionPreference='Stop'; $o=Get-CimInstance Win32_OperatingSystem; $p=Get-CimInstance Win32_ComputerSystemProduct; $g=(Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name MachineGuid).MachineGuid; @{host=$o.CSName;bootedAt=$o.LastBootUpTime.ToUniversalTime().ToString("o");windowsMachineGuid=$g;hardwareUuid=$p.UUID} | ConvertTo-Json -Compress`],
@@ -32,6 +33,7 @@ export async function observeLegacyRecovery({ workspace, databasePath, sendIds, 
     host: machine.host, machineIdentity: legacyMachineIdentity(machine), bootedAt: machine.bootedAt, observedAt: new Date().toISOString(), sources: {},
     ...readLegacyRows(databasePath, sendIds) };
   for (const [name, file] of Object.entries(sourceFiles)) snapshot.sources[name] = sha(await readFile(file));
+  if (nativeResources) snapshot.sources.nativeResourceScope = nativeResourceFingerprint(nativeResources);
   validateLegacyRecoverySnapshot(snapshot);
   return snapshot;
 }
@@ -48,6 +50,8 @@ export function legacyRecoverySources(workspace) {
     writerStates: resolve(workspace, 'lib/workroom-writer-states.mjs'),
     meshDispatchBarrier: resolve(workspace, 'lib/workroom-dispatch-barrier.mjs'),
     databaseIdentity: resolve(workspace, 'lib/database-identity.mjs'),
+    nativeMaintenance: resolve(workspace, 'lib/windows-native-maintenance.mjs'),
+    dependencyLock: resolve(workspace, 'package-lock.json'),
     meshServer: resolve(workspace, 'server.mjs'),
     meshServingProxy: resolve(workspace, 'serve.mjs'),
     meshFlow: resolve(workspace, 'lib/workroom-flow.mjs'),
@@ -62,18 +66,19 @@ export function legacyRecoverySources(workspace) {
 }
 
 async function main() {
-  const [action, input, output] = process.argv.slice(2);
-  if (!['prepare', 'inspect'].includes(action) || !input || !output) throw Error('Use prepare <exact-scope.json> <new-plan.json> or inspect <plan.json> <new-assessment.json>. No apply action exists.');
+  const [action, input, output, resourceFile] = process.argv.slice(2);
+  if (!['prepare', 'inspect'].includes(action) || !input || !output) throw Error('Use prepare <exact-scope.json> <new-plan.json> or inspect <plan.json> <new-assessment.json>. An optional fourth argument selects a reviewed native-resource JSON file. No apply action exists.');
   const value = JSON.parse(await readFile(resolve(input), 'utf8'));
+  const nativeResources = resourceFile ? JSON.parse(await readFile(resolve(resourceFile), 'utf8')) : undefined;
   const workspace = action === 'prepare' ? process.cwd() : value.workspace;
   if (await realpath(workspace) !== await realpath(process.cwd())) throw Error('Run from the reviewed Mesh workspace.');
   const snapshot = await observeLegacyRecovery({ workspace, databasePath: action === 'prepare'
     ? resolve('data/workroom-preview/tasks.sqlite') : value.databasePath,
-  sendIds: value.targets.map(t => t.sendId), sourceFiles: legacyRecoverySources(workspace) });
+  sendIds: value.targets.map(t => t.sendId), sourceFiles: legacyRecoverySources(workspace), nativeResources });
   const result = action === 'prepare' ? makeLegacyRecoveryPlan(snapshot) : assessLegacyRecovery(value, snapshot);
   await writeFile(resolve(output), JSON.stringify(result, null, 2) + '\n', { flag: 'wx' });
   process.stdout.write(JSON.stringify({ action, output: resolve(output), targetCount: result.targets?.length || result.targetCount,
-    planHash: result.planHash, status: result.status || 'prepared_only', reasons: result.reasons || [], canRelease: false }) + '\n');
+    planHash: result.planHash, status: result.status || 'prepared_only', reasons: result.reasons || [], nativeResourceScope: snapshot.sources.nativeResourceScope || null, nativeCoverageQualified: false, canRelease: false }) + '\n');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

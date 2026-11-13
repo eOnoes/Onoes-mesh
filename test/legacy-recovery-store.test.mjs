@@ -1,4 +1,5 @@
-import test from 'node:test';
+import nodeTest from 'node:test';
+const test=process.platform==='win32'&&process.arch==='x64'?nodeTest:nodeTest.skip;
 import assert from 'node:assert/strict';
 import { mkdtempSync, statSync, writeFileSync, renameSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
@@ -6,6 +7,8 @@ import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { createServer } from 'node:net';
+import { holdWindowsNativeMaintenance, nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { openTaskStore } from '../lib/task-store.mjs';
 import { writerQuiescenceBlockers } from '../lib/workroom-claim-policy.mjs';
 import { issueLegacyRecoveryPermit, isLegacyRecovered, createLegacyRecoveryStore } from '../lib/workroom-legacy-recovery.mjs';
@@ -17,7 +20,7 @@ import {assertDispatchHold,createDispatchBarrier} from '../lib/workroom-dispatch
 const ledgerCount = (db, name) => db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)
   ? db.prepare(`SELECT COUNT(*) AS n FROM "${name.replaceAll('"', '""')}"`).get().n : 0;
 
-function fixture({hold=true}={}) {
+async function fixture({hold=true}={}) {
   const dir = mkdtempSync(join(tmpdir(), 'mesh-legacy-store-')), path = join(dir, 'tasks.sqlite');
   let store = openTaskStore(path);
   const old = store.create({ title: 'Historical work', description: 'Preserve this original request.' });
@@ -37,6 +40,16 @@ function fixture({hold=true}={}) {
   const file = statSync(path, { bigint: true });
   const databaseIdentity = hash({ device: String(file.dev), file: String(file.ino), created: String(file.birthtimeNs) });
   const sources = Object.fromEntries(['mesh', 'relay', 'hermes', 'dsh'].map(k => [k, 'b'.repeat(64)]));
+  const nativeLock = join(dir, 'gateway.lock');writeFileSync(nativeLock, 'Synthetic profile metadata');
+  const seed=createServer();await new Promise((resolve,reject)=>{seed.once('error',reject);seed.listen(0,'127.0.0.1',resolve);});
+  const port=seed.address().port;await new Promise(resolve=>seed.close(resolve));
+  if ([3081,4123,4320,8452,8453,8642].includes(port)) throw Error('Protected fixture port');
+  const nativeResources={profileLocks:[nativeLock],endpoints:[['127.0.0.1',port],['::1',port]]};
+  sources.nativeResourceScope=nativeResourceFingerprint(nativeResources);
+  let nativeLease;
+  try { nativeLease=await holdWindowsNativeMaintenance(nativeResources); }
+  catch(error) { release();db.close();store.close();throw error; }
+  const releaseNative=()=>{if(nativeLease){nativeLease.release();nativeLease=undefined;}};
   const bootedAt = new Date(Date.now() - 60000).toISOString();
   const snapshot = () => ({ workspace: dir, databasePath: path, databaseIdentity, host: 'SYNTHETIC', machineIdentity: '1'.repeat(64),
     sources, bootedAt, observedAt: new Date().toISOString(), ...readLegacyRows(path, ids) });
@@ -45,16 +58,16 @@ function fixture({hold=true}={}) {
   const boundary = (_plan, observation) => ({ schema: 'mesh/legacy-local-fence/v1', planHash: plan.planHash,
     host: observation.host, machineIdentity: observation.machineIdentity, bootedAt: observation.bootedAt, sources: observation.sources,
     dispatchPaused: true, coveredLocalWriters: true, activeWriterCount: 0, replayPrevented: true, uncoveredWriters: [] });
-  const options = () => ({ plan, meshLease, authorize: () => owner, observe: snapshot, verifyFence: boundary,
+  const options = () => ({ plan, meshLease, nativeLease, authorize: () => owner, observe: snapshot, verifyFence: boundary,
     commitGuard: (_plan, observation) => ({ owner, boundary: boundary(_plan, observation) }) });
-  return { dir, path, db, old, next, ids, plan, snapshot, boundary, options,
+  return { dir, path, db, old, next, ids, plan, snapshot, boundary, options, nativeResources, releaseNative,
     resumeDispatch() { release(); dispatch.resume(dispatch.status().generation); },
     get store() { return store; }, setOwner(value) { owner = value; },
-    reopen() { store.close(); store = openTaskStore(path); }, close() { release(); db.close(); store.close(); } };
+    reopen() { store.close(); store = openTaskStore(path); }, close() { releaseNative(); release(); db.close(); store.close(); } };
 }
 
-test('opening and reading an older database never creates recovery tables', () => {
-  const f = fixture({hold:false});
+test('opening and reading an older database never creates recovery tables', async () => {
+  const f = await fixture({hold:false});
   try {
     f.db.exec('DROP TABLE IF EXISTS workroom_legacy_recovery_sends; DROP TABLE IF EXISTS workroom_legacy_recoveries;');
     const before = f.db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all();
@@ -64,8 +77,8 @@ test('opening and reading an older database never creates recovery tables', () =
   } finally { f.close(); }
 });
 
-test('pending intake already present at baseline cannot be blessed by a fresh recovery plan', () => {
-  const f = fixture();
+test('pending intake already present at baseline cannot be blessed by a fresh recovery plan', async () => {
+  const f = await fixture();
   try {
     for (const state of ['queued', 'planning', 'working']) {
       f.store.workroom.flow.working(f.next.id);
@@ -81,7 +94,7 @@ test('pending intake already present at baseline cannot be blessed by a fresh re
 });
 
 test('only an authentic exact-live permit atomically adjudicates eight holds; history survives reopen', async () => {
-  const f = fixture();
+  const f = await fixture();
   try {
     const original = f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all();
     const task = f.store.get(f.old.id);
@@ -104,6 +117,7 @@ test('only an authentic exact-live permit atomically adjudicates eight holds; hi
     await assert.rejects(Promise.resolve().then(() => f.store.workroom.reserve(f.old.id,
       { id: message.id, agentId: message.agentId, conversationId: message.conversationId, text: message.text }, 'work')), /recovered/);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n, 8);
+    f.releaseNative();
     f.reopen();
     assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 0);
     const next = f.store.workroom.get(f.next.id);
@@ -115,7 +129,7 @@ test('only an authentic exact-live permit atomically adjudicates eight holds; hi
 });
 
 test('preparation approval, absent fences, uncovered writers and stale/same-boot observations cannot mint permits', async () => {
-  const f = fixture();
+  const f = await fixture();
   try {
     const base = f.options();
     const cases = [
@@ -135,14 +149,14 @@ test('preparation approval, absent fences, uncovered writers and stale/same-boot
 });
 
 test('revoked authorization or a board write after inspection rolls back the whole recovery', async () => {
-  const f = fixture();
+  const f = await fixture();
   try {
     const permit = await issueLegacyRecoveryPermit(f.options());
     f.setOwner(null);
     await assert.rejects(f.store.workroom.legacyRecovery.commit(permit), /authorization/);
     assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
   } finally { f.close(); }
-  const g = fixture();
+  const g = await fixture();
   try {
     let calls = 0;
     const opts = { ...g.options(), verifyFence: (plan, observation) => {
@@ -158,7 +172,7 @@ test('revoked authorization or a board write after inspection rolls back the who
 });
 
 test('new work, tampered projections and modified original receipts stay protected after recovery', async () => {
-  const f = fixture();
+  const f = await fixture();
   try {
     await f.store.workroom.legacyRecovery.commit(await issueLegacyRecoveryPermit(f.options()));
     const message = f.store.workroom.get(f.old.id).messages[0];
@@ -184,7 +198,7 @@ test('new work, tampered projections and modified original receipts stay protect
 });
 
 test('a failure midway through all eight records rolls back evidence, references and events', async () => {
-  const f = fixture();
+  const f = await fixture();
   try {
     const permit = await issueLegacyRecoveryPermit(f.options());
     f.db.exec(`CREATE TRIGGER reject_partial BEFORE INSERT ON workroom_events
@@ -199,7 +213,7 @@ test('a failure midway through all eight records rolls back evidence, references
 });
 
 test('a permit cannot be moved to another board/database', async () => {
-  const f = fixture(), g = fixture();
+  const f = await fixture(), g = await fixture();
   try {
     const permit = await issueLegacyRecoveryPermit(f.options());
     await assert.rejects(g.store.workroom.legacyRecovery.commit(permit), /another database/);
@@ -208,7 +222,7 @@ test('a permit cannot be moved to another board/database', async () => {
 });
 
 test('real pinned approval revocation after permit issuance prevents every recovery write', async () => {
-  const f = fixture();
+  const f = await fixture();
   try {
     const record = { ...f.options().authorize(), owner: 'Eddie', authorizedAt: new Date(Date.now() - 1000).toISOString(),
       expiresAt: new Date(Date.now() + 60000).toISOString() };
@@ -226,7 +240,7 @@ test('real pinned approval revocation after permit issuance prevents every recov
 });
 
 test('revocation after all provisional rows are written rolls back the entire recovery', async () => {
-  const f = fixture();
+  const f = await fixture();
   try {
     let checked = false;
     const opts = { ...f.options(), commitGuard: (plan, observation) => {
@@ -246,7 +260,7 @@ test('revocation after all provisional rows are written rolls back the entire re
 
 test('a lost final fence or asynchronous final guard cannot commit provisional recovery', async () => {
   for (const promise of [false, true]) {
-    const f = fixture();
+    const f = await fixture();
     try {
       const commitGuard = (plan, observation) => {
         const value = { owner: f.options().authorize(), boundary: { ...f.boundary(plan, observation), dispatchPaused: promise } };
@@ -261,7 +275,7 @@ test('a lost final fence or asynchronous final guard cannot commit provisional r
 });
 
 test('an async-function final guard is refused before a permit can be issued', async () => {
-  const f = fixture();
+  const f = await fixture();
   try {
     await assert.rejects(issueLegacyRecoveryPermit({ ...f.options(), commitGuard: async () => ({}) }), /synchronous/);
     assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
@@ -269,7 +283,7 @@ test('an async-function final guard is refused before a permit can be issued', a
 });
 
 test('actual approval-file revocation at the final boundary rolls back all provisional rows', async () => {
-  const f = fixture();
+  const f = await fixture();
   try {
     const record = { ...f.options().authorize(), owner: 'Eddie', authorizedAt: new Date(Date.now() - 1000).toISOString(),
       expiresAt: new Date(Date.now() + 60000).toISOString() };
@@ -294,15 +308,15 @@ test('actual approval-file revocation at the final boundary rolls back all provi
   } finally { f.close(); }
 });
 
-test('real same-database Mesh hold and pinned approval guard a synthetic native recovery through commit', async () => {
-  const f=fixture({hold:false});let held;
+test('real Mesh and native resource holds plus pinned approval commit synthetic recovery', async () => {
+  const f=await fixture({hold:false});let held;
   try {
     f.store.workroom.dispatch.pause();held=f.store.workroom.dispatch.hold();
     const plan=makeLegacyRecoveryPlan({...f.snapshot(),bootedAt:'2020-01-01T00:00:00Z',observedAt:new Date(Date.now()-120000).toISOString()});
     const record={...f.options().authorize(),planHash:plan.planHash,owner:'Eddie',authorizedAt:new Date(Date.now()-1000).toISOString(),expiresAt:new Date(Date.now()+60000).toISOString()};
     delete record.recordHash;const bytes=JSON.stringify(record),path=join(await realpath(f.dir),'approval-held.json');writeFileSync(path,bytes);
     const authorize=await createLegacyAuthorizationReader({recordPath:path,planHash:plan.planHash,host:record.host,bootedAt:record.bootedAt,expectedSha256:createHash('sha256').update(bytes).digest('hex')});
-    // Native coverage stays synthetic here; no production provider is enrolled.
+    // Resource leases are real; whole-writer/replay coverage stays synthetic. No production provider is enrolled.
     const verifyFence=(p,o)=>{assertDispatchHold(held,p);return {...f.boundary(p,o),planHash:p.planHash};};
     let finalChecked=false;
     const commitGuard=(p,o)=>{
@@ -310,7 +324,7 @@ test('real same-database Mesh hold and pinned approval guard a synthetic native 
       assert.ok(p.targets.every(t=>f.store.workroom.legacyRecovery.read(t.taskId,t.sendId)));
       return {owner:authorize.checkSync(p.planHash),boundary:verifyFence(p,o)};
     };
-    const permit=await issueLegacyRecoveryPermit({plan,authorize,observe:f.snapshot,verifyFence,commitGuard,meshLease:held});
+    const permit=await issueLegacyRecoveryPermit({plan,authorize,observe:f.snapshot,verifyFence,commitGuard,meshLease:held,nativeLease:f.options().nativeLease});
     const receipt=await f.store.workroom.legacyRecovery.commit(permit);
     assert.equal(receipt.duplicate,false);assert.equal(finalChecked,true);
     assert.equal(assertDispatchHold(held,plan).dispatchPaused,true);
@@ -322,7 +336,7 @@ test('real same-database Mesh hold and pinned approval guard a synthetic native 
 });
 
  test('missing, copied, foreign or released Mesh holds cannot authorize recovery', async () => {
-  const f=fixture(),g=fixture();
+  const f=await fixture(),g=await fixture();
   try {
     for (const meshLease of [undefined, {...f.options().meshLease}, g.options().meshLease])
       await assert.rejects(issueLegacyRecoveryPermit({...f.options(),meshLease}), /authentic|does not match/);
@@ -335,7 +349,7 @@ test('real same-database Mesh hold and pinned approval guard a synthetic native 
 });
 
 test('loss of the Mesh hold during the final synchronous guard rolls back provisional records', async () => {
-  const f=fixture();
+  const f=await fixture();
   try {
     const commitGuard=(plan,observation)=>{
       // Mutate the same transactional connection to prove the final check catches a lost generation.
@@ -349,4 +363,34 @@ test('loss of the Mesh hold during the final synchronous guard rolls back provis
     assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length,8);
     assert.equal(assertDispatchHold(f.options().meshLease,f.plan).dispatchPaused,true);
   } finally { f.close(); }
+});
+
+
+test('missing, copied, foreign or released native resources refuse recovery despite boolean fence claims', async () => {
+  const f=await fixture(),g=await fixture();
+  try {
+    for (const nativeLease of [undefined,{...f.options().nativeLease},g.options().nativeLease])
+      await assert.rejects(issueLegacyRecoveryPermit({...f.options(),nativeLease}),/authentic|resource scope/);
+    const permit=await issueLegacyRecoveryPermit(f.options());f.releaseNative();
+    await assert.rejects(f.store.workroom.legacyRecovery.commit(permit),/authentic current native/);
+    assert.equal(ledgerCount(f.db,'workroom_legacy_recoveries'),0);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length,8);
+  } finally {f.close();g.close();}
+});
+
+test('native hold release in the final synchronous guard rolls back every provisional recovery row', async () => {
+  const f=await fixture();
+  try {
+    let reached=false;
+    const commitGuard=(plan,observation)=>{
+      reached=true;assert.ok(plan.targets.every(t=>f.store.workroom.legacyRecovery.read(t.taskId,t.sendId)));
+      f.releaseNative();return {owner:f.options().authorize(),boundary:f.boundary(plan,observation)};
+    };
+    const permit=await issueLegacyRecoveryPermit({...f.options(),commitGuard});
+    await assert.rejects(f.store.workroom.legacyRecovery.commit(permit),/authentic current native/);
+    assert.equal(reached,true);assert.equal(ledgerCount(f.db,'workroom_legacy_recoveries'),0);
+    assert.equal(ledgerCount(f.db,'workroom_legacy_recovery_sends'),0);
+    assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n,0);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length,8);
+  } finally {f.close();}
 });
