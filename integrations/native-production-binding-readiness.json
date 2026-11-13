@@ -143,7 +143,7 @@
       "Legacy native admission without a tracked process scope must remain unbound; current native receipt observer always returns writerQuiescence=false.",
       "No source, queues, holds, services, credentials or worker state changed; no native status endpoint invoked for this audit."
     ],
-    "next": "Finish exact DSH apply/startup and runtime cancellation/child handling, plus Hermes canonical/ordinary recovery branch before any maintenance proposal. Do not reread the whole bundled outline.",
+    "next": "Await owner choice between preparing a one-time legacy recovery or retaining original-worker-proof requirement. No restart, hold release or automatic assignment is authorized.",
     "relayRecovery": {
       "observedAt": "2026-11-13T03:10:21.207364+00:00",
       "sourcePins": {
@@ -175,7 +175,18 @@
       "evidence": [
         "data/legacy-relay-recovery-fixture-20261112.json",
         "data/legacy-relay-live-outbox-20261112.json"
-      ]
+      ],
+      "nativeRedispatchGuardQualification": {
+        "sourceSha256": "ad0444ac043dcdb5aa6baa008c4b58b47144f56925b39759a44dbbeafac2fafd",
+        "checks": {
+          "acceptedRefusedFreshFalse": true,
+          "acceptedRefusedFreshTrue": true,
+          "observationDoesNotInventBinding": true,
+          "acceptedMetadataUnchanged": true
+        },
+        "boundary": "Actual installed binding rejects synthetic accepted-but-unbound redispatch before any client/network access. No real receipts or native workers changed.",
+        "evidence": "data/legacy-native-replay-qualification-20261112.json"
+      }
     },
     "dshA2ASubset": {
       "sourceSha256": "06b7585153e100d12a1efc875f79e29e1e06998c29be29293635a2433e4cf410",
@@ -198,11 +209,52 @@
         }
       ],
       "notYetVerified": [
-        "apply/startup wiring and its records Map lifecycle",
-        "request-handler cancellation outcome when runtime record is absent",
-        "core-agent detached/background tool and cross-restart behavior"
+        "Core-agent detached/background tool and cross-restart guarantees",
+        "Actual live-service startup/maintenance acceptance"
       ],
-      "liveCancellationInvoked": false
+      "liveCancellationInvoked": false,
+      "startupAndCancellationQualification": {
+        "observedAt": "2026-11-13T03:20:37.941092+00:00",
+        "checks": {
+          "startupLoadsWithoutCreatingWorkers": true,
+          "actualTaskRouteRegistered": true,
+          "startupPreservesSavedTaskBytes": true,
+          "cleanupCreatesNoWorkers": true,
+          "freshStoreRetainsWorkingState": true,
+          "cancellationCanBeMetadataOnly": true,
+          "noNativeCancellationCalled": true,
+          "cancellationHasNoRetirementProof": true,
+          "cancelledMetadataSurvivesReopen": true,
+          "installedSourceUnchanged": true
+        },
+        "command": "node integrations/qualify-dsh-legacy-recovery.mjs",
+        "sourceSha256": "06b7585153e100d12a1efc875f79e29e1e06998c29be29293635a2433e4cf410",
+        "boundary": "Installed-code snapshot with export-only instrumentation, synthetic task file and fake host. No live services, credentials, provider calls or real task operations. Not whole-worker retirement or production restart acceptance.",
+        "evidence": "data/dsh-legacy-recovery-qualification-20261112.json"
+      }
     }
+  },
+  "legacyRecoveryPolicyProposal": {
+    "status": "owner_decision_required_not_authorized",
+    "scope": "One-time recovery for the exact eight already-recorded legacy accepted sends only; no future blanket override.",
+    "preserve": [
+      "Original accepted sends, artifacts, task stages and unknown historical outcomes",
+      "nativeLocal.writerQuiescence stays false; no fabricated native retirement or completed work",
+      "No resend of these sends; unrelated and newly-active work remains protected"
+    ],
+    "proposedGate": [
+      "A separately reviewed and approved maintenance window, with new dispatch paused",
+      "A trusted collector must verify a later PC boot and establish the covered local-writer boundary; service restart or an owner-supplied boolean is insufficient",
+      "Check pinned queue/startup behavior and fresh original receipts to prevent old work replay; unresolved writers outside the covered boundary remain held",
+      "An explicit owner recovery record bound to the exact send-set, workspace, new boot and evidence would adjudicate only these legacy holds",
+      "Current worker retirement, independent review, source-writing serialization and activation guards continue unchanged for new work"
+    ],
+    "notIncluded": [
+      "No restart is scheduled",
+      "No hold release, source deployment, production enrollment, credential/access change or worker dispatch",
+      "No claim that restart or cancellation proves the old work completed"
+    ],
+    "alternative": "Keep the original-worker-proof rule unchanged; all eight holds remain until authoritative original worker evidence is supplied.",
+    "reasonForDecision": "This changes how a legacy hold may be resolved; existing code/testing permission is not approval to substitute recovery evidence for original-worker proof."
   }
 }
