@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, statSync } from 'node:fs';
+import { mkdtempSync, statSync, writeFileSync, renameSync } from 'node:fs';
+import { realpath } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -9,6 +11,7 @@ import { writerQuiescenceBlockers } from '../lib/workroom-claim-policy.mjs';
 import { issueLegacyRecoveryPermit, isLegacyRecovered } from '../lib/workroom-legacy-recovery.mjs';
 import {makeLegacyRecoveryPlan,legacyRecoveryFingerprint as hash} from '../lib/workroom-legacy-evidence.mjs';
 import {readLegacyRows} from '../integrations/legacy-recovery-plan.mjs';
+import {createLegacyAuthorizationReader} from '../lib/workroom-legacy-authorization.mjs';
 
 const ledgerCount = (db, name) => db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)
   ? db.prepare(`SELECT COUNT(*) AS n FROM "${name.replaceAll('"', '""')}"`).get().n : 0;
@@ -29,10 +32,11 @@ function fixture() {
   const file = statSync(path, { bigint: true });
   const databaseIdentity = hash({ device: String(file.dev), file: String(file.ino), created: String(file.birthtimeNs) });
   const sources = Object.fromEntries(['mesh', 'relay', 'hermes', 'dsh'].map(k => [k, 'b'.repeat(64)]));
+  const bootedAt = new Date(Date.now() - 60000).toISOString();
   const snapshot = () => ({ workspace: dir, databasePath: path, databaseIdentity, host: 'SYNTHETIC',
-    sources, bootedAt: new Date(Date.now() - 60000).toISOString(), observedAt: new Date().toISOString(), ...readLegacyRows(path, ids) });
+    sources, bootedAt, observedAt: new Date().toISOString(), ...readLegacyRows(path, ids) });
   const plan = makeLegacyRecoveryPlan({ ...snapshot(), bootedAt: '2020-01-01T00:00:00Z', observedAt: new Date(Date.now() - 120000).toISOString() });
-  let owner = { schema: 'mesh/legacy-recovery-authorization/v1', decision: 'apply_exact_eight', planHash: plan.planHash, recordHash: 'c'.repeat(64) };
+  let owner = { schema: 'mesh/legacy-recovery-authorization/v1', decision: 'apply_exact_eight', planHash: plan.planHash, host: 'SYNTHETIC', bootedAt, recordHash: 'c'.repeat(64) };
   const boundary = (_plan, observation) => ({ schema: 'mesh/legacy-local-fence/v1', planHash: plan.planHash,
     host: observation.host, bootedAt: observation.bootedAt, sources: observation.sources,
     dispatchPaused: true, coveredLocalWriters: true, activeWriterCount: 0, replayPrevented: true, uncoveredWriters: [] });
@@ -92,6 +96,8 @@ test('preparation approval, absent fences, uncovered writers and stale/same-boot
     const base = f.options();
     const cases = [
       { authorize: () => ({ ...base.authorize(), decision: 'prepare_and_test' }) },
+      { authorize: () => ({ ...base.authorize(), host: 'OTHER' }) },
+      { authorize: () => ({ ...base.authorize(), bootedAt: '2020-01-01T00:00:00Z' }) },
       { verifyFence: (_p, o) => ({ ...f.boundary(_p, o), replayPrevented: false }) },
       { verifyFence: (_p, o) => ({ ...f.boundary(_p, o), uncoveredWriters: ['unverified'] }) },
       { verifyFence: (_p, o) => ({ ...f.boundary(_p, o), activeWriterCount: 1 }) },
@@ -175,4 +181,22 @@ test('a permit cannot be moved to another board/database', async () => {
     await assert.rejects(g.store.workroom.legacyRecovery.commit(permit), /another database/);
     assert.equal(writerQuiescenceBlockers(g.store.workroom.list()).length, 8);
   } finally { f.close(); g.close(); }
+});
+
+test('real pinned approval revocation after permit issuance prevents every recovery write', async () => {
+  const f = fixture();
+  try {
+    const record = { ...f.options().authorize(), owner: 'Eddie', authorizedAt: new Date(Date.now() - 1000).toISOString(),
+      expiresAt: new Date(Date.now() + 60000).toISOString() };
+    delete record.recordHash;
+    const bytes = JSON.stringify(record), path = join(await realpath(f.dir), 'approval.json');
+    writeFileSync(path, bytes);
+    const authorize = await createLegacyAuthorizationReader({ recordPath: path, planHash: f.plan.planHash,
+      host: record.host, bootedAt: record.bootedAt, expectedSha256: createHash('sha256').update(bytes).digest('hex') });
+    const permit = await issueLegacyRecoveryPermit({ ...f.options(), authorize });
+    renameSync(path, path + '.revoked');
+    await assert.rejects(f.store.workroom.legacyRecovery.commit(permit), /ENOENT/);
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
+  } finally { f.close(); }
 });

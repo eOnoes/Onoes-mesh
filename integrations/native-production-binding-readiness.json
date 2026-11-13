@@ -291,11 +291,11 @@
     "status": "implemented_and_locally_qualified_not_runtime_enrolled",
     "preparationAuthorized": true,
     "runtimeApplicationAuthorized": false,
-    "newStoreTests": 7,
+    "newStoreTests": 8,
     "focusedPlanStoreClaimTests": "20 plan/store/PC/bundle/backup cases passed after packaging correction",
     "fullLocalRegression": {
-      "total": 536,
-      "node": 422,
+      "total": 541,
+      "node": 427,
       "python": 114,
       "exitCode": 0
     },
@@ -309,7 +309,7 @@
     ],
     "isolation": "All25live user tables unchanged, no recovery schema on the running database. Source candidate not loaded by a Mesh restart.",
     "remaining": [
-      "Trusted operator approval-file loader and native writer-boundary/replay-fence integration",
+      "Qualified native writer-boundary/replay-fence integration and final source pins including approval reader",
       "Reviewed concrete maintenance procedure and explicit live application approval",
       "Independent current-candidate review: Echo returned a previous-question marker; it is not accepted as a review"
     ],
@@ -343,7 +343,26 @@
       "reason": "Runtime depended on operator CLI excluded from restored source",
       "fix": "Pure evidence and custody functions moved to lib; runtime imports no preparation CLI",
       "regression": "Minimal packaged data layer starts with lib/public/config and no integrations scripts",
-      "backupRetest": "Not yet run for corrected packaging"
+      "backupRetest": "PASS all7checks at E:/App-Backups/ONOes-Mesh/2026-11-13_04-40-10-062_UTC_02a7b2fe; receipt data/legacy-durable-corrected-milestone-receipt-20261112.json (c814f75 source, before approval-reader addition)"
     }
+  },
+  "legacyApprovalReader": {
+    "status": "implemented_and_locally_qualified_not_enrolled",
+    "liveApprovalCreated": false,
+    "liveRecoveryApplied": false,
+    "contract": "Separately pinned bytes, canonical same-file identity, exact plan/host/boot, Eddie/apply_exact_eight, current window at most24hours; revalidate every call",
+    "verification": "12 focused authorization/store cases PASS, including actual file revocation after permit issuance preventing all ledger writes",
+    "source": "lib/workroom-legacy-authorization.mjs",
+    "remaining": "Qualified runtime fence, source pin enrollment, independent review and concrete owner-authorized maintenance remain required",
+    "fullLocalRegression": {
+      "total": 541,
+      "node": 427,
+      "python": 114,
+      "exitCode": 0
+    },
+    "evidence": [
+      "data/legacy-approval-full-test-proof-20261112.json",
+      "data/legacy-approval-live-preservation-20261112.json"
+    ]
   }
 }
