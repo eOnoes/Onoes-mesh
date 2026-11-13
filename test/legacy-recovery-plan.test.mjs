@@ -106,6 +106,13 @@ test('real SQLite reads preserve original records and detect payload edits and o
     db.exec("DELETE FROM workroom_local_sessions WHERE sendId='native-other'; UPDATE workroom_sends SET state='future-state' WHERE id='native-other'");
     assert.equal(readLegacyRows(path, ids).otherWriterHolds[0].reason, 'unknown_send_state');
     db.exec("DELETE FROM workroom_sends WHERE id='native-other'");
+    db.exec("CREATE TABLE workroom_dispatch_gate(id INTEGER,state TEXT,generation INTEGER,holder TEXT); INSERT INTO workroom_dispatch_gate VALUES(1,'paused',1,'fixture-owner'); CREATE TABLE workroom_dispatch_admissions(id TEXT,state TEXT); INSERT INTO workroom_dispatch_admissions VALUES('pending','admitted');");
+    assert.equal(readLegacyRows(path, ids).otherWriterHolds[0].reason, 'pending_dispatch_admission');
+    db.exec("UPDATE workroom_dispatch_admissions SET state='finished'");
+    assert.deepEqual(readLegacyRows(path, ids).otherWriterHolds, []);
+    db.exec('DROP TABLE workroom_dispatch_gate');
+    assert.throws(() => readLegacyRows(path, ids), /maintenance schema is incomplete/);
+    db.exec('DROP TABLE workroom_dispatch_admissions');
     db.prepare("UPDATE workroom_sends SET payload='edited' WHERE id=?").run(ids[0]);
     const second = readLegacyRows(path, ids);
     assert.notEqual(first.targets[0].fingerprint, second.targets[0].fingerprint);

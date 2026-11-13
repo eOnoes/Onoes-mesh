@@ -320,13 +320,14 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if (!store || executionPersistenceFailed) throw new TaskError(503, 'Workroom persistence unavailable.');
         const sessionId = (req.headers.cookie ?? '').split(';').map(s => s.trim()).find(s => s.startsWith(SESSION_COOKIE_NAME + '='))?.slice(SESSION_COOKIE_NAME.length + 1);
         const admitted = () => Boolean(manager.authorize(sessionId, { mutation: true, csrfToken: req.headers['x-trial-csrf'] }));
-        return send(200, await relay.message(context.body, admitted));
+        return send(200, await store.workroom.dispatch.run(() => relay.message(context.body, admitted)));
       }
       if (route === '/api/relay/reconnect') {
         if (req.method !== 'POST') throw new TaskError(405, 'Method not allowed.');
         if (!context.body || Object.keys(context.body).length) throw new TaskError(400, 'Reconnect accepts no configuration.');
         if (!current()) return;
-        return send(200, await relay.reconnect());
+        if (!store) throw new TaskError(503, 'Workroom persistence unavailable.');
+        return send(200, await store.workroom.dispatch.run(() => relay.reconnect()));
       }
       if(route==='/api/workroom/claim-next'){
         if(req.method!=='POST')throw new TaskError(405,'Method not allowed.');
@@ -386,11 +387,11 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
           if(body.decision==='allow_once' && !store.workroom.canApproveHandoff(id,source.id))throw new TaskError(409,'Task changed; this handoff cannot be approved. You can still deny it.');
           if(!current())throw new TaskError(403,'Session expired.');
           let result;
-          try{result=await dshApprovals.decide(scope,body,()=>{
+          try{result=await store.workroom.dispatch.run(()=>dshApprovals.decide(scope,body,()=>{
             if(!current())throw new TaskError(403,'Session expired.');
             const latest=store.workroom.get(id).messages.filter(m=>m.agentId==='dsh' && m.state==='accepted').at(-1);
             if(body.decision==='allow_once' && (latest?.id!==source.id || !store.workroom.canApproveHandoff(id,source.id)))throw new TaskError(409,'Task changed before the decision; approval refused.');
-          });}catch(error){
+          }));}catch(error){
             if(error.code!=='DSH_DECISION_UNCONFIRMED')throw error;
             if(!current())throw new TaskError(403,'Session expired. Refresh the existing request before another decision.');
             return send(202,{decisionStatus:'unconfirmed',task:store.workroom.get(id)});
@@ -504,7 +505,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   catch (e) { await nativeWorker?.close().catch(()=>{});await teamRunner?.close();await rookRuntime?.close();await localInference.close?.();modelDatabase?.close();await relay.close(); store?.close(); throw e; }
   guard = createTrialHttpGuard({ manager, port: server.address().port });
   rookRuntime?.start();
-  return { server, rookRuntime, mode: standalone ? 'standalone' : 'mesh', url: `http://127.0.0.1:${server.address().port}`, close: async () => {
+  return { server, rookRuntime, dispatch: store?.workroom.dispatch, mode: standalone ? 'standalone' : 'mesh', url: `http://127.0.0.1:${server.address().port}`, close: async () => {
     const closed = new Promise((resolve, reject) => server.close(e => e ? reject(e) : resolve()));
     server.closeAllConnections(); await closed;
     let nativeCloseFailed=false;

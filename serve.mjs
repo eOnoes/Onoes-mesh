@@ -1,3 +1,4 @@
+import {runDispatchRequest} from './lib/workroom-dispatch-barrier.mjs';
 import {parseGpuMetrics} from './lib/gpu-metrics.mjs';
 import {sampleCpuTimes,cpuLoadPercent} from './lib/host-cpu.mjs';
 import {mainboardNativeConnection} from './lib/native-mainboard.mjs';
@@ -350,6 +351,17 @@ function shortModel(name) {
 
 // --- Relay proxy --------------------------------------------------------------------
 async function relayProxy(req, res, token, path) {
+  try {
+    const reply = await runDispatchRequest(app.dispatch, req.method, () => relayProxyNow(req, res, token, path));
+    res.writeHead(reply.status, { 'Content-Type': reply.type, 'Cache-Control': 'no-store' });
+    res.end(reply.body);
+  } catch (error) {
+    req.resume();
+    sendJson(res, error.status || 503, {ok:false,error:error.message});
+  }
+}
+
+async function relayProxyNow(req, res, token, path) {
   const url = `${RELAY_ORIGIN}${path}`;
   const headers = { Authorization: `Bearer ${token}` };
   if (req.headers['content-type']) headers['Content-Type'] = req.headers['content-type'];
@@ -357,13 +369,9 @@ async function relayProxy(req, res, token, path) {
   try {
     const upstream = await fetch(url, { method: req.method, headers, body, signal: AbortSignal.timeout(20000) });
     const text = await upstream.text();
-    res.writeHead(upstream.status, {
-      'Content-Type': upstream.headers.get('content-type') ?? 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-    });
-    res.end(text);
+    return { status: upstream.status, type: upstream.headers.get('content-type') ?? 'application/json; charset=utf-8', body: text };
   } catch (error) {
-    sendJson(res, 502, { ok: false, error: `relay unreachable: ${error?.message ?? error}` });
+    return { status: 502, type: 'application/json; charset=utf-8', body: JSON.stringify({ ok: false, error: `relay unreachable: ${error?.message ?? error}` }) };
   }
 }
 

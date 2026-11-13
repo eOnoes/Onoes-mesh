@@ -49,8 +49,8 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 548,
-      "node": 434,
+      "total": 557,
+      "node": 443,
       "python": 114,
       "exitCode": 0
     }
@@ -265,10 +265,10 @@
   "legacyRecoveryPreparation": {
     "status": "v2_identity_and_activity_preparation_qualified_runtime_inactive",
     "approved": true,
-    "planHash": "e70c1a18f69f3fb2521c02c56c0abd409236e3948c53539012e5d2ef9e8228a2",
+    "planHash": "9f380ee1ce6325ca03e00fa932592e0f91f423e4fbf261d242b0adb4b52e2f06",
     "targetCount": 8,
     "savedTaskCount": 14,
-    "privatePlan": "data/legacy-recovery-plan-v4-20261112.json",
+    "privatePlan": "data/legacy-recovery-plan-v6-20261112.json",
     "realAssessment": {
       "status": "blocked",
       "reasons": [
@@ -294,8 +294,8 @@
     "newStoreTests": 13,
     "focusedPlanStoreClaimTests": "20 plan/store/PC/bundle/backup cases passed after packaging correction",
     "fullLocalRegression": {
-      "total": 548,
-      "node": 434,
+      "total": 557,
+      "node": 443,
       "python": 114,
       "exitCode": 0
     },
@@ -309,8 +309,8 @@
     ],
     "isolation": "All25live user tables unchanged, no recovery schema on the running database. Source candidate not loaded by a Mesh restart.",
     "remaining": [
-      "Qualified real held writer/replay boundary and synchronous commit provider",
-      "Review final source and concrete maintenance procedure; explicit live application approval remains absent"
+      "Bind qualified Mesh hold to the exact recovery database/plan and qualify the remaining native/all-entrypoint writer/replay boundary",
+      "Independent review of final barrier/provider source and concrete maintenance procedure before explicit live application approval"
     ],
     "review": {
       "status": "mismatched_reply_not_accepted",
@@ -327,7 +327,8 @@
       "data/legacy-recovery-lazy-full-test-proof-20261112.json",
       "data/legacy-runtime-packaging-full-test-proof-20261112.json",
       "data/legacy-final-guard-full-test-proof-20261112.json",
-      "data/legacy-identity-strict-full-test-proof-20261112.json"
+      "data/legacy-identity-strict-full-test-proof-20261112.json",
+      "data/dispatch-barrier-restart-full-test-proof-20261112.json"
     ],
     "next": "Qualify the operator/runtime fence integration while preserving the rejected review evidence; do not request or perform a PC restart yet.",
     "startupSchemaCorrection": {
@@ -437,5 +438,44 @@
         "data/legacy-identity-review-replies-20261112.json"
       ]
     }
+  },
+  "dispatchMaintenanceBarrier": {
+    "status": "implemented_and_locally_qualified_shared_app_not_restarted",
+    "scope": "Mesh admissions only, not existing workers or other applications",
+    "newTests": 9,
+    "fullLocalRegression": {
+      "total": 557,
+      "node": 443,
+      "python": 114,
+      "exitCode": 0
+    },
+    "routesCovered": [
+      "Workroom legacy messages/handoffs",
+      "dedicated native session dispatch",
+      "backend Relay messages and reconnects",
+      "DeepSeek approval decisions",
+      "mutating Relay proxy requests"
+    ],
+    "verified": [
+      "no gate schema created by reads/startup",
+      "pause persists across independent connections and actual owned app restart",
+      "read-only GET/HEAD remains available",
+      "hold requires paused generation and drained admissions; copied JSON is refused",
+      "hold release leaves pause; resume requires exact unheld drained generation",
+      "lost sender blocks replacement sends after restart even when gate is open",
+      "SQLite contention retries bookkeeping only; original send action called once",
+      "incomplete schema and pending gate admissions block recovery preparation"
+    ],
+    "notEstablished": [
+      "all-PC or external-application writer retirement",
+      "direct Telegram/Hermes/DSH admission exclusion",
+      "native replay qualification beyond the prior source-specific fixtures",
+      "live recovery provider binding to exact database/plan and concrete maintenance authorization"
+    ],
+    "evidence": [
+      "data/dispatch-barrier-restart-full-test-proof-20261112.json",
+      "data/dispatch-barrier-live-preservation-20261112.json",
+      "test/dispatch-barrier.test.mjs"
+    ]
   }
 }
