@@ -1089,3 +1089,24 @@ Focused25cases and full577 local checks PASS. Real Python byte-lock/socket-reuse
 Read-only prepare/inspect optionally accept a fourth resource-JSON argument. It hashes the effective canonical paths/file identities/endpoints into the source snapshot without acquiring them. v11 and its resource declaration are review candidates, nativeCoverageQualified=false/canRelease=false, not an activation contract. A real window must acquire holds first and prepare a fresh board/source/boot-bound plan.
 
 Independent review is NOT accepted yet: exact questionc868f5ed-eaa9-47d6-8b9c-86b0bb1f7453 completed but its displayed reply began with an older request marker. Source hashes still matched. Preserve data/inprocess-native-fence-review-assessment-20261113.json and trace delivery/native result/display correlation before using that response as review. Do not infer which layer caused it or repeat the question blindly.
+
+
+### Native review-result comparison (2026-11-13)
+
+The sanitized integrations/relay-result-evidence packet adds content-free result
+SHA256/counts to Relay's existing authenticated exact saved-run receipt. Fourteen
+local acceptance tests PASS. Result evidence requires matching run/conversation,
+terminal status and bounded valid UTF-8 text; no new send, raw text, credentials
+or writer-retirement conclusion. Reviewed one-file rollout backed up the helper,
+verified idle agents and exact saved process identities, then restarted only
+owned Relay. Native gateways/model service were untouched. Relay health and the
+existing review receipt succeeded afterward.
+
+Native and captured display hashes matched exactly: the older answer already
+exists in the native result, rather than being substituted by Relay display.
+Input/admission/execution cause remains unknown and the source review stays
+rejected. Next trace the existing native input/session path before any resend.
+Private proof: data/relay-review-native-display-comparison-20261113.json and
+rollout receipt data/relay-result-rollout-receipt-20261113.json. These14 tests are
+separate from the earlier577 Mesh checks. Local release remains18/21; live
+recovery/production workers/Rook/Mind are not activated.
