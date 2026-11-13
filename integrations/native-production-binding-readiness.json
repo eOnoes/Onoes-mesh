@@ -143,6 +143,66 @@
       "Legacy native admission without a tracked process scope must remain unbound; current native receipt observer always returns writerQuiescence=false.",
       "No source, queues, holds, services, credentials or worker state changed; no native status endpoint invoked for this audit."
     ],
-    "next": "Inspect Relay handoff queue and DSH saved-task/cancellation startup behavior before proposing a concrete maintenance plan; retain all eight holds."
+    "next": "Finish exact DSH apply/startup and runtime cancellation/child handling, plus Hermes canonical/ordinary recovery branch before any maintenance proposal. Do not reread the whole bundled outline.",
+    "relayRecovery": {
+      "observedAt": "2026-11-13T03:10:21.207364+00:00",
+      "sourcePins": {
+        "relay_sessions.py": "0449bdeec8aacfc01849cf022200815d98a58411289e0c1c45f4ee5725b97879",
+        "relay_server.py": "070076dd0d1ae059d88993ae047e093e9abf150b858c2e25526ccf6a63f8dadb"
+      },
+      "verifiedBehavior": {
+        "disposableStoreReopenRecoveryChecks": {
+          "onlySendingRecovered": true,
+          "acceptedRowUnchanged": true,
+          "acceptedNeverRetryEligible": true,
+          "sendingBecomesRetrying": true,
+          "existingPendingPreserved": true,
+          "recoveryIdempotent": true
+        },
+        "liveExactHistoricalReceiptsMatched": 8,
+        "allLiveReceiptsAccepted": true,
+        "allLiveAttemptsStillOne": true,
+        "echoReceiptsWithoutTransportReference": 6,
+        "dshReceiptsWithA2ATransportReference": 2
+      },
+      "sourceFindings": [
+        "outbox_recover changes only sending to retrying; accepted records are excluded.",
+        "outbox_pending selects pending/retrying only.",
+        "Relay Agent initializes a fresh in-memory message_queue; source search finds queue append in explicit message handling.",
+        "startup starts watchdog/desktop/notification tasks and OpenClaw adapters; that function does not restore accepted sends into the Hermes queue."
+      ],
+      "boundary": "Actual installed SessionStore behavior and fresh exact-eight Relay receipt metadata verified; not a complete watchdog/desktop/remote-work or worker-retirement qualification.",
+      "evidence": [
+        "data/legacy-relay-recovery-fixture-20261112.json",
+        "data/legacy-relay-live-outbox-20261112.json"
+      ]
+    },
+    "dshA2ASubset": {
+      "sourceSha256": "06b7585153e100d12a1efc875f79e29e1e06998c29be29293635a2433e4cf410",
+      "sourceFile": ".dsh/profiles/a2a/node_modules/dsh-a2a-server/lib/index.js",
+      "findings": [
+        {
+          "symbol": "FileTaskStore",
+          "lines": "7235-7288",
+          "finding": "init reloads JSON records into its Map; that class itself does not create or resume agents."
+        },
+        {
+          "symbol": "makeExecutor",
+          "lines": "7635-7774",
+          "finding": "execute creates a runtime agent when the runtime records Map lacks the task. cancelTask returns immediately when no runtime record exists; invoking it is not retirement proof."
+        },
+        {
+          "symbol": "quiesce",
+          "lines": "7780-7793",
+          "finding": "Clears the registry, waits for idle and dispose with allSettled, then warns for failures. Return alone does not prove every disposal succeeded."
+        }
+      ],
+      "notYetVerified": [
+        "apply/startup wiring and its records Map lifecycle",
+        "request-handler cancellation outcome when runtime record is absent",
+        "core-agent detached/background tool and cross-restart behavior"
+      ],
+      "liveCancellationInvoked": false
+    }
   }
 }
