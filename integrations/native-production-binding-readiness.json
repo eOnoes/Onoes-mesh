@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-11-13T02:34:42.178076+00:00",
+  "observedAt": "2026-11-13T06:58:13.026246+00:00",
   "status": "held_production_enrollment_not_activated",
   "activationAuthorized": false,
   "liveDispatchPerformed": false,
@@ -53,6 +53,16 @@
       "node": 448,
       "python": 114,
       "exitCode": 0
+    },
+    "postFullSuiteFormattingOnly": {
+      "files": [
+        "lib/pc-recovery-evidence.mjs",
+        "lib/workroom-legacy-evidence.mjs"
+      ],
+      "change": "Remove one extra blank EOF line each; behavior unchanged",
+      "focusedTestsPassed": 11,
+      "syntax": "PASS",
+      "publicationRangeWhitespace": "PASS"
     }
   },
   "currentMainBoard": {
@@ -527,14 +537,15 @@
     "evidence": "data/native-pause-discovery-replies-20261112.json"
   },
   "latestLegacyPreparation": {
-    "plan": "data/legacy-recovery-plan-v8-20261113.json",
-    "planHash": "8cfa19f451afe74453af26f45709443f369ae4c62e553c3b600bdda79e695f33",
-    "assessment": "data/legacy-recovery-assessment-v8-20261113.json",
+    "plan": "data/legacy-recovery-plan-v9-20261113.json",
+    "planHash": "d241fbf8462fb98370b19c62aa57ca3ff0660c4da38b6067db966acb64a5d67d",
+    "assessment": "data/legacy-recovery-assessment-v9-20261113.json",
     "canRelease": false,
     "reasons": [
       "later_pc_boot_not_verified"
     ],
-    "remainingSeparateGates": "Native writer/replay coverage, independent current-source review and exact live owner approval"
+    "remainingSeparateGates": "Native writer/replay coverage, independent current-source review and exact live owner approval",
+    "preservation": "data/publication-v9-live-preservation-20261113.json"
   },
   "dshAdmissionControlQualification": {
     "status": "component_verified_insufficient_for_recovery",
@@ -574,11 +585,33 @@
   "nativeWindowCoordination": {
     "sendId": "1a75bdd9-52fd-431e-a897-2345606ce67a",
     "conversationId": "6e715448-c51d-45b1-b045-cdb40731ca91",
-    "status": "running",
+    "status": "completed_exact_marker_matched",
     "intent": "data/native-window-facts-intent-20261113.json",
     "scope": "Read-only exact stop/drain/restart owner facts; no credentials, edits or native maintenance authorized",
     "runId": "run_3d8166797f0040f7b493b95ba4a0d31d",
-    "terminal": false,
-    "writerQuiescence": false
+    "terminal": true,
+    "writerQuiescence": false,
+    "replyVerified": true,
+    "evidence": "data/native-window-facts-replies-20261113.json",
+    "finding": "No supported DSH drain/held exclusion established; A2A foreground runner has no loop; web3081 startup owner still unknown; actual Hermes task profile/adapters not established by source alone"
+  },
+  "nativeLauncherFollowup": {
+    "processEvidence": "data/native-launcher-chain-inspection-20261113.json",
+    "startupEvidence": "data/dsh-configured-startup-surfaces-20261113.json",
+    "facts": [
+      "A2A4123 process ancestry contains D:/Dev/Onoes-Relay/tools/dsh-a2a-run.cmd",
+      "DSH web3081 original parent no longer exists; no original launcher custody inferred",
+      "Registered Hermes task points to AppData/Local/hermes/gateway-service/Hermes_Gateway.vbs",
+      "String-matched all configured task actions, services and Run entries found only unrelated model-supervisor task; not proof against arbitrary supervisors",
+      "Installed dsh web --help completed exit0 and exposes serve options, no documented stop/drain flag"
+    ],
+    "limits": [
+      "No native process stopped or restarted",
+      "No live code reload",
+      "Installed help source may differ from already-loaded long-running server",
+      "Profile help warned incompatible subscriptions plugin skipped; no exemption or update applied",
+      "Exact current task profile and active adapters still require approved inspection"
+    ],
+    "ownerQuestion": "Does DSH web start manually or automatically at Windows sign-in? Asked asynchronously; no answer inferred."
   }
 }
