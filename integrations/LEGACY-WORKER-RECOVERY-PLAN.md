@@ -293,3 +293,80 @@ assembly independent acceptance and actual runtime activation remain open.
 Evidence: data/operator-correlation-review-assessment-20261113.json and
 data/operator-dsh-request-boundary-20261113.json. Source-only review used no
 machine inspection or tools and no new worker/trial/activation authority.
+
+
+## 2026-11-13: DSH originating-message boundary and exact Relay normalization
+
+The operator now requires each DSH binding's `originMessageId` and
+`originFingerprint`. The first history message must match that reviewed identity,
+its full canonical fingerprint and the original rendered delivery; the message
+ID must occur exactly once across the task store. Later follow-ups are allowed.
+A matching text appearing elsewhere, a substituted origin or a copied origin in
+another task cannot qualify. The completed task state is current replay-state
+evidence only. Original work outcome remains explicitly unknown. No claim of
+original-request success or whole-writer retirement follows from task status.
+
+Current installed native methods FileTaskStore.save, ResultManager's task-event
+merge and DefaultRequestHandler's known-task request-context path were inspected
+through a hash-matched one-file snapshot. Their exact bodies were evaluated with
+isolated store/context/error adapters and synthetic requests: origin persisted,
+follow-up appended and completed task retained its origin. This is method-level
+qualification, not full-plugin startup or concurrency acceptance. The same pure
+origin predicate passed read-only against the actual two original DSH tasks,
+including the historical task with two user inputs. No live queue gate was
+bypassed, no task changed and no private input text was recorded.
+
+Relay transport uses Python str.strip, not JavaScript trim. A reproduced failure
+for U+0085 is fixed with Python's exact whitespace classifier, including control
+separators and excluding BOM. Tests compare every Unicode codepoint with Python
+and preserve interior whitespace; integrated receipt tests cover both boundary
+normalization and BOM retention. Relay's installed Python and the test runtime
+were both3.14.3 with the same29 whitespace codepoints. Full591 local checks PASS
+(470 Node/121 Python);9 operator cases PASS, with pre-fix failures recorded for
+both review findings. New source-only Echo review is in progress; do not claim
+independent approval until its exact reply and digest are verified.
+
+No PC/model/native restart, startup pause, live scope/plan/approval, queue cleanup,
+old-hold release, new paid trial, Rook/Mind activation or GitHub push occurred.
+The two retrying Relay rows and older unknown Hermes admission still need a
+reviewed reconciliation/containment procedure. Current first release remains
+18/21; these are recovery-provider correctness changes, not production signoff.
+
+Tooling lesson: index_file on the installed profile resolved the broad user-root
+index and took202seconds. Only that owned helper was interrupted after its result
+returned, not any app/service. A one-file snapshot index_folder unexpectedly
+replaced602 project index entries; source files were untouched. Restoring the
+index with the supported explicit tracked-path list avoids any directory walk.
+The oversized terminal JSON was rejected before execution; a finite structured
+SDK call now restores the same authorized metadata. Do not use index_folder on a
+subdirectory of an existing index without explicit identity/scope semantics.
+A disposable qualification script initially failed before execution due to its
+relative imports; corrected and successfully qualified unchanged native bytes.
+
+
+### Independent review of origin and strip fixes
+
+Echo's exact terminal source-only reply matched its question marker, native
+UTF-8 digest and unchanged source hashes. It confirms both prior findings are
+addressed. This is static review of the supplied diff, not live recovery approval.
+It adds a store-provenance contingency: a source record with no embedded taskId
+might be relocated while its message identity/fingerprint stays unchanged and
+unique. The reviewed scope already pins the task/origin pair and preparation
+checks it; the remaining qualification must explicitly test frozen-scope
+relocation and establish adequate snapshot/source integrity without asserting
+historical success. Do not dismiss the contingency without proving its scope,
+or claim a task was historically bound merely because current text matches.
+
+Next: finish that one association-integrity qualification (consider a reviewed
+whole-store snapshot hash checked on the same bytes used by the predicate),
+then determine the authoritative replay/containment behavior for the unrelated
+uncertain queues. No retirement, retry, cleanup or maintenance authority follows
+from this review. Keep the current real two-input history supported; do not turn
+a blanket refusal of valid history into a completion claim.
+
+Explicit tracked-path indexing restored the project index:746 files added,
+8526 symbols, no directory walk and no source-file change. Owned lookup clients
+14995/70115 and finite restoration3822 are terminal; no index job remains.
+Evidence: data/operator-origin-strip-review-assessment-20261113.json,
+data/operator-native-origin-qualification-20261113.json and
+data/operator-index-restoration-20261113.json.

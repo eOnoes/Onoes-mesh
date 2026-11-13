@@ -20,6 +20,14 @@ const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value
 const key = path => process.platform === 'win32' ? path.toLowerCase() : path;
 const same = (a, b) => fingerprint(a) === fingerprint(b);
 function requireValue(condition, message) { if (!condition) throw Error(message); }
+// Relay's Python str.strip includes U+0085 and U+001C..001F and excludes
+// U+FEFF. JavaScript trim has different boundaries; never normalize interiors.
+const relayWhitespace = '[\\u0009-\\u000d\\u001c-\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]';
+const relayBoundaries = new RegExp(`^${relayWhitespace}+|${relayWhitespace}+$`, 'gu');
+export function normalizeRelayDelivery(value) {
+  requireValue(typeof value === 'string', 'A saved string delivery is required.');
+  return value.replace(relayBoundaries, '');
+}
 function localFile(path, maxBytes) {
   requireValue(typeof path === 'string' && isAbsolute(path) && (process.platform !== 'win32' || /^[a-z]:[\\/]/i.test(path)), 'An absolute local file is required.');
   requireValue(key(realpathSync.native(path)) === key(resolve(path)), 'Aliased paths are refused.');
@@ -67,9 +75,9 @@ export function verifyReplayRecords(scope, targets) {
     const rows = db.prepare('SELECT id,taskId,agentId,conversationId,payload FROM workroom_sends WHERE id=?').all(binding.sendId);
     const target = targets.find(t => t.sendId === binding.sendId), row = rows[0];
     requireValue(rows.length === 1 && row.taskId === target.taskId && row.agentId === binding.agentId &&
-      row.conversationId === binding.conversationId && typeof row.payload === 'string' && row.payload.trim().length > 0,
+      row.conversationId === binding.conversationId && typeof row.payload === 'string' && normalizeRelayDelivery(row.payload).length > 0,
     'A binding does not match the original Workroom delivery.');
-    return [binding.sendId, row.payload.trim()];
+    return [binding.sendId, normalizeRelayDelivery(row.payload)];
   })));
   readonly(scope.relay.path, scope.relay.identity, db => {
     const states = db.prepare('SELECT DISTINCT state FROM outbox').all().map(row => row.state);
@@ -96,16 +104,34 @@ export function verifyReplayRecords(scope, targets) {
   const bytes = readFileSync((localFile(scope.dsh.path, 16777216), scope.dsh.path));
   const records = JSON.parse(bytes.toString('utf8'));
   requireValue(Array.isArray(records), 'DSH task store shape changed.');
-  for (const binding of scope.bindings.filter(t => t.agentId === 'dsh')) {
+  const dsh = verifyDshOrigins(records, scope.bindings, originalDeliveries);
+  return { exactAcceptedSends: 8, terminalEchoAdmissions: 6, ...dsh };
+}
+
+// Read-only association evidence, not writer retirement or dispatch permission.
+export function verifyDshOrigins(records, bindings, originalDeliveries) {
+  const selected = bindings.filter(binding => binding.agentId === 'dsh');
+  requireValue(Array.isArray(records) && selected.length === 2 && new Set(selected.map(binding => binding.nativeTaskId)).size === 2 &&
+    new Set(selected.map(binding => binding.originMessageId)).size === 2, 'Two distinct DSH origin bindings are required.');
+  for (const binding of selected) {
     const matches = records.filter(row => row.id === binding.nativeTaskId);
     requireValue(matches.length === 1 && matches[0].contextId === binding.conversationId && matches[0].status?.state === 3 &&
       fingerprint({ id: matches[0].id, contextId: matches[0].contextId, status: matches[0].status }) === binding.nativeFingerprint,
     'An original DSH task is missing, changed or replayable.');
-    const users = matches[0].history?.filter(message => message.role === 1 && message.parts?.length === 1 &&
-      message.parts[0].content?.$case === 'text' && message.parts[0].content.value === originalDeliveries.get(binding.sendId));
-    requireValue(users?.length === 1, 'DSH request text is missing, ambiguous or differs from the original delivery payload.');
+    // A task may include a later follow-up. Bind its reviewed originating message,
+    // not any text match elsewhere in history or a claim of original-work success.
+    const origin = matches[0].history?.[0];
+    requireValue(typeof binding.originMessageId === 'string' && binding.originMessageId.length > 0 &&
+      digest(binding.originFingerprint) && origin?.role === 1 && origin.messageId === binding.originMessageId &&
+      (!origin.taskId || origin.taskId === binding.nativeTaskId) && fingerprint(origin) === binding.originFingerprint,
+    'DSH origin is missing, changed or does not identify the reviewed request boundary.');
+    const occurrences = records.flatMap(task => (task.history || []).filter(message => message.messageId === binding.originMessageId));
+    requireValue(occurrences.length === 1, 'DSH origin occurs more than once in the task store.');
+    requireValue(origin.parts?.length === 1 && origin.parts[0].content?.$case === 'text' &&
+      origin.parts[0].content.value === originalDeliveries.get(binding.sendId),
+    'DSH request text differs from the original delivery payload.');
   }
-  return { exactAcceptedSends: 8, terminalEchoAdmissions: 6, completedDshTasks: 2 };
+  return { completedDshTasks: 2, originalWorkOutcome: 'unknown' };
 }
 
 // Read-only OS query. Names are data in an environment variable, never shell code.
@@ -157,6 +183,11 @@ export function loadOperatorScope(scopePath, expectedSha256) {
     new Set(scope.bindings.filter(b => b.agentId === 'echo').map(b => b.admissionId)).size === 6 &&
     new Set(scope.bindings.filter(b => b.agentId === 'dsh').map(b => b.nativeTaskId)).size === 2,
   'Eight independently correlated native bindings are required.');
+  const dshBindings = scope.bindings.filter(binding => binding.agentId === 'dsh');
+  requireValue(dshBindings.every(binding => typeof binding.originMessageId === 'string' &&
+    /^[A-Za-z0-9_-]{1,100}$/.test(binding.originMessageId) && digest(binding.originFingerprint)) &&
+    new Set(dshBindings.map(binding => binding.originMessageId)).size === 2,
+  'Both independently pinned DSH originating message boundaries are required.');
   const sourceFiles = { ...legacyRecoverySources(scope.workspace), operatorScope: scopePath, operatorRunner: fileURLToPath(import.meta.url) };
   for (const [name, path] of Object.entries(scope.additionalSources || {})) {
     requireValue(/^[a-zA-Z][a-zA-Z0-9]{0,63}$/.test(name) && !['constructor', 'prototype'].includes(name) &&

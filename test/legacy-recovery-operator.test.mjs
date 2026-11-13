@@ -4,6 +4,7 @@ import { mkdtempSync, realpathSync, writeFileSync, readFileSync, mkdirSync, exis
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { createServer } from 'node:net';
 import { openTaskStore } from '../lib/task-store.mjs';
@@ -12,7 +13,7 @@ import { createDispatchBarrier } from '../lib/workroom-dispatch-barrier.mjs';
 import { nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { legacyRecoveryFingerprint as hash } from '../lib/workroom-legacy-evidence.mjs';
 import { readLegacyRows } from '../integrations/legacy-recovery-plan.mjs';
-import { inspectReplayQueues, verifyReplayRecords, verifyStartupControls, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
+import { normalizeRelayDelivery, inspectReplayQueues, verifyReplayRecords, verifyStartupControls, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
 
 const test = process.platform === 'win32' && process.arch === 'x64' ? nodeTest : nodeTest.skip;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -40,8 +41,11 @@ async function fixture() {
       Object.assign(binding, { admissionId: record.admission_id, nativeFingerprint: hash(record) });
     } else {
       const record = { id: 'native-' + n, contextId: conversationId, status: { state: 3, timestamp: '2020-01-01T00:00:00Z' } };
-      tasks.push({ ...record, history: [{ role: 1, parts: [{ content: { $case: 'text', value: delivery } }] }] });
-      Object.assign(binding, { nativeTaskId: record.id, nativeFingerprint: hash(record) });
+      const origin = { role: 1, messageId: 'origin-' + n, taskId: '', contextId: 'original-client-context',
+        parts: [{ content: { $case: 'text', value: delivery } }] };
+      tasks.push({ ...record, history: [origin] });
+      Object.assign(binding, { nativeTaskId: record.id, nativeFingerprint: hash(record),
+        originMessageId: origin.messageId, originFingerprint: hash(origin) });
     }
     bindings.push(binding);
   }
@@ -187,7 +191,66 @@ test('exact native receipts cannot substitute another request with the same comp
     const swapped = structuredClone(f.scope), a = swapped.bindings[6], b = swapped.bindings[7];
     [a.nativeTaskId, b.nativeTaskId] = [b.nativeTaskId, a.nativeTaskId];
     [a.nativeFingerprint, b.nativeFingerprint] = [b.nativeFingerprint, a.nativeFingerprint];
+    [a.originMessageId, b.originMessageId] = [b.originMessageId, a.originMessageId];
+    [a.originFingerprint, b.originFingerprint] = [b.originFingerprint, a.originFingerprint];
     assert.throws(() => verifyReplayRecords(swapped, f.targets()), /DSH request text/);
     assert.equal(verifyReplayRecords(f.scope, f.targets()).exactAcceptedSends, 8);
+  } finally { f.close(); }
+});
+
+test('delivery normalization matches Python strip, including Unicode boundaries and preserved interior whitespace', async () => {
+  const f = await fixture();
+  try {
+    const inputs = ['\u0085Synthetic delivery 0\u001c', '\u001f\t Synthetic delivery 0\u3000',
+      '\ufeffSynthetic delivery 0\ufeff', ' \tSynthetic  delivery\n0\r ', '\u200bSynthetic delivery 0\u200b'];
+    const expected = JSON.parse(execFileSync('python', ['-X', 'utf8', '-c',
+      'import json,sys;print(json.dumps([v.strip() for v in json.load(sys.stdin)]))'],
+    { input: JSON.stringify(inputs), encoding: 'utf8', windowsHide: true, timeout: 10000 }));
+    for (let n = 0; n < inputs.length; n++) {
+      f.db.prepare("UPDATE workroom_sends SET payload=? WHERE id='send-0'").run(inputs[n]);
+      f.relay.prepare("UPDATE outbox SET content=? WHERE idem_key='send-0'").run(expected[n]);
+      f.hermes.prepare("UPDATE session_admissions SET payload_json=?,payload_digest=? WHERE admission_id='admission-0'")
+        .run(JSON.stringify({ text: expected[n] }), sha(expected[n]));
+      const receipt = f.hermes.prepare("SELECT admission_id,request_id,target_session_id,payload_digest,status,outcome,owner_epoch,generation FROM session_admissions WHERE admission_id='admission-0'").get();
+      f.scope.bindings[0].nativeFingerprint = hash(receipt);
+      assert.doesNotThrow(() => verifyReplayRecords(f.scope, f.targets()), 'Python-normalized delivery case ' + n);
+    }
+  } finally { f.close(); }
+});
+
+test('the boundary classifier matches Python across every Unicode codepoint and preserves interior whitespace', () => {
+  const pythonWhitespace = JSON.parse(execFileSync('python', ['-X', 'utf8', '-c',
+    'import json;print(json.dumps([n for n in range(0x110000) if chr(n).isspace()]))'],
+  { encoding: 'utf8', windowsHide: true, timeout: 10000 }));
+  const stripped = new Set(pythonWhitespace);
+  for (let n = 0; n < 0x110000; n++) {
+    const character = String.fromCodePoint(n), input = character + 'anchor' + character;
+    assert.equal(normalizeRelayDelivery(input), stripped.has(n) ? 'anchor' : input, 'Boundary codepoint ' + n);
+  }
+  for (const n of stripped) {
+    const input = 'left' + String.fromCodePoint(n) + 'right';
+    assert.equal(normalizeRelayDelivery(input), input, 'Interior codepoint ' + n);
+  }
+});
+
+test('DSH binds the pinned origin message and supports later follow-up history without inferring original success', async () => {
+  const f = await fixture();
+  try {
+    const original = structuredClone(f.tasks[1].history[0]);
+    const followup = { role: 1, messageId: 'followup-7', taskId: f.tasks[1].id,
+      contextId: original.contextId, parts: [{ content: { $case: 'text', value: 'A different later request' } }] };
+    f.tasks[1].history.push({ role: 2, messageId: 'response-7', parts: [] }, followup);
+    writeFileSync(f.scope.dsh.path, JSON.stringify(f.tasks));
+    assert.equal(verifyReplayRecords(f.scope, f.targets()).completedDshTasks, 2);
+    const wrong = structuredClone(f.scope); wrong.bindings[7].originMessageId = followup.messageId;
+    wrong.bindings[7].originFingerprint = hash(followup);
+    assert.throws(() => verifyReplayRecords(wrong, f.targets()), /DSH origin/);
+    f.tasks[1].history.unshift({ ...followup, taskId: '', messageId: 'unrelated-origin' });
+    writeFileSync(f.scope.dsh.path, JSON.stringify(f.tasks));
+    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /DSH origin/);
+    f.tasks[1].history.shift();
+    const duplicate = structuredClone(f.tasks[1]); duplicate.id = 'unrelated-task';
+    writeFileSync(f.scope.dsh.path, JSON.stringify([...f.tasks, duplicate]));
+    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /DSH origin/);
   } finally { f.close(); }
 });
