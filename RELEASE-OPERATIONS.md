@@ -1138,3 +1138,31 @@ Next dependency is the real operator recovery plan: declared local-writer scope,
 complete startup/replay handling, exact live configuration, and owner-approved
 later-boot maintenance. Preserve all eight historical holds and production-off
 state. Do not add more fixture scaffolding to replace those missing facts.
+
+
+### DSH web starts at Windows sign-in (2026-11-13)
+
+At Eddie's explicit request, installed the per-user Startup entry Onoes DeepSeek
+Harness Web. It targets the hidden Windows Script Host launcher under
+%LOCALAPPDATA%/Onoes/Launchers/DSH-Web. It checks existing loopback3081 before
+launching the same installed Node/DSH web entrypoint, preserves occupied ports,
+and makes one bounded attempt. No recurring task, script-policy change,
+credentials, automatic Windows login, authentication change or public listener.
+The separate DSH A2A bridge login shortcut remains unchanged.
+
+Seven actual Windows smoke checks passed, including real HTTP fixture readback,
+duplicate suppression, retained-process cleanup and unchanged protected DSH
+owner5748/starttime. Installed actual shortcut invocation produced a fresh
+port-already-listening receipt without restarting DSH. First fixture HTTP check
+failed because its response omitted a text content type; fixture corrected and
+rerun passed, with product source unchanged. Evidence data/dsh-web-autostart-
+smoke-20261113.json and data/dsh-web-autostart-install-20261113.json. Actual next
+Windows login is not yet exercised; no sign-out/reboot. See integrations/
+dsh-web-autostart/README.md for status location and disable instructions.
+
+Owner clarified most Workroom cards are mocks and he has never used Workroom
+properly. Preserve this as an owner-use fact, not confirmation that dispatched
+test processes retired or that every old assignment was desktop-local. No old
+card/hold deletion or release. The requested startup change supersedes the old
+DSH-web-start-method question; include this new known startup owner in future
+approved recovery preparation. Local first-release register remains18/21.
