@@ -33,12 +33,12 @@ function fixture() {
   const databaseIdentity = hash({ device: String(file.dev), file: String(file.ino), created: String(file.birthtimeNs) });
   const sources = Object.fromEntries(['mesh', 'relay', 'hermes', 'dsh'].map(k => [k, 'b'.repeat(64)]));
   const bootedAt = new Date(Date.now() - 60000).toISOString();
-  const snapshot = () => ({ workspace: dir, databasePath: path, databaseIdentity, host: 'SYNTHETIC',
+  const snapshot = () => ({ workspace: dir, databasePath: path, databaseIdentity, host: 'SYNTHETIC', machineIdentity: '1'.repeat(64),
     sources, bootedAt, observedAt: new Date().toISOString(), ...readLegacyRows(path, ids) });
   const plan = makeLegacyRecoveryPlan({ ...snapshot(), bootedAt: '2020-01-01T00:00:00Z', observedAt: new Date(Date.now() - 120000).toISOString() });
   let owner = { schema: 'mesh/legacy-recovery-authorization/v1', decision: 'apply_exact_eight', planHash: plan.planHash, host: 'SYNTHETIC', bootedAt, recordHash: 'c'.repeat(64) };
   const boundary = (_plan, observation) => ({ schema: 'mesh/legacy-local-fence/v1', planHash: plan.planHash,
-    host: observation.host, bootedAt: observation.bootedAt, sources: observation.sources,
+    host: observation.host, machineIdentity: observation.machineIdentity, bootedAt: observation.bootedAt, sources: observation.sources,
     dispatchPaused: true, coveredLocalWriters: true, activeWriterCount: 0, replayPrevented: true, uncoveredWriters: [] });
   const options = () => ({ plan, authorize: () => owner, observe: snapshot, verifyFence: boundary,
     commitGuard: (_plan, observation) => ({ owner, boundary: boundary(_plan, observation) }) });
@@ -55,6 +55,22 @@ test('opening and reading an older database never creates recovery tables', () =
     f.reopen();
     assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
     assert.deepEqual(f.db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all(), before);
+  } finally { f.close(); }
+});
+
+test('pending intake already present at baseline cannot be blessed by a fresh recovery plan', () => {
+  const f = fixture();
+  try {
+    for (const state of ['queued', 'planning', 'working']) {
+      f.store.workroom.flow.working(f.next.id);
+      f.db.prepare('UPDATE workroom_flow SET state=? WHERE taskId=?').run(state, f.next.id);
+      const snapshot = f.snapshot();
+      assert.deepEqual(snapshot.otherWriterHolds, [{ taskId: f.next.id, sendId: '', reason: 'pending_intake' }]);
+      assert.throws(() => makeLegacyRecoveryPlan(snapshot), /pending intake/);
+      f.db.prepare('DELETE FROM workroom_flow WHERE taskId=?').run(f.next.id);
+    }
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
   } finally { f.close(); }
 });
 

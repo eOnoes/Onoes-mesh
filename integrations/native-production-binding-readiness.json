@@ -49,8 +49,8 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 545,
-      "node": 431,
+      "total": 548,
+      "node": 434,
       "python": 114,
       "exitCode": 0
     }
@@ -263,12 +263,12 @@
     }
   },
   "legacyRecoveryPreparation": {
-    "status": "read_only_preparation_qualified_apply_not_implemented",
+    "status": "v2_identity_and_activity_preparation_qualified_runtime_inactive",
     "approved": true,
-    "planHash": "cacbfb4e270ca45e0673bfad74b7e3befd789406e29720d22cba0d20ed7f178b",
+    "planHash": "e70c1a18f69f3fb2521c02c56c0abd409236e3948c53539012e5d2ef9e8228a2",
     "targetCount": 8,
     "savedTaskCount": 14,
-    "privatePlan": "data/legacy-recovery-plan-v2-20261112.json",
+    "privatePlan": "data/legacy-recovery-plan-v4-20261112.json",
     "realAssessment": {
       "status": "blocked",
       "reasons": [
@@ -277,11 +277,11 @@
       "canRelease": false
     },
     "verification": {
-      "newPlanTests": 5,
-      "combinedPlanAndExistingPcCustodyTests": 9,
-      "workroomSuite": 251,
+      "newPlanTests": 7,
+      "combinedPlanAndExistingPcCustodyTests": 11,
+      "workroomSuite": 271,
       "staticCheck": "PASS",
-      "fullSuite": "Prior 523-check gate remains historical; no new full-suite count claimed.",
+      "fullSuite": "548 current local checks passed; runtime recovery remains inactive",
       "all25UserTablesUnchangedDuringPreparation": true
     },
     "guardBoundary": "No apply/release command, database mutation, browser endpoint, source deployment, restart or worker dispatch. Reuses existing assertPcRecovery custody check without converting it to worker retirement.",
@@ -291,11 +291,11 @@
     "status": "implemented_and_locally_qualified_not_runtime_enrolled",
     "preparationAuthorized": true,
     "runtimeApplicationAuthorized": false,
-    "newStoreTests": 12,
+    "newStoreTests": 13,
     "focusedPlanStoreClaimTests": "20 plan/store/PC/bundle/backup cases passed after packaging correction",
     "fullLocalRegression": {
-      "total": 545,
-      "node": 431,
+      "total": 548,
+      "node": 434,
       "python": 114,
       "exitCode": 0
     },
@@ -309,9 +309,8 @@
     ],
     "isolation": "All25live user tables unchanged, no recovery schema on the running database. Source candidate not loaded by a Mesh restart.",
     "remaining": [
-      "Qualify held native writer/replay exclusion provider and final source pins",
-      "Close review findings on baseline active-team/claim coverage and machine identity",
-      "Review final corrected source and concrete maintenance procedure before explicit live application approval"
+      "Qualified real held writer/replay boundary and synchronous commit provider",
+      "Review final source and concrete maintenance procedure; explicit live application approval remains absent"
     ],
     "review": {
       "status": "mismatched_reply_not_accepted",
@@ -327,7 +326,8 @@
       "data/legacy-durable-review-question-20261112-readback.json",
       "data/legacy-recovery-lazy-full-test-proof-20261112.json",
       "data/legacy-runtime-packaging-full-test-proof-20261112.json",
-      "data/legacy-final-guard-full-test-proof-20261112.json"
+      "data/legacy-final-guard-full-test-proof-20261112.json",
+      "data/legacy-identity-strict-full-test-proof-20261112.json"
     ],
     "next": "Qualify the operator/runtime fence integration while preserving the rejected review evidence; do not request or perform a PC restart yet.",
     "startupSchemaCorrection": {
@@ -381,9 +381,8 @@
     "currentReviewStatus": "completed_exact_marker_and_all_five_source_hashes_verified",
     "reviewMeaning": "Bounded static findings at pre-fix5a65ca1, not activation or current-source approval",
     "remainingReviewFindings": [
-      "Qualified held writer/replay provider is still missing",
-      "Confirm baseline active teams/claims/native states against the authoritative dispatch blocker predicate; source review did not establish coverage",
-      "Replace hostname-only custody binding with a reviewed machine-unique identity; do not call hostname a physical machine identity"
+      "Review final stricter state/native coverage against the final pinned source; earlier static review predates that refinement",
+      "Qualify real held writer/replay exclusion provider and concrete maintenance before live approval"
     ],
     "raceCorrection": {
       "status": "implemented_and_locally_qualified_not_enrolled",
@@ -399,6 +398,44 @@
         "python": 114,
         "exitCode": 0
       }
+    },
+    "identityAndCoverageCorrection": {
+      "status": "implemented_and_locally_qualified_not_runtime_enrolled",
+      "planSchema": "mesh/legacy-recovery-plan/v2",
+      "privatePlan": "data/legacy-recovery-plan-v4-20261112.json",
+      "planHash": "e70c1a18f69f3fb2521c02c56c0abd409236e3948c53539012e5d2ef9e8228a2",
+      "machineBinding": "Hash of validated Windows MachineGuid and SMBIOS UUID; raw identifiers not persisted/output; no TPM or clone-resistance claim",
+      "sharedWriterPredicate": "lib/workroom-writer-states.mjs used by admission and collector",
+      "coverage": "All other unresolved work sends held; active teams and other queued/planning/working intake held; unknown send/team/flow states held; every other native binding held regardless of phase/display status; exact historical flow must also match task ID",
+      "sourceStateAudit": {
+        "ordinarySends": "workroom.mjs reserve inserts prepared; startup maps prepared to unknown; settle permits accepted/unknown/rejected and refuses native bindings",
+        "nativeSends": "workroom-local-sessions.mjs native receipt writer maps only to prepared/unknown/accepted; other bindings are conservatively held without trusting raw native terminal state",
+        "teamStates": "automation store/runner write active,paused,closed,needs_review,completed; unknown values held",
+        "intakeStates": "flow store writes idea,queued,planning,working,clarification,accepted,failed; unknown values held",
+        "scope": "Current reviewed local runtime writer entrypoints, pinned in plan; not proof of all-host writer retirement"
+      },
+      "focusedPassed": 35,
+      "liveAssessment": "blocked solely on missing later PC boot; remaining owner/fence/application gates still separately required",
+      "currentReview": {
+        "sendId": "d1677167-c158-4134-8a5f-19293c87c236",
+        "runId": "run_4a31ee00b66249cdb812ccbe5e10eb34",
+        "terminal": true,
+        "exactMarkerMatched": true,
+        "sevenHashesMatchedAtReview": true,
+        "laterStrictCaptureChangesNotReviewed": true,
+        "approvalToActivate": false
+      },
+      "fullLocalRegression": {
+        "total": 548,
+        "node": 434,
+        "python": 114,
+        "exitCode": 0
+      },
+      "evidence": [
+        "data/legacy-identity-strict-full-test-proof-20261112.json",
+        "data/legacy-identity-live-preservation-20261112.json",
+        "data/legacy-identity-review-replies-20261112.json"
+      ]
     }
   }
 }

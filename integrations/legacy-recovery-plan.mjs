@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { homedir } from 'node:os';
-import {makeLegacyRecoveryPlan,assessLegacyRecovery,captureLegacyRecoveryRows,legacyRecoveryFingerprint,validateLegacyRecoverySnapshot} from '../lib/workroom-legacy-evidence.mjs';
+import {makeLegacyRecoveryPlan,assessLegacyRecovery,captureLegacyRecoveryRows,legacyRecoveryFingerprint,validateLegacyRecoverySnapshot,legacyMachineIdentity} from '../lib/workroom-legacy-evidence.mjs';
 
 const run = promisify(execFile);
 const sha = value => createHash('sha256').update(value).digest('hex');
@@ -23,14 +23,14 @@ export function readLegacyRows(databasePath, sendIds) {
 export async function observeLegacyRecovery({ workspace, databasePath, sendIds, sourceFiles }) {
   if (process.platform !== 'win32') throw Error('The live collector requires this Windows PC.');
   const { stdout } = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-    '$o=Get-CimInstance Win32_OperatingSystem; @{host=$o.CSName;bootedAt=$o.LastBootUpTime.ToUniversalTime().ToString("o")} | ConvertTo-Json -Compress'],
+    String.raw`$ErrorActionPreference='Stop'; $o=Get-CimInstance Win32_OperatingSystem; $p=Get-CimInstance Win32_ComputerSystemProduct; $g=(Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name MachineGuid).MachineGuid; @{host=$o.CSName;bootedAt=$o.LastBootUpTime.ToUniversalTime().ToString("o");windowsMachineGuid=$g;hardwareUuid=$p.UUID} | ConvertTo-Json -Compress`],
   { windowsHide: true, timeout: 15000, maxBuffer: 8192 });
   const machine = JSON.parse(stdout.trim());
   const file = await stat(databasePath, { bigint: true });
   if (!file.isFile() || file.ino <= 0n || file.birthtimeNs <= 0n) throw Error('Database file identity is unavailable.');
   const databaseIdentity = legacyRecoveryFingerprint({ device: String(file.dev), file: String(file.ino), created: String(file.birthtimeNs) });
   const snapshot = { workspace: await realpath(workspace), databasePath: await realpath(databasePath), databaseIdentity,
-    host: machine.host, bootedAt: machine.bootedAt, observedAt: new Date().toISOString(), sources: {},
+    host: machine.host, machineIdentity: legacyMachineIdentity(machine), bootedAt: machine.bootedAt, observedAt: new Date().toISOString(), sources: {},
     ...readLegacyRows(databasePath, sendIds) };
   for (const [name, file] of Object.entries(sourceFiles)) snapshot.sources[name] = sha(await readFile(file));
   validateLegacyRecoverySnapshot(snapshot);
@@ -45,6 +45,12 @@ export function legacyRecoverySources(workspace) {
     recoveryPlanner: resolve(workspace, 'integrations/legacy-recovery-plan.mjs'),
     pcCustodyVerifier: resolve(workspace, 'lib/pc-recovery-evidence.mjs'),
     legacyEvidence: resolve(workspace, 'lib/workroom-legacy-evidence.mjs'),
+    legacyAuthorization: resolve(workspace, 'lib/workroom-legacy-authorization.mjs'),
+    writerStates: resolve(workspace, 'lib/workroom-writer-states.mjs'),
+    meshFlow: resolve(workspace, 'lib/workroom-flow.mjs'),
+    meshAutomation: resolve(workspace, 'lib/workroom-automation-store.mjs'),
+    meshAutomationRunner: resolve(workspace, 'lib/workroom-automation.mjs'),
+    meshNativeSessions: resolve(workspace, 'lib/workroom-local-sessions.mjs'),
     relayStore: 'D:/Dev/Onoes-Relay/relay_sessions.py', relayServer: 'D:/Dev/Onoes-Relay/relay_server.py',
     relayNativeReceipts: 'D:/Dev/Onoes-Relay/relay_native_receipts.py',
     hermesRuns: resolve(homedir(), 'AppData/Local/hermes/hermes-agent/gateway/platforms/api_server_runs.py'),
