@@ -66,6 +66,19 @@
       "publicationRangeWhitespace": "PASS",
       "historical": true,
       "includedInLatest569": true
+    },
+    "currentRecoverySourceReview": {
+      "observedAt": "2026-11-13T15:51:49.820224+00:00",
+      "status": "accepted_source_review_only",
+      "sendId": "b59bfdec-6893-46dc-848d-30d2fe611950",
+      "runId": "run_1b74f193b8404b3daaf57a86499474a4",
+      "currentSourceHashesMatched": true,
+      "nativeDisplayDigestMatched": true,
+      "verdict": "No blocking defect found in inspected same-process acquisition and commit path",
+      "cleanupCaveat": "Close/unlock failure may leave resources held until process exit; closed lease refuses commit",
+      "activationApproved": false,
+      "workerRetirementEstablished": false,
+      "evidence": "data/native-review-corrective-assessment-20261113.json"
     }
   },
   "currentMainBoard": {

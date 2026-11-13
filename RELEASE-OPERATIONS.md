@@ -1110,3 +1110,31 @@ Private proof: data/relay-review-native-display-comparison-20261113.json and
 rollout receipt data/relay-result-rollout-receipt-20261113.json. These14 tests are
 separate from the earlier577 Mesh checks. Local release remains18/21; live
 recovery/production workers/Rook/Mind are not activated.
+
+
+### Corrective review and input trace (2026-11-13)
+
+The original exact request body/session/header fingerprint matches its saved
+native receipt. Its exact user message reached the native transcript. During
+that run the session compressed; the continuation contains the request marker
+inside a42012-character user summary rather than the separate original request,
+and contains the exact older answer. This supports compression-associated task
+drift; it does not prove a specific model or compression implementation defect.
+No unrelated transcript, summary text, credentials or memory was inspected.
+
+One deliberate short corrective source question then completed under its own
+saved run. Correct marker, all five named files, unchanged source hashes and
+native/display answer digest were checked. Echo found no blocking defect in the
+inspected same-process acquisition/commit path. Cleanup failure can leave a
+resource held until process exit; the closed lease cannot authorize a commit.
+This is accepted source review, not independent test execution, whole-writer
+coverage, historical retirement, replay qualification or activation approval.
+Private evidence: data/native-review-corrective-assessment-20261113.json and
+native-review-request-fingerprint/transcript-correlation/compression-correlation/
+post-compression-input records. No further review resend is pending. Existing
+577 Mesh tests and14 Relay diagnostic cases are unchanged; no repeated test run.
+
+Next dependency is the real operator recovery plan: declared local-writer scope,
+complete startup/replay handling, exact live configuration, and owner-approved
+later-boot maintenance. Preserve all eight historical holds and production-off
+state. Do not add more fixture scaffolding to replace those missing facts.

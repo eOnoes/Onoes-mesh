@@ -138,3 +138,23 @@ The next executable slice is a trusted provider that couples these holds to the 
 The in-process Node adapter now supplies actual profile and port handles in the same process as the canonical SQLite transaction. Both native and database-bound Mesh capabilities are required through the synchronous final check and COMMIT. No JSON snapshot or observed PID can replace a native capability. Failure/exit cases were exercised on disposable resources; full577 tests pass. A reviewed exact resource fingerprint is part of the plan source hash. Optional resource-JSON preparation is read-only and is not coverage approval.
 
 Remaining before a real window: resolve the current independent-review reply mismatch; establish the exact declared local-writer and replay scope without claiming unknown/remote retirement; review exact startup/resource configuration and disruption; obtain explicit owner window/plan authority; then use actual later-boot evidence and actual held resources. No restart, old-hold release, native/Rook/Mind enrollment or new paid team trial is authorized by these local tests.
+
+
+## 2026-11-13: independent current-source review accepted
+
+The reply mismatch is resolved for source-review purposes. A single corrective
+request completed with the exact new marker, matching5source hashes and matching
+native/display digest. Echo found no blocking defect in the same-process hold
+and COMMIT path. Its cleanup caveat remains fail-closed; resources may stay held
+until process exit after a native close failure. This review does not execute
+tests independently or establish production/local-writer/replay coverage.
+
+Original request fingerprint and transcript comparison prove correct Relay
+submission; the separate request was incorporated into a compression summary
+before the wrong older answer. Compression-associated task drift is observed;
+its precise cause is not established. No compression/native code was changed.
+
+Next: finish the operator scope/startup/replay/restore record, then obtain exact
+window authority. No restart, hold release, Rook/Mind activation or paid team
+trial is granted. Preserve unknown outcomes and original eight hold records.
+Evidence: data/native-review-corrective-assessment-20261113.json.
