@@ -1,6 +1,6 @@
 {
   "schema": "mesh-guide-post-maintenance-qualification/v1",
-  "qualification": "PASS_CURRENT_ISOLATED_LIVE_NATIVE_ONLY",
+  "qualification": "PASS_ISOLATED_FILE_AND_BUILD_CHECK_TRIALS_ONLY",
   "prepared": {
     "path": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-03369aa8-d418-4058-9d2d-99faa9df87b1\\pilot.json",
     "review": "C:\\Users\\eMitchell109\\Documents\\ChatGPT\\Nims Chat\\mesh-workroom-ab\\data\\guide-team-state-03369aa8-d418-4058-9d2d-99faa9df87b1\\REVIEW.txt",
@@ -444,22 +444,22 @@
   "latestLocalRegression": {
     "command": "npm test",
     "exitCode": 0,
-    "nodePassed": 406,
+    "nodePassed": 409,
     "pythonPassed": 114,
-    "totalPassed": 520,
-    "log": "data/fixed-reviewer-milestone-full-tests-20261112.log",
+    "totalPassed": 523,
+    "log": "data/code-and-test-milestone-full-tests-20261112.log",
     "codeChangedDuringRun": false
   },
   "mainBoardMilestone": {
-    "parentProgressRevision": 83,
+    "parentProgressRevision": 84,
     "other13CardsUnchanged": true,
     "historicalHolds": 8,
     "inferenceState": "STOPPED",
     "productionDispatchEnabled": false,
-    "evidence": "data/fixed-reviewer-mainboard-isolation-20261112.json"
+    "evidence": "data/code-trial-mainboard-isolation-20261112.json"
   },
   "codeAndTestPreparation": {
-    "qualification": "PREPARED_VALIDATED_NOT_RUN",
+    "qualification": "PASS_LIVE_NATIVE_CODE_AND_TEST",
     "path": "data/guide-team-state-9ff97698-93db-4db6-9c41-4ae9e460d5ef/pilot.json",
     "scopeHash": "70838f62e80cb860c3eca6396d0249920da176673e80d023086004e81190b158",
     "taskId": "3673e977-6e9a-451b-b76b-15f3a5f2091a",
@@ -491,9 +491,47 @@
       "scope": "Synthetic native team + real local PowerShell/Node execution; no live provider work"
     },
     "implementation": "Reuses guide-team-pilot single-attempt runner with explicit build-check kind; old file-only mode unchanged. Golden module and immutable tests checked before host execution; both tests must actually run.",
-    "evidenceBoundary": "Host test execution, reviewer command execution, native tool-profile availability and builder-reported test execution are distinct. Inspect original native evidence before claiming the builder actually invoked a terminal; prose alone is insufficient. Production terminal enrollment remains unqualified.",
-    "approval": "Fresh code-and-test trial question pending. Prior successful guide approval was file-only.",
-    "newProviderTasks": 0,
-    "liveServicesChanged": false
+    "evidenceBoundary": "Actual builder terminal invocation now verified against exact native session messages and matching tool-call/result ID; host and Nims checks remain separately evidenced. Production enrollment and filesystem read isolation are not implied.",
+    "approval": "Eddie: I approve this code and test trial. One builder and one independent reviewer consumed; no retries.",
+    "newProviderTasks": 2,
+    "liveServicesChanged": false,
+    "execution": {
+      "source": "live_native",
+      "workerSendId": "d3edd5c8-b350-4cd0-8b7f-029261c257ce",
+      "nativeOutcome": "completed",
+      "closedTools": [
+        "file",
+        "terminal"
+      ],
+      "writerQuiescence": true,
+      "retirementHash": "dbc194baad91daf4b07317f251030af9a6a215567a6c6a10101bfe427f087a45",
+      "builderTerminalVerified": true,
+      "builderCommand": "node --test board-column.test.mjs",
+      "builderTerminalToolCallId": "call_f147a6a3c6584afaaa13c0867b8d12ed",
+      "builderNativeResultRowId": 702922,
+      "builderExitCode": 0,
+      "builderPassedTests": 2,
+      "builderFailedTests": 0,
+      "hostTestVerification": {
+        "command": "node --test board-column.test.mjs",
+        "exitCode": 0,
+        "stdoutHash": "dd8595aed52f774460ab3eeab31b4b3a6733b041932a26037ba62de6a6953e6a",
+        "sourceAndTestsMatched": true
+      },
+      "reviewerThreadId": "01a1d2b7-802b-79e3-8d99-a417104c9fa2",
+      "reviewerTurnId": "01a1d2b7-8a6c-7080-85f9-8999db6c9109",
+      "reviewVerdict": "approved",
+      "reviewCommands": 3,
+      "reviewFailedCommands": 0,
+      "frozenWorkerAndReviewerInputsMatched": true,
+      "moduleAndImmutableTestsMatched": true,
+      "sourcePinsUnchanged": true,
+      "preservedAcrossRestart": true,
+      "ownerReviewRecorded": false,
+      "automaticDone": false,
+      "retries": 0,
+      "evidence": "data/guide-team-state-9ff97698-93db-4db6-9c41-4ae9e460d5ef",
+      "observation": "Builder searched AGENTS.md metadata at parent repository root. Only recorded write was the approved module. Do not infer read confinement from the closed profile."
+    }
   }
 }

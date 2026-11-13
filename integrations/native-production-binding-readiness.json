@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-11-12T23:15:15.013494+00:00",
+  "observedAt": "2026-11-13T02:34:42.178076+00:00",
   "status": "held_production_enrollment_not_activated",
   "activationAuthorized": false,
   "liveDispatchPerformed": false,
@@ -32,7 +32,28 @@
       "diff": "PASS"
     },
     "redGreen": "New explicit build-check enrollment regression failed before loader change, passed afterward.",
-    "boundary": "Synthetic enrollment/binding checks do not qualify real-provider terminal execution or production activation."
+    "boundary": "Synthetic enrollment/binding checks do not qualify real-provider terminal execution or production activation.",
+    "isolatedBuildCheckTeam": {
+      "qualification": "PASS_LIVE_NATIVE",
+      "scopeHash": "70838f62e80cb860c3eca6396d0249920da176673e80d023086004e81190b158",
+      "closedTools": [
+        "file",
+        "terminal"
+      ],
+      "actualBuilderTerminalCallVerified": true,
+      "builderTestsPassed": 2,
+      "independentNimsReview": "approved",
+      "strictReviewTraceFailedCommands": 0,
+      "workerRetired": true,
+      "savedAcrossRestart": true,
+      "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
+    },
+    "latestFullLocalRegression": {
+      "total": 523,
+      "node": 409,
+      "python": 114,
+      "exitCode": 0
+    }
   },
   "currentMainBoard": {
     "taskCount": 14,
@@ -47,10 +68,10 @@
     "evidence": "data/production-connection-hold-scope-20261112.json"
   },
   "nextSmallestSlice": [
-    "Prepare isolated code-and-test qualification using explicit build-check-v1, exact allowed source/test files, one builder capped at50 and existing Nims independent read-only review.",
-    "Run local fixture/transport checks first; freeze the concrete scope and obtain exact approval before any real provider work.",
-    "For the main board, preserve existing8holds until authoritative original writer evidence or a separately reviewed legacy-closure procedure is approved and verified. No age/Done/restart-based release.",
-    "Before activation, review exact external enrollment record, native identity/config references and workspace; live tool access and enrollment need separate explicit authorization."
+    "Prepare a reviewed legacy-closure procedure or obtain authoritative original writer receipts for the 8 old accepted sends; preserve 3 same-workspace and 5 unknown-scope holds until resolved.",
+    "Review exact production identity/config references, workspace and external immutable owner record before separate activation approval.",
+    "Keep read-isolation requirements explicit: original builder trace includes one repository-root metadata search for instructions; no extra writes were recorded.",
+    "Only after approved connection and recovery gates, qualify the owner phone start-to-result workflow and final release acceptance. No repeat of already-passed individual phone checks."
   ],
   "candidateConnectionForReviewOnly": {
     "workspace": "C:/Users/eMitchell109/Documents/ChatGPT/Nims Chat/mesh-workroom-ab",
