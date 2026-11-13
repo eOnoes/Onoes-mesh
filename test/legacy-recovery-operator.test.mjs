@@ -23,24 +23,25 @@ async function fixture() {
   const task = store.create({ title: 'Synthetic old requests', description: 'Disposable operator qualification only.' });
   const bindings = [];
   const relayPath = join(dir, 'relay.sqlite'), relay = new DatabaseSync(relayPath);
-  relay.exec('CREATE TABLE outbox(idem_key TEXT,agent_id TEXT,session_id TEXT,state TEXT,transport_ref TEXT);');
+  relay.exec('CREATE TABLE outbox(idem_key TEXT,agent_id TEXT,session_id TEXT,state TEXT,transport_ref TEXT,content TEXT);');
   const hermesPath = join(dir, 'hermes.sqlite'), hermes = new DatabaseSync(hermesPath);
-  hermes.exec('CREATE TABLE session_admissions(admission_id TEXT,request_id TEXT,target_session_id TEXT,payload_digest TEXT,status TEXT,outcome TEXT,owner_epoch INTEGER,generation INTEGER);');
+  hermes.exec('CREATE TABLE session_admissions(admission_id TEXT,request_id TEXT,target_session_id TEXT,payload_digest TEXT,status TEXT,outcome TEXT,owner_epoch INTEGER,generation INTEGER,payload_json TEXT);');
   const tasks = [];
   for (let n = 0; n < 8; n++) {
-    const sendId = 'send-' + n, agentId = n < 6 ? 'echo' : 'dsh', conversationId = 'fixture-session';
+    const sendId = 'send-' + n, agentId = n < 6 ? 'echo' : 'dsh', conversationId = 'fixture-session', delivery = 'Synthetic delivery ' + n;
     db.prepare(`INSERT INTO workroom_sends(id,taskId,agentId,conversationId,text,fingerprint,state,at,payload,basis,phase)
-      VALUES(?,?,?,?,?,?,'accepted',?,?,?,'work')`).run(sendId, task.id, agentId, conversationId, 'Synthetic request', 'a'.repeat(64), '2020-01-01T00:00:00Z', 'Synthetic payload', '{}');
-    relay.prepare('INSERT INTO outbox VALUES(?,?,?,?,NULL)').run(sendId, agentId, conversationId, 'accepted');
+      VALUES(?,?,?,?,?,?,'accepted',?,?,?,'work')`).run(sendId, task.id, agentId, conversationId, 'Synthetic request', 'a'.repeat(64), '2020-01-01T00:00:00Z', delivery, '{}');
+    relay.prepare('INSERT INTO outbox VALUES(?,?,?,?,NULL,?)').run(sendId, agentId, conversationId, 'accepted', delivery);
     const binding = { sendId, agentId, conversationId };
     if (n < 6) {
       const record = { admission_id: 'admission-' + n, request_id: 'request-' + n, target_session_id: conversationId,
-        payload_digest: sha('Synthetic request'), status: 'terminal', outcome: 'completed', owner_epoch: 1, generation: n + 1 };
-      hermes.prepare('INSERT INTO session_admissions VALUES(?,?,?,?,?,?,?,?)').run(...Object.values(record));
+        payload_digest: sha(delivery), status: 'terminal', outcome: 'completed', owner_epoch: 1, generation: n + 1 };
+      hermes.prepare('INSERT INTO session_admissions VALUES(?,?,?,?,?,?,?,?,?)').run(...Object.values(record), JSON.stringify({ text: delivery }));
       Object.assign(binding, { admissionId: record.admission_id, nativeFingerprint: hash(record) });
     } else {
       const record = { id: 'native-' + n, contextId: conversationId, status: { state: 3, timestamp: '2020-01-01T00:00:00Z' } };
-      tasks.push(record); Object.assign(binding, { nativeTaskId: record.id, nativeFingerprint: hash(record) });
+      tasks.push({ ...record, history: [{ role: 1, parts: [{ content: { $case: 'text', value: delivery } }] }] });
+      Object.assign(binding, { nativeTaskId: record.id, nativeFingerprint: hash(record) });
     }
     bindings.push(binding);
   }
@@ -57,7 +58,7 @@ async function fixture() {
   assert.ok(![3081, 4123, 4320, 8452, 8453, 8642].includes(port));
   const lock = join(dir, 'gateway.lock'); writeFileSync(lock, 'Synthetic lock');
   const scope = { schema: 'mesh/legacy-operator-scope/v1', owner: 'Eddie', locality: 'desktop_echo_dsh_only',
-    workspace: realpathSync.native(process.cwd()), databasePath,
+    workspace: realpathSync.native(process.cwd()), databasePath, databaseIdentity: databaseFileIdentity(databasePath),
     relay: { path: relayPath, identity: databaseFileIdentity(relayPath) }, hermes: { path: hermesPath, identity: databaseFileIdentity(hermesPath) },
     dsh: { path: dshPath }, bindings, nativeResources: { profileLocks: [lock], endpoints: [['127.0.0.1', port], ['::1', port]] },
     startup: { tasks: taskObservations.map(({ name, path, actions, principal }) => ({ name, path, definitionFingerprint: hash({ actions, principal }) })), shortcuts } };
@@ -115,7 +116,7 @@ test('replay checks reject queued Relay deliveries, unknown native admissions, c
   const f = await fixture();
   try {
     assert.equal(verifyReplayRecords(f.scope, f.targets()).exactAcceptedSends, 8);
-    f.relay.prepare("INSERT INTO outbox VALUES('other','echo','other','retrying',NULL)").run();
+    f.relay.prepare("INSERT INTO outbox VALUES('other','echo','other','retrying',NULL,'Other')").run();
     assert.equal(inspectReplayQueues(f.scope).relay.find(r => r.state === 'retrying').count, 1);
     assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /unresolved queued/);
     f.relay.prepare("DELETE FROM outbox WHERE idem_key='other'").run();
@@ -148,18 +149,45 @@ test('startup checks reject enabled or changed tasks, active login shortcuts, ch
   } finally { f.close(); }
 });
 
-test('the final composed guard rolls back when replay becomes uncertain immediately before commit', async () => {
+test('the final composed guard rolls back when replay becomes uncertain or its exact input changes before commit', async () => {
+  for (const corruptText of [false, true]) {
   const f = await fixture();
   try {
     await runLegacyOperator({ ...f.options, action: 'prepare' }, f.runtime); f.boot();
     let checks = 0;
     const runtime = { ...f.runtime, startupReader() {
-      if (++checks === 4) f.hermes.prepare("UPDATE session_admissions SET status='unknown' WHERE admission_id='admission-0'").run();
+      if (++checks === 4) {
+        if (corruptText) f.hermes.prepare("UPDATE session_admissions SET payload_json=? WHERE admission_id='admission-0'").run(JSON.stringify({ text: 'Different original' }));
+        else f.hermes.prepare("UPDATE session_admissions SET status='unknown' WHERE admission_id='admission-0'").run();
+      }
       return structuredClone(f.taskObservations);
     } };
-    await assert.rejects(runLegacyOperator({ ...f.options, action: 'apply', ...f.authorize() }, runtime), /unresolved native/);
+    await assert.rejects(runLegacyOperator({ ...f.options, action: 'apply', ...f.authorize() }, runtime), corruptText ? /Echo request text/ : /unresolved native/);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n, 0);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n, 0);
     assert.equal(f.barrier.status().state, 'paused'); assert.equal(f.barrier.status().held, false);
+  } finally { f.close(); }
+  }
+});
+
+
+test('exact native receipts cannot substitute another request with the same completed status and conversation', async () => {
+  const f = await fixture();
+  try {
+    f.relay.prepare("UPDATE outbox SET content='Different request' WHERE idem_key='send-0'").run();
+    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /original delivery payload/);
+    f.relay.prepare("UPDATE outbox SET content='Synthetic delivery 0' WHERE idem_key='send-0'").run();
+    f.hermes.prepare("UPDATE session_admissions SET payload_json=? WHERE admission_id='admission-0'").run(JSON.stringify({text:'Different request'}));
+    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /Echo request text/);
+    f.hermes.prepare("UPDATE session_admissions SET payload_json=? WHERE admission_id='admission-0'").run(JSON.stringify({text:'Synthetic delivery 0'}));
+    const other = structuredClone(f.scope); other.bindings[0].conversationId = 'another-conversation';
+    f.relay.prepare("UPDATE outbox SET session_id='another-conversation' WHERE idem_key='send-0'").run();
+    assert.throws(() => verifyReplayRecords(other, f.targets()), /original Workroom delivery/);
+    f.relay.prepare("UPDATE outbox SET session_id='fixture-session' WHERE idem_key='send-0'").run();
+    const swapped = structuredClone(f.scope), a = swapped.bindings[6], b = swapped.bindings[7];
+    [a.nativeTaskId, b.nativeTaskId] = [b.nativeTaskId, a.nativeTaskId];
+    [a.nativeFingerprint, b.nativeFingerprint] = [b.nativeFingerprint, a.nativeFingerprint];
+    assert.throws(() => verifyReplayRecords(swapped, f.targets()), /DSH request text/);
+    assert.equal(verifyReplayRecords(f.scope, f.targets()).exactAcceptedSends, 8);
   } finally { f.close(); }
 });

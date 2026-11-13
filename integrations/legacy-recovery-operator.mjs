@@ -61,13 +61,24 @@ export function verifyReplayRecords(scope, targets) {
     scope.bindings.every(t => targets.some(original => original.sendId === t.sendId && original.agentId === t.agentId)), 'Replay bindings must cover exactly the eight original sends.');
   requireValue(scope.bindings.filter(t => t.agentId === 'echo').length === 6 &&
     scope.bindings.filter(t => t.agentId === 'dsh').length === 2, 'The reviewed six Echo / two DSH route is required.');
+  // Workroom stores the rendered delivery separately from the user's short text.
+  // Relay strips that delivery's outer whitespace before transport admission.
+  const originalDeliveries = readonly(scope.databasePath, scope.databaseIdentity, db => new Map(scope.bindings.map(binding => {
+    const rows = db.prepare('SELECT id,taskId,agentId,conversationId,payload FROM workroom_sends WHERE id=?').all(binding.sendId);
+    const target = targets.find(t => t.sendId === binding.sendId), row = rows[0];
+    requireValue(rows.length === 1 && row.taskId === target.taskId && row.agentId === binding.agentId &&
+      row.conversationId === binding.conversationId && typeof row.payload === 'string' && row.payload.trim().length > 0,
+    'A binding does not match the original Workroom delivery.');
+    return [binding.sendId, row.payload.trim()];
+  })));
   readonly(scope.relay.path, scope.relay.identity, db => {
     const states = db.prepare('SELECT DISTINCT state FROM outbox').all().map(row => row.state);
     requireValue(states.every(state => ['accepted', 'failed', 'dead'].includes(state)), 'Relay has unresolved queued deliveries; recovery stays blocked.');
     for (const binding of scope.bindings) {
-      const rows = db.prepare('SELECT idem_key,agent_id,session_id,state,transport_ref FROM outbox WHERE idem_key=?').all(binding.sendId);
+      const rows = db.prepare('SELECT idem_key,agent_id,session_id,state,transport_ref,content FROM outbox WHERE idem_key=?').all(binding.sendId);
       requireValue(rows.length === 1 && rows[0].agent_id === binding.agentId && rows[0].session_id === binding.conversationId &&
         rows[0].state === 'accepted' && rows[0].transport_ref === null, 'An original Relay receipt changed.');
+      requireValue(rows[0].content === originalDeliveries.get(binding.sendId), 'Relay text does not match the original delivery payload.');
     }
   });
   readonly(scope.hermes.path, scope.hermes.identity, db => {
@@ -77,6 +88,9 @@ export function verifyReplayRecords(scope, targets) {
       const rows = db.prepare('SELECT admission_id,request_id,target_session_id,payload_digest,status,outcome,owner_epoch,generation FROM session_admissions WHERE admission_id=?').all(binding.admissionId);
       requireValue(rows.length === 1 && rows[0].target_session_id === binding.conversationId && rows[0].status === 'terminal' &&
         rows[0].outcome === 'completed' && fingerprint(rows[0]) === binding.nativeFingerprint, 'An original Echo admission changed.');
+      // Extract only this exact original request field, never its saved history.
+      const request = db.prepare("SELECT json_extract(payload_json,'$.text') AS text FROM session_admissions WHERE admission_id=?").get(binding.admissionId);
+      requireValue(request.text === originalDeliveries.get(binding.sendId), 'Echo request text does not match the original delivery payload.');
     }
   });
   const bytes = readFileSync((localFile(scope.dsh.path, 16777216), scope.dsh.path));
@@ -84,9 +98,12 @@ export function verifyReplayRecords(scope, targets) {
   requireValue(Array.isArray(records), 'DSH task store shape changed.');
   for (const binding of scope.bindings.filter(t => t.agentId === 'dsh')) {
     const matches = records.filter(row => row.id === binding.nativeTaskId);
-    requireValue(matches.length === 1 && matches[0].status?.state === 3 &&
+    requireValue(matches.length === 1 && matches[0].contextId === binding.conversationId && matches[0].status?.state === 3 &&
       fingerprint({ id: matches[0].id, contextId: matches[0].contextId, status: matches[0].status }) === binding.nativeFingerprint,
     'An original DSH task is missing, changed or replayable.');
+    const users = matches[0].history?.filter(message => message.role === 1 && message.parts?.length === 1 &&
+      message.parts[0].content?.$case === 'text' && message.parts[0].content.value === originalDeliveries.get(binding.sendId));
+    requireValue(users?.length === 1, 'DSH request text is missing, ambiguous or differs from the original delivery payload.');
   }
   return { exactAcceptedSends: 8, terminalEchoAdmissions: 6, completedDshTasks: 2 };
 }
@@ -125,6 +142,8 @@ export function loadOperatorScope(scopePath, expectedSha256) {
   requireValue(key(realpathSync.native(scope.workspace)) === key(resolve(scope.workspace)) &&
     key(realpathSync.native(process.cwd())) === key(scope.workspace), 'Run from the exact reviewed Mesh workspace.');
   localFile(scope.databasePath);
+  requireValue(digest(scope.databaseIdentity) && databaseFileIdentity(scope.databasePath) === scope.databaseIdentity,
+    'The original Workroom database identity is required.');
   requireValue(digest(scope.relay?.identity) && digest(scope.hermes?.identity), 'Replay database identities are required.');
   requireValue(same(scope.startup.tasks.map(t => t.name).sort(), ['Hermes_Gateway', 'Onoes Deep Watchdog'].sort()) &&
     new Set(scope.startup.tasks.map(t => t.path + t.name)).size === 2 &&

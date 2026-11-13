@@ -241,3 +241,55 @@ requeue, retire or delete them merely to make recovery pass. Next: obtain exact
 authoritative reconciliation evidence and a reviewed disposition for those
 records, review the composed operator and exact scope, then request the real
 login-capable maintenance window. No restart is scheduled or approved now.
+
+
+## 2026-11-13: recovery receipts now bind the exact original delivery
+
+A new regression reproduced a real defect in the assembled candidate: a matching
+receipt ID/terminal status could pass while its input text differed. Recovery
+now opens the pinned original Workroom database read-only and checks task, agent,
+conversation and rendered delivery against Relay content. It uses saved
+`payload.trim()`, not the shorter card `text`; the actual eight records prove
+those fields differ. Echo checks only the selected admission's JSON text field;
+DSH requires the selected completed task/context and exactly one matching user
+text. Scope now requires the exact Workroom `databaseIdentity` as well as its path.
+No original payload or conversation is copied into a receipt or a review packet.
+
+Tests reject changed Relay/native text, coherent-but-wrong conversation bindings,
+and swapping completed DSH tasks in the same conversation. Both unknown native
+status and changed input at the final guard roll back all provisional recovery
+references/events. Full588 checks PASS (467 Node/121 Python). Actual read-only
+correlation proves all6 Echo and2 DSH original deliveries match their exact native
+inputs; this is not proof of writer retirement or permission to release holds.
+
+The unrelated2 retrying Relay records remain unchanged, with null transport
+references and no exact send-to-task retirement proof. The older Hermes unknown
+admission has owner epoch2 versus current10 but no matching worker execution;
+epoch age and missing worker metadata are not terminal proof. Relay startup's
+recovery function marks interrupted sends retrying; that function itself does
+not dispatch, and message() suppresses existing-ID submissions. Background
+watchdog/adapter behavior is not yet qualified, so do not weaken the conservative
+queue gate. New direct source-only Echo review is in progress; no tools or live
+inspection were requested. No reboot, startup changes, cleanup or activation.
+
+
+### Correlation review result: further changes required before live use
+
+Echo's exact source-only reply matched the question marker, native terminal
+receipt digest and unchanged source hashes. It identified DSH history ambiguity
+and missing Python/JavaScript trimming parity coverage. This is not approval of
+the operator or of live recovery. Actual metadata confirms the second original
+DSH task contains the original input at index0 and a later different user input
+at index2. Its completed status is not evidence that the original request alone
+completed. Keep unknown outcomes, queue gates, startup controls and live holds.
+
+Next slice: qualify the native DSH request-specific boundary against the actual
+two-input history and add its regression, plus exact parity with Relay's Python
+`str.strip` rule (not merely JavaScript `trim`, including Unicode edge cases).
+Do not solve the ambiguity by marking original work successful, dropping native
+correlation, or silently rejecting a legitimate original history as finished
+implementation. Current588 proof applies to the current candidate only; full
+assembly independent acceptance and actual runtime activation remain open.
+Evidence: data/operator-correlation-review-assessment-20261113.json and
+data/operator-dsh-request-boundary-20261113.json. Source-only review used no
+machine inspection or tools and no new worker/trial/activation authority.
