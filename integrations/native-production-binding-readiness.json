@@ -235,7 +235,7 @@
     }
   },
   "legacyRecoveryPolicyProposal": {
-    "status": "owner_decision_required_not_authorized",
+    "status": "preparation_and_testing_approved_live_actions_not_authorized",
     "scope": "One-time recovery for the exact eight already-recorded legacy accepted sends only; no future blanket override.",
     "preserve": [
       "Original accepted sends, artifacts, task stages and unknown historical outcomes",
@@ -255,6 +255,36 @@
       "No claim that restart or cancellation proves the old work completed"
     ],
     "alternative": "Keep the original-worker-proof rule unchanged; all eight holds remain until authoritative original worker evidence is supplied.",
-    "reasonForDecision": "This changes how a legacy hold may be resolved; existing code/testing permission is not approval to substitute recovery evidence for original-worker proof."
+    "reasonForDecision": "This changes how a legacy hold may be resolved; existing code/testing permission is not approval to substitute recovery evidence for original-worker proof.",
+    "ownerApproval": {
+      "at": "2026-11-13T03:40:51.428597+00:00",
+      "scope": "Prepare and test the proposed exact-eight one-time recovery; no restart, release, activation or weaker general worker policy.",
+      "approved": true
+    }
+  },
+  "legacyRecoveryPreparation": {
+    "status": "read_only_preparation_qualified_apply_not_implemented",
+    "approved": true,
+    "planHash": "cacbfb4e270ca45e0673bfad74b7e3befd789406e29720d22cba0d20ed7f178b",
+    "targetCount": 8,
+    "savedTaskCount": 14,
+    "privatePlan": "data/legacy-recovery-plan-v2-20261112.json",
+    "realAssessment": {
+      "status": "blocked",
+      "reasons": [
+        "later_pc_boot_not_verified"
+      ],
+      "canRelease": false
+    },
+    "verification": {
+      "newPlanTests": 5,
+      "combinedPlanAndExistingPcCustodyTests": 9,
+      "workroomSuite": 251,
+      "staticCheck": "PASS",
+      "fullSuite": "Prior 523-check gate remains historical; no new full-suite count claimed.",
+      "all25UserTablesUnchangedDuringPreparation": true
+    },
+    "guardBoundary": "No apply/release command, database mutation, browser endpoint, source deployment, restart or worker dispatch. Reuses existing assertPcRecovery custody check without converting it to worker retirement.",
+    "next": "Implement the guarded durable recovery record and disposable integration acceptance before any live-maintenance request."
   }
 }

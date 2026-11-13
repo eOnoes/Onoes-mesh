@@ -14,6 +14,14 @@ C1 useful phone workflow without rescue, C4 final release/custody/owner acceptan
 
 Current exact-source qualification: integrations/nemotron-full-native-qualification.json and integrations/nemotron-idle-fix-qualification.json. Historical sections below retain prior states and counts.
 
+## One-time legacy recovery preparation (inactive)
+
+Eddie approved preparation and testing for the exact eight historical sends. The read-only tool `integrations/legacy-recovery-plan.mjs` prepares an immutable plan from an exact private scope file and inspects it using fresh Windows boot, database file identity, source hashes, original-send fingerprints and the complete saved-board fingerprint. It reuses the existing PC-custody verifier. A changed/replaced database, edited send, extra work, changed source or unchanged PC boot blocks the assessment.
+
+Commands: `node integrations/legacy-recovery-plan.mjs prepare <private-scope.json> <new-plan.json>` and `node integrations/legacy-recovery-plan.mjs inspect <plan.json> <new-assessment.json>`. Output files are created exclusively; existing evidence is not overwritten. There is no apply command. Even a successful assessment only reaches operator review and always returns canRelease=false. It does not establish worker retirement or clear a hold.
+
+Actual read-only preparation left all 25 live user tables unchanged and refused the current same-boot recovery. All 251 Workroom checks passed, including five new planning tests; static checks passed. The first restricted run hit loopback EACCES; the host-permitted run passed. The previous full 523-check gate remains separate. Durable adjudication and live maintenance are not implemented or authorized by this preparation milestone.
+
 ## Earlier bounded guide team qualification - 2026-11-11
 
 The approved isolated guide trial completed one Echo-role native gpt-6-luna build
