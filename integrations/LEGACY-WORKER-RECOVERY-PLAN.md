@@ -124,3 +124,10 @@ Local-only records:
 - `data/goal-startup-path-review-readback-20261111.json`
 
 These observations cover the inspected stores and exact identities. They are not an exhaustive search of every log or a proof that no external evidence exists.
+
+
+## 2026-11-13: tested transport hold for the proposed window
+
+The operator candidate now has a real Windows-exclusive loopback TCP hold in native_transport_hold.py. This addresses new listener admission without depending on how that listener was launched. It refuses an occupied endpoint and does not terminate its owner. A fresh disposable qualification held the installed-source Hermes profile lock and the transport reservation in the same child; competing profile owner and transport binds were both refused, then both became available after explicit release. It does not establish existing-worker or direct-execution coverage. No live provider is enrolled and no actual native port is held.
+
+The next executable slice is a trusted provider that couples these holds to the exact Mesh database-held lease and recovery transaction through COMMIT, with evidence of lifetime/failure behavior and truthful remaining coverage. Do not pass a copied Python snapshot as authority, weaken the synchronous final guard, or claim this component alone authorizes the cold-boot window. Original records and all eight holds remain unchanged. Startup-method clarification may help the final maintenance recipe; it does not block continued local provider implementation and is not itself restart approval.

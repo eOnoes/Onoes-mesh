@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-11-13T06:58:13.026246+00:00",
+  "observedAt": "2026-11-13T14:21:29.739288+00:00",
   "status": "held_production_enrollment_not_activated",
   "activationAuthorized": false,
   "liveDispatchPerformed": false,
@@ -49,10 +49,11 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 562,
+      "total": 569,
       "node": 448,
-      "python": 114,
-      "exitCode": 0
+      "python": 121,
+      "exitCode": 0,
+      "evidence": "data/native-transport-hold-full-test-proof-20261113.json"
     },
     "postFullSuiteFormattingOnly": {
       "files": [
@@ -62,7 +63,9 @@
       "change": "Remove one extra blank EOF line each; behavior unchanged",
       "focusedTestsPassed": 11,
       "syntax": "PASS",
-      "publicationRangeWhitespace": "PASS"
+      "publicationRangeWhitespace": "PASS",
+      "historical": true,
+      "includedInLatest569": true
     }
   },
   "currentMainBoard": {
@@ -613,5 +616,42 @@
       "Exact current task profile and active adapters still require approved inspection"
     ],
     "ownerQuestion": "Does DSH web start manually or automatically at Windows sign-in? Asked asynchronously; no answer inferred."
+  },
+  "nativeTransportMaintenanceHold": {
+    "status": "implemented_and_locally_qualified_not_live_enrolled",
+    "source": "integrations/native_transport_hold.py",
+    "api": [
+      "hold_loopback_transports(endpoints)",
+      "assert_loopback_hold(lease, expected_endpoints)"
+    ],
+    "scope": "Exact literal loopback TCP endpoints only; no listening, request acceptance or worker/process control",
+    "windowsBoundary": "SO_EXCLUSIVEADDRUSE before bind; IPv6-only sockets; non-inherited handles; opaque thread/process-bound lease; all-or-nothing acquisition and cleanup",
+    "focusedTests": 7,
+    "fullLocalSuite": 569,
+    "combinedOwnershipPredicates": 14,
+    "evidence": [
+      "data/native-transport-hold-full-test-proof-20261113.json",
+      "data/native-combined-hold-qualification-20261113.json",
+      "data/native-transport-hold-live-preservation-20261113.json"
+    ],
+    "notEstablished": [
+      "Production native fence/provider enrollment",
+      "Original worker retirement or remote writer coverage",
+      "Direct CLI or in-process execution exclusion",
+      "Safe post-boot/live operator window",
+      "Atomic lifetime coupling to Node recovery transaction"
+    ],
+    "livePortsHeld": false
+  },
+  "publicationMilestone": {
+    "repository": "eOnoes/Onoes-mesh",
+    "branch": "workroom/identity-and-relay",
+    "publishedThrough": "c388062aa505348378b145a7990499239e45a691",
+    "commits": 31,
+    "ownerApproved": true,
+    "remoteHeadVerified": true,
+    "githubWorkflowsAfterPush": 0,
+    "evidence": "data/publication-through-c388062-20261113.json",
+    "newTransportWorkPublished": false
   }
 }

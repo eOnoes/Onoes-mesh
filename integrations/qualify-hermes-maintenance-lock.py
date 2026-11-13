@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import queue
+import socket
 import subprocess
 import sys
 import tempfile
@@ -29,13 +30,15 @@ def integer(node):
 def main():
     if sys.platform != 'win32':
         raise RuntimeError('This qualification requires the actual Windows lock implementation')
-    files = [SOURCE / 'runtime_ownership.py', SOURCE / 'status.py', SOURCE.parent / 'hermes_dir_acl.py']
+    files = [SOURCE / 'runtime_ownership.py', SOURCE / 'status.py', SOURCE.parent / 'hermes_dir_acl.py',
+             ROOT / 'integrations/native_transport_hold.py']
     pins = {str(path): digest(path) for path in files}
     fixture = Path(tempfile.mkdtemp(prefix='hermes-maintenance-lock-', dir=ROOT / 'data')).resolve()
     package = fixture / 'gateway'
     package.mkdir()
     (package / '__init__.py').write_text('', encoding='utf-8')
     (package / 'runtime_ownership.py').write_bytes(files[0].read_bytes())
+    (fixture / 'native_transport_hold.py').write_bytes(files[3].read_bytes())
     # ACL repair is outside this lock test; never grant permissions to any path.
     (fixture / 'hermes_dir_acl.py').write_text('from pathlib import Path\n'
         'def make_user_dir(path, mode=0o777, *, parents=False, exist_ok=False, elevated=None):\n'
@@ -54,6 +57,7 @@ def main():
     child.write_text('''import json, os, sys, threading
 from pathlib import Path
 from gateway.runtime_ownership import ProfileOwnership, exclusive_maintenance, OwnershipConflict
+from native_transport_hold import hold_loopback_transports, assert_loopback_hold
 mode=sys.argv[1]; homes=[Path(p) for p in sys.argv[2:]]
 def wait(extra=None):
  print(json.dumps({'held':True,**(extra or {})}),flush=True)
@@ -90,7 +94,12 @@ else:
     except OwnershipConflict:extra['threadBlocked']=True
    thread=threading.Thread(target=other,daemon=True);thread.start();thread.join(5)
    if thread.is_alive():raise RuntimeError('Competing thread did not settle')
-  wait(extra)
+  if mode=='hold_combined':
+   endpoints=[('127.0.0.1',int(os.environ['MESH_TRANSPORT_FIXTURE_PORT']))]
+   with hold_loopback_transports(endpoints) as transport:
+    wait({'transportProof':assert_loopback_hold(transport,endpoints)})
+    assert_loopback_hold(transport,endpoints)
+  else:wait(extra)
 ''', encoding='utf-8')
     env = {key: value for key, value in os.environ.items() if not key.startswith('HERMES_')}
     env.update(PYTHONPATH=str(fixture), HERMES_HOME=str(fixture / 'unused-home'))
@@ -130,6 +139,17 @@ else:
         if process.returncode:
             raise RuntimeError('Owned fixture release failed: ' + error[-2000:])
 
+    def port_blocked(port):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as handle:
+            handle.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            try:
+                handle.bind(('127.0.0.1', port))
+            except OSError as error:
+                if error.winerror not in (10013, 10048):
+                    raise
+                return True
+        return False
+
     a, b = fixture / 'profile-a', fixture / 'profile-b'
     try:
         process, _ = hold('hold_maintenance', [b])
@@ -156,13 +176,24 @@ else:
         process, _ = hold('hold_maintenance', [b])
         release(process, 'crash')
         checks['processExitReleasesOSLockWithoutDeletingFile'] = lock.exists() and not attempt('try_owner', [b])
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as candidate:
+            candidate.bind(('127.0.0.1', 0))
+            port = candidate.getsockname()[1]
+        if port in (3081, 4123, 4320, 8452, 8453, 8642):
+            raise RuntimeError('Combined fixture must not use a real application port')
+        env['MESH_TRANSPORT_FIXTURE_PORT'] = str(port)
+        process, combined = hold('hold_combined', [b])
+        checks['combinedHoldBlocksProfileOwner'] = attempt('try_owner', [b])
+        checks['combinedHoldBlocksTransport'] = port_blocked(port)
+        release(process)
+        checks['combinedReleaseAllowsProfileAndTransport'] = not attempt('try_owner', [b]) and not port_blocked(port)
         checks['installedSourceUnchanged'] = all(digest(Path(path)) == value for path, value in pins.items())
         if not all(checks.values()):
             raise RuntimeError('A native ownership predicate failed')
-        result = dict(sourceHashes=pins, fixture=str(fixture), checks=checks,
-                      boundary='Actual installed ownership and Windows lock bodies, disposable homes; PID metadata and directory ACL helper are fixture-only. No ACL grants. Not real service/profile enrollment, native admission coverage or worker retirement.')
+        result = dict(sourceHashes=pins, fixture=str(fixture), checks=checks, combinedHold=combined,
+                      boundary='Actual installed ownership and Windows lock bodies plus Mesh exclusive TCP hold, disposable homes/ports; PID metadata and directory ACL helper are fixture-only. No ACL grants. Not real service/profile enrollment, direct-execution coverage or worker retirement.')
         (fixture / 'qualification.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
-        target = ROOT / 'data/hermes-maintenance-lock-qualification-20261113.json'
+        target = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else ROOT / 'data/hermes-maintenance-lock-qualification-20261113.json'
         with target.open('x', encoding='utf-8') as stream:
             json.dump(result, stream, indent=2)
             stream.write('\n')
