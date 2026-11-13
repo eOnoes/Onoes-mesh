@@ -9,6 +9,9 @@ import { writerQuiescenceBlockers } from '../lib/workroom-claim-policy.mjs';
 import { issueLegacyRecoveryPermit, isLegacyRecovered } from '../lib/workroom-legacy-recovery.mjs';
 import { makeLegacyRecoveryPlan, readLegacyRows, legacyRecoveryFingerprint as hash } from '../integrations/legacy-recovery-plan.mjs';
 
+const ledgerCount = (db, name) => db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)
+  ? db.prepare(`SELECT COUNT(*) AS n FROM "${name.replaceAll('"', '""')}"`).get().n : 0;
+
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'mesh-legacy-store-')), path = join(dir, 'tasks.sqlite');
   let store = openTaskStore(path);
@@ -37,6 +40,17 @@ function fixture() {
     get store() { return store; }, setOwner(value) { owner = value; },
     reopen() { store.close(); store = openTaskStore(path); }, close() { db.close(); store.close(); } };
 }
+
+test('opening and reading an older database never creates recovery tables', () => {
+  const f = fixture();
+  try {
+    f.db.exec('DROP TABLE IF EXISTS workroom_legacy_recovery_sends; DROP TABLE IF EXISTS workroom_legacy_recoveries;');
+    const before = f.db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all();
+    f.reopen();
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
+    assert.deepEqual(f.db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all(), before);
+  } finally { f.close(); }
+});
 
 test('only an authentic exact-live permit atomically adjudicates eight holds; history survives reopen', async () => {
   const f = fixture();
@@ -85,7 +99,7 @@ test('preparation approval, absent fences, uncovered writers and stale/same-boot
     ];
     for (const change of cases) await assert.rejects(issueLegacyRecoveryPermit({ ...base, ...change }));
     assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
-    assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recoveries').get().n, 0);
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
   } finally { f.close(); }
 });
 
@@ -107,8 +121,8 @@ test('revoked authorization or a board write after inspection rolls back the who
     } };
     const permit = await issueLegacyRecoveryPermit(opts);
     await assert.rejects(g.store.workroom.legacyRecovery.commit(permit), /changed before recovery commit/);
-    assert.equal(g.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recoveries').get().n, 0);
-    assert.equal(g.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n, 0);
+    assert.equal(ledgerCount(g.db, 'workroom_legacy_recoveries'), 0);
+    assert.equal(ledgerCount(g.db, 'workroom_legacy_recovery_sends'), 0);
   } finally { g.close(); }
 });
 
@@ -142,11 +156,12 @@ test('a failure midway through all eight records rolls back evidence, references
   const f = fixture();
   try {
     const permit = await issueLegacyRecoveryPermit(f.options());
-    f.db.exec(`CREATE TRIGGER reject_partial BEFORE INSERT ON workroom_legacy_recovery_sends
-      WHEN NEW.sendId='legacy-4' BEGIN SELECT RAISE(ABORT,'synthetic mid-write failure'); END;`);
+    f.db.exec(`CREATE TRIGGER reject_partial BEFORE INSERT ON workroom_events
+      WHEN NEW.kind='legacy_recovery_recorded' AND NEW.detail LIKE '%legacy-4%'
+      BEGIN SELECT RAISE(ABORT,'synthetic mid-write failure'); END;`);
     await assert.rejects(f.store.workroom.legacyRecovery.commit(permit), /mid-write failure/);
-    assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recoveries').get().n, 0);
-    assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n, 0);
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recovery_sends'), 0);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n, 0);
     assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
   } finally { f.close(); }

@@ -49,8 +49,8 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 534,
-      "node": 420,
+      "total": 535,
+      "node": 421,
       "python": 114,
       "exitCode": 0
     }
@@ -285,17 +285,17 @@
       "all25UserTablesUnchangedDuringPreparation": true
     },
     "guardBoundary": "No apply/release command, database mutation, browser endpoint, source deployment, restart or worker dispatch. Reuses existing assertPcRecovery custody check without converting it to worker retirement.",
-    "next": "Implement the guarded durable recovery record and disposable integration acceptance before any live-maintenance request."
+    "next": "Guarded source candidate implemented; see legacyDurableCandidate for current runtime gates."
   },
   "legacyDurableCandidate": {
     "status": "implemented_and_locally_qualified_not_runtime_enrolled",
     "preparationAuthorized": true,
     "runtimeApplicationAuthorized": false,
-    "newStoreTests": 6,
-    "focusedPlanStoreClaimTests": 25,
+    "newStoreTests": 7,
+    "focusedPlanStoreClaimTests": "25 passed before upgrade regression; 15 plan/store/backup cases passed after migration fix",
     "fullLocalRegression": {
-      "total": 534,
-      "node": 420,
+      "total": 535,
+      "node": 421,
       "python": 114,
       "exitCode": 0
     },
@@ -317,15 +317,25 @@
       "status": "mismatched_reply_not_accepted",
       "originalNativeRunTerminal": true,
       "originalNativeStatus": "completed",
-      "currentSourcePinsStillMatch": true,
+      "currentSourcePinsStillMatch": false,
       "newPromptFoundInSelectedNativeTranscript": false,
       "boundary": "Selected state.db exact-session/marker lookup was empty; this does not prove non-delivery or identify the native profile. No broad transcript scan or resend performed."
     },
     "evidence": [
       "data/legacy-recovery-durable-full-test-proof-20261112.json",
       "data/legacy-durable-live-isolation-20261112.json",
-      "data/legacy-durable-review-question-20261112-readback.json"
+      "data/legacy-durable-review-question-20261112-readback.json",
+      "data/legacy-recovery-lazy-full-test-proof-20261112.json"
     ],
-    "next": "Qualify the operator/runtime fence integration while preserving the rejected review evidence; do not request or perform a PC restart yet."
+    "next": "Qualify the operator/runtime fence integration while preserving the rejected review evidence; do not request or perform a PC restart yet.",
+    "startupSchemaCorrection": {
+      "originalBackupFailure": "Restore changed the saved table set on older data; initial constructor eagerly added two empty tables.",
+      "failedAttempt": "E:/App-Backups/ONOes-Mesh/2026-11-13_04-23-28-977_UTC_0ee2b72d",
+      "failedAttemptLabeled": true,
+      "previousVerifiedBackupPointerPreserved": true,
+      "regression": "Opening and reading an older database failed table-set equality before correction; passed afterward.",
+      "fix": "No schema changes at startup/read. Tables are initialized only after authorization and final evidence checks inside the same all-eight transaction; rollback also rolls back table creation.",
+      "backupRetest": "Outcome is recorded after capture in data/legacy-durable-corrected-milestone-receipt-20261112.json and the library latest verified pointer; this source record does not declare PASS."
+    }
   }
 }
