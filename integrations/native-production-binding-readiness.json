@@ -94,5 +94,17 @@
     "No old hold released",
     "Rook and live Mind off"
   ],
-  "note": "This review proposes the practical build/test profile rather than presenting file-only guide success as qualification to build applications."
+  "note": "This review proposes the practical build/test profile rather than presenting file-only guide success as qualification to build applications.",
+  "legacyCoordinationReview": {
+    "observedAt": "2026-11-13T02:49:10.638231+00:00",
+    "ordinaryRelayMessage": true,
+    "newWorkroomDispatch": false,
+    "replyReadFromOriginalConversation": true,
+    "newAuthoritativeEvidence": false,
+    "savedNegativeSnapshotsIndependentlyChecked": true,
+    "sameEightHoldsPreserved": true,
+    "evidence": "data/legacy-echo-evidence-review-20261112.json",
+    "next": "Prepare a concrete reviewed legacy-recovery procedure; do not repeat identical empty native lookups or infer retirement from turn completion.",
+    "oneQuestionAccepted": true
+  }
 }
