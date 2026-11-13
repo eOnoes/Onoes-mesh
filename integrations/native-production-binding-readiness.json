@@ -49,8 +49,8 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 535,
-      "node": 421,
+      "total": 545,
+      "node": 431,
       "python": 114,
       "exitCode": 0
     }
@@ -291,11 +291,11 @@
     "status": "implemented_and_locally_qualified_not_runtime_enrolled",
     "preparationAuthorized": true,
     "runtimeApplicationAuthorized": false,
-    "newStoreTests": 8,
+    "newStoreTests": 12,
     "focusedPlanStoreClaimTests": "20 plan/store/PC/bundle/backup cases passed after packaging correction",
     "fullLocalRegression": {
-      "total": 541,
-      "node": 427,
+      "total": 545,
+      "node": 431,
       "python": 114,
       "exitCode": 0
     },
@@ -309,9 +309,9 @@
     ],
     "isolation": "All25live user tables unchanged, no recovery schema on the running database. Source candidate not loaded by a Mesh restart.",
     "remaining": [
-      "Qualified native writer-boundary/replay-fence integration and final source pins including approval reader",
-      "Reviewed concrete maintenance procedure and explicit live application approval",
-      "Independent current-candidate review: Echo returned a previous-question marker; it is not accepted as a review"
+      "Qualify held native writer/replay exclusion provider and final source pins",
+      "Close review findings on baseline active-team/claim coverage and machine identity",
+      "Review final corrected source and concrete maintenance procedure before explicit live application approval"
     ],
     "review": {
       "status": "mismatched_reply_not_accepted",
@@ -326,7 +326,8 @@
       "data/legacy-durable-live-isolation-20261112.json",
       "data/legacy-durable-review-question-20261112-readback.json",
       "data/legacy-recovery-lazy-full-test-proof-20261112.json",
-      "data/legacy-runtime-packaging-full-test-proof-20261112.json"
+      "data/legacy-runtime-packaging-full-test-proof-20261112.json",
+      "data/legacy-final-guard-full-test-proof-20261112.json"
     ],
     "next": "Qualify the operator/runtime fence integration while preserving the rejected review evidence; do not request or perform a PC restart yet.",
     "startupSchemaCorrection": {
@@ -364,5 +365,40 @@
       "data/legacy-approval-full-test-proof-20261112.json",
       "data/legacy-approval-live-preservation-20261112.json"
     ]
+  },
+  "legacyRuntimeBoundaryAudit": {
+    "observedAt": "2026-11-13T04:51:33.618962+00:00",
+    "status": "coverage_gap_confirmed_no_runtime_fence_enrolled",
+    "verified": [
+      "WindowsWriterFence.snapshot covers only its own Windows Job members; bool(roots) and sealed and zero active members are required even for its own ended state",
+      "require_writer_agent_entry returns normally for ordinary unenrolled agents; it cannot retroactively fence old unbound jobs",
+      "native_bridge_maintenance.stopped_runtime checks native port8642 and known Hermes Python entrypoints for source installation only; not all-host or old-worker proof"
+    ],
+    "consequence": "Do not use an empty new job, absent listener or stopped_runtime success alone as the exact-eight covered-writer fence. Later PC boot and original-scope coverage/non-replay evidence remain distinct.",
+    "currentReviewSend": "c00dab80-dd91-42f5-b998-95ca1c84a005",
+    "reviewAccepted": true,
+    "noRestartOrRecoveryAuthorized": true,
+    "currentReviewStatus": "completed_exact_marker_and_all_five_source_hashes_verified",
+    "reviewMeaning": "Bounded static findings at pre-fix5a65ca1, not activation or current-source approval",
+    "remainingReviewFindings": [
+      "Qualified held writer/replay provider is still missing",
+      "Confirm baseline active teams/claims/native states against the authoritative dispatch blocker predicate; source review did not establish coverage",
+      "Replace hostname-only custody binding with a reviewed machine-unique identity; do not call hostname a physical machine identity"
+    ],
+    "raceCorrection": {
+      "status": "implemented_and_locally_qualified_not_enrolled",
+      "before": "Authorization/fence checked before BEGIN IMMEDIATE with no final pre-COMMIT check",
+      "after": "Mandatory synchronous commitGuard validates owner/host/boot, same owner record, held fence and observation freshness after all provisional writes; no await inside transaction",
+      "revocationBoundary": "Final synchronous guard immediately before COMMIT; no retroactive or cross-filesystem atomic revocation claim",
+      "redGreen": "New provisional-write revocation regression failed before correction with Missing expected rejection, passed after",
+      "evidence": "data/legacy-exact-boot-review-replies-20261112.json",
+      "productionProviderEnrolled": false,
+      "fullLocalRegression": {
+        "total": 545,
+        "node": 431,
+        "python": 114,
+        "exitCode": 0
+      }
+    }
   }
 }

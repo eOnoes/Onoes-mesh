@@ -40,7 +40,8 @@ function fixture() {
   const boundary = (_plan, observation) => ({ schema: 'mesh/legacy-local-fence/v1', planHash: plan.planHash,
     host: observation.host, bootedAt: observation.bootedAt, sources: observation.sources,
     dispatchPaused: true, coveredLocalWriters: true, activeWriterCount: 0, replayPrevented: true, uncoveredWriters: [] });
-  const options = () => ({ plan, authorize: () => owner, observe: snapshot, verifyFence: boundary });
+  const options = () => ({ plan, authorize: () => owner, observe: snapshot, verifyFence: boundary,
+    commitGuard: (_plan, observation) => ({ owner, boundary: boundary(_plan, observation) }) });
   return { dir, path, db, old, next, ids, plan, snapshot, boundary, options,
     get store() { return store; }, setOwner(value) { owner = value; },
     reopen() { store.close(); store = openTaskStore(path); }, close() { db.close(); store.close(); } };
@@ -197,6 +198,75 @@ test('real pinned approval revocation after permit issuance prevents every recov
     renameSync(path, path + '.revoked');
     await assert.rejects(f.store.workroom.legacyRecovery.commit(permit), /ENOENT/);
     assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
+  } finally { f.close(); }
+});
+
+test('revocation after all provisional rows are written rolls back the entire recovery', async () => {
+  const f = fixture();
+  try {
+    let checked = false;
+    const opts = { ...f.options(), commitGuard: (plan, observation) => {
+      checked = true;
+      assert.ok(plan.targets.every(t => f.store.workroom.legacyRecovery.read(t.taskId, t.sendId)));
+      f.setOwner(null);
+      return { owner: f.options().authorize(), boundary: f.boundary(plan, observation) };
+    } };
+    const permit = await issueLegacyRecoveryPermit(opts);
+    await assert.rejects(f.store.workroom.legacyRecovery.commit(permit), /authorization/);
+    assert.equal(checked, true);
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recovery_sends'), 0);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
+  } finally { f.close(); }
+});
+
+test('a lost final fence or asynchronous final guard cannot commit provisional recovery', async () => {
+  for (const promise of [false, true]) {
+    const f = fixture();
+    try {
+      const commitGuard = (plan, observation) => {
+        const value = { owner: f.options().authorize(), boundary: { ...f.boundary(plan, observation), dispatchPaused: promise } };
+        return promise ? Promise.reject(new Error('Asynchronous provider failure')) : value;
+      };
+      const permit = await issueLegacyRecoveryPermit({ ...f.options(), commitGuard });
+      await assert.rejects(f.store.workroom.legacyRecovery.commit(permit), /fences|synchronous/);
+      assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
+      assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
+    } finally { f.close(); }
+  }
+});
+
+test('an async-function final guard is refused before a permit can be issued', async () => {
+  const f = fixture();
+  try {
+    await assert.rejects(issueLegacyRecoveryPermit({ ...f.options(), commitGuard: async () => ({}) }), /synchronous/);
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
+  } finally { f.close(); }
+});
+
+test('actual approval-file revocation at the final boundary rolls back all provisional rows', async () => {
+  const f = fixture();
+  try {
+    const record = { ...f.options().authorize(), owner: 'Eddie', authorizedAt: new Date(Date.now() - 1000).toISOString(),
+      expiresAt: new Date(Date.now() + 60000).toISOString() };
+    delete record.recordHash;
+    const bytes = JSON.stringify(record), path = join(await realpath(f.dir), 'approval-final.json');
+    writeFileSync(path, bytes);
+    const authorize = await createLegacyAuthorizationReader({ recordPath: path, planHash: f.plan.planHash,
+      host: record.host, bootedAt: record.bootedAt, expectedSha256: createHash('sha256').update(bytes).digest('hex') });
+    let checked = false;
+    const commitGuard = (plan, observation) => {
+      checked = true;
+      assert.ok(plan.targets.every(t => f.store.workroom.legacyRecovery.read(t.taskId, t.sendId)));
+      renameSync(path, path + '.revoked');
+      return { owner: authorize.checkSync(plan.planHash), boundary: f.boundary(plan, observation) };
+    };
+    const permit = await issueLegacyRecoveryPermit({ ...f.options(), authorize, commitGuard });
+    await assert.rejects(f.store.workroom.legacyRecovery.commit(permit), /ENOENT/);
+    assert.equal(checked, true);
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recoveries'), 0);
+    assert.equal(ledgerCount(f.db, 'workroom_legacy_recovery_sends'), 0);
     assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length, 8);
   } finally { f.close(); }
 });
