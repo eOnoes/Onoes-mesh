@@ -535,5 +535,50 @@
       "later_pc_boot_not_verified"
     ],
     "remainingSeparateGates": "Native writer/replay coverage, independent current-source review and exact live owner approval"
+  },
+  "dshAdmissionControlQualification": {
+    "status": "component_verified_insufficient_for_recovery",
+    "sourceSha256": "06b7585153e100d12a1efc875f79e29e1e06998c29be29293635a2433e4cf410",
+    "predicates": 7,
+    "evidence": "data/dsh-admission-control-qualification-20261113.json",
+    "actualInstalledAdmissionPrefix": true,
+    "collaborators": "synthetic only; no live plugin import, HTTP, credentials or worker",
+    "verifiedLimits": [
+      "Already-admitted request awaiting body may dispatch after disable",
+      "Approval route delegates before disable check; downstream execution not tested",
+      "New handler resets enabled=true",
+      "Existing task map unchanged; activeTasks is not retirement evidence"
+    ],
+    "liveControlsChanged": false
+  },
+  "nativeStartupInventory": {
+    "evidence": [
+      "data/native-entrypoint-startup-inventory-20261113.json",
+      "data/dsh-startup-entry-20261113.json",
+      "data/dsh-startup-launcher-inspection-20261113.json"
+    ],
+    "facts": [
+      "Hermes_Gateway has logon trigger",
+      "Hermes_Gateway_Guardian disabled",
+      "HermesAgent service stopped/disabled does not describe live gateway",
+      "DSH A2A Startup shortcut targets D:/Dev/Onoes-Relay/tools/start-dsh-a2a.cmd and launches tools/dsh-a2a-run.cmd for4123",
+      "Local-model supervisor is unrelated; do not stop it for native recovery"
+    ],
+    "notEstablished": [
+      "Complete DSH A2A restart-owner inventory",
+      "DSH web3081 automatic owner",
+      "Held whole-native maintenance coverage"
+    ],
+    "startupModified": false
+  },
+  "nativeWindowCoordination": {
+    "sendId": "1a75bdd9-52fd-431e-a897-2345606ce67a",
+    "conversationId": "6e715448-c51d-45b1-b045-cdb40731ca91",
+    "status": "running",
+    "intent": "data/native-window-facts-intent-20261113.json",
+    "scope": "Read-only exact stop/drain/restart owner facts; no credentials, edits or native maintenance authorized",
+    "runId": "run_3d8166797f0040f7b493b95ba4a0d31d",
+    "terminal": false,
+    "writerQuiescence": false
   }
 }
