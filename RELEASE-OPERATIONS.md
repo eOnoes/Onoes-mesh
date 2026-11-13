@@ -1,16 +1,18 @@
 # Mesh private release candidate
 
-## Current release status - 2026-11-12
+## Current release status - 2026-11-13
 
 First local release: **18/21 complete**. Idle-timer fix installed and all eight exact-source Nemotron qualification checks passed. Final actual Mesh load/chat/unload saved both completed command receipts and ended STOPPED; native slot empty and all four model endpoints idle. The model is unloaded.
 
 Main-PC first Nemotron lane D1-D4 is accepted: owner phone load/chat/unload plus actual backend receipt trace and loaded Inference/Control runtime/GPU agreement. Whole-device meters remain separate from verified model ownership. Other profiles are disabled/unqualified; laptop/AI-box work remains later. Earlier phone receipts are not fabricated or backfilled.
 
-The latest full local code gate passed **535 checks (421 Node + 114 Python)**. The approved isolated file-and-terminal trial passed: the builder changed only the allowed module, its original native transcript proves the two supplied tests ran successfully, and Nims independently approved the result. The result survived reopening the isolated board. This qualifies that bounded trial; production workers are not enrolled. The recorded parent-repository instruction search means this is not an OS filesystem read-isolation claim.
+The latest full local code gate passed **562 checks (448 Node + 114 Python)**. The approved isolated file-and-terminal trial passed: the builder changed only the allowed module, its original native transcript proves the two supplied tests ran successfully, and Nims independently approved the result. The result survived reopening the isolated board. This qualifies that bounded trial; production workers are not enrolled. The recorded parent-repository instruction search means this is not an OS filesystem read-isolation claim.
 
 Automatic assignments remain off. Eight historical accepted work sends lack original worker-retirement proof: three name the Mesh workspace and five have unknown workspace. Echo's read-only coordination reply supplied no new authoritative binding; the same eight empty run/admission lookups were independently checked. Empty results, a completed reply, a card in Done, elapsed time or a restart alone do not release these holds. Current retirement interfaces cannot retroactively enroll an untracked legacy worker. A recovery procedure must address original workers and durable replay before any closure; no such maintenance is scheduled or activated.
 
 C1 useful phone workflow without rescue, C4 final release/custody/owner acceptance and E2 production bounded team enrollment remain open. Full shared Mind/context/skills/MCP and three-machine work is unfinished. Local changes after published aeee363 remain unpublished. The latest E backup pointer is authoritative. Existing phone acceptance remains valid; these recovery questions do not require repeating those checks.
+
+The current recovery candidate requires an authentic held Mesh lease bound to the exact database through the final commit check. Installed Hermes ownership passed eleven disposable component predicates; installed DSH admission-prefix checks passed seven. Neither component test count is added to the562 full-suite count. DSH disable is not a drained or durable maintenance fence, and both Hermes and DSH A2A have sign-in launchers. Exact original-owner controls are under read-only coordination review; no native maintenance, restart or old hold release is scheduled. Evidence: data/recovery-held-commit-full-test-proof-20261113.json, data/hermes-maintenance-lock-qualification-20261113.json and data/dsh-admission-control-qualification-20261113.json.
 
 Current exact-source qualification: integrations/nemotron-full-native-qualification.json and integrations/nemotron-idle-fix-qualification.json. Historical sections below retain prior states and counts.
 
