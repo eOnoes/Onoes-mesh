@@ -794,5 +794,17 @@
     "strictQueueGuardUnchanged": true,
     "canRelease": false,
     "originalWorkerRetirementEstablished": false
+  },
+  "relayLaunchInputCustody": {
+    "status": "IMPLEMENTED_ALGORITHM_QUALIFIED_LIVE_LEGACY_UNVERIFIED",
+    "fullTests": 600,
+    "evidence": "data/relay-runtime-binding-full-test-proof.json",
+    "currentStatus": "data/relay-runtime-live-status.json",
+    "liveServiceRestarted": false,
+    "productionCaptureRun": false,
+    "logonUsesManagedWrapper": false,
+    "loginInventory": "data/relay-restart-owner-inventory.json",
+    "loadedBytesAttested": false,
+    "canRelease": false
   }
 }

@@ -60,6 +60,9 @@ export function legacyRecoverySources(workspace) {
     meshNativeSessions: resolve(workspace, 'lib/workroom-local-sessions.mjs'),
     relayStore: 'D:/Dev/Onoes-Relay/relay_sessions.py', relayServer: 'D:/Dev/Onoes-Relay/relay_server.py',
     relayNativeReceipts: 'D:/Dev/Onoes-Relay/relay_native_receipts.py',
+    relayLaunchPolicy: resolve(workspace, 'integrations/relay-service.ps1'),
+    relayLaunchBinding: resolve(workspace, 'integrations/relay-runtime-binding.ps1'),
+    relayConfiguration: 'D:/Dev/Onoes-Relay/config.json',
     // Freeze the actual initialization/recovery/control paths qualified by the
     // isolated native startup test, not only the outward Runs API adapter.
     ...Object.fromEntries([
