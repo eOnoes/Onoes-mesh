@@ -1789,6 +1789,8 @@ The latest inventory/quiet-window draft is maintained in
 [integrations/LEGACY-WORKER-RECOVERY-PLAN.md](integrations/LEGACY-WORKER-RECOVERY-PLAN.md).
 The guard requires five exact scheduled owners and three parked login links; the
 already-disabled guardian stays disabled. Full620 local checks pass. The compiled
-OnoesExec broker is detected but its role remains unknown; no service action or
-live recovery is approved. Private inventory and source proof:
+OnoesExec broker is detected; the follow-up audit identifies its separate VM-image
+project, without qualifying its complete runtime or historical worker use. See the
+canonical plan broker provenance audit. No service action or live recovery is
+approved. Private inventory and source proof:
 data/maintenance-owner-inventory-proof.json and data/maintenance-final-test-proof.json.

@@ -1,5 +1,33 @@
 # Remaining owner checks
 
+## Current Workroom - 2026-11-14
+
+Open [Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom) or
+[Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference).
+The current release checklist is in [RELEASE-OPERATIONS.md](RELEASE-OPERATIONS.md).
+The older 8446 installation described below is separate; its checks do not apply
+automatically to the current Workroom.
+
+Already confirmed by Eddie: card creation, editing, touch-drag, saved review/Done,
+reload, both themes, background/resume, rotation with an unsaved draft, network
+reconnection, starting a scoped team from the phone, and main-PC Nemotron
+load/chat/unload ending STOPPED. Do not repeat these simply because work resumed.
+
+The next useful phone check is a complete production team workflow after the
+legacy recovery and production enrollment have been qualified. That prerequisite
+is not ready: automatic assignment, Rook and live Mind remain off. No phone test,
+restart or service change is requested by this document. When ready, Nims will
+provide the exact link, card name, short steps and expected result together.
+
+Remaining first-release gates: C1 production workflow without operator rescue;
+C4 deployed release/custody and owner acceptance; E2 qualified production team.
+Other machines and shared Mind context remain later stages of the full goal.
+
+## Historical 8446 checks - retained for that separate installation
+
+The following source revisions, requests and pending states are historical.
+They are not the current Workroom checklist or permission to run a command.
+
 Current source HEAD: `d077f2d83ed9607f21139aa71a86743918a50f74`; accepted recovery merge `64a1d257f638cc390ad0ba2a152849d15bbca6ba`. Private URL: **https://emitchell.tail8c4a75.ts.net:8446/**. Exact mapping: [HOST-CLOSURE.md](HOST-CLOSURE.md). These are deferred checks, not instructions to restart now or execute Eddie's current pending proposal.
 
 ## Confirmed; do not repeat the checklist

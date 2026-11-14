@@ -26,9 +26,13 @@ If another edit makes the open editor stale, Save may be rejected with “Task c
 
 Backups are manual or milestone-based; no automatic schedule or off-device backup is enabled. The documented backup writes to E:\App-Backups\ONOes-Mesh; check LATEST.txt for the verified matching source/data snapshot. Keep labelled milestone copies. Do not merge the older 8446 store into the current Workroom store.
 
-Current limits: the listed phone recovery cases are accepted, but whole-app owner release acceptance remains open. Model controls are not qualified; do not use Workroom to load, unload or cancel a model. Mind is not live personal-memory recall: it can deliberately show a selected saved Workroom task, not shared conversation or personal-memory context. Telegram and shared context are not synchronized. Off-device backup remains deferred. The current scoped team flow pauses for owner review; it does not auto-approve or mark Done.
+Current limits: the listed phone recovery cases are accepted, but whole-app owner release acceptance remains open. Main-PC Nemotron 3.5 Bolt is qualified for the tested profile, including Eddie's phone load/chat/unload check ending STOPPED. Use the [Inference tab](https://emitchell.tail8c4a75.ts.net:8453/#inference) for model controls; other models and machines are not covered by that qualification. Mind is not live personal-memory recall: it can deliberately show a selected saved Workroom task, not shared conversation or personal-memory context. Telegram and shared context are not synchronized. Off-device backup remains deferred. Automatic assignments and production workers remain off pending legacy recovery and enrollment; the isolated scoped-team trials do not authorize starting production work. The scoped team flow pauses for owner review; it does not auto-approve or mark Done. See [remaining owner checks](NEXT-OWNER-CHECKS.md) before a new acceptance run.
 
-## Phone acceptance checklist
+## Phone workflow reference
+
+Eddie has already passed the basic card and recovery checks. These steps explain
+the workflow; they are not a request to repeat tests or start a team now. The
+remaining production-team check waits for qualified enrollment.
 
 - Open the 8453 link; create a small test task with a title, goal, project lead and checklist.
 - Tap to open it; try hold-and-drag, then swipe-scroll. Confirm a move did not start an agent.
