@@ -101,11 +101,15 @@ export function verifyReplayRecords(scope, targets) {
       requireValue(request.text === originalDeliveries.get(binding.sendId), 'Echo request text does not match the original delivery payload.');
     }
   });
-  const bytes = readFileSync((localFile(scope.dsh.path, 16777216), scope.dsh.path));
-  const records = JSON.parse(bytes.toString('utf8'));
-  requireValue(Array.isArray(records), 'DSH task store shape changed.');
-  const dsh = verifyDshOrigins(records, scope.bindings, originalDeliveries);
+  const dsh = verifyDshSnapshot(scope.dsh, scope.bindings, originalDeliveries);
   return { exactAcceptedSends: 8, terminalEchoAdmissions: 6, ...dsh };
+}
+
+// Parse the same bytes whose hash is pinned by the separately reviewed scope.
+// This freezes the task/origin association, not just each message in isolation.
+export function verifyDshSnapshot(snapshot, bindings, originalDeliveries) {
+  const bytes = readPinned(snapshot.path, snapshot.sha256, 16777216);
+  return verifyDshOrigins(JSON.parse(bytes.toString('utf8')), bindings, originalDeliveries);
 }
 
 // Read-only association evidence, not writer retirement or dispatch permission.
@@ -171,6 +175,7 @@ export function loadOperatorScope(scopePath, expectedSha256) {
   requireValue(digest(scope.databaseIdentity) && databaseFileIdentity(scope.databasePath) === scope.databaseIdentity,
     'The original Workroom database identity is required.');
   requireValue(digest(scope.relay?.identity) && digest(scope.hermes?.identity), 'Replay database identities are required.');
+  requireValue(digest(scope.dsh?.sha256), 'A separately reviewed DSH task-store snapshot hash is required.');
   requireValue(same(scope.startup.tasks.map(t => t.name).sort(), ['Hermes_Gateway', 'Onoes Deep Watchdog'].sort()) &&
     new Set(scope.startup.tasks.map(t => t.path + t.name)).size === 2 &&
     new Set(scope.startup.shortcuts.map(t => key(resolve(t.original)))).size === 2,
@@ -188,7 +193,8 @@ export function loadOperatorScope(scopePath, expectedSha256) {
     /^[A-Za-z0-9_-]{1,100}$/.test(binding.originMessageId) && digest(binding.originFingerprint)) &&
     new Set(dshBindings.map(binding => binding.originMessageId)).size === 2,
   'Both independently pinned DSH originating message boundaries are required.');
-  const sourceFiles = { ...legacyRecoverySources(scope.workspace), operatorScope: scopePath, operatorRunner: fileURLToPath(import.meta.url) };
+  const sourceFiles = { ...legacyRecoverySources(scope.workspace), operatorScope: scopePath, operatorRunner: fileURLToPath(import.meta.url),
+    dshTaskStoreSnapshot: scope.dsh.path };
   for (const [name, path] of Object.entries(scope.additionalSources || {})) {
     requireValue(/^[a-zA-Z][a-zA-Z0-9]{0,63}$/.test(name) && !['constructor', 'prototype'].includes(name) &&
       !Object.hasOwn(sourceFiles, name), 'Source names cannot override the required recovery implementation.');

@@ -13,7 +13,7 @@ import { createDispatchBarrier } from '../lib/workroom-dispatch-barrier.mjs';
 import { nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { legacyRecoveryFingerprint as hash } from '../lib/workroom-legacy-evidence.mjs';
 import { readLegacyRows } from '../integrations/legacy-recovery-plan.mjs';
-import { normalizeRelayDelivery, inspectReplayQueues, verifyReplayRecords, verifyStartupControls, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
+import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, verifyReplayRecords, verifyStartupControls, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
 
 const test = process.platform === 'win32' && process.arch === 'x64' ? nodeTest : nodeTest.skip;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -43,7 +43,11 @@ async function fixture() {
       const record = { id: 'native-' + n, contextId: conversationId, status: { state: 3, timestamp: '2020-01-01T00:00:00Z' } };
       const origin = { role: 1, messageId: 'origin-' + n, taskId: '', contextId: 'original-client-context',
         parts: [{ content: { $case: 'text', value: delivery } }] };
-      tasks.push({ ...record, history: [origin] });
+      const history = [origin];
+      if (n === 7) history.push({ role: 2, messageId: 'response-7', parts: [] },
+        { role: 1, messageId: 'followup-7', taskId: record.id, contextId: origin.contextId,
+          parts: [{ content: { $case: 'text', value: 'A different later request' } }] });
+      tasks.push({ ...record, history });
       Object.assign(binding, { nativeTaskId: record.id, nativeFingerprint: hash(record),
         originMessageId: origin.messageId, originFingerprint: hash(origin) });
     }
@@ -64,7 +68,7 @@ async function fixture() {
   const scope = { schema: 'mesh/legacy-operator-scope/v1', owner: 'Eddie', locality: 'desktop_echo_dsh_only',
     workspace: realpathSync.native(process.cwd()), databasePath, databaseIdentity: databaseFileIdentity(databasePath),
     relay: { path: relayPath, identity: databaseFileIdentity(relayPath) }, hermes: { path: hermesPath, identity: databaseFileIdentity(hermesPath) },
-    dsh: { path: dshPath }, bindings, nativeResources: { profileLocks: [lock], endpoints: [['127.0.0.1', port], ['::1', port]] },
+    dsh: { path: dshPath, sha256: sha(readFileSync(dshPath)) }, bindings, nativeResources: { profileLocks: [lock], endpoints: [['127.0.0.1', port], ['::1', port]] },
     startup: { tasks: taskObservations.map(({ name, path, actions, principal }) => ({ name, path, definitionFingerprint: hash({ actions, principal }) })), shortcuts } };
   const scopePath = join(dir, 'scope.json'); writeFileSync(scopePath, JSON.stringify(scope));
   const options = { scopePath, scopeSha256: sha(readFileSync(scopePath)), planPath: join(dir, 'plan.json') };
@@ -132,7 +136,10 @@ test('replay checks reject queued Relay deliveries, unknown native admissions, c
     const changed = structuredClone(f.scope); changed.bindings.pop();
     assert.throws(() => verifyReplayRecords(changed, f.targets()), /exactly the eight/);
     f.tasks[0].status.state = 1; writeFileSync(f.scope.dsh.path, JSON.stringify(f.tasks));
-    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /replayable/);
+    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /reviewed hash/);
+    const deliveries = new Map(f.scope.bindings.filter(b => b.agentId === 'dsh').map(b => [b.sendId,
+      f.db.prepare('SELECT payload FROM workroom_sends WHERE id=?').get(b.sendId).payload]));
+    assert.throws(() => verifyDshOrigins(f.tasks, f.scope.bindings, deliveries), /replayable/);
   } finally { f.close(); }
 });
 
@@ -154,19 +161,21 @@ test('startup checks reject enabled or changed tasks, active login shortcuts, ch
 });
 
 test('the final composed guard rolls back when replay becomes uncertain or its exact input changes before commit', async () => {
-  for (const corruptText of [false, true]) {
+  for (const corruption of ['status', 'echoText', 'dshSnapshot']) {
   const f = await fixture();
   try {
     await runLegacyOperator({ ...f.options, action: 'prepare' }, f.runtime); f.boot();
     let checks = 0;
     const runtime = { ...f.runtime, startupReader() {
       if (++checks === 4) {
-        if (corruptText) f.hermes.prepare("UPDATE session_admissions SET payload_json=? WHERE admission_id='admission-0'").run(JSON.stringify({ text: 'Different original' }));
+        if (corruption === 'dshSnapshot') writeFileSync(f.scope.dsh.path, JSON.stringify([...f.tasks, { id: 'unreviewed-task', history: [] }]));
+        else if (corruption === 'echoText') f.hermes.prepare("UPDATE session_admissions SET payload_json=? WHERE admission_id='admission-0'").run(JSON.stringify({ text: 'Different original' }));
         else f.hermes.prepare("UPDATE session_admissions SET status='unknown' WHERE admission_id='admission-0'").run();
       }
       return structuredClone(f.taskObservations);
     } };
-    await assert.rejects(runLegacyOperator({ ...f.options, action: 'apply', ...f.authorize() }, runtime), corruptText ? /Echo request text/ : /unresolved native/);
+    await assert.rejects(runLegacyOperator({ ...f.options, action: 'apply', ...f.authorize() }, runtime),
+      corruption === 'dshSnapshot' ? /reviewed hash/ : corruption === 'echoText' ? /Echo request text/ : /unresolved native/);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n, 0);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n, 0);
     assert.equal(f.barrier.status().state, 'paused'); assert.equal(f.barrier.status().held, false);
@@ -236,21 +245,30 @@ test('the boundary classifier matches Python across every Unicode codepoint and 
 test('DSH binds the pinned origin message and supports later follow-up history without inferring original success', async () => {
   const f = await fixture();
   try {
-    const original = structuredClone(f.tasks[1].history[0]);
-    const followup = { role: 1, messageId: 'followup-7', taskId: f.tasks[1].id,
-      contextId: original.contextId, parts: [{ content: { $case: 'text', value: 'A different later request' } }] };
-    f.tasks[1].history.push({ role: 2, messageId: 'response-7', parts: [] }, followup);
-    writeFileSync(f.scope.dsh.path, JSON.stringify(f.tasks));
+    const followup = f.tasks[1].history.at(-1);
     assert.equal(verifyReplayRecords(f.scope, f.targets()).completedDshTasks, 2);
     const wrong = structuredClone(f.scope); wrong.bindings[7].originMessageId = followup.messageId;
     wrong.bindings[7].originFingerprint = hash(followup);
     assert.throws(() => verifyReplayRecords(wrong, f.targets()), /DSH origin/);
     f.tasks[1].history.unshift({ ...followup, taskId: '', messageId: 'unrelated-origin' });
     writeFileSync(f.scope.dsh.path, JSON.stringify(f.tasks));
-    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /DSH origin/);
+    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /reviewed hash/);
+    const deliveries = new Map(f.scope.bindings.filter(b => b.agentId === 'dsh').map(b => [b.sendId,
+      f.db.prepare('SELECT payload FROM workroom_sends WHERE id=?').get(b.sendId).payload]));
+    assert.throws(() => verifyDshOrigins(f.tasks, f.scope.bindings, deliveries), /DSH origin/);
     f.tasks[1].history.shift();
     const duplicate = structuredClone(f.tasks[1]); duplicate.id = 'unrelated-task';
     writeFileSync(f.scope.dsh.path, JSON.stringify([...f.tasks, duplicate]));
-    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /DSH origin/);
+    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /reviewed hash/);
+    assert.throws(() => verifyDshOrigins([...f.tasks, duplicate], f.scope.bindings, deliveries), /DSH origin/);
+  } finally { f.close(); }
+});
+
+test('the reviewed DSH snapshot rejects changes outside selected receipts instead of trusting origin placement alone', async () => {
+  const f = await fixture();
+  try {
+    f.tasks.push({ id: 'unreviewed-task', contextId: 'elsewhere', status: { state: 2 }, history: [] });
+    writeFileSync(f.scope.dsh.path, JSON.stringify(f.tasks));
+    assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /reviewed hash/);
   } finally { f.close(); }
 });

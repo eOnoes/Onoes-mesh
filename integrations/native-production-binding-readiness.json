@@ -49,11 +49,11 @@
       "boundary": "Isolated workspace; not production enrollment, historical writer closure or filesystem read-isolation qualification."
     },
     "latestFullLocalRegression": {
-      "total": 591,
-      "node": 470,
+      "total": 592,
+      "node": 471,
       "python": 121,
       "exitCode": 0,
-      "evidence": "data/operator-origin-strip-full-proof-20261113.json"
+      "evidence": "data/operator-snapshot-full-proof-20261113.json"
     },
     "postFullSuiteFormattingOnly": {
       "files": [

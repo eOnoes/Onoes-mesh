@@ -370,3 +370,95 @@ Explicit tracked-path indexing restored the project index:746 files added,
 Evidence: data/operator-origin-strip-review-assessment-20261113.json,
 data/operator-native-origin-qualification-20261113.json and
 data/operator-index-restoration-20261113.json.
+
+
+## 2026-11-13: reviewed DSH snapshot integrity qualified
+
+Recovery scope now requires `dsh.sha256`, the reviewed canonical task-store byte
+hash. The snapshot verifier hashes the exact bounded bytes it parses; the same
+store is also a required hashed plan source. There is no automatic refresh when
+records change. A new reviewed scope/plan is required. Relocating an origin or
+changing any selected/unselected task-store byte after review therefore refuses
+recovery. Legitimate two-user history exists before fixture scope preparation
+and passes the complete composed operator. Final snapshot mutation rolls back
+all provisional recovery references/events and leaves dispatch paused.
+
+Pre-fix regression reproduced acceptance of changed unselected store data.
+Focused10 cases and full592 checks PASS (471 Node/121 Python). A read-only probe
+of the actual canonical store uses the same snapshot verifier and qualifies the
+two original DSH associations, preserving original outcomes unknown. It creates
+no live recovery scope, plan, approval or write. Echo's exact terminal source-only
+review matches marker/native digest/unchanged source and closes the snapshot
+finding for the correctly reviewed bytes, conditioned on readPinned's actual
+hash/size checks. Those checks are in the current implementation; runtime
+extinction, replay exclusion and activation remain separate requirements.
+
+The remaining unknown native admission is messaging/Telegram, intent queue,
+older epoch; it is outside the original Workroom eight. No private message or
+principal ID was disclosed. Source inspection and isolated execution of the
+actual inspected methods show native session recovery refuses unknown work
+(including unknown plus queued), and the bot retry gate rejects unknown/started/
+queued, accepting only settled failed results that classify as retryable. Relay
+constructor starts an empty memory queue; outbox recovery preserves retrying
+rows, fresh drain does not deliver them, duplicate IDs return before enqueue,
+and only a deliberate new fixture enqueue reaches its run-turn stub.
+
+This is method-level evidence with route/key/result/store/error stubs, not full
+startup, current loaded-code, other-adapter recovery or old-writer retirement
+proof. The bot source is edited/uncommitted in its own checkout; it was only read
+and hashed, never edited or committed here. The old Cyony receipt still has a
+current A2A agent route; current registry also has a separate OpenClaw adapter,
+whose recovery is outside the probe. Keep the conservative global queue guard
+unmodified. We have not authorized ignoring or retiring any of those records.
+
+Next design question to Echo asks whether exact retained non-replaying holds can
+be carried unchanged, what separate prior-writer containment remains necessary,
+and which minimum evidence is needed before implementing such a contract. No
+actual IDs/paths/private content are in that question, and no actions were
+requested. Prefer retaining unknown history over administrative cleanup, but do
+not equate non-replay with writer quiescence or infer retirement from missing
+rows/age. No maintenance window request until the executable boundary is ready.
+
+Evidence: data/operator-snapshot-full-proof-20261113.json,
+data/operator-snapshot-live-probe-20261113.json,
+data/operator-snapshot-review-assessment-20261113.json and
+data/operator-retained-queue-source-probe-20261113.json. Source-only reviews and
+method fixtures do not grant live activation. No restart, queue cleanup, old-hold
+release, new paid team trial, Rook/Mind activation or GitHub push occurred.
+
+
+### Retained-hold design result and actual route boundary
+
+Echo's exact design reply matches the question/native digest. A narrow retained
+record contract can establish preservation and non-replay of covered paths; it
+cannot establish prior-writer retirement. Bind exact source/store/record/route/
+runtime evidence and all dispatch/ownership fields, recheck at every gate and
+commit, and block missing/changed/duplicate/unclassified evidence. No general
+ignore flag, no retry-eligible failure exception and no inference from age or
+missing worker rows. Separate positive retirement/containment is required for
+every writer that could affect the selected scope. Remote writers remain
+explicitly outside a local claim and unresolved without their own evidence.
+
+Actual public route metadata shows the old Cyony receipt's A2A endpoint is not
+loopback; comparison with this PC's interface addresses confirms it does not
+resolve to this PC. No peer was contacted. This does not prove the peer is live
+or identify/retire an old worker. A PC restart must not be presented as resolving
+that record. Eddie's declaration that original Workroom jobs used only Echo/DSH
+on this desktop remains the selected-eight scope; do not broaden it implicitly.
+
+Further source trace: SessionAuthority._schedule invokes _drain; its claim-retry
+path handles unknown_execution and may separately settle eligible unattended
+automation. That additional path is not qualified by the initial method probe,
+and absence of unknown_execution text in session_admission.py is not evidence
+that the overall admission path is unguarded or fully qualified. The general
+unknown native-recovery and bot retry tests remain limited to their inspected
+methods. Do not turn them into a blanket full-startup non-replay claim.
+
+Next implementation/evidence slice: define per-record retained scope from actual
+store/route/workspace linkage, qualify every relevant startup/claim/adapter path
+for those exact states, and retain all unrelated UNKNOWN history. Establish
+covered local old-writer extinction plus restart-owner containment separately.
+If any writer could still affect the selected workspace, keep the hold. Current
+operator global queue guard remains unchanged; no exclusion, retirement or live
+recovery is authorized by this design advice. Do not ask for a restart as though
+these outstanding conditions are already satisfied.
