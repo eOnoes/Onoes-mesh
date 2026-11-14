@@ -27,8 +27,10 @@ ended STOPPED; no model was loaded for this candidate milestone.
 lack original whole-writer retirement evidence. Their original sends remain intact;
 no live recovery ledger was applied. A completed reply/card, missing run mapping,
 inactivity or restart alone never establishes retirement. Eddie confirmed Workroom
-used only Echo/DSH on this desktop; other-app/other-PC Mesh writers remain a separate
-pending scope question. Mock cards do not answer it.
+used only Echo/DSH on this desktop and now confirms all other Mesh editors,
+including laptop agents, can remain closed during recovery. This resolves the
+owner coverage question; technical containment and exact window authority remain
+separate. Mock cards never establish original worker retirement.
 
 The offline recovery candidate is implemented and locally tested, not ready for
 live recovery. It now requires a reviewed v3 offline scope with the full mandatory
@@ -46,7 +48,8 @@ has local verification, not a second independent review. Exact source hashes and
 review/cleanup attribution are in data/maintenance-final-test-proof.json.
 
 The bounded containment policy still needs explicit owner review/approval before
-any live window. Other-app/other-PC writers remain unknown. Snapshot absence,
+any live window. Eddie has confirmed other Mesh editors can stay closed; that
+confirmation does not prove technical worker retirement. Snapshot absence,
 listed-file protection or tests do not establish universal/continuous exclusion.
 No real approved retained review, v3 scope or live quiet-window authorization exists.
 Original eight holds remain; no retry, fake retirement or automatic resume occurs.

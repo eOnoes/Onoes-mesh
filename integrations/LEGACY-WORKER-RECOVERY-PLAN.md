@@ -1,9 +1,103 @@
 # Historical worker recovery — proposal for review
 
-Status: PARKED at Eddie's clarification. A PC restart is not required to continue
-the Mesh build. The briefly scheduled 7:00 a.m. restart automation was deleted;
-no Windows power command was queued or executed. Do not recreate it from older
-instructions. Further testing grants no live hold release or PC restart authority.
+## Current maintenance handoff - November 14, 2026
+
+Eddie confirmed that all other apps/agents editing Mesh can stay closed, including
+anything on the laptop, and authorized preparing these steps. The earlier
+editor-coverage question is RESOLVED. This is preparation, not authorization to
+stop services, restart Windows or apply recovery. No restart is scheduled.
+
+Purpose: preserve the eight old sends and their unknown historical outcomes,
+then record a separately authorized local maintenance boundary. This does not
+mark the old jobs successful or enable automatic workers, Rook or Mind.
+
+### Eddie's part
+
+1. Save work on both computers. Stop other agents from editing Mesh, and leave
+   them closed until the maintenance handoff says they can reopen. Keep this chat
+   open while Nims finishes the final package; do not close it or restart yet.
+2. Review the proposed interruption below. Give a separate go-ahead for the
+   exact window only after Nims presents the ready package and its checks.
+3. When instructed during that approved window, allow the single PC restart,
+   sign back into the usual Windows account, and leave Codex, DSH, Echo/Relay,
+   VM tools and other coding apps closed. Use only the prepared standalone
+   recovery console. Ordinary sign-in is enough; no password or recovery key is
+   to be sent in chat. Preparation has not installed an automatic console.
+4. Keep that console's result available. After restoration, reopen Mesh and check
+   that the saved board is present. Use the supplied card/result check rather
+   than rerunning the already-passed basic phone and Nemotron tests.
+
+Expected interruption: Mesh/phone board access, Relay/Echo (including Telegram
+replies), DSH and all four local-model endpoints can be unavailable during the
+window. A PC restart interrupts every application. Allow a flexible window;
+there is no verified duration estimate yet. Tailscale settings are not changed.
+
+### Operator sequence to finalize and review before the window
+
+| Stage | Exact work | Required result before proceeding |
+| --- | --- | --- |
+| Prepare | Recheck the named processes, active work and model status; save a fresh manual source/data backup under E:/App-Backups/ONOes-Mesh. Export the five task definitions and preserve the three exact login links and their original locations. | Backup verified; no active new worker or model cycle; custody/source identities match. A task reporting Ready alone does not prove its service is stopped. |
+| Suspend startup | After the exact window approval, disable the five named tasks below and park the three exact links outside Startup. Stop Mesh through its named launcher; preserve its recovery-paused marker. No process-name cleanup. | Task definitions differ only in the approved enabled state; all five are disabled/not Running; parked links have identical bytes and original locations recorded. Any necessary stop of a still-Running task needs its named lifecycle action included in the approved window. |
+| Freeze | Keep dispatch paused/drained. Re-read the exact eight original sends, native bindings and three retained records. Complete the source-bound retained-record review and v3 offline scope. Run the existing operator's prepare action to create the exact preboot plan. | Original records preserved; no extra sends; all source/store identities pinned. Preparation itself grants no release. If any check refuses, do not reboot merely to try again. |
+| Restart and sign in | Use one separately approved preserving Windows restart. Eddie signs in and opens only the prepared standalone console. Do not launch the VM project or agent apps. | Later boot on the same machine. Original startup controls remain suspended. Protected Codex infrastructure is not manually stopped. |
+| Recover | Inspect the exact plan with the existing operator. Obtain the exact, time-limited postboot owner confirmation in the prepared handoff, then apply once with its matching scope and approval hashes. | Actual profile/socket/file and dispatch barriers held through commit; unknown outcomes recorded separately; original sends preserved; dispatch remains paused. Inspect always returns canRelease=false and cannot substitute for apply. |
+| Restore | Read back the recovery ledger and board; close the standalone console to release its resources. Restore only the recorded original task flags and exact links, then use the named Mesh start and each reviewed app launcher once. | Original board and receipts preserved, no replay/duplicate work, private route healthy. Keep the guardian and legacy HermesAgent disabled. Workers/Rook/Mind remain off until separately enrolled. |
+
+Five exact root-path tasks: `Hermes_Gateway`, `Onoes Deep Watchdog`,
+`ONOes Mesh Workroom Recovery`, `DSH Local Model Supervisor`, and
+`Hermes_Gateway_Guardian`. Fresh November 14 inventory matches all five earlier
+definition hashes. The first four are enabled/Ready; the guardian is already
+disabled and must remain disabled on restoration. These observations do not
+authorize task control.
+
+Three exact links: `Onoes Deep (DSH A2A).lnk`,
+`Onoes DeepSeek Harness Web.lnk`, and `Onoes Relay.lnk` in the user's Startup
+folder. Do not remove unrelated links or enable the legacy HermesAgent service.
+
+The separate OnoesExecBroker currently reports Running/Manual. No stop/start or
+configuration change is proposed for it. A restart is not proof that it stays
+off: if it or another covered runtime appears after sign-in, the operator refuses
+and retains the holds. Do not close it by discovered PID or weaken the guard.
+Its project's approvals cannot authorize Mesh maintenance.
+
+### Recovery and abort rules
+
+Before apply, refusal means no recovery is accepted. Preserve the report, restore
+only the recorded startup configuration when safe, and leave the old holds and
+dispatch pause intact. Do not retry old sends or start workers to test them.
+If apply output is lost, inspect the SAME plan/ledger before deciding what
+happened; do not repeat apply blindly. Readback failure after commit is not proof
+that nothing committed. Do not restore an older database over a possibly committed
+one. A backup restore is a separately reviewed action after preserving the current
+database and sidecars.
+
+### Remaining package work - no live controls changed
+
+This handoff gives the proposed sequence and owner actions. It is NOT yet a
+ready-to-run maintenance bundle. Before asking for the window, Nims must finish
+the exact eight-send/three-record review, confirm the qualified sources still
+match, prepare the v3 scope inputs and standalone postboot authority/result
+handoff, and verify the stop/restore launchers. Final plan freezing necessarily
+follows approved startup suspension. Do not fabricate an approved scope or
+postboot authority from Eddie's editor-coverage confirmation.
+
+Private evidence: data/owner-mesh-editor-window-confirmation-20261114.json and
+data/maintenance-handoff-current-inventory-20261114.json. The latter is read-only;
+it is not a restore-ready export. Latest verified backup pointer was read from
+E:/App-Backups/ONOes-Mesh/LATEST.json; a fresh matching backup is required for the
+actual window. Historical sections below retain prior observations and decisions.
+
+Preparation checks completed: all 39 recovery/qualification file hashes still
+match their existing proofs; all five task definitions and original enabled flags
+match the saved inventory; the same three retained queue records and source/store
+identities are unchanged. The new exact eight-send/three-record draft remains
+not_approved. No synthetic tests were rerun for this documentation/preparation-only
+slice. Machine-readable result: data/maintenance-handoff-preparation-20261114.json.
+
+## Historical proposal and qualification record
+
+The briefly scheduled 7:00 a.m. restart automation was deleted; no Windows power
+command was queued or executed. Do not recreate it from older instructions.
 
 ## What testing established
 
