@@ -782,5 +782,17 @@
       "exitCode": 0,
       "evidence": "data/native-coordinator-full-test-proof.json"
     }
+  },
+  "retainedRecordReviewContract": {
+    "status": "IMPLEMENTED_INSPECT_ONLY_NOT_ENROLLED",
+    "fullTests": 598,
+    "focusedTests": 16,
+    "evidence": "data/retained-review-full-test-proof.json",
+    "realDraft": "data/retained-record-review-draft.json",
+    "draftApproved": false,
+    "draftRejected": true,
+    "strictQueueGuardUnchanged": true,
+    "canRelease": false,
+    "originalWorkerRetirementEstablished": false
   }
 }

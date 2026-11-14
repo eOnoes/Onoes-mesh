@@ -2,7 +2,7 @@
 // The scope hash and owner-record hash are supplied out of band after review.
 import { createHash } from 'node:crypto';
 import { lstatSync, realpathSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
-import { resolve, isAbsolute, dirname } from 'node:path';
+import { resolve, isAbsolute, dirname, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
@@ -92,11 +92,12 @@ export function inspectRetainedRecords(scope) {
     decision: 'unresolved_do_not_release',
   }));
   for (const row of hermes.rows) {
-    let markerTypes;
+    let markerTypes, nativeTextEnvelope = false;
     try {
       const payload = JSON.parse(row.payload_json), native = payload?.native_text_v1;
       requireValue(payload && typeof payload === 'object' && !Array.isArray(payload) &&
         (native == null || typeof native === 'object' && !Array.isArray(native)), 'Unclassified admission envelope.');
+      nativeTextEnvelope = Boolean(native && typeof native === 'object' && !Array.isArray(native));
       markerTypes = {
         localAutomation: Object.hasOwn(payload, 'local_automation_v1'), kanbanCard: Object.hasOwn(payload, 'kanban_card_v1'),
         nativeAutomation: Boolean(native && Object.hasOwn(native, 'automation')),
@@ -107,7 +108,7 @@ export function inspectRetainedRecords(scope) {
     const principalClass = principal.startsWith('messaging:telegram:') ? 'telegram' : principal.startsWith('messaging:') ? 'messaging'
       : principal.startsWith('automation:') ? 'automation' : principal === 'api' ? 'api' : 'unclassified';
     records.push({ source: 'hermes_admission', recordId: row.admission_id, recordFingerprint: recordHash(row),
-      state: row.status, principalClass, automationMarkers: markerTypes,
+      state: row.status, principalClass, nativeTextEnvelope, automationMarkers: markerTypes,
       directWorkroomTaskIds: tasks(workroom.bindings.filter(binding => binding.admissionId === row.admission_id).map(binding => binding.taskId)),
       sharedConversationTaskIds: tasks([...workroom.sends.filter(send => send.conversationId === row.target_session_id).map(send => send.taskId),
         ...workroom.bindings.filter(binding => binding.sessionId === row.target_session_id).map(binding => binding.taskId)]),
@@ -123,6 +124,76 @@ export function inspectRetainedRecords(scope) {
     canRelease: false, limitations: ['Separate read transactions; not a held commit fence.',
       'ID and conversation links do not establish project scope, non-replay or writer retirement.',
       'No route, runtime/startup or worker-containment qualification is supplied by this report.'] };
+}
+
+// A source-bound review witness, deliberately NOT an eligibility exception.
+// Enrollment still requires a separately reviewed containment policy; the strict
+// queue guards below never consume this result as permission to recover.
+export function verifyRetainedReview(scope) {
+  const descriptor = scope.retainedReview;
+  if (!descriptor) return { status: 'not_supplied', canRelease: false };
+  const json = input => {
+    const bytes = readPinned(input?.path, input?.sha256);
+    let value;
+    try { value = JSON.parse(bytes.toString('utf8')); }
+    catch { throw Error('Retained review input is not valid JSON.'); }
+    requireValue(value && typeof value === 'object' && !Array.isArray(value), 'Retained review inputs must be JSON objects.');
+    return value;
+  };
+  const review = json(descriptor);
+  requireValue(review.schema === 'mesh/retained-record-review/v1' && review.owner === 'Eddie' &&
+    review.decision === 'preserve_without_retry_or_retirement' &&
+    review.writerScope === 'confirmed_desktop_only' && Array.isArray(review.selectedSendIds) &&
+    review.selectedSendIds.length === 8 && new Set(review.selectedSendIds).size === 8 && scope.bindings?.length === 8 &&
+    same(review.selectedSendIds?.slice().sort(), scope.bindings?.map(binding => binding.sendId).sort()),
+  'An exact owner-reviewed desktop scope and selected send set are required.');
+  const current = inspectRetainedRecords(scope);
+  const ordered = records => records.slice().sort((a, b) => (a.source + ':' + a.recordId).localeCompare(b.source + ':' + b.recordId));
+  requireValue(Array.isArray(review.records) && review.records.length === 3 && current.records.length === 3 &&
+    new Set(current.records.map(record => record.source + ':' + record.recordId)).size === 3 &&
+    same(review.sources, current.sources) && same(ordered(review.records), ordered(current.records)),
+  'The retained source identities, schemas, complete rows or Workroom links changed.');
+  const relayRecords = current.records.filter(record => record.source === 'relay_outbox');
+  const nativeRecords = current.records.filter(record => record.source === 'hermes_admission');
+  requireValue(relayRecords.length === 2 && same(relayRecords.map(record => record.agentId).sort(), ['cyony', 'dsh']) &&
+    relayRecords.every(record => record.state === 'retrying' && record.directWorkroomTaskIds.length === 0) &&
+    nativeRecords.length === 1 && nativeRecords[0].state === 'unknown' && nativeRecords[0].nativeTextEnvelope === true &&
+    ['messaging', 'telegram'].includes(nativeRecords[0].principalClass) && nativeRecords[0].directWorkroomTaskIds.length === 0 &&
+    nativeRecords[0].automationMarkers !== 'unclassified_payload' &&
+    Object.values(nativeRecords[0].automationMarkers).every(value => value === false),
+  'The reviewed retained states are not supported; no queued/started or automation exception exists.');
+  const relay = json(review.qualifications?.relay), native = json(review.qualifications?.native);
+  requireValue(relay.schema === 'mesh/relay-retained-startup-qualification/v1' && relay.liveStoreOpened === false &&
+    relay.liveDeploymentChanged === false && relay.networkOrProcessAttempts === 0 && relay.boundaryRejectionControlsPassed === 3 &&
+    relay.cases?.length === 2 && relay.cases.every((item, i) => item.boot === i + 1 && item.startupTransportCalls === 0 &&
+      item.duplicateTransportCalls === 0 && item.freshRequestTransportCalls === 1 && item.retainedRowsUnchanged === true),
+  'The reviewed Relay startup qualification is incomplete.');
+  requireValue(native.schema === 'mesh/native-retained-startup-qualification/v1' && native.liveStoreOpened === false &&
+    native.liveServiceRestarted === false && native.originalWorkerRetirementEstablished === false &&
+    native.coordinatorIsPrimaryRecovery === true && native.recoveries?.length === 2 && native.recoveries.every((item, i) =>
+      item.startup === i + 1 && item.syntheticModelCalls === (i === 0 ? 1 : 0) && item.unknownRemainedPaused === true &&
+      item.blockedFollowerRemainedQueued === true && item.safeRequestCompleted === true && item.gatewayCoordinatorPreservedRows === true),
+  'The reviewed native coordinator qualification is incomplete.');
+  const relayFiles = ['relay_server.py', 'relay_a2a.py', 'relay_a2a_reconcile.py', 'relay_auth.py', 'relay_budget.py',
+    'relay_channels.py', 'relay_config.py', 'relay_db.py', 'relay_hermes.py', 'relay_inbox.py', 'relay_mcp.py',
+    'relay_native_receipts.py', 'relay_notify.py', 'relay_openclaw.py', 'relay_sessions.py', 'relay_webpush.py'];
+  requireValue(same(Object.keys(relay.sourceSha256 || {}).sort(), relayFiles.slice().sort()), 'Incomplete Relay qualification source set.');
+  for (const file of relayFiles) readPinned(resolve('D:/Dev/Onoes-Relay', file), relay.sourceSha256[file]);
+  const nativeRoot = resolve(homedir(), 'AppData/Local/hermes/hermes-agent');
+  const nativeFiles = Object.entries(legacyRecoverySources(scope.workspace)).filter(([name]) => name.startsWith('hermesRecovery'));
+  requireValue(nativeFiles.length === 14 && Object.keys(native.sourceSha256 || {}).length === 14,
+    'Incomplete native qualification source set.');
+  for (const [, file] of nativeFiles) {
+    const relative = file.slice(nativeRoot.length + 1).split(sep).join('/');
+    readPinned(file, native.sourceSha256[relative]);
+  }
+  readPinned(resolve(scope.workspace, 'integrations/qualify-relay-retained-startup.py'), relay.qualificationHelperSha256);
+  const helpers = ['qualify-native-retained-startup.py', 'qualify-native-retained-peer.py', 'qualify-native-retained-recovery.py'];
+  requireValue(same(Object.keys(native.helperSha256 || {}).sort(), helpers.slice().sort()), 'Incomplete native qualifier source set.');
+  for (const helper of helpers) readPinned(resolve(scope.workspace, 'integrations', helper), native.helperSha256[helper]);
+  return { status: 'matched_review_only', retainedRecords: 3, qualificationSources: 30,
+    canRelease: false, workerRetirementEstablished: false,
+    remaining: ['Runtime route/loaded-source binding', 'Separate original-writer containment', 'Live recovery authorization and enrollment'] };
 }
 
 export function verifyReplayRecords(scope, targets) {
@@ -316,7 +387,12 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
   let controls;
   try { checkControls(plan.targets); controls = { status: 'verified' }; }
   catch (error) { controls = { status: 'blocked', reason: error.message }; }
-  if (action === 'inspect') return { ...assessment, controls, retainedRecords: inspectRetainedRecords(scope), canRelease: false };
+  if (action === 'inspect') {
+    let retainedReview;
+    try { retainedReview = verifyRetainedReview(scope); }
+    catch (error) { retainedReview = { status: 'blocked', reason: error.message, canRelease: false }; }
+    return { ...assessment, controls, retainedRecords: inspectRetainedRecords(scope), retainedReview, canRelease: false };
+  }
   requireValue(assessment.status === 'ready_for_operator_review' && controls.status === 'verified',
     'Recovery remains blocked: ' + [...assessment.reasons, controls.reason].filter(Boolean).join('; '));
   const authorize = await createLegacyAuthorizationReader({ recordPath: authorizationPath, expectedSha256: authorizationSha256,

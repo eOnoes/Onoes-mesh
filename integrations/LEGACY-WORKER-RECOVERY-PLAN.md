@@ -637,3 +637,60 @@ owner scope/window facts. No general ignore switch or premature restart request.
 Goal remains ACTIVE, local release18/21 / parent84.
 
 Full current source gate completed: npm test exit0, 595 passing checks (474 Node +121 Python); focused operator13/13 also passed. Test/source pins in data/native-coordinator-full-test-proof.json. Read-only publication preflight: remote f2362ee, local/remote workflow directories empty, GitHub workflows0 and head PRs0; no GitHub write performed. Owner cross-app/external-writer scope question pending, so no retained-record exemption or live recovery is activated.
+
+
+### Exact retained-record review contract — 2026-11-14
+
+Previous goal turn was PROGRESS: the actual isolated Windows control/API/runtime
+and full recovery coordinator passed, all 595 local checks passed, and E: restore
+verification passed. This turn implements the next source-bound review component
+while the owner cross-app writer-scope question remains unanswered.
+
+`verifyRetainedReview(scope)` now validates an explicitly hash-pinned review
+record. The optional `retainedReview: {path, sha256}` descriptor is consumed by
+operator INSPECT only. The schema is mesh/retained-record-review/v1; owner Eddie,
+decision preserve_without_retry_or_retirement, writerScope confirmed_desktop_only
+and the exact eight selected send IDs are required. The record binds the three
+complete row fingerprints, store identities, table schemas and actual Workroom
+relationships. Missing task IDs never imply that work is outside this workspace.
+Only the two explicitly reviewed DSH/Cyony retrying records and one person-message
+unknown admission are supported. Queued/started, automation, malformed/native-null
+envelopes, additional records, changed links or changed schemas are refused.
+
+The review also pins both startup-qualification artifacts, their complete source
+sets (16 Relay modules and 14 native startup/control modules), and all four
+qualification helper files. The native evidence must cover primary full-coordinator
+recovery and the one/zero model-call restart cases; older profile-only evidence is
+refused. JSON errors do not echo input content. Reports contain fixed status and
+counts; private request bodies, principal IDs and arbitrary review fields are not
+emitted. Diagnostic records now explicitly report the native-text-envelope kind.
+
+IMPORTANT: this is review verification, NOT retained-record enrollment. A matching
+review returns matched_review_only, canRelease=false and no worker-retirement
+claim. PREPARE/APPLY still enforce the existing global queue guard. The verifier
+does not restart services, retry/clean up uncertain records or clear any hold.
+Actual runtime route/loaded-source binding, separately reviewed containment and
+explicit live recovery authorization remain necessary before a later enrollment
+change. Do not pass this witness to an authority API as though it were a permit.
+
+Acceptance: 16 focused tests pass; full npm test exit0 passes 598 checks
+(477 Node +121 Python). Synthetic review tests exercise matching evidence while
+actual operator apply remains blocked, row-only and link-only drift, schemas, new
+work, absent owner scope, selected-ID changes, automation/native-null requests,
+changed proof bytes, incomplete source sets, changed helper hashes, incomplete
+coordinator proof and malformed JSON. All tests use disposable stores.
+
+A private draft was prepared from the real three unchanged row fingerprints:
+data/retained-record-review-draft.json. Its schema is deliberately DRAFT, decision
+is not_approved and writerScope is pending_owner_confirmation. The actual verifier
+refuses it. No real owner confirmation or approval was manufactured. The real
+board still has 15 cards and the old three rows have unchanged full fingerprints.
+Evidence: data/retained-review-actual-draft-proof.json,
+data/retained-review-focused-tests.log and data/retained-review-full-test-proof.json.
+
+Next: qualify actual runtime route/source custody for the retained set and finish
+the separate containment/enrollment contract after the pending writer-scope fact.
+Do not ask for a restart as though those conditions are complete. Original eight
+holds, Rook/native production activation and live Mind remain unchanged. Goal
+stays ACTIVE, local release18/21 / parent84. This newer work is outside the pending
+exact publication request through149ac87; do not bundle it into that push.

@@ -1,8 +1,8 @@
 import nodeTest from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, realpathSync, writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { tmpdir, homedir } from 'node:os';
+import { join, resolve, relative } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
@@ -12,8 +12,8 @@ import { databaseFileIdentity } from '../lib/database-identity.mjs';
 import { createDispatchBarrier } from '../lib/workroom-dispatch-barrier.mjs';
 import { nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { legacyRecoveryFingerprint as hash } from '../lib/workroom-legacy-evidence.mjs';
-import { readLegacyRows } from '../integrations/legacy-recovery-plan.mjs';
-import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, inspectRetainedRecords, verifyReplayRecords, verifyStartupControls, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
+import { readLegacyRows, legacyRecoverySources } from '../integrations/legacy-recovery-plan.mjs';
+import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, inspectRetainedRecords, verifyRetainedReview, verifyReplayRecords, verifyStartupControls, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
 
 const test = process.platform === 'win32' && process.arch === 'x64' ? nodeTest : nodeTest.skip;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -326,4 +326,102 @@ test('diagnose refuses file overrides and an unrelated current directory before 
     assert.equal(elsewhere.status, 1); assert.match(elsewhere.stderr, /from its Mesh workspace/);
     assert.equal(override.stdout, ''); assert.equal(elsewhere.stdout, '');
   } finally { f.close(); }
+});
+
+// Qualification metadata is synthetic here; files are hashed, not executed.
+// Real startup execution is qualified separately by the committed helper scripts.
+function retainedFixture(f) {
+  f.relay.prepare("INSERT INTO outbox VALUES('old-dsh','dsh','fixture-session','retrying',NULL,'Synthetic private request')").run();
+  f.relay.prepare("INSERT INTO outbox VALUES('old-cyony','cyony','elsewhere','retrying',NULL,'Synthetic other request')").run();
+  f.hermes.exec('ALTER TABLE session_admissions ADD COLUMN principal_id TEXT;');
+  f.hermes.prepare(`INSERT INTO session_admissions(admission_id,request_id,target_session_id,payload_digest,status,outcome,owner_epoch,generation,payload_json,principal_id)
+    VALUES('old-unknown','old-input','elsewhere','digest','unknown',NULL,1,1,?,'messaging:telegram:synthetic')`)
+    .run(JSON.stringify({ native_text_v1: { text: 'Synthetic request' } }));
+  const hashFiles = files => Object.fromEntries(files.map(([name, file]) => [name, sha(readFileSync(file))]));
+  const relayNames = ['relay_server.py','relay_a2a.py','relay_a2a_reconcile.py','relay_auth.py','relay_budget.py','relay_channels.py',
+    'relay_config.py','relay_db.py','relay_hermes.py','relay_inbox.py','relay_mcp.py','relay_native_receipts.py','relay_notify.py','relay_openclaw.py','relay_sessions.py','relay_webpush.py'];
+  const relay = { schema: 'mesh/relay-retained-startup-qualification/v1', liveStoreOpened: false, liveDeploymentChanged: false,
+    networkOrProcessAttempts: 0, boundaryRejectionControlsPassed: 3,
+    cases: [1,2].map(boot => ({ boot, startupTransportCalls: 0, duplicateTransportCalls: 0, freshRequestTransportCalls: 1, retainedRowsUnchanged: true })),
+    sourceSha256: hashFiles(relayNames.map(name => [name, resolve('D:/Dev/Onoes-Relay',name)])),
+    qualificationHelperSha256: sha(readFileSync('integrations/qualify-relay-retained-startup.py')) };
+  const nativeRoot = resolve(homedir(), 'AppData/Local/hermes/hermes-agent');
+  const native = { schema: 'mesh/native-retained-startup-qualification/v1', liveStoreOpened: false, liveServiceRestarted: false,
+    originalWorkerRetirementEstablished: false, coordinatorIsPrimaryRecovery: true,
+    recoveries: [1,2].map(startup => ({ startup, syntheticModelCalls: startup === 1 ? 1 : 0, unknownRemainedPaused: true,
+      blockedFollowerRemainedQueued: true, safeRequestCompleted: true, gatewayCoordinatorPreservedRows: true })),
+    sourceSha256: hashFiles(Object.entries(legacyRecoverySources(process.cwd())).filter(([name]) => name.startsWith('hermesRecovery'))
+      .map(([,file]) => [relative(nativeRoot,file).split('\\').join('/'),file])),
+    helperSha256: hashFiles(['qualify-native-retained-startup.py','qualify-native-retained-peer.py','qualify-native-retained-recovery.py']
+      .map(name => [name,resolve('integrations',name)])) };
+  const save = (name, data) => { const path = join(f.dir,name); writeFileSync(path,JSON.stringify(data));return { path, sha256:sha(readFileSync(path)) }; };
+  const actual = inspectRetainedRecords(f.scope);
+  const review = { schema: 'mesh/retained-record-review/v1', owner:'Eddie', decision:'preserve_without_retry_or_retirement',
+    writerScope:'confirmed_desktop_only', selectedSendIds:f.scope.bindings.map(binding=>binding.sendId),
+    records:actual.records, sources:actual.sources, qualifications:{ relay:save('relay-proof.json',relay),native:save('native-proof.json',native) } };
+  function seal() {
+    f.scope.retainedReview=save('retained-review.json',review);
+    writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));
+  }
+  seal();return { review, relay, native, save, seal };
+}
+
+test('the exact retained review matches synthetic evidence without mutating records or bypassing the live recovery queue guard', async () => {
+  const f = await fixture();
+  try {
+    await runLegacyOperator({ ...f.options,action:'prepare' },f.runtime);f.boot();
+    retainedFixture(f);
+    const rows=()=>hash({relay:f.relay.prepare('SELECT * FROM outbox').all(),native:f.hermes.prepare('SELECT * FROM session_admissions').all()});
+    const before=rows(), result=verifyRetainedReview(f.scope);
+    assert.equal(result.status,'matched_review_only');assert.equal(result.canRelease,false);assert.equal(result.workerRetirementEstablished,false);
+    assert.equal(rows(),before);
+    const inspected=await runLegacyOperator({...f.options,action:'inspect'},f.runtime);
+    assert.equal(inspected.retainedReview.status,'matched_review_only');assert.equal(inspected.controls.status,'blocked');assert.equal(inspected.canRelease,false);
+    await assert.rejects(runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime),/unresolved queued/);
+    assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
+    assert.equal(rows(),before);
+  } finally {f.close();}
+});
+
+test('retained reviews reject row/link/schema drift, new work and missing owner scope without using absence of task IDs as scope proof',async()=>{
+  for(const change of ['row','link','schema','newWork','ownerScope','selectedSend','automation','nativeNull']) {
+    const f=await fixture();
+    try {
+      const r=retainedFixture(f);
+      if(change==='row')f.relay.prepare("UPDATE outbox SET content='Changed' WHERE idem_key='old-dsh'").run();
+      if(change==='link'){
+        f.db.prepare("UPDATE workroom_sends SET conversationId='moved-conversation' WHERE conversationId='fixture-session'").run();
+        assert.equal(inspectRetainedRecords(f.scope).records.find(record=>record.recordId==='old-dsh').recordFingerprint,
+          r.review.records.find(record=>record.recordId==='old-dsh').recordFingerprint);
+      }
+      if(change==='schema')f.relay.exec('ALTER TABLE outbox ADD COLUMN extra TEXT');
+      if(change==='newWork')f.relay.prepare("INSERT INTO outbox VALUES('new','dsh','elsewhere','queued',NULL,'New')").run();
+      if(change==='ownerScope'){r.review.writerScope='pending';r.seal();}
+      if(change==='selectedSend'){r.review.selectedSendIds.pop();r.seal();}
+      if(change==='automation'||change==='nativeNull'){
+        f.hermes.prepare("UPDATE session_admissions SET payload_json=? WHERE admission_id='old-unknown'").run(JSON.stringify(change==='automation'?{local_automation_v1:{}}:{native_text_v1:null}));
+        r.review.records=inspectRetainedRecords(f.scope).records;r.seal();
+      }
+      assert.throws(()=>verifyRetainedReview(f.scope));
+    }finally{f.close();}
+  }
+});
+
+test('retained reviews require exact pinned proofs, complete source sets, current qualifier bytes and full coordinator evidence',async()=>{
+  for(const change of ['nativeSource','relaySourceSet','helper','coordinator','proofBytes','reviewBytes','malformed']) {
+    const f=await fixture();
+    try {
+      const r=retainedFixture(f);
+      if(change==='nativeSource')r.native.sourceSha256['gateway/session_authority.py']='0'.repeat(64);
+      if(change==='relaySourceSet')delete r.relay.sourceSha256['relay_a2a.py'];
+      if(change==='helper')r.native.helperSha256['qualify-native-retained-peer.py']='0'.repeat(64);
+      if(change==='coordinator')r.native.coordinatorIsPrimaryRecovery=false;
+      if(['nativeSource','helper','coordinator'].includes(change)){r.review.qualifications.native=r.save('native-proof.json',r.native);r.seal();}
+      if(change==='relaySourceSet'){r.review.qualifications.relay=r.save('relay-proof.json',r.relay);r.seal();}
+      if(change==='proofBytes')writeFileSync(r.review.qualifications.native.path,'{}');
+      if(change==='reviewBytes')writeFileSync(f.scope.retainedReview.path,'{}');
+      if(change==='malformed'){writeFileSync(f.scope.retainedReview.path,'PRIVATE_BAD_JSON');f.scope.retainedReview.sha256=sha(readFileSync(f.scope.retainedReview.path));}
+      assert.throws(()=>verifyRetainedReview(f.scope),change==='malformed'?/not valid JSON/:undefined);
+    }finally{f.close();}
+  }
 });
