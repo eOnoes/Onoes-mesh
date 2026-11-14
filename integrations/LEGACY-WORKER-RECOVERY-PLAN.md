@@ -819,3 +819,68 @@ Rook and live Mind remain off; live legacy holds remain. Goal ACTIVE18/21/parent
 Pending exact publication through149ac87 does not include this later candidate.
 
 Full normal-permission npm test completed exit0: 605 checks (Node 40+1+30+92+321; Python 104+17). All summaries zero failures. Proof data/offline-retained-source-proof.json binds the three executable/test sources. No live recovery performed.
+
+
+## Independent review boundary — 2026-11-14 UTC
+
+Echo reviewed the exact candidate excerpt through ordinary Relay coordination,
+not a Workroom task or implementation dispatch. The first answer is private
+metadata-only review evidence in data/offline-candidate-echo-review-20261114-readback.json.
+It correctly leaves other-app/other-PC Mesh writers unknown. It requests source
+for containment, final-boundary stability and restoration; it is NOT approval.
+Its concern that apply might not validate the retained review is resolved in the
+current source: checkControls calls verifyReplayRecords, which calls
+verifyRetainedReview before permitting reviewed retained states. This chain also
+runs in the final commit boundary. A bounded follow-up supplies that code and
+permits read-only inspection of six Mesh source files. No live gate is passed by
+this exchange, and no source change follows merely from a snippet's omissions.
+
+The native profile/socket reservations last through the recovery commit and end
+when the operator exits, including error cleanup. A released reservation does
+NOT certify containment afterward. Disabled/parked restart owners must stay that
+way through result review; no service restoration, re-enabling login entries,
+dispatch resume or Rook activation is part of apply or this candidate's approval.
+Before any separately approved restoration, recheck exact current code/config,
+retained rows and receipt states, startup owner inventory and paused dispatch;
+qualify the deployed retained-record/no-replay behavior. Unknown/new work stops
+restoration and requires reconciliation, never a blind replay. Preserve failed
+and successful evidence. A subsequent whole-PC normal-login acceptance is separate.
+
+Known endpoints/profile locks are exclusion controls for the reviewed entrypoints,
+not universal proof that every process capable of editing source is absent.
+Later boot retires preboot local processes, but does not establish a postboot quiet
+window or external-machine coverage. The owner scope/quiet-window decision and
+review of actual service/restart-owner containment remain necessary operational
+gates. No global process inventory or inferred inactivity substitutes for those
+facts, and this document does not authorize stopping any discovered process.
+
+
+### Echo source-review result: candidate NOT READY — 2026-11-14 UTC
+
+Follow-up exact marker MESH_OFFLINE_REVIEW_DETAIL_8a8610eb-3330-4395-a25b-5630e6b9cb19
+completed in Relay. Private readback:
+data/offline-candidate-echo-followup-20261114-readback.json.
+Echo explicitly retracts the earlier inspect-only validation concern after source
+inspection: apply validates the retained review through checkControls and repeats
+that chain in the final boundary. No patch is needed for that non-defect.
+
+Remaining CODE blocker: boundary emits coveredLocalWriters=true and
+uncoveredWriters=[] without a separate live containment provider proving those
+claims. The genuine native resources establish the named exclusion locks/sockets,
+not universal writer coverage. Source/Relay/Hermes/DSH observations are separate
+reads; whole-window immutability therefore depends on currently unproven writer
+containment. Owner quiet-window declarations cannot stand in for that provider.
+This finding supersedes any inference that605 passing tests establish candidate
+readiness. No live apply/activation is authorized or performed.
+
+NEXT bounded implementation: bind observed worker-service/process and reviewed
+entrypoint coverage to the actual held native-maintenance capability; unknown or
+uncovered postboot writers must deny the permit. Establish external-store/source
+stability through Workroom commit, with exact held evidence rather than another
+scope boolean. Verify positive actual disposable resources and negatives for a
+non-listening writer, restarted/replaced writer, lost observation/custody, and
+external-row/source drift between final verification and commit. Preserve existing
+leases, owner/boot/exact8-send gates, unknown historical outcomes and paused result.
+Do not broaden this into a generic process killer or silently stop live services.
+Current production worker/Rook/Mind activation and model-service maintenance stay
+off. The owner cross-app/other-PC scope answer is still unknown; Echo cannot supply it.
