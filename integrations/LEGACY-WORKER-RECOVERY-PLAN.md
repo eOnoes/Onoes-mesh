@@ -34,6 +34,29 @@ there is no verified duration estimate yet. Tailscale settings are not changed.
 
 ### Operator sequence to finalize and review before the window
 
+The first startup-preparation stage can be approved separately from downtime.
+Its exact restore snapshot is now prepared under
+data/maintenance-window-preparation-20261114/startup-restore-manifest.json.
+It contains original enabled flags, five XML copies and three byte-identical
+shortcut copies with hashes and original/parked paths. No originals were changed.
+
+Limited stage A proposal: disable only the five named root-path tasks and move
+only the three named Startup links to the manifest's Parked-startup-links folder.
+The guardian is already disabled; preserve that state. Do not stop a running task,
+app or service, restart Windows, change model state or apply recovery in this
+stage. If a task is Running, a source/hash/definition changed, a destination is
+occupied or an entry is missing, stop preparation and resolve it; do not kill a
+process or overwrite a shortcut. Inspect fresh state immediately before changes.
+
+After the separately approved suspension, capture the disabled definitions for
+the v3 scope. They cannot be honestly frozen from the still-enabled task hashes.
+Restore only entries actually changed by this stage if preparation cannot proceed,
+after confirming no intervening owner change. Use the exact original flags and
+links; never re-register saved XML blindly or enable the disabled guardian.
+The later full quiet window, named app stops, restart and local apply still need
+their own concrete approval. The existing apps may keep running during stage A;
+their automatic login/recovery starts will be suspended until restoration.
+
 | Stage | Exact work | Required result before proceeding |
 | --- | --- | --- |
 | Prepare | Recheck the named processes, active work and model status; save a fresh manual source/data backup under E:/App-Backups/ONOes-Mesh. Export the five task definitions and preserve the three exact login links and their original locations. | Backup verified; no active new worker or model cycle; custody/source identities match. A task reporting Ready alone does not prove its service is stopped. |
