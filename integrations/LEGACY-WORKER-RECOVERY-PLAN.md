@@ -496,3 +496,43 @@ not a known local interface address; physical host identity remains unverified.
 No peer was contacted. The approved publication through f2362ee was verified
 already present on GitHub; no new push was needed or performed. Newer local
 commits and this diagnostic are outside that exact publication approval.
+
+
+### Relay retained-state startup qualification — 2026-11-14
+
+Previous goal turn made progress: read-only retained diagnostics were implemented,
+595 chained checks passed and the manual E: restore verification passed. This
+turn closes an additional startup-evidence gap without weakening queue guards.
+
+`python integrations/qualify-relay-retained-startup.py` copies only installed
+Relay Python source into a disposable directory. Live configuration, credentials,
+conversation bodies and stores are not copied or opened. Actual copied Relay
+import, all three startup loops, shutdown and a second import/startup run against
+a synthetic SQLite store with DSH/Cyony A2A retrying records. Across both boots,
+old records stay identical and repeat POST-handler calls for the old IDs never
+reach the transport. Each deliberately new request reaches the transport spy
+once. No network/process attempt comes from the copied app. Three positive
+controls prove networking, subprocesses and outside-file reads are rejected.
+Source modules are hash-matched before and after the run.
+
+PASS: two startup/restart cases and three isolation controls. Initial harness
+failures are retained: blocking Windows asyncio's internal self-pipe, followed
+by restricted Windows event-loop startup timeouts. Running this isolated test
+with normal Windows permissions fixes that fixture environment; actual Relay
+was never restarted. Transport remains a spy, not a real peer.
+
+Evidence: data/relay-retained-startup-qualification.json,
+data/relay-retained-startup-child.log and data/relay-retained-startup-run.log.
+The existing 595-test Mesh source proof remains historical/unchanged app-code
+evidence; it is not represented as a new full run for this helper. Backup
+selection now explicitly includes the qualification script.
+
+NOT ESTABLISHED: full native-gateway startup, Hermes/OpenClaw backend recovery,
+current running Relay byte identity or original-writer retirement. No record
+is excluded, retried, cleaned up or retired by this result. Existing global
+queue guards, eight Workroom holds and production enrollment remain unchanged.
+Next required work: qualify the native gateway's actual unknown-admission
+recovery using an isolated real store/runtime before preparing a narrow retained
+record contract; separately establish old-writer containment. No maintenance
+window should be requested as though those conditions are already satisfied.
+Full goal stays active, local release 18/21 / parent84. No new phone check needed.

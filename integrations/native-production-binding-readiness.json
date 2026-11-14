@@ -748,5 +748,16 @@
     "privateContentEmitted": false,
     "globalQueueGuardUnchanged": true,
     "writerRetirementEstablished": false
+  },
+  "retainedRelayStartupQualification": {
+    "status": "PASS_ISOLATED_COPIED_APPLICATION",
+    "evidence": "data/relay-retained-startup-qualification.json",
+    "startupCases": 2,
+    "isolationControls": 3,
+    "liveStoreOpened": false,
+    "transportStubbed": true,
+    "nativeGatewayStartupQualified": false,
+    "writerRetirementEstablished": false,
+    "retainedExclusionsEnabled": false
   }
 }
