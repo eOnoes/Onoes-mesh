@@ -462,3 +462,37 @@ If any writer could still affect the selected workspace, keep the hold. Current
 operator global queue guard remains unchanged; no exclusion, retirement or live
 recovery is authorized by this design advice. Do not ask for a restart as though
 these outstanding conditions are already satisfied.
+
+
+### Read-only retained-record diagnostic — 2026-11-14
+
+Added `node integrations/legacy-recovery-operator.mjs diagnose`, run from
+this Mesh workspace with no overrides. It reads canonical stores without
+changing queues, approvals, holds or dispatch. Reports contain record hashes,
+state and Workroom links, with private message bodies and principal IDs omitted.
+All records remain unresolved and canRelease is false. Actual read found fifteen
+cards, twenty-one sends, two unresolved Relay records and one native unknown.
+The old DSH record shares one Workroom conversation; missing direct IDs do not
+prove a record is outside this workspace. Apply still refuses these records.
+
+Full chained regression log passes 595 tests (474 Node, 121 Python); focused
+operator tests pass 13/13. A privacy regression caught an arbitrary scope-field
+leak before the source descriptor was restricted to explicit fields. Exact
+isolated unattended hooks leave the actual person-message marker shape
+unresolved (zero resolution calls); synthetic automation controls resolve.
+This is method-level qualification, not full startup or old-writer retirement.
+Evidence: data/operator-diagnostic-full-proof-20261114.json,
+data/operator-retained-record-diagnostic-20261114.json and
+data/operator-unattended-hook-qualification-20261114.json.
+
+Owner reconfirmed Workroom jobs used only Echo/DSH on this desktop. That is
+selected-job scope evidence, not proof about every external app or retired
+writer. Current global queue guards remain unchanged. Next: qualify a narrow
+retained-record boundary and separate writer containment before any live
+recovery/activation; no restart or model maintenance is authorized here.
+
+Correction to earlier route wording: the Cyony address is non-loopback and
+not a known local interface address; physical host identity remains unverified.
+No peer was contacted. The approved publication through f2362ee was verified
+already present on GitHub; no new push was needed or performed. Newer local
+commits and this diagnostic are outside that exact publication approval.

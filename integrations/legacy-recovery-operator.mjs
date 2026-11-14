@@ -2,7 +2,7 @@
 // The scope hash and owner-record hash are supplied out of band after review.
 import { createHash } from 'node:crypto';
 import { lstatSync, realpathSync, readFileSync, existsSync, writeFileSync } from 'node:fs';
-import { resolve, isAbsolute } from 'node:path';
+import { resolve, isAbsolute, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
@@ -61,6 +61,68 @@ export function inspectReplayQueues({ relay, hermes }) {
     relay: readonly(relay.path, relay.identity, db => db.prepare('SELECT state,COUNT(*) AS count FROM outbox GROUP BY state ORDER BY state').all()),
     hermes: readonly(hermes.path, hermes.identity, db => db.prepare('SELECT status,COUNT(*) AS count FROM session_admissions GROUP BY status ORDER BY status').all()),
   };
+}
+
+// A review witness only. Missing Workroom links never establish workspace scope,
+// non-replay or writer retirement, and this report cannot create a permit.
+export function inspectRetainedRecords(scope) {
+  const workroom = readonly(scope.databasePath, scope.databaseIdentity, db => ({
+    taskCount: db.prepare('SELECT COUNT(*) AS n FROM tasks').get().n,
+    sends: db.prepare('SELECT id,taskId,agentId,conversationId FROM workroom_sends').all(),
+    bindings: db.prepare('SELECT sendId,taskId,sessionId,admissionId FROM workroom_local_sessions').all(),
+  }));
+  const tasks = values => [...new Set(values.filter(Boolean))].sort();
+  const recordHash = row => {
+    requireValue(Object.values(row).every(value => typeof value !== 'number' || Number.isFinite(value) && Math.abs(value) <= Number.MAX_SAFE_INTEGER),
+      'Queue record has unclassifiable numeric metadata.');
+    return fingerprint(row);
+  };
+  const unresolved = (source, table, predicate) => readonly(source.path, source.identity, db => {
+    const rows = db.prepare(`SELECT * FROM ${table} WHERE ${predicate} LIMIT 257`).all();
+    requireValue(rows.length <= 256, 'Diagnostic record limit exceeded; use a separately scoped review.');
+    return { rows, schemaFingerprint: fingerprint(db.prepare(`PRAGMA table_info(${table})`).all()) };
+  });
+  const relay = unresolved(scope.relay, 'outbox', "state IS NULL OR state NOT IN ('accepted','failed','dead')");
+  const hermes = unresolved(scope.hermes, 'session_admissions', "status IS NULL OR status!='terminal'");
+  const records = relay.rows.map(row => ({
+    source: 'relay_outbox', recordId: row.idem_key, recordFingerprint: recordHash(row),
+    agentId: row.agent_id, state: row.state,
+    directWorkroomTaskIds: tasks(workroom.sends.filter(send => send.id === row.idem_key).map(send => send.taskId)),
+    sharedConversationTaskIds: tasks(workroom.sends.filter(send => send.conversationId === row.session_id).map(send => send.taskId)),
+    decision: 'unresolved_do_not_release',
+  }));
+  for (const row of hermes.rows) {
+    let markerTypes;
+    try {
+      const payload = JSON.parse(row.payload_json), native = payload?.native_text_v1;
+      requireValue(payload && typeof payload === 'object' && !Array.isArray(payload) &&
+        (native == null || typeof native === 'object' && !Array.isArray(native)), 'Unclassified admission envelope.');
+      markerTypes = {
+        localAutomation: Object.hasOwn(payload, 'local_automation_v1'), kanbanCard: Object.hasOwn(payload, 'kanban_card_v1'),
+        nativeAutomation: Boolean(native && Object.hasOwn(native, 'automation')),
+        webhookDelivery: Boolean(native && Object.hasOwn(native, 'webhook_delivery')),
+      };
+    } catch { markerTypes = 'unclassified_payload'; }
+    const principal = row.principal_id || '';
+    const principalClass = principal.startsWith('messaging:telegram:') ? 'telegram' : principal.startsWith('messaging:') ? 'messaging'
+      : principal.startsWith('automation:') ? 'automation' : principal === 'api' ? 'api' : 'unclassified';
+    records.push({ source: 'hermes_admission', recordId: row.admission_id, recordFingerprint: recordHash(row),
+      state: row.status, principalClass, automationMarkers: markerTypes,
+      directWorkroomTaskIds: tasks(workroom.bindings.filter(binding => binding.admissionId === row.admission_id).map(binding => binding.taskId)),
+      sharedConversationTaskIds: tasks([...workroom.sends.filter(send => send.conversationId === row.target_session_id).map(send => send.taskId),
+        ...workroom.bindings.filter(binding => binding.sessionId === row.target_session_id).map(binding => binding.taskId)]),
+      decision: 'unresolved_do_not_release' });
+  }
+  return { schema: 'mesh/retained-record-diagnostic/v1', observedAt: new Date().toISOString(), mode: 'read_only',
+    taskCount: workroom.taskCount, workroomSendCount: workroom.sends.length, records,
+    sources: {
+      workroom: { path: scope.databasePath, identity: scope.databaseIdentity },
+      relay: { path: scope.relay.path, identity: scope.relay.identity, schemaFingerprint: relay.schemaFingerprint },
+      hermes: { path: scope.hermes.path, identity: scope.hermes.identity, schemaFingerprint: hermes.schemaFingerprint },
+    },
+    canRelease: false, limitations: ['Separate read transactions; not a held commit fence.',
+      'ID and conversation links do not establish project scope, non-replay or writer retirement.',
+      'No route, runtime/startup or worker-containment qualification is supplied by this report.'] };
 }
 
 export function verifyReplayRecords(scope, targets) {
@@ -254,7 +316,7 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
   let controls;
   try { checkControls(plan.targets); controls = { status: 'verified' }; }
   catch (error) { controls = { status: 'blocked', reason: error.message }; }
-  if (action === 'inspect') return { ...assessment, controls, canRelease: false };
+  if (action === 'inspect') return { ...assessment, controls, retainedRecords: inspectRetainedRecords(scope), canRelease: false };
   requireValue(assessment.status === 'ready_for_operator_review' && controls.status === 'verified',
     'Recovery remains blocked: ' + [...assessment.reasons, controls.reason].filter(Boolean).join('; '));
   const authorize = await createLegacyAuthorizationReader({ recordPath: authorizationPath, expectedSha256: authorizationSha256,
@@ -287,9 +349,22 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
 
 async function main() {
   const [action, scopePath, scopeSha256, planPath, authorizationPath, authorizationSha256, ...extra] = process.argv.slice(2);
+  if (action === 'diagnose') {
+    requireValue(process.argv.length === 3, 'Use diagnose with no scope, overrides or approval arguments.');
+    const workspace = realpathSync.native(process.cwd());
+    requireValue(key(workspace) === key(realpathSync.native(resolve(dirname(fileURLToPath(import.meta.url)), '..'))),
+      'Run the read-only diagnostic from its Mesh workspace.');
+    const databasePath = resolve(workspace, 'data/workroom-preview/tasks.sqlite');
+    const relayPath = resolve('D:/Dev/Onoes-Relay/.private/relay.sqlite3'), hermesPath = resolve(homedir(), 'AppData/Local/hermes/state.db');
+    const report = inspectRetainedRecords({ databasePath, databaseIdentity: databaseFileIdentity(databasePath),
+      relay: { path: relayPath, identity: databaseFileIdentity(relayPath) },
+      hermes: { path: hermesPath, identity: databaseFileIdentity(hermesPath) } });
+    process.stdout.write(JSON.stringify(report) + '\n');
+    return;
+  }
   requireValue(action && scopePath && scopeSha256 && planPath && !extra.length &&
     (action === 'apply' ? authorizationPath && authorizationSha256 : !authorizationPath && !authorizationSha256),
-  'Usage: <prepare|inspect|apply> <absolute-scope.json> <reviewed-scope-sha256> <plan.json> [<absolute-owner-record.json> <reviewed-owner-sha256>]. No pause, resume or restart action exists.');
+  'Usage: diagnose (read-only), or <prepare|inspect|apply> <absolute-scope.json> <reviewed-scope-sha256> <plan.json> [<absolute-owner-record.json> <reviewed-owner-sha256>]. No pause, resume or restart action exists.');
   const result = await runLegacyOperator({ action, scopePath, scopeSha256, planPath, authorizationPath, authorizationSha256 });
   process.stdout.write(JSON.stringify(result) + '\n');
 }

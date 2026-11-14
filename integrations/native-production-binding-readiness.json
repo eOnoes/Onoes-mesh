@@ -738,5 +738,15 @@
     "accepted": false,
     "evidence": "data/inprocess-native-fence-review-assessment-20261113.json",
     "next": "Trace submitted prompt, exact native run/result and Relay display association; do not infer routing cause or retry until mismatch is understood"
+  },
+  "retainedRecordDiagnostic": {
+    "status": "read_only_locally_qualified_not_release_authority",
+    "passed": 595,
+    "evidence": "data/operator-diagnostic-full-proof-20261114.json",
+    "actualRecords": 3,
+    "canRelease": false,
+    "privateContentEmitted": false,
+    "globalQueueGuardUnchanged": true,
+    "writerRetirementEstablished": false
   }
 }

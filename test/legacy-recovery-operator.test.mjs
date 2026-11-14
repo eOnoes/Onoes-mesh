@@ -4,7 +4,7 @@ import { mkdtempSync, realpathSync, writeFileSync, readFileSync, mkdirSync, exis
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { createServer } from 'node:net';
 import { openTaskStore } from '../lib/task-store.mjs';
@@ -13,7 +13,7 @@ import { createDispatchBarrier } from '../lib/workroom-dispatch-barrier.mjs';
 import { nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { legacyRecoveryFingerprint as hash } from '../lib/workroom-legacy-evidence.mjs';
 import { readLegacyRows } from '../integrations/legacy-recovery-plan.mjs';
-import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, verifyReplayRecords, verifyStartupControls, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
+import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, inspectRetainedRecords, verifyReplayRecords, verifyStartupControls, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
 
 const test = process.platform === 'win32' && process.arch === 'x64' ? nodeTest : nodeTest.skip;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -270,5 +270,60 @@ test('the reviewed DSH snapshot rejects changes outside selected receipts instea
     f.tasks.push({ id: 'unreviewed-task', contextId: 'elsewhere', status: { state: 2 }, history: [] });
     writeFileSync(f.scope.dsh.path, JSON.stringify(f.tasks));
     assert.throws(() => verifyReplayRecords(f.scope, f.targets()), /reviewed hash/);
+  } finally { f.close(); }
+});
+
+test('retained-record diagnostics show exact links and private row digests without exposing content or deciding writer scope', async () => {
+  const f = await fixture();
+  try {
+    f.scope.relay.extraSecret = 'SCOPE_SECRET_DO_NOT_EMIT';
+    f.relay.prepare("INSERT INTO outbox VALUES('old-delivery','echo','fixture-session','retrying',NULL,?)").run('PRIVATE_BODY_DO_NOT_EMIT');
+    f.relay.prepare("UPDATE outbox SET state='retrying' WHERE idem_key='send-0'").run();
+    f.hermes.exec('ALTER TABLE session_admissions ADD COLUMN principal_id TEXT;');
+    f.hermes.prepare(`INSERT INTO session_admissions(admission_id,request_id,target_session_id,payload_digest,status,outcome,owner_epoch,generation,payload_json,principal_id)
+      VALUES('unbound-admission','old-native','another-session','digest','unknown',NULL,1,1,?,?)`)
+      .run(JSON.stringify({ native_text_v1: { text: 'PRIVATE_BODY_DO_NOT_EMIT' } }), 'messaging:telegram:PRIVATE_PRINCIPAL_DO_NOT_EMIT');
+    const snapshot = () => hash({ sends: f.db.prepare('SELECT * FROM workroom_sends').all(), relay: f.relay.prepare('SELECT * FROM outbox').all(),
+      native: f.hermes.prepare('SELECT * FROM session_admissions').all(), tables: f.db.prepare("SELECT name FROM sqlite_master ORDER BY name").all() });
+    const before = snapshot(), report = inspectRetainedRecords(f.scope), serialized = JSON.stringify(report);
+    assert.equal(snapshot(), before);
+    assert.equal(report.records.length, 3); assert.equal(report.canRelease, false);
+    for (const privateValue of ['PRIVATE_BODY_DO_NOT_EMIT', 'PRIVATE_PRINCIPAL_DO_NOT_EMIT', 'SCOPE_SECRET_DO_NOT_EMIT'])
+      assert.ok(!serialized.includes(privateValue), 'Diagnostic exposed ' + privateValue);
+    const old = report.records.find(record => record.recordId === 'old-delivery');
+    assert.deepEqual(old.directWorkroomTaskIds, []); assert.equal(old.sharedConversationTaskIds.length, 1);
+    const linked = report.records.find(record => record.recordId === 'send-0'); assert.equal(linked.directWorkroomTaskIds.length, 1);
+    const native = report.records.find(record => record.recordId === 'unbound-admission');
+    assert.equal(native.principalClass, 'telegram'); assert.deepEqual(native.directWorkroomTaskIds, []);
+    for (const record of report.records) {
+      assert.match(record.recordFingerprint, /^[a-f0-9]{64}$/); assert.equal(record.decision, 'unresolved_do_not_release');
+    }
+    f.relay.prepare("UPDATE outbox SET content='Changed private request' WHERE idem_key='old-delivery'").run();
+    assert.notEqual(inspectRetainedRecords(f.scope).records.find(record => record.recordId === 'old-delivery').recordFingerprint, old.recordFingerprint);
+  } finally { f.close(); }
+});
+
+test('inspect explains unmatched records while the same apply path still refuses them', async () => {
+  const f = await fixture();
+  try {
+    await runLegacyOperator({ ...f.options, action: 'prepare' }, f.runtime); f.boot();
+    f.relay.prepare("INSERT INTO outbox VALUES('old-delivery','echo','elsewhere','retrying',NULL,'Private fixture')").run();
+    const result = await runLegacyOperator({ ...f.options, action: 'inspect' }, f.runtime);
+    assert.equal(result.controls.status, 'blocked'); assert.equal(result.canRelease, false);
+    assert.equal(result.retainedRecords.records[0].recordId, 'old-delivery');
+    await assert.rejects(runLegacyOperator({ ...f.options, action: 'apply', ...f.authorize() }, f.runtime), /unresolved queued/);
+    assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n, 0);
+  } finally { f.close(); }
+});
+
+test('diagnose refuses file overrides and an unrelated current directory before opening native data', async () => {
+  const f = await fixture();
+  try {
+    const script = resolve('integrations/legacy-recovery-operator.mjs');
+    const override = spawnSync(process.execPath, [script, 'diagnose', '--ignore-holds'], { cwd: f.dir, windowsHide: true, encoding: 'utf8' });
+    assert.equal(override.status, 1); assert.match(override.stderr, /no scope, overrides or approval/);
+    const elsewhere = spawnSync(process.execPath, [script, 'diagnose'], { cwd: f.dir, windowsHide: true, encoding: 'utf8' });
+    assert.equal(elsewhere.status, 1); assert.match(elsewhere.stderr, /from its Mesh workspace/);
+    assert.equal(override.stdout, ''); assert.equal(elsewhere.stdout, '');
   } finally { f.close(); }
 });
