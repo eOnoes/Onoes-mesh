@@ -9,7 +9,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { homedir } from 'node:os';
 import { databaseFileIdentity } from '../lib/database-identity.mjs';
 import { createDispatchBarrier, assertDispatchHold } from '../lib/workroom-dispatch-barrier.mjs';
-import { holdWindowsNativeMaintenance, assertNativeMaintenanceHold } from '../lib/windows-native-maintenance.mjs';
+import { holdWindowsNativeMaintenance, assertNativeMaintenanceHold, holdWindowsFileReadBarrier, assertWindowsFileReadBarrier } from '../lib/windows-native-maintenance.mjs';
 import { createLegacyAuthorizationReader } from '../lib/workroom-legacy-authorization.mjs';
 import { issueLegacyRecoveryPermit, createLegacyRecoveryStore } from '../lib/workroom-legacy-recovery.mjs';
 import { makeLegacyRecoveryPlan, assessLegacyRecovery, legacyRecoveryFingerprint as fingerprint } from '../lib/workroom-legacy-evidence.mjs';
@@ -432,12 +432,21 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
   const authorize = async requestedPlanHash => checkOwner(requestedPlanHash);
   Object.defineProperty(authorize, 'checkSync', { value: checkOwner });
   await authorize(plan.planHash);
-  let nativeLease, meshLease, db;
+  // Protect every pinned source/snapshot plus existing external store sidecars.
+  // Workroom remains writable for its own atomic administrative transaction.
+  const protectedPaths=[...Object.values(sourceFiles),scope.relay.path,scope.hermes.path,
+    ...[scope.relay.path,scope.hermes.path].flatMap(path=>['-wal','-shm','-journal'].map(suffix=>path+suffix).filter(existsSync))];
+  const protectedFiles=[...new Map(protectedPaths.map(path=>{
+    const canonical=realpathSync.native(path);return [key(canonical),canonical];
+  })).values()];
+  let nativeLease, fileLease, meshLease, db;
   try {
     nativeLease = await holdWindowsNativeMaintenance(scope.nativeResources);
+    fileLease = await holdWindowsFileReadBarrier(protectedFiles);
     db = new DatabaseSync(scope.databasePath);
     meshLease = createDispatchBarrier(db).hold();
     const boundary = (_plan, current) => {
+      assertWindowsFileReadBarrier(fileLease,protectedFiles);
       checkControls(_plan.targets);
       for (const [name, path] of Object.entries(sourceFiles)) {
         localFile(path);
@@ -445,6 +454,7 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
       }
       assertDispatchHold(meshLease, _plan, db);
       assertNativeMaintenanceHold(nativeLease, _plan);
+      assertWindowsFileReadBarrier(fileLease,protectedFiles);
       return { schema: 'mesh/legacy-local-fence/v1', planHash: _plan.planHash, host: current.host,
         bootedAt: current.bootedAt, machineIdentity: current.machineIdentity, sources: current.sources,
         dispatchPaused: true, coveredLocalWriters: true, activeWriterCount: 0, replayPrevented: true, uncoveredWriters: [] };
@@ -454,7 +464,7 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
     return { ...await createLegacyRecoveryStore(db).commit(permit), dispatchRemainsPaused: true };
   } finally {
     try { meshLease?.release(); }
-    finally { try { db?.close(); } finally { nativeLease?.release(); } }
+    finally { try { db?.close(); } finally { try { fileLease?.release(); } finally { nativeLease?.release(); } } }
   }
 }
 

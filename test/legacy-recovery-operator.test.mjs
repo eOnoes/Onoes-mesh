@@ -1,6 +1,6 @@
 import nodeTest from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, realpathSync, writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
+import { mkdtempSync, realpathSync, writeFileSync, readFileSync, mkdirSync, existsSync, openSync, closeSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { join, resolve, relative } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -86,7 +86,17 @@ async function fixture() {
     sources: { ...Object.fromEntries(Object.entries(sourceFiles).map(([name, path]) => [name, sha(readFileSync(path))])),
       nativeResourceScope: nativeResourceFingerprint(scope.nativeResources) }, ...readLegacyRows(databasePath, bindings.map(b => b.sendId)),
   }) };
-  return { dir, scope, options, db, relay, hermes, barrier, runtime, taskObservations, tasks,
+  // An offline fixture must not keep external writable SQLite handles open.
+  // Every inspection opens read-only; deliberate mutations open/close explicitly.
+  relay.close();hermes.close();
+  const external=path=>({
+    prepare(sql){return Object.fromEntries(['run','get','all'].map(method=>[method,(...args)=>{
+      const handle=new DatabaseSync(path,{readOnly:method!=='run'});
+      try{return handle.prepare(sql)[method](...args);}finally{handle.close();}
+    }]));},
+    exec(sql){const handle=new DatabaseSync(path);try{return handle.exec(sql);}finally{handle.close();}},
+  });
+  return { dir, scope, options, db, relay:external(relayPath), hermes:external(hermesPath), barrier, runtime, taskObservations, tasks,
     targets: () => readLegacyRows(databasePath, bindings.map(b => b.sendId)).targets,
     boot() { afterBoot = true; },
     authorize() {
@@ -95,7 +105,7 @@ async function fixture() {
         planHash: plan.planHash, host: 'SYNTHETIC', bootedAt: laterBoot, authorizedAt: new Date(Date.now() - 1000).toISOString(), expiresAt: new Date(Date.now() + 60000).toISOString() }));
       return { authorizationPath: path, authorizationSha256: sha(readFileSync(path)) };
     },
-    close() { db.close(); store.close(); relay.close(); hermes.close(); } };
+    close() { db.close(); store.close(); } };
 }
 
 test('the assembled operator prepares, denies same-boot apply, commits only after the fixture boot and exact approval, and stays paused', async () => {
@@ -180,7 +190,7 @@ test('the final composed guard rolls back when replay becomes uncertain or its e
       return structuredClone(f.taskObservations);
     } };
     await assert.rejects(runLegacyOperator({ ...f.options, action: 'apply', ...f.authorize() }, runtime),
-      corruption === 'relayShortcut' ? /login shortcut remains active/ : corruption === 'dshSnapshot' ? /reviewed hash/ : corruption === 'echoText' ? /Echo request text/ : /unresolved native/);
+      corruption === 'relayShortcut' ? /login shortcut remains active/ : corruption === 'dshSnapshot' ? /EACCES|EPERM|EBUSY/ : /readonly database/);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n, 0);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n, 0);
     assert.equal(f.barrier.status().state, 'paused'); assert.equal(f.barrier.status().held, false);
@@ -521,4 +531,29 @@ test('retained row or proof drift at the final offline boundary rolls back the e
       assert.equal(f.barrier.status().state,'paused');assert.equal(f.barrier.status().held,false);
     }finally{f.close();}
   }
+});
+
+
+test('offline apply refuses an existing external writable handle without releasing the original hold',async()=>{
+  const f=await fixture();let writer;
+  try{
+    await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();writer=openSync(f.scope.relay.path,'r+');
+    await assert.rejects(runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime),/File read barrier refused/);
+    assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
+    assert.equal(f.barrier.status().state,'paused');assert.equal(f.barrier.status().held,false);
+    closeSync(writer);writer=undefined;
+    const result=await runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime);assert.equal(result.dispatchRemainsPaused,true);
+  }finally{if(writer!==undefined)closeSync(writer);f.close();}
+});
+
+test('reviewed source cannot be replaced by a late writer during the actual recovery commit path',async()=>{
+  const f=await fixture();
+  try{
+    const source=join(f.dir,'pinned-source.mjs');writeFileSync(source,'Frozen module');f.scope.additionalSources={disposablePinnedSource:source};
+    writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));
+    await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();let denials=0,checks=0;
+    const runtime={...f.runtime,startupReader(){if(++checks>=3){assert.throws(()=>writeFileSync(source,'Late change'),/EACCES|EPERM|EBUSY/);denials++;}return structuredClone(f.taskObservations);}};
+    const result=await runLegacyOperator({...f.options,action:'apply',...f.authorize()},runtime);assert.equal(result.dispatchRemainsPaused,true);assert.ok(denials>=2);
+    assert.equal(readFileSync(source,'utf8'),'Frozen module');writeFileSync(source,'Writable after the operator returns');
+  }finally{f.close();}
 });

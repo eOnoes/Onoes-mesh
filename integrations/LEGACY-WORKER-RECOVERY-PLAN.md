@@ -884,3 +884,48 @@ leases, owner/boot/exact8-send gates, unknown historical outcomes and paused res
 Do not broaden this into a generic process killer or silently stop live services.
 Current production worker/Rook/Mind activation and model-service maintenance stay
 off. The owner cross-app/other-PC scope answer is still unknown; Echo cannot supply it.
+
+
+## Held file protections through recovery commit — 2026-11-14 UTC
+
+The operator now acquires genuine same-process Windows read-only handles for all
+pinned sources/snapshots, Relay/Hermes database files and existing WAL/SHM/journal
+sidecars. FILE_SHARE_READ excludes write/delete/replacement sharing; no ACL,
+credential or permission is changed. Acquisition refuses an existing writer.
+Canonical paths are deduplicated before acquisition. Private WeakMap custody,
+file identities, non-inheritance, process/thread identity and exact scope are
+checked at both sides of the final verification. Handles stay open through the
+Workroom transaction; cleanup occurs afterward or with process exit. Neither a
+copied JSON witness nor a released handle is an authentic barrier.
+
+This protects LISTED EXISTING FILES ONLY. It is not whole-worker retirement or
+complete writer containment; unlisted/new paths and missing sidecars are not
+reserved. The broader coverage assertion identified by Echo remains an OPEN code
+readiness gate and must not be treated as proved by this component. No live apply,
+service restart, model load, startup-control change or activation occurred.
+
+Real disposable tests: Python direct writes/truncate/delete/rename are denied;
+a non-listening existing writer is refused without being stopped; partial holds
+release; readonly SQL remains readable while attempted writes fail; reviewed
+source remains stable through a separate SQLite commit. The composed operator
+refuses an existing external writer, prevents late source writes through its
+actual commit path, preserves originals and remains paused. Abrupt exit of the
+owned child rolls back its transaction and releases profile/socket/file resources.
+External test-store handles now open/close per operation instead of keeping
+synthetic writers alive across an offline trial. No test-only runtime bypass was
+added to the CLI. Some old mutation tests now fail earlier at the kernel/SQLite
+readonly denial, with unchanged rollback assertions. The initial red log retains
+short-temp-path/duplicate-path fixture errors and stricter refusal-message changes.
+
+Full npm test:611 passed, exit0 (Node40+1+30+92+327; Python104+17).
+Focused native/operator suite:33 passed before adding abrupt-exit file coverage;
+the full611 run includes that added assertion. Proof binds four exact source/test
+files: data/windows-file-barrier-proof.json. Other startup qualifications remain
+separate. Microsoft sharing semantics reference:
+https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
+
+Next: actual writer/service containment evidence and uncovered-entrypoint denial,
+including whole-window source/store stability beyond the listed existing files.
+The owner cross-app/other-PC scope and approved maintenance remain unresolved.
+Keep original eight holds, unknown outcomes, paused dispatch, Rook/Mind-off state
+and the full objective intact. Local release remains18/21/parent84.
