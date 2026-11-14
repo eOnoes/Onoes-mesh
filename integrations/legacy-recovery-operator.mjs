@@ -9,7 +9,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { homedir } from 'node:os';
 import { databaseFileIdentity } from '../lib/database-identity.mjs';
 import { createDispatchBarrier, assertDispatchHold } from '../lib/workroom-dispatch-barrier.mjs';
-import { holdWindowsNativeMaintenance, assertNativeMaintenanceHold, holdWindowsFileReadBarrier, assertWindowsFileReadBarrier } from '../lib/windows-native-maintenance.mjs';
+import { holdWindowsNativeMaintenance, assertNativeMaintenanceHold, holdWindowsFileReadBarrier, assertWindowsFileReadBarrier, productionWorkerRuntimeNames, nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { createLegacyAuthorizationReader } from '../lib/workroom-legacy-authorization.mjs';
 import { issueLegacyRecoveryPermit, createLegacyRecoveryStore } from '../lib/workroom-legacy-recovery.mjs';
 import { makeLegacyRecoveryPlan, assessLegacyRecovery, legacyRecoveryFingerprint as fingerprint } from '../lib/workroom-legacy-evidence.mjs';
@@ -206,8 +206,8 @@ export function verifyReplayRecords(scope, targets) {
     scope.bindings.filter(t => t.agentId === 'dsh').length === 2, 'The reviewed six Echo / two DSH route is required.');
   let retained = null;
   if (scope.retainedReview) {
-    requireValue(scope.schema === 'mesh/legacy-operator-scope/v2' && scope.containment === 'worker_services_offline',
-      'Retained records require the reviewed offline v2 scope.');
+    requireValue(scope.schema === 'mesh/legacy-operator-scope/v3' && scope.containment === 'worker_services_offline',
+      'Retained records require the reviewed offline v3 scope.');
     retained = verifyRetainedReview(scope);
   }
   // Workroom stores the rendered delivery separately from the user's short text.
@@ -308,8 +308,8 @@ export function verifyStartupControls(scope, observations) {
 
 export function loadOperatorScope(scopePath, expectedSha256) {
   const scope = JSON.parse(readPinned(scopePath, expectedSha256));
-  requireValue(scope.schema === 'mesh/legacy-operator-scope/v2' && scope.containment === 'worker_services_offline' && scope.owner === 'Eddie' &&
-    scope.locality === 'desktop_echo_dsh_only', 'Reviewed owner, desktop-only scope and offline v2 containment are required.');
+  requireValue(scope.schema === 'mesh/legacy-operator-scope/v3' && scope.containment === 'worker_services_offline' && scope.owner === 'Eddie' &&
+    scope.locality === 'desktop_echo_dsh_only', 'Reviewed owner, desktop-only scope and offline v3 containment are required.');
   requireValue(key(realpathSync.native(scope.workspace)) === key(resolve(scope.workspace)) &&
     key(realpathSync.native(process.cwd())) === key(scope.workspace), 'Run from the exact reviewed Mesh workspace.');
   localFile(scope.databasePath);
@@ -317,6 +317,8 @@ export function loadOperatorScope(scopePath, expectedSha256) {
     'The original Workroom database identity is required.');
   requireValue(digest(scope.relay?.identity) && digest(scope.hermes?.identity), 'Replay database identities are required.');
   requireValue(digest(scope.dsh?.sha256), 'A separately reviewed DSH task-store snapshot hash is required.');
+  requireValue(Array.isArray(scope.nativeResources?.workerRuntimeNames) && scope.nativeResources.workerRuntimeNames.length>0, 'The reviewed worker runtime class set is required.');
+  nativeResourceFingerprint(scope.nativeResources);
   requireValue(same(scope.startup.tasks.map(t => t.name).sort(), ['Hermes_Gateway', 'Onoes Deep Watchdog'].sort()) &&
     new Set(scope.startup.tasks.map(t => t.path + t.name)).size === 2 &&
     new Set(scope.startup.shortcuts.map(t => key(resolve(t.original)))).size === 3,
@@ -373,6 +375,7 @@ export function verifyDeploymentScope(scope) {
     same(scope.nativeResources.endpoints?.map(JSON.stringify).sort(),
       [3081, 4123, 8642, 8787].flatMap(port => [['127.0.0.1', port], ['::1', port]]).map(JSON.stringify).sort()),
   'The full reviewed native profile and eight worker loopback endpoints are required.');
+  requireValue(productionWorkerRuntimeNames.every(name=>scope.nativeResources.workerRuntimeNames.includes(name)), 'The complete deployed worker runtime class set is required.');
   const startup = at('AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup');
   requireValue(scope.startup.shortcuts.every(item => exact(item.original, resolve(startup, item.original.split(/[\\/]/).at(-1)))) &&
     scope.startup.tasks.every(task => task.path === '\\'), 'The reviewed login and scheduled-task locations are required.');
@@ -421,12 +424,10 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
     planHash: plan.planHash, host: observation.host, bootedAt: observation.bootedAt });
   const checkOwner = requestedPlanHash => {
     const owner = baseAuthorize.checkSync(requestedPlanHash);
-    if (scope.retainedReview) {
-      const record = readPinnedObject({ path: authorizationPath, sha256: authorizationSha256 });
-      requireValue(record.maintenanceMode === 'worker_services_offline' && record.quietWorkspaceConfirmed === true &&
-        record.retainedReviewSha256 === scope.retainedReview.sha256,
-      'Exact owner quiet-window authority for this retained review is required.');
-    }
+    const record = readPinnedObject({ path: authorizationPath, sha256: authorizationSha256 });
+    requireValue(record.maintenanceMode === 'worker_services_offline' && record.quietWorkspaceConfirmed === true &&
+      (!scope.retainedReview || record.retainedReviewSha256 === scope.retainedReview.sha256),
+    'Exact owner quiet-window authority for this scope and retained review is required.');
     return owner;
   };
   const authorize = async requestedPlanHash => checkOwner(requestedPlanHash);
@@ -453,11 +454,16 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
         requireValue(sha(readFileSync(path)) === current.sources[name], 'A reviewed source changed during recovery.');
       }
       assertDispatchHold(meshLease, _plan, db);
-      assertNativeMaintenanceHold(nativeLease, _plan);
+      const native = assertNativeMaintenanceHold(nativeLease, _plan);
+      const runtime = native.workerRuntimeObservation;
+      requireValue(runtime?.scope === 'reviewed_runtime_names_only' && runtime.outsideRuntimeCount === 0,
+        'Current worker runtime coverage is not observed.');
       assertWindowsFileReadBarrier(fileLease,protectedFiles);
-      return { schema: 'mesh/legacy-local-fence/v1', planHash: _plan.planHash, host: current.host,
+      return { schema: 'mesh/legacy-local-fence/v2', planHash: _plan.planHash, host: current.host,
         bootedAt: current.bootedAt, machineIdentity: current.machineIdentity, sources: current.sources,
-        dispatchPaused: true, coveredLocalWriters: true, activeWriterCount: 0, replayPrevented: true, uncoveredWriters: [] };
+        coverageScope: 'reviewed_runtime_entrypoints_only', workerRuntimeObservation: runtime,
+        dispatchPaused: true, observedRuntimeEntrypointsClear: runtime.outsideRuntimeCount === 0,
+        observedOutsideRuntimeCount: runtime.outsideRuntimeCount, replayPrevented: true };
     };
     const permit = await issueLegacyRecoveryPermit({ plan, authorize, observe, verifyFence: boundary,
       commitGuard: (p, o) => ({ owner: authorize.checkSync(p.planHash), boundary: boundary(p, o) }), meshLease, nativeLease });

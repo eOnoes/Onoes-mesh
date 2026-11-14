@@ -3,9 +3,9 @@
 ## Current release status - 2026-11-14 UTC
 
 First local release: **18/21 complete**. This is a private release candidate.
-Recovery baseline: **7cdc2b5**; current file-barrier hardening is recorded below.
-Latest full local gate: **611 checks passed (490 Node +121 Python), exit0**.
-The proof binds the tested recovery sources: data/windows-file-barrier-proof.json.
+Recovery baseline: **c438166**; current runtime-observation candidate is recorded below.
+Latest full local gate: **618 checks passed (497 Node +121 Python), exit0**.
+The proof binds the tested recovery sources: data/worker-runtime-cleanup-proof.json.
 The latest verified milestone backup contains 15 cards and passed all seven restore
 checks; exact archived recovery source hashes also match the test proof. See
 E:/App-Backups/ONOes-Mesh/LATEST.json for the authoritative backup location.
@@ -13,7 +13,7 @@ E:/App-Backups/ONOes-Mesh/LATEST.json for the authoritative backup location.
 | Local release lane | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Owner confirmed card create/edit/drag/reload, themes, resume, rotation/draft, offline reconnect and starting the scoped team from phone. | Complete a useful production team workflow without operator rescue after enrollment; preserve prior phone checks. |
-| C4 final release/custody/owner acceptance | Local 611-check gate; verified source/data backup; candidate recovery and launch-custody tests. | Qualify the actual deployed release and exact service custody, then obtain owner acceptance. Candidate tests do not qualify a running deployment. |
+| C4 final release/custody/owner acceptance | Local 618-check gate; verified source/data backup; candidate recovery and launch-custody tests. | Qualify the actual deployed release and exact service custody, then obtain owner acceptance. Candidate tests do not qualify a running deployment. |
 | D1-D4 main-PC Nemotron | Owner phone load/chat/unload plus backend receipts and loaded Inference/Control runtime/GPU agreement; idle fix installed and exact-source qualification passed. | Accepted for this first main-PC profile. Other profiles and machines remain later. |
 | E2 bounded production team | Isolated file-and-terminal build plus independent Nims review passed, with original transcript/test evidence and reopened-board result. | Resolve legacy holds through reviewed maintenance, then enroll and qualify the actual production route. |
 
@@ -31,26 +31,29 @@ used only Echo/DSH on this desktop; other-app/other-PC Mesh writers remain a sep
 pending scope question. Mock cards do not answer it.
 
 The offline recovery candidate is implemented and locally tested, not ready for
-live recovery. Independent review found an unresolved containment-evidence gap.
-It requires a reviewed v2 offline scope, later same-machine boot, exact owner
-plan/review-bound quiet-window authorization, paused/drained Mesh lease, native
-profile lock, eight exclusive worker sockets, two disabled restart tasks and three
-parked login shortcuts including Relay. A retained review can cover only the exact
-three source-qualified rows; it never grants authority alone. Final source/row/
-control drift denies or rolls back. Successful disposable recovery records unknown
-historical outcomes separately and stays paused, without retry or fake retirement.
-No real approved retained review, v2 scope or quiet-window authorization exists.
-Echo's completed source review confirms apply revalidates retained records, but
-blocks candidate readiness: the boundary reports complete writer coverage without
-a live containment provider establishing that claim. Known reserved endpoints and
-parked startup entries do not prove every possible writer is contained. External
-store/file stability through commit depends on that still-unproven coverage.
-Next code slice must bind actual containment evidence to the final private permit
-and refuse unknown coverage; do not satisfy this with another JSON declaration.
-No live apply is permitted by the605-test pass or this review.
+live recovery. It now requires a reviewed v3 offline scope with the full mandatory
+runtime-name set, a later same-machine boot, exact owner quiet-window approval,
+paused/drained Mesh lease, native profile/socket exclusions and held file barriers.
+Actual Windows snapshots refuse covered runtimes outside the retained observer
+ancestry. Fence v2 describes scoped observations; it removes universal writer
+coverage claims and explicitly does not exclude future direct execution.
 
-The detailed operator sequence is in the 2026-11-14 offline-candidate section below
-and integrations/LEGACY-WORKER-RECOVERY-PLAN.md.
+Echo reviewed the five source/test files and confirmed those limits are stated
+honestly. It found a failed-close tracking bug; that was reproduced and corrected
+with a red/green regression, followed by the full618-test pass. The cleanup delta
+has local verification, not a second independent review. Exact source hashes and
+review/cleanup attribution are in data/worker-runtime-cleanup-proof.json.
+
+The bounded containment policy still needs explicit owner review/approval before
+any live window. Other-app/other-PC writers remain unknown. Snapshot absence,
+listed-file protection or tests do not establish universal/continuous exclusion.
+No real approved retained review, v3 scope or live quiet-window authorization exists.
+Original eight holds remain; no retry, fake retirement or automatic resume occurs.
+The runtime-name check is deliberately conservative and can also refuse unrelated
+applications, including a separate Mesh server and model supervisor. A proposed
+window must identify exact startup/stop/restore owners and its wider downtime;
+never infer permission to terminate a listed PID. Existing deployment remains live.
+See the latest runtime-candidate section below and the detailed legacy recovery plan.
 
 Fresh read-only Relay status remains healthy on its unchanged launcher/listener;
 its legacy launch receipt remains unverified. Managed launch-input capture is
@@ -1688,3 +1691,92 @@ including whole-window source/store stability beyond the listed existing files.
 The owner cross-app/other-PC scope and approved maintenance remain unresolved.
 Keep original eight holds, unknown outcomes, paused dispatch, Rook/Mind-off state
 and the full objective intact. Local release remains18/21/parent84.
+
+
+## Observed worker-runtime boundary candidate — 2026-11-14 UTC
+
+The production operator now requires mesh/legacy-operator-scope/v3. Old v1/v2
+scopes are refused. The native resource fingerprint includes a reviewed runtime
+image-name set; production validation requires every mandatory name. An owner
+may add names to broaden coverage, never remove mandatory classes. There is no
+PID-ignore or environment override. Disposable imports use their own unique
+runtime names; that narrower scope cannot pass the production layout validator.
+
+Actual in-process Windows ToolHelp process snapshots now run at native capability
+acquisition and every native assertion, including the final synchronous guard.
+Complete enumeration/error checks are required. Query/synchronize-only handles
+retain the current observer's causal ancestry; creation times, exit state, names,
+parent links and non-inheritance are rechecked. Inaccessible non-runtime ancestry
+stops traversal without granting an exception above it. Inaccessible covered
+ancestry refuses. A covered runtime outside that exact ancestry refuses recovery,
+even when it has no listening port or open data file. No process is stopped,
+adopted or granted new privileges by this code.
+
+Fence v2 removes the unsupported global coveredLocalWriters/activeWriterCount
+claims. It records coverageScope=reviewed_runtime_entrypoints_only plus observed
+clearance/count, bound to the authentic native capability's current witness at
+issuance, commit and persisted readback. Observation explicitly declares
+continuousExecutionExcluded=false and workerRetirementEstablished=false. Forged
+clearance/global claims fail persisted validation even with a recomputed digest.
+Historical v1 component evidence remains readable; the production v3 entry does
+not accept old scopes. All apply approvals now require an exact owner quiet-window
+confirmation, including operations without a retained-record exception.
+
+This is a BOUNDED OPERATIONAL CONTRACT CANDIDATE, not universal whole-PC or future
+execution exclusion. A snapshot does not prevent a new process after the last
+check. Existing file handles protect listed existing files only; missing sidecars,
+new paths, renamed/custom runtimes, other computers and unreviewed ingress remain
+outside that component's proof. The proposed containment policy and actual quiet
+window/restart-owner coverage require separate review/owner approval before any
+live maintenance. Code/tests never supply those missing facts. The conservative
+mandatory-name check can block unrelated applications too; its output is NOT a
+list of safe-to-kill processes. Do not close discovered programs automatically.
+
+Real disposable tests prove denial for a non-listening worker with no data handle,
+a worker started after acquisition, and one started in the final transaction
+boundary (full rollback of recovery rows/events). Native evidence remains bound
+to the retained observer identity. The positive composed path preserves originals,
+records unknown historical outcomes separately, remains paused, and reads back
+its scoped evidence after resource cleanup. All617 full local tests passed
+(Node40+1+30+92+333; Python104+17), exit0. Exact five-source proof:
+data/worker-runtime-final-proof.json. Earlier red fixture/error-wording logs remain.
+A real-PC process observation using only disposable resources refused current
+runtimes. It overlapped local tests, so it is not a persistent-service inventory.
+No live database/profile/socket was reserved and no service/model/boot changed.
+
+Echo's exact-source review is pending under MESH_RUNTIME_SCOPE_REVIEW marker in
+data/worker-runtime-echo-review-20261114-intent.json; it authorizes read-only
+inspection of five code/test files only. No worker build or activation was sent.
+Original eight holds, production-worker/Rook/Mind-off state and the pending owner
+cross-app/other-PC writer scope remain unchanged. Local release remains18/21.
+Microsoft API references: PROCESSENTRY32W and GetProcessTimes on learn.microsoft.com.
+
+
+### Source review and cleanup correction — 2026-11-14 UTC
+
+Echo's exact-marker review completed; readback is private under
+data/worker-runtime-echo-review-20261114-readback.json. Echo read only the five
+permitted source/test files and did not independently hash or execute them.
+It confirms the bounded observational semantics are honest and identifies the
+open owner/operational gates; it approves no activation. It found one concrete
+cleanup defect: a rejected newer parent's handle was removed before CloseHandle
+success was checked. The regression reproduced the missing exception, then passed
+after the fix: failure now throws with the handle still tracked for outer cleanup.
+The injected failure exists only in a disposable copy of the exact algorithm;
+production accepts no native-binding/test-ignore injection. A second independent
+review of that small cleanup delta was not run.
+
+Final npm test after correction:618 PASS, exit0 (Node40+1+30+92+334; Python104+17).
+Exact five-source proof and before/after review attribution:
+data/worker-runtime-cleanup-proof.json. Preserve both red and green logs.
+
+IMPORTANT operating cost: the conservative full runtime-name set can refuse
+unrelated programs, including an independently running Mesh server, model service
+and other agent consoles. This candidate never authorizes killing those PIDs.
+Before requesting a live maintenance window, identify each actual stop/start/
+restore owner (including Mesh's startup), explain the full downtime, and obtain
+explicit approval for that bounded containment policy. Do not assume only the
+three worker shortcuts and two known tasks are enough for that expanded window.
+A fresh boot/quiet window and owner writer-scope decision remain unapproved.
+No process/service/model/startup or real store was changed during qualification.
+Goal ACTIVE; local release18/21/parent84. Keep original holds and Rook/Mind off.

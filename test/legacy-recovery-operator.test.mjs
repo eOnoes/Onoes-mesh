@@ -1,16 +1,18 @@
 import nodeTest from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, realpathSync, writeFileSync, readFileSync, mkdirSync, existsSync, openSync, closeSync } from 'node:fs';
+import { mkdtempSync, realpathSync, writeFileSync, readFileSync, mkdirSync, existsSync, openSync, closeSync, copyFileSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { join, resolve, relative } from 'node:path';
 import { createHash } from 'node:crypto';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync, spawn } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { createServer } from 'node:net';
+import { once } from 'node:events';
+import { createLegacyRecoveryStore } from '../lib/workroom-legacy-recovery.mjs';
 import { openTaskStore } from '../lib/task-store.mjs';
 import { databaseFileIdentity } from '../lib/database-identity.mjs';
 import { createDispatchBarrier } from '../lib/workroom-dispatch-barrier.mjs';
-import { nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
+import { nativeResourceFingerprint, productionWorkerRuntimeNames } from '../lib/windows-native-maintenance.mjs';
 import { legacyRecoveryFingerprint as hash } from '../lib/workroom-legacy-evidence.mjs';
 import { readLegacyRows, legacyRecoverySources } from '../integrations/legacy-recovery-plan.mjs';
 import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, inspectRetainedRecords, verifyRetainedReview, verifyReplayRecords, verifyStartupControls, verifyDeploymentScope, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
@@ -69,10 +71,10 @@ async function fixture() {
     if (!ports.includes(port)) ports.push(port);
   }
   const lock = join(dir, 'gateway.lock'); writeFileSync(lock, 'Synthetic lock');
-  const scope = { schema: 'mesh/legacy-operator-scope/v2', containment: 'worker_services_offline', owner: 'Eddie', locality: 'desktop_echo_dsh_only',
+  const scope = { schema: 'mesh/legacy-operator-scope/v3', containment: 'worker_services_offline', owner: 'Eddie', locality: 'desktop_echo_dsh_only',
     workspace: realpathSync.native(process.cwd()), databasePath, databaseIdentity: databaseFileIdentity(databasePath),
     relay: { path: relayPath, identity: databaseFileIdentity(relayPath) }, hermes: { path: hermesPath, identity: databaseFileIdentity(hermesPath) },
-    dsh: { path: dshPath, sha256: sha(readFileSync(dshPath)) }, bindings, nativeResources: { profileLocks: [lock], endpoints: ports.flatMap(port => [['127.0.0.1', port], ['::1', port]]) },
+    dsh: { path: dshPath, sha256: sha(readFileSync(dshPath)) }, bindings, nativeResources: { profileLocks: [lock], endpoints: ports.flatMap(port => [['127.0.0.1', port], ['::1', port]]),workerRuntimeNames:['mesh-operator-'+dir.split(/[\\/]/).at(-1)+'.exe'] },
     startup: { tasks: taskObservations.map(({ name, path, actions, principal }) => ({ name, path, definitionFingerprint: hash({ actions, principal }) })), shortcuts } };
   const scopePath = join(dir, 'scope.json'); writeFileSync(scopePath, JSON.stringify(scope));
   const options = { scopePath, scopeSha256: sha(readFileSync(scopePath)), planPath: join(dir, 'plan.json') };
@@ -102,7 +104,7 @@ async function fixture() {
     authorize() {
       const plan = JSON.parse(readFileSync(options.planPath, 'utf8')), path = join(dir, 'approval.json');
       writeFileSync(path, JSON.stringify({ schema: 'mesh/legacy-recovery-authorization/v1', owner: 'Eddie', decision: 'apply_exact_eight',
-        planHash: plan.planHash, host: 'SYNTHETIC', bootedAt: laterBoot, authorizedAt: new Date(Date.now() - 1000).toISOString(), expiresAt: new Date(Date.now() + 60000).toISOString() }));
+        maintenanceMode:'worker_services_offline',quietWorkspaceConfirmed:true,planHash: plan.planHash, host: 'SYNTHETIC', bootedAt: laterBoot, authorizedAt: new Date(Date.now() - 1000).toISOString(), expiresAt: new Date(Date.now() + 60000).toISOString() }));
       return { authorizationPath: path, authorizationSha256: sha(readFileSync(path)) };
     },
     close() { db.close(); store.close(); } };
@@ -122,6 +124,10 @@ test('the assembled operator prepares, denies same-boot apply, commits only afte
     assert.equal(f.barrier.status().state, 'paused'); assert.equal(f.barrier.status().held, false);
     assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(), originals);
     assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n, 8);
+    const target=f.targets()[0],record=createLegacyRecoveryStore(f.db).read(target.taskId,target.sendId);assert.equal(record.workerRetirementEstablished,false);
+    const saved=JSON.parse(f.db.prepare('SELECT evidence FROM workroom_legacy_recoveries').get().evidence);
+    assert.equal(saved.boundary.schema,'mesh/legacy-local-fence/v2');assert.equal(saved.boundary.coverageScope,'reviewed_runtime_entrypoints_only');
+    assert.equal(saved.nativeHold.workerRuntimeObservation.outsideRuntimeCount,0);assert.equal(saved.nativeHold.workerRuntimeObservation.continuousExecutionExcluded,false);
   } finally { f.close(); }
 });
 
@@ -443,20 +449,22 @@ test('retained reviews require exact pinned proofs, complete source sets, curren
   }
 });
 
-test('offline v2 refuses the old layout, an active Relay login entry, or missing Relay socket coverage', async()=>{
+test('offline v3 refuses the old layout, an active Relay login entry, or missing Relay socket coverage', async()=>{
   const f=await fixture();
   try{
     const save=()=>{writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));};
-    f.scope.schema='mesh/legacy-operator-scope/v1';save();assert.throws(()=>loadOperatorScope(f.options.scopePath,f.options.scopeSha256),/offline v2/);
-    f.scope.schema='mesh/legacy-operator-scope/v2';const link=f.scope.startup.shortcuts.pop();save();assert.throws(()=>loadOperatorScope(f.options.scopePath,f.options.scopeSha256),/startup owners/);
+    f.scope.schema='mesh/legacy-operator-scope/v1';save();assert.throws(()=>loadOperatorScope(f.options.scopePath,f.options.scopeSha256),/offline v3/);
+    f.scope.schema='mesh/legacy-operator-scope/v3';const link=f.scope.startup.shortcuts.pop();save();assert.throws(()=>loadOperatorScope(f.options.scopePath,f.options.scopeSha256),/startup owners/);
     f.scope.startup.shortcuts.push(link);save();verifyStartupControls(f.scope,f.taskObservations);
     writeFileSync(link.original,readFileSync(link.parked));assert.throws(()=>verifyStartupControls(f.scope,f.taskObservations),/login shortcut remains active/);
     const production=structuredClone(f.scope),at=suffix=>resolve(homedir(),suffix);
     production.databasePath=resolve(production.workspace,'data/workroom-preview/tasks.sqlite');
     production.relay.path=resolve('D:/Dev/Onoes-Relay/.private/relay.sqlite3');production.hermes.path=at('AppData/Local/hermes/state.db');production.dsh.path=at('.dsh/a2a/runtime/tasks/a2a-tasks.json');
-    production.nativeResources={profileLocks:[at('AppData/Local/hermes/gateway.lock')],endpoints:[3081,4123,8642,8787].flatMap(port=>[['127.0.0.1',port],['::1',port]])};
+    production.nativeResources={profileLocks:[at('AppData/Local/hermes/gateway.lock')],endpoints:[3081,4123,8642,8787].flatMap(port=>[['127.0.0.1',port],['::1',port]]),workerRuntimeNames:[...productionWorkerRuntimeNames]};
     production.startup.shortcuts=production.startup.shortcuts.map(item=>({...item,original:at('AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/'+item.original.split(/[\\/]/).at(-1))}));
     verifyDeploymentScope(production);
+    production.nativeResources.workerRuntimeNames=['node.exe'];assert.throws(()=>verifyDeploymentScope(production),/complete deployed worker runtime/);
+    production.nativeResources.workerRuntimeNames=[...productionWorkerRuntimeNames];
     production.nativeResources.endpoints=production.nativeResources.endpoints.filter(([,port])=>port!==8787);
     assert.throws(()=>verifyDeploymentScope(production),/eight worker loopback/);
   }finally{f.close();}
@@ -555,5 +563,48 @@ test('reviewed source cannot be replaced by a late writer during the actual reco
     const runtime={...f.runtime,startupReader(){if(++checks>=3){assert.throws(()=>writeFileSync(source,'Late change'),/EACCES|EPERM|EBUSY/);denials++;}return structuredClone(f.taskObservations);}};
     const result=await runLegacyOperator({...f.options,action:'apply',...f.authorize()},runtime);assert.equal(result.dispatchRemainsPaused,true);assert.ok(denials>=2);
     assert.equal(readFileSync(source,'utf8'),'Frozen module');writeFileSync(source,'Writable after the operator returns');
+  }finally{f.close();}
+});
+
+
+test('a non-listening worker starting at the final recovery boundary rolls back every administrative write',async()=>{
+  const f=await fixture();let child;
+  try{
+    const image=join(f.dir,f.scope.nativeResources.workerRuntimeNames[0]);copyFileSync('C:/Python314/python.exe',image);
+    await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();let checks=0;
+    const runtime={...f.runtime,startupReader(){
+      if(++checks===4){child=spawn(image,['-B','-S','-c',"import sys;print('held',flush=True);sys.stdin.readline()"],{cwd:f.dir,env:{...process.env,PYTHONHOME:'C:/Python314',PATH:'C:/Python314;'+process.env.PATH},stdio:['pipe','pipe','pipe'],windowsHide:true});assert.ok(child.pid);}
+      return structuredClone(f.taskObservations);
+    }};
+    await assert.rejects(runLegacyOperator({...f.options,action:'apply',...f.authorize()},runtime),/Covered worker runtimes remain active/);
+    assert.equal(child.exitCode,null);assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
+    assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n,0);
+    assert.equal(f.barrier.status().state,'paused');assert.equal(f.barrier.status().held,false);
+    const exited=once(child,'exit');child.stdin.end('done\n');assert.equal((await exited)[0],0);
+  }finally{if(child&&child.exitCode===null&&child.signalCode===null){const exited=once(child,'exit');child.kill();await exited;}f.close();}
+});
+
+test('quiet-window authority is mandatory even when no retained-record exception is requested',async()=>{
+  for(const change of [{quietWorkspaceConfirmed:false},{maintenanceMode:'online'}]){
+    const f=await fixture();try{
+      await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();const approval=f.authorize();
+      const record=JSON.parse(readFileSync(approval.authorizationPath,'utf8'));Object.assign(record,change);writeFileSync(approval.authorizationPath,JSON.stringify(record));approval.authorizationSha256=sha(readFileSync(approval.authorizationPath));
+      await assert.rejects(runLegacyOperator({...f.options,action:'apply',...approval},f.runtime),/quiet-window authority/);
+      assert.equal(f.barrier.status().held,false);assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
+    }finally{f.close();}
+  }
+});
+
+
+test('forged saved runtime clearance is rejected even when the evidence hash is recomputed',async()=>{
+  const f=await fixture();try{
+    await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();await runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime);
+    const target=f.targets()[0],store=createLegacyRecoveryStore(f.db),row=f.db.prepare('SELECT * FROM workroom_legacy_recoveries').get();
+    assert.ok(store.read(target.taskId,target.sendId));
+    for(const mutation of [{observedRuntimeEntrypointsClear:false},{observedOutsideRuntimeCount:1},{coveredLocalWriters:true}]){
+      const evidence=JSON.parse(row.evidence);Object.assign(evidence.boundary,mutation);
+      f.db.prepare('UPDATE workroom_legacy_recoveries SET evidence=?,proofHash=?').run(JSON.stringify(evidence),hash(evidence));
+      assert.equal(store.read(target.taskId,target.sendId),null);
+    }
   }finally{f.close();}
 });

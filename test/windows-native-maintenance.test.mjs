@@ -1,12 +1,13 @@
 import nodeTest from 'node:test';
 const test=process.platform==='win32'&&process.arch==='x64'?nodeTest:nodeTest.skip;
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, readFileSync, realpathSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, realpathSync, copyFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, resolve, basename } from 'node:path';
 import { createServer, createConnection } from 'node:net';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { pathToFileURL } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { holdWindowsNativeMaintenance, nativeResourceFingerprint, assertNativeMaintenanceHold, validateNativeHoldEvidence, holdWindowsFileReadBarrier, assertWindowsFileReadBarrier } from '../lib/windows-native-maintenance.mjs';
 
@@ -189,4 +190,77 @@ test('file barrier scope rejects missing, network, duplicate and empty paths wit
   const f=await fixture();
   for(const paths of [[],[f.lock,f.lock],[join(f.dir,'missing')],['\\\\untrusted.invalid\\file']])await assert.rejects(holdWindowsFileReadBarrier(paths));
   writeFileSync(f.lock,'Unchanged permissions, still writable');
+});
+
+
+async function runtimeFixture(){
+  const f=await fixture(),name=basename(f.dir).toLowerCase()+'.exe',image=join(f.dir,name);
+  copyFileSync('C:/Python314/python.exe',image);
+  f.resources.workerRuntimeNames=[name];f.plan.sources.nativeResourceScope=nativeResourceFingerprint(f.resources);
+  return {...f,image,name};
+}
+function runtimePeer(f){return spawn(f.image,['-B','-S','-c',"import sys;print('held',flush=True);sys.stdin.readline()"],{cwd:f.dir,env:{...process.env,PYTHONHOME:'C:/Python314',PATH:'C:/Python314;'+process.env.PATH},stdio:['pipe','pipe','pipe'],windowsHide:true});}
+
+test('a non-listening runtime with no file handle blocks native maintenance without being stopped',async()=>{
+  const f=await runtimeFixture(),child=runtimePeer(f);
+  try{
+    assert.equal(await ready(child),'held');
+    await assert.rejects(holdWindowsNativeMaintenance(f.resources),/Covered worker runtimes remain active/);
+    assert.equal(child.exitCode,null);assert.deepEqual(peer(f),[false,false,false]);
+    const exited=once(child,'exit');child.stdin.end('done\r\n');assert.equal((await exited)[0],0);
+    const lease=await holdWindowsNativeMaintenance(f.resources);try{
+      const value=assertNativeMaintenanceHold(lease,f.plan);assert.equal(value.workerRuntimeObservation.outsideRuntimeCount,0);
+      assert.equal(value.workerRuntimeObservation.continuousExecutionExcluded,false);
+      assert.equal(value.workerRuntimeObservation.observerAncestry[0].pid,process.pid);
+      assert.throws(()=>validateNativeHoldEvidence({...value,planHash:f.plan.planHash,ownerPid:process.pid+1},f.plan),/runtime observation/);
+      validateNativeHoldEvidence({...value,planHash:f.plan.planHash},f.plan);
+      assert.throws(()=>validateNativeHoldEvidence({...value,planHash:f.plan.planHash,workerRuntimeObservation:{...value.workerRuntimeObservation,continuousExecutionExcluded:true}},f.plan),/runtime observation/);
+    }finally{lease.release();}
+  }finally{await clean(child);}
+});
+
+test('a runtime started after acquisition invalidates every subsequent native hold assertion',async()=>{
+  const f=await runtimeFixture(),lease=await holdWindowsNativeMaintenance(f.resources);let child;
+  try{
+    const before=assertNativeMaintenanceHold(lease,f.plan);child=runtimePeer(f);assert.equal(await ready(child),'held');
+    assert.throws(()=>assertNativeMaintenanceHold(lease,f.plan),/Covered worker runtimes remain active/);
+    assert.throws(()=>assertNativeMaintenanceHold(structuredClone(before),f.plan),/authentic/);
+    const exited=once(child,'exit');child.stdin.end('done\r\n');assert.equal((await exited)[0],0);
+    assert.equal(assertNativeMaintenanceHold(lease,f.plan).workerRuntimeObservation.outsideRuntimeCount,0);
+  }finally{lease.release();if(child)await clean(child);}
+});
+
+test('malformed and duplicate runtime scopes are refused before profile or socket acquisition',async()=>{
+  const f=await fixture();
+  for(const names of [[],['python.exe','PYTHON.EXE'],['../python.exe'],['python'],['*'],null])await assert.rejects(holdWindowsNativeMaintenance({...f.resources,workerRuntimeNames:names}),/runtime image names|runtime image/);
+  assert.deepEqual(peer(f),[false,false,false]);
+});
+
+
+test('a rejected newer ancestor stays tracked when CloseHandle fails instead of returning a successful observation',async()=>{
+  const f=await fixture(),copy=join(f.dir,'native-cleanup-algorithm.mjs');
+  // Fault injection exists only in this disposable module copy. Production never
+  // accepts native bindings or an ignore flag from arguments, scope or environment.
+  writeFileSync(copy,readFileSync(new URL('../lib/windows-native-maintenance.mjs',import.meta.url),'utf8')+'\nexport { acquireRuntimeObservation };\n');
+  const {acquireRuntimeObservation}=await import(pathToFileURL(copy).href);
+  const parentPid=process.pid+100000,rows=[{pid:process.pid,parentPid,name:'observer.exe'},{pid:parentPid,parentPid:0,name:'unverified-parent.exe'}];
+  let next=0,lastError=18,parentCloseAttempts=0;const closed=[];
+  const fill=(buffer,row)=>{buffer.fill(0);buffer.writeUInt32LE(568);buffer.writeUInt32LE(row.pid,8);buffer.writeUInt32LE(row.parentPid,32);Buffer.from(row.name+'\0','utf16le').copy(buffer,44);};
+  const bindings={
+    processSnapshot(){next=0;return 100;},
+    processFirst(_handle,buffer){fill(buffer,rows[next++]);return 1;},
+    processNext(_handle,buffer){if(next<rows.length){fill(buffer,rows[next++]);return 1;}lastError=18;return 0;},
+    processOpen(_access,_inherit,pid){return pid===process.pid?11:12;},
+    processWait(){return 258;},
+    processTimes(handle,created){created.writeBigUInt64LE(handle===11?1000n:2000n);return 1;},
+    flags(_handle,buffer){buffer.writeUInt32LE(0);return 1;},
+    close(handle){if(handle===12&&++parentCloseAttempts===1){lastError=6;return 0;}closed.push(handle);return 1;},
+    error(){return lastError;},
+  };
+  const state={api:bindings,resources:{workerRuntimeNames:['covered-fixture.exe']},runtimeProcesses:[]};
+  assert.throws(()=>acquireRuntimeObservation(state),/Unverified ancestor close refused/);
+  assert.deepEqual(state.runtimeProcesses.map(item=>item.handle),[11,12]);
+  // The outer native lease can still see and clean both retained handles.
+  for(const item of state.runtimeProcesses.reverse())assert.equal(bindings.close(item.handle),1);
+  assert.equal(parentCloseAttempts,2);assert.ok(closed.includes(11));assert.ok(closed.includes(12));
 });
