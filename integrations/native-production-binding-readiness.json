@@ -761,18 +761,26 @@
     "retainedExclusionsEnabled": false
   },
   "nativeRetainedStartupQualification": {
-    "status": "PROFILE_RUNTIME_PASS_FULL_COORDINATOR_HELD",
+    "status": "PASS_ISOLATED_REAL_FULL_RECOVERY_COORDINATOR",
     "passedEvidence": "data/native-retained-startup-qualification.json",
-    "heldEvidence": "data/native-retained-coordinator-held.json",
+    "priorHeldEvidence": "data/native-retained-coordinator-held.json",
     "actualStartupRecoveries": 2,
     "syntheticModelCalls": [
       1,
       0
     ],
     "liveServiceRestarted": false,
-    "fullCoordinatorQualified": false,
-    "currentHelperExtensionPassing": false,
-    "blocker": "Real session_control_server bootstrap missing in fixture",
-    "productionActivated": false
+    "fullCoordinatorQualified": true,
+    "wholeServiceLauncherQualified": false,
+    "currentHelperExtensionPassing": true,
+    "mandatoryQualifiedSourcePins": 14,
+    "sourcePinEvidence": "data/native-coordinator-source-freeze-proof.json",
+    "originalWorkerRetirementEstablished": false,
+    "productionActivated": false,
+    "fullLocalRegression": {
+      "passed": 595,
+      "exitCode": 0,
+      "evidence": "data/native-coordinator-full-test-proof.json"
+    }
   }
 }

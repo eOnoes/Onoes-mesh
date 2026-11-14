@@ -1360,3 +1360,55 @@ weaken the global queue guard or treat source/method tests as full startup.
 Separate original-worker containment and owner authority still precede live
 recovery. No restart should be requested as though these prerequisites passed.
 Goal remains ACTIVE, local-release18/21 / parent84; C1/C4/E2 remain.
+
+
+### Full native recovery coordinator qualified in isolation — 2026-11-14
+
+Previous goal turn was PROGRESS: real native profile recovery passed and the
+outer coordinator's missing control-server bootstrap was identified. This turn
+resolved that exact fixture boundary using production bootstrap functions.
+
+The disposable source/store now acquires real profile ownership, calls
+initialize_gateway_runtime, starts the actual Windows control server through
+_start_gateway_start_control_socket, then starts the real local API. The full
+recover_gateway_native_sessions coordinator is the PRIMARY recovery caller.
+The fixture does not substitute a server object or patch recovery predicates.
+Only the provider and messaging wire are synthetic. A deliberately crashed
+owned child leaves one started request, its queued follower, and an independent
+safe queued request. First real startup/recovery runs the safe request once;
+unknown/follower work stays paused. Second startup runs no model request and
+keeps completed work terminal. Repeating the full coordinator after settlement
+also preserves all rows and makes no extra request. Four authorization/route
+negative cases preserve rows; the two final saved receipts match exactly for
+safe and blocked work across restarts. Three helper hashes match tested bytes;
+14 relevant installed source files match before/after the test.
+
+Evidence: data/native-retained-startup-qualification.json (latest successful
+snapshot data/mesh-native-retained-npaa4zev), its two original recovery receipts,
+and data/native-coordinator-source-freeze-proof.json. Prior HELD/bootstrap
+attempts remain historical evidence; they are not rewritten as successful.
+The current helper extension now passes the real coordinator path.
+
+Recovery plans now additionally freeze all 14 qualified native initialization,
+admission, ownership and Windows control-service source files. The earlier
+mandatory list pinned the outward Runs adapter without these startup owners.
+This adds source custody, not eligibility exceptions. Existing operator tests
+13/13 pass with the expanded source set. Full local regression is running;
+record its actual terminal count below rather than assuming the prior 595.
+
+Current exact old Relay errors remain ambiguous: DSH says interrupted/unknown;
+Cyony reports a stream failure without a terminal acceptance/refusal receipt.
+Neither proves no worker started. Do not resolve either from missing transport
+references. A focused owner question asks whether any other PC ever worked on
+Mesh outside Workroom; this differs from the already-confirmed desktop-only
+Workroom dispatch scope. That answer is pending; do not assume it.
+
+NOT ESTABLISHED: full launcher/service entry-point acceptance, loaded live-source
+identity, original-writer extinction or remote writer coverage. No live gateway
+restart, production enrollment, held-record exemption, cleanup/retry, model load
+or paid agent task occurred. Next: a narrowly reviewed retained-record contract
+using exact rows/sources, plus separate writer containment and the required
+owner scope/window facts. No general ignore switch or premature restart request.
+Goal remains ACTIVE, local release18/21 / parent84.
+
+Full current source gate completed: npm test exit0, 595 passing checks (474 Node +121 Python); focused operator13/13 also passed. Test/source pins in data/native-coordinator-full-test-proof.json. Read-only publication preflight: remote f2362ee, local/remote workflow directories empty, GitHub workflows0 and head PRs0; no GitHub write performed. Owner cross-app/external-writer scope question pending, so no retained-record exemption or live recovery is activated.

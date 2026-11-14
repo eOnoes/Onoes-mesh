@@ -24,7 +24,9 @@ def main():
     helper = Path(__file__).with_name('qualify-native-retained-peer.py')
     names = ['gateway/session_authority.py','gateway/session_unattended_unknown.py','gateway/run_runtime.py',
         'gateway/session_local_recovery.py','gateway/session_bot.py','gateway/session_envelope.py',
-        'hermes_state.py','hermes_state_runtime.py','hermes_state_runtime_workers.py']
+        'hermes_state.py','hermes_state_runtime.py','hermes_state_runtime_workers.py',
+        'gateway/run_bootstrap.py','gateway/control_socket.py','gateway/runtime_ownership.py',
+        'gateway/runtime_bootstrap_windows.py','gateway/session_hosted_service.py']
     hashes = {name: hashlib.sha256((native / name).read_bytes()).hexdigest() for name in names}
     # Existing Mesh environment builder provisions isolated homes and compatible installed libraries.
     spec = importlib.util.spec_from_file_location('mesh_native_environment', Path(__file__).with_name('qualify_hermes_runtime.py'))
@@ -93,11 +95,16 @@ def main():
         (root / ('recovery-receipt-' + str(index) + '.json')).write_text(json.dumps(receipt,indent=2)+'\n')
         runs.append({'startup':index,'syntheticModelCalls':expected,'unknownRemainedPaused':True,
             'blockedFollowerRemainedQueued':True,'safeRequestCompleted':True,'gatewayCoordinatorPreservedRows':True})
+    first = json.loads((root / 'recovery-receipt-1.json').read_text())
+    second = json.loads((root / 'recovery-receipt-2.json').read_text())
+    assert first['safe'] == second['safe'] and first['blocked'] == second['blocked']
     assert all(hashlib.sha256((native / name).read_bytes()).hexdigest() == digest for name,digest in hashes.items())
     proof = {'schema':'mesh/native-retained-startup-qualification/v1','observedAt':datetime.now(timezone.utc).isoformat(),
         'directory':str(root),'sourceSha256':hashes,'ownedFixtureCrashExitCode':crash_exit,'recoveries':runs,
+        'helperSha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['qualify-native-retained-startup.py','qualify-native-retained-peer.py','qualify-native-retained-recovery.py']},
+        'sourceArchiveSha256':hashlib.sha256(archive.read_bytes()).hexdigest(),
         'liveStoreOpened':False,'liveServiceRestarted':False,'originalWorkerRetirementEstablished':False,
-        'limits':['Real GatewayRunner and SessionDB initialization, runtime epochs, native profile recovery; synthetic messaging adapter and local fake model.',
+        'limits':['Real profile ownership, GatewayRunner/SessionDB/runtime initialization, Windows control server, API startup and full native recovery coordinator; synthetic messaging adapter and local fake model.',
             'Does not run the whole gateway service entry point or prove loaded production bytes, original worker retirement or remote writer coverage.',
             'No retained-record exemption or live recovery activation authorized.']}
     output = workspace / 'data/native-retained-startup-qualification.json'

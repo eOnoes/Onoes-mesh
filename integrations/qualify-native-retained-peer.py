@@ -90,15 +90,26 @@ async def probe():
             return {"id": chat_id}
 
     runner = GatewayRunner()
-    if importlib.util.find_spec("gateway.session_authority") is not None:
-        from gateway.session_authority import initialize_session_authority
-        await initialize_session_authority(runner, profile_id="default", instance_id="test-owner")
+    from gateway.runtime_ownership import process_ownership
+    from gateway.run_runtime import initialize_gateway_runtime
+    from gateway.run_bootstrap import _start_gateway_start_control_socket
+    process_ownership.reserve([Path(os.environ['HERMES_HOME'])])
+    await initialize_gateway_runtime(runner)
+    control = await _start_gateway_start_control_socket(runner)
+    assert control is not None, 'Real isolated control-server startup failed'
+
     adapter = CaptureAdapter()
     runner.adapters[Platform.TELEGRAM] = adapter
     adapter.set_message_handler(runner._handle_message)
     source = SessionSource(platform=Platform.TELEGRAM, chat_id="fixture-chat", chat_type="dm", user_id="fixture-user")
     if os.environ.get('AUTHORITY_PROBE_MODE') == 'recover':
-        await recover_probe(runner, adapter, source, peer)
+        from gateway.run_api import start_gateway_api, stop_gateway_api
+        api_handle = await start_gateway_api(runner)
+        try:
+            await recover_probe(runner, adapter, source, peer)
+        finally:
+            await stop_gateway_api(api_handle)
+            await control.stop()
         return
     event = MessageEvent(text='MESSAGING_WARM', source=source, message_id='warm-1')
     await adapter.handle_message(event)

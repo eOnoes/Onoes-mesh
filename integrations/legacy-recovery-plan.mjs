@@ -60,6 +60,18 @@ export function legacyRecoverySources(workspace) {
     meshNativeSessions: resolve(workspace, 'lib/workroom-local-sessions.mjs'),
     relayStore: 'D:/Dev/Onoes-Relay/relay_sessions.py', relayServer: 'D:/Dev/Onoes-Relay/relay_server.py',
     relayNativeReceipts: 'D:/Dev/Onoes-Relay/relay_native_receipts.py',
+    // Freeze the actual initialization/recovery/control paths qualified by the
+    // isolated native startup test, not only the outward Runs API adapter.
+    ...Object.fromEntries([
+      'gateway/session_authority.py', 'gateway/session_unattended_unknown.py',
+      'gateway/run_runtime.py', 'gateway/session_local_recovery.py',
+      'gateway/session_bot.py', 'gateway/session_envelope.py', 'hermes_state.py',
+      'hermes_state_runtime.py', 'hermes_state_runtime_workers.py',
+      'gateway/run_bootstrap.py', 'gateway/control_socket.py',
+      'gateway/runtime_ownership.py', 'gateway/runtime_bootstrap_windows.py',
+      'gateway/session_hosted_service.py',
+    ].map(file => ['hermesRecovery' + file.replace(/[^A-Za-z0-9]/g, ''),
+      resolve(homedir(), 'AppData/Local/hermes/hermes-agent', file)])),
     hermesRuns: resolve(homedir(), 'AppData/Local/hermes/hermes-agent/gateway/platforms/api_server_runs.py'),
     dshBridge: resolve(homedir(), '.dsh/profiles/a2a/node_modules/dsh-a2a-server/lib/index.js'),
   };

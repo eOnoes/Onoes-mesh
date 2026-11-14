@@ -111,8 +111,8 @@ async def recover_probe(runner, adapter, source, peer):
     assert wrong[safe_sid] == 'admission_conflict', wrong
     assert rows(authority, safe_sid) == initial
     assert not peer.requests
-    from gateway.run_runtime import recover_profile_native_sessions
-    recovered = await recover_profile_native_sessions(runner, authority)
+    from gateway.run_runtime import recover_gateway_native_sessions
+    recovered = await recover_gateway_native_sessions(runner)
     assert recovered[blocked_sid] == 'unknown_execution', recovered
     live = authority.sessions.get(safe_sid)
     task = live.task if live is not None else None
@@ -137,12 +137,7 @@ async def recover_probe(runner, adapter, source, peer):
     assert blocked == before['blockedAfterBoot'], 'Unknown/queued blocked rows changed during recovery'
     from gateway.run_runtime import recover_gateway_native_sessions
     calls_before_coordinator = len(peer.requests)
-    from gateway.run_api import start_gateway_api, stop_gateway_api
-    api_handle = await start_gateway_api(runner)
-    try:
-        await recover_gateway_native_sessions(runner)
-    finally:
-        await stop_gateway_api(api_handle)
+    await recover_gateway_native_sessions(runner)
     assert rows(authority, blocked_sid) == blocked
     assert rows(authority, safe_sid) == safe
     assert len(peer.requests) == calls_before_coordinator, 'Gateway recovery coordinator resent work'
