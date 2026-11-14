@@ -52,7 +52,9 @@ async function fixture() {
       tasks.push({ ...record, history });
       Object.assign(binding, { nativeTaskId: record.id, nativeFingerprint: hash(record),
         originMessageId: origin.messageId, originFingerprint: hash(origin) });
+      relay.prepare('UPDATE outbox SET transport_ref=? WHERE idem_key=?').run('a2a:'+record.id,sendId);
     }
+    binding.relayReceiptFingerprint=hash(relay.prepare('SELECT idem_key,agent_id,session_id,state,transport_ref,content FROM outbox WHERE idem_key=?').get(sendId));
     bindings.push(binding);
   }
   const dshPath = join(dir, 'dsh.json'); writeFileSync(dshPath, JSON.stringify(tasks));
@@ -129,6 +131,38 @@ test('the assembled operator prepares, denies same-boot apply, commits only afte
     assert.equal(saved.boundary.schema,'mesh/legacy-local-fence/v2');assert.equal(saved.boundary.coverageScope,'reviewed_runtime_entrypoints_only');
     assert.equal(saved.nativeHold.workerRuntimeObservation.outsideRuntimeCount,0);assert.equal(saved.nativeHold.workerRuntimeObservation.continuousExecutionExcluded,false);
   } finally { f.close(); }
+});
+
+test('deployed-shaped accepted receipts preserve six null Echo refs and two exact DSH task refs',async()=>{
+  const f=await fixture();
+  try {
+    const before=hash(f.relay.prepare('SELECT * FROM outbox ORDER BY idem_key').all());
+    assert.equal(f.relay.prepare('SELECT COUNT(*) AS n FROM outbox WHERE agent_id=\'echo\' AND transport_ref IS NULL').get().n,6);
+    assert.equal(f.relay.prepare('SELECT COUNT(*) AS n FROM outbox WHERE agent_id=\'dsh\' AND transport_ref IS NOT NULL').get().n,2);
+    assert.equal(verifyReplayRecords(f.scope,f.targets()).exactAcceptedSends,8);
+    assert.equal(hash(f.relay.prepare('SELECT * FROM outbox ORDER BY idem_key').all()),before);
+  } finally {f.close();}
+});
+
+test('missing receipt pins and substituted references refuse even when a changed receipt is repinned',async()=>{
+  const f=await fixture();
+  try {
+    const missing=structuredClone(f.scope);delete missing.bindings[0].relayReceiptFingerprint;
+    assert.throws(()=>verifyReplayRecords(missing,f.targets()),/pinned Relay receipt/);
+    const dsh=f.scope.bindings.find(b=>b.agentId==='dsh');
+    f.relay.prepare('UPDATE outbox SET transport_ref=? WHERE idem_key=?').run('a2a:other-task',dsh.sendId);
+    const changed=structuredClone(f.scope);
+    changed.bindings.find(b=>b.sendId===dsh.sendId).relayReceiptFingerprint=hash(f.relay.prepare('SELECT idem_key,agent_id,session_id,state,transport_ref,content FROM outbox WHERE idem_key=?').get(dsh.sendId));
+    assert.throws(()=>verifyReplayRecords(changed,f.targets()),/Relay receipt changed/);
+    f.relay.prepare('UPDATE outbox SET transport_ref=? WHERE idem_key=?').run('a2a:'+dsh.nativeTaskId,dsh.sendId);
+    const echo=changed.bindings.find(b=>b.agentId==='echo');
+    f.relay.prepare('UPDATE outbox SET transport_ref=? WHERE idem_key=?').run('a2a:'+dsh.nativeTaskId,echo.sendId);
+    echo.relayReceiptFingerprint=hash(f.relay.prepare('SELECT idem_key,agent_id,session_id,state,transport_ref,content FROM outbox WHERE idem_key=?').get(echo.sendId));
+    assert.throws(()=>verifyReplayRecords(changed,f.targets()),/Relay receipt changed/);
+    f.relay.prepare('UPDATE outbox SET transport_ref=NULL WHERE idem_key=?').run(echo.sendId);
+    const badPin=structuredClone(f.scope);badPin.bindings[0].relayReceiptFingerprint='0'.repeat(64);
+    assert.throws(()=>verifyReplayRecords(badPin,f.targets()),/receipt fingerprint changed/);
+  } finally {f.close();}
 });
 
 test('the production entry refuses disposable or narrowed service coverage even with a pinned scope', async () => {
@@ -223,7 +257,10 @@ test('exact native receipts cannot substitute another request with the same comp
     [a.nativeFingerprint, b.nativeFingerprint] = [b.nativeFingerprint, a.nativeFingerprint];
     [a.originMessageId, b.originMessageId] = [b.originMessageId, a.originMessageId];
     [a.originFingerprint, b.originFingerprint] = [b.originFingerprint, a.originFingerprint];
-    assert.throws(() => verifyReplayRecords(swapped, f.targets()), /DSH request text/);
+    assert.throws(() => verifyReplayRecords(swapped, f.targets()), /Relay receipt changed/);
+    const originalDeliveries=new Map(f.scope.bindings.filter(binding=>binding.agentId==='dsh').map(binding=>
+      [binding.sendId,f.db.prepare('SELECT payload FROM workroom_sends WHERE id=?').get(binding.sendId).payload]));
+    assert.throws(() => verifyDshOrigins(f.tasks,swapped.bindings,originalDeliveries), /DSH request text/);
     assert.equal(verifyReplayRecords(f.scope, f.targets()).exactAcceptedSends, 8);
   } finally { f.close(); }
 });
@@ -243,6 +280,7 @@ test('delivery normalization matches Python strip, including Unicode boundaries 
         .run(JSON.stringify({ text: expected[n] }), sha(expected[n]));
       const receipt = f.hermes.prepare("SELECT admission_id,request_id,target_session_id,payload_digest,status,outcome,owner_epoch,generation FROM session_admissions WHERE admission_id='admission-0'").get();
       f.scope.bindings[0].nativeFingerprint = hash(receipt);
+      f.scope.bindings[0].relayReceiptFingerprint = hash(f.relay.prepare("SELECT idem_key,agent_id,session_id,state,transport_ref,content FROM outbox WHERE idem_key='send-0'").get());
       assert.doesNotThrow(() => verifyReplayRecords(f.scope, f.targets()), 'Python-normalized delivery case ' + n);
     }
   } finally { f.close(); }

@@ -208,6 +208,8 @@ export function verifyReplayRecords(scope, targets) {
     scope.bindings.every(t => targets.some(original => original.sendId === t.sendId && original.agentId === t.agentId)), 'Replay bindings must cover exactly the eight original sends.');
   requireValue(scope.bindings.filter(t => t.agentId === 'echo').length === 6 &&
     scope.bindings.filter(t => t.agentId === 'dsh').length === 2, 'The reviewed six Echo / two DSH route is required.');
+  requireValue(scope.bindings.every(binding => digest(binding.relayReceiptFingerprint)),
+    'An exact pinned Relay receipt fingerprint is required for every binding.');
   let retained = null;
   if (scope.retainedReview) {
     requireValue(scope.schema === 'mesh/legacy-operator-scope/v3' && scope.containment === 'worker_services_offline',
@@ -230,8 +232,10 @@ export function verifyReplayRecords(scope, targets) {
     for (const binding of scope.bindings) {
       const rows = db.prepare('SELECT idem_key,agent_id,session_id,state,transport_ref,content FROM outbox WHERE idem_key=?').all(binding.sendId);
       requireValue(rows.length === 1 && rows[0].agent_id === binding.agentId && rows[0].session_id === binding.conversationId &&
-        rows[0].state === 'accepted' && rows[0].transport_ref === null, 'An original Relay receipt changed.');
+        rows[0].state === 'accepted' && rows[0].transport_ref ===
+          (binding.agentId === 'dsh' ? 'a2a:' + binding.nativeTaskId : null), 'An original Relay receipt changed.');
       requireValue(rows[0].content === originalDeliveries.get(binding.sendId), 'Relay text does not match the original delivery payload.');
+      requireValue(fingerprint(rows[0]) === binding.relayReceiptFingerprint, 'An original Relay receipt fingerprint changed.');
     }
   });
   readonly(scope.hermes.path, scope.hermes.identity, db => {
@@ -331,7 +335,7 @@ export function loadOperatorScope(scopePath, expectedSha256) {
   'The exact reviewed startup owners are required.');
   requireValue(same(scope.startup.shortcuts.map(t => resolve(t.original).split(/[\\/]/).at(-1)).sort(),
     ['Onoes Deep (DSH A2A).lnk', 'Onoes DeepSeek Harness Web.lnk', 'Onoes Relay.lnk'].sort()), 'Both DSH login entries and the Relay login entry must be covered.');
-  requireValue(scope.bindings?.length === 8 && scope.bindings.every(b => b.conversationId && digest(b.nativeFingerprint)) &&
+  requireValue(scope.bindings?.length === 8 && scope.bindings.every(b => b.conversationId && digest(b.nativeFingerprint) && digest(b.relayReceiptFingerprint)) &&
     scope.bindings.every(b => typeof (b.agentId === 'echo' ? b.admissionId : b.nativeTaskId) === 'string' &&
       (b.agentId === 'echo' ? b.admissionId : b.nativeTaskId).length > 0) &&
     new Set(scope.bindings.filter(b => b.agentId === 'echo').map(b => b.admissionId)).size === 6 &&

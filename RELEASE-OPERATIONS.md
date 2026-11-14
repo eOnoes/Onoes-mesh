@@ -4,8 +4,8 @@
 
 First local release: **18/21 complete**. This is a private release candidate.
 Recovery baseline: **c438166**; current runtime-observation candidate is recorded below.
-Latest full local gate: **628 checks passed (507 Node +121 Python), exit0**.
-The proof binds the tested console/recovery sources: data/legacy-console-full-test-proof.json.
+Latest full local gate: **630 checks passed (509 Node +121 Python), exit0**.
+The proof binds the tested recovery sources: data/relay-receipt-compat-full-test-proof.json.
 The latest verified milestone backup contains 15 cards and passed all seven restore
 checks; exact archived recovery source hashes also match the test proof. See
 E:/App-Backups/ONOes-Mesh/LATEST.json for the authoritative backup location.
@@ -13,7 +13,7 @@ E:/App-Backups/ONOes-Mesh/LATEST.json for the authoritative backup location.
 | Local release lane | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Owner confirmed card create/edit/drag/reload, themes, resume, rotation/draft, offline reconnect and starting the scoped team from phone. | Complete a useful production team workflow without operator rescue after enrollment; preserve prior phone checks. |
-| C4 final release/custody/owner acceptance | Local 628-check gate; verified source/data backup; candidate recovery and launch-custody tests. | Qualify the actual deployed release and exact service custody, then obtain owner acceptance. Candidate tests do not qualify a running deployment. |
+| C4 final release/custody/owner acceptance | Local 630-check gate; verified source/data backup; candidate recovery and launch-custody tests. | Qualify the actual deployed release and exact service custody, then obtain owner acceptance. Candidate tests do not qualify a running deployment. |
 | D1-D4 main-PC Nemotron | Owner phone load/chat/unload plus backend receipts and loaded Inference/Control runtime/GPU agreement; idle fix installed and exact-source qualification passed. | Accepted for this first main-PC profile. Other profiles and machines remain later. |
 | E2 bounded production team | Isolated file-and-terminal build plus independent Nims review passed, with original transcript/test evidence and reopened-board result. | Resolve legacy holds through reviewed maintenance, then enroll and qualify the actual production route. |
 

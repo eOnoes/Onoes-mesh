@@ -117,12 +117,31 @@ original task records; they must be preserved, not cleared or replaced to satisf
 the candidate. No scope draft or preboot plan was produced by the failed builder.
 Evidence: data/legacy-relay-reference-compatibility-20261114.json.
 
-Next fix must bind the exact accepted agent-specific receipt and its full selected
-receipt fingerprint to the reviewed scope, with changed/substituted references
-denied. Retain the existing native-task/request equality and origin checks. Add a
-deployed-shape disposable regression before relying on the candidate. The628 gate
-predates this finding and does not prove compatibility with these actual receipts.
-No historical retirement, replay, hold release or receipt mutation is authorized.
+The candidate fix is now locally qualified: six Echo references must stay NULL;
+each DSH reference must exactly equal a2a: plus its independently bound original
+nativeTaskId. Every binding also requires relayReceiptFingerprint over the selected
+idem_key, agent_id, session_id, state, transport_ref and content. Missing pins,
+changed fields and substituted references fail, including a substituted reference
+whose changed receipt was repinned. Native-task/request equality and origin checks
+remain. No real receipt was cleared or changed. Older candidate scopes without
+receipt pins are refused; none is an approved live scope to migrate.
+
+The deployed-shaped disposable fixture now uses six NULL Echo and two mapped DSH
+references. The original assembled prepare/apply/rollback tests run that shape,
+and two added tests prove unchanged readback and invalid-reference/pin refusal.
+The Unicode-normalization fixture explicitly pins its deliberately changed
+synthetic receipt; the swapped-task test still proves the native text guard and
+now also checks earlier refusal at the stronger receipt guard. All42 focused
+checks and the full630 gate pass, exit0. Exact six-source proof:
+data/relay-receipt-compat-full-test-proof.json. Initial failures are retained.
+
+Read-only draft assembly now succeeds against the exact eight live original
+deliveries/native records and current disabled startup state. It writes only
+operator-scope-draft.json and proof in the preparation directory. This artifact
+deliberately uses a draft schema and not_approved review decision; the actual
+production CLI was tested to refuse it without creating a plan. It is not live
+scope approval, historical retirement or a passing postboot recovery. No
+independent review of this receipt delta has been claimed.
 
 This handoff gives the proposed sequence and owner actions. It is NOT yet a
 ready-to-run maintenance bundle. Before asking for the window, Nims must finish
