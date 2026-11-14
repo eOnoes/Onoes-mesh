@@ -16,6 +16,7 @@ import { nativeResourceFingerprint, productionWorkerRuntimeNames } from '../lib/
 import { legacyRecoveryFingerprint as hash } from '../lib/workroom-legacy-evidence.mjs';
 import { readLegacyRows, legacyRecoverySources } from '../integrations/legacy-recovery-plan.mjs';
 import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, inspectRetainedRecords, verifyRetainedReview, verifyReplayRecords, verifyStartupControls, verifyDeploymentScope, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
+import { readMaintenanceRecovery } from '../integrations/read-maintenance-recovery.mjs';
 
 const test = process.platform === 'win32' && process.arch === 'x64' ? nodeTest : nodeTest.skip;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -130,7 +131,28 @@ test('the assembled operator prepares, denies same-boot apply, commits only afte
     const saved=JSON.parse(f.db.prepare('SELECT evidence FROM workroom_legacy_recoveries').get().evidence);
     assert.equal(saved.boundary.schema,'mesh/legacy-local-fence/v2');assert.equal(saved.boundary.coverageScope,'reviewed_runtime_entrypoints_only');
     assert.equal(saved.nativeHold.workerRuntimeObservation.outsideRuntimeCount,0);assert.equal(saved.nativeHold.workerRuntimeObservation.continuousExecutionExcluded,false);
+    const plan=JSON.parse(readFileSync(f.options.planPath,'utf8'));
+    const ledgerBefore=hash(f.db.prepare('SELECT * FROM workroom_legacy_recovery_sends ORDER BY sendId').all());
+    const readback=readMaintenanceRecovery(f.scope,plan);
+    assert.equal(readback.status,'eight_recoveries_read_back');assert.equal(readback.readOnly,true);
+    assert.equal(readback.workerRetirementEstablished,false);assert.equal(readback.dispatchRemainsPaused,true);
+    assert.equal(hash(f.db.prepare('SELECT * FROM workroom_legacy_recovery_sends ORDER BY sendId').all()),ledgerBefore);
+    assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),originals);
+    f.db.prepare('UPDATE workroom_legacy_recovery_sends SET fingerprint=? WHERE sendId=?').run('0'.repeat(64),plan.targets[0].sendId);
+    assert.throws(()=>readMaintenanceRecovery(f.scope,plan),/did not read back/);
+    assert.equal(f.db.prepare('SELECT fingerprint FROM workroom_legacy_recovery_sends WHERE sendId=?').get(plan.targets[0].sendId).fingerprint,'0'.repeat(64));
   } finally { f.close(); }
+});
+
+test('standalone readback refuses an unrecorded ledger and changed database identity without creating recovery tables',async()=>{
+  const f=await fixture();
+  try{
+    await runLegacyOperator({...f.options,action:'prepare'},f.runtime);
+    const plan=JSON.parse(readFileSync(f.options.planPath,'utf8'));
+    assert.throws(()=>readMaintenanceRecovery(f.scope,plan),/did not read back/);
+    assert.equal(f.db.prepare("SELECT count(*) n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
+    assert.throws(()=>readMaintenanceRecovery({...f.scope,databaseIdentity:'0'.repeat(64)},plan),/database identity/);
+  }finally{f.close();}
 });
 
 test('deployed-shaped accepted receipts preserve six null Echo refs and two exact DSH task refs',async()=>{

@@ -45,6 +45,25 @@ test('opening a blocked plan never prompts, writes approval or applies',async t=
   assert.equal(readdirSync(result.receiptDirectory).includes('authorization.json'),false);
 });
 
+test('the pinned window deadline caps the postboot approval instead of granting another ten minutes',async t=>{
+  const f=fixture(t);const deadline=new Date(Date.now()+60000).toISOString();f.options.authorizationExpiresAt=deadline;
+  const apply=f.options.apply;
+  f.options.apply=async args=>{
+    assert.equal(JSON.parse(readFileSync(args.authorizationPath,'utf8')).expiresAt,deadline);
+    return apply(args);
+  };
+  assert.equal((await runLegacyRecoveryConsole(f.options)).status,'operator_returned');assert.equal(f.calls,1);
+});
+
+test('a window expiring while confirmation is open creates no approval or apply attempt',async t=>{
+  const f=fixture(t);f.options.authorizationExpiresAt=new Date(Date.now()+500).toISOString();
+  f.options.confirm=async({phrase})=>{await new Promise(resolve=>setTimeout(resolve,600));return phrase;};
+  const result=await runLegacyRecoveryConsole(f.options);
+  assert.equal(result.status,'blocked_expired_window');assert.equal(f.calls,0);
+  assert.equal(readdirSync(result.receiptDirectory).includes('authorization.json'),false);
+  assert.equal(readdirSync(join(f.workspace,'data','maintenance-console')).includes(f.options.plan.planHash+'.attempt.json'),false);
+});
+
 test('canceling or mistyping confirmation sends no apply and creates no approval',async t=>{
   const f=fixture(t);f.options.confirm=async()=> 'no';
   const result=await runLegacyRecoveryConsole(f.options);

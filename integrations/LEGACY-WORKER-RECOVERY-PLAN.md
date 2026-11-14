@@ -21,6 +21,58 @@ Purpose: preserve the eight old sends and their unknown historical outcomes,
 then record a separately authorized local maintenance boundary. This does not
 mark the old jobs successful or enable automatic workers, Rook or Mind.
 
+### Approved static review and restore corrections - November 14
+
+Eddie approved the exact 21,563-byte packet (SHA256
+ce7d0c3b5813d58a42ad2d5d279f4ada9e31eac9b922444b5b89c42a68c0a4eb).
+It was sent once through Relay, send 1e630231-5993-403c-a80a-bc868ef24e39.
+Echo's exact marker-matched response identified two restore-helper corrections:
+bind approval to the independently prepared window ID, owner SID and current
+host/boot; and verify startup-path absence plus parked hash on shortcut rollback,
+with disabled-definition readback on task rollback. Both are now prepared.
+Thirteen isolated checks exercising the actual source guard expressions passed;
+the real read-only restore preview passed. No Windows restoration was run.
+These private-helper checks are separate from the unchanged 630-test app proof.
+
+Echo found no concrete receipt-validator defect in the supplied snippet; this
+is not independent hashing, testing, whole-writer retirement or live acceptance.
+The final window must explicitly authorize trigger execution during restoration:
+enabling startup tasks can allow future triggers to run. Inspect saved recovery
+receipts, not exit zero alone, before restoration. Postboot launcher, final scope
+and exact window authorization remain unfinished; no reboot is authorized.
+
+New observed blocker before production team dispatch: /api/agents now exceeds
+the Mesh adapter's 262144-byte bound. The first directory-only attempt failed
+before any send. The approved review used the existing pinned-conversation
+message endpoint once; no adapter cap was changed. A bounded directory fix
+remains required. Evidence: data/window-static-review-corrections-20261114-proof.json.
+
+### Standalone handoff qualification - November 14
+
+Three manual launchers are prepared (Preview, Recover, Restore); none is installed
+in Startup. The launcher pins binaries/source, requires the original Windows
+owner and approved later-boot window, serializes Recover/Restore, and retains an
+unresolved-child intent after interruption. Draft scope or missing final-ready
+authority refuses before a child or approval is created. Exit zero alone is
+insufficient: the matching durable result and eight-record read-only ledger
+readback must pass before restoring startup after an apply attempt.
+
+The original task IDs and exact validated recovery evidence read back for all
+eight sends in the composed disposable test; altered/missing ledger evidence and
+wrong database identity refuse without repair or table creation. Recovery's fresh
+postboot authorization is capped at the pinned window deadline; expiration while
+the confirmation is open cannot create approval or an apply attempt.
+All633 local tests pass (512 Node,121 Python), plus17 isolated PowerShell handoff
+guard checks. Actual Preview and unapproved Recover refusal pass with no live
+control changes. This is preparation evidence, not live postboot acceptance.
+
+Final owner window approval is still absent. The final production scope, reviewed
+three-record exception, preboot plan and ready record will be produced only after
+that exact approval and fresh checks. Source/data backup must include the new
+handoff helpers; its packager whitelist was extended after the full suite and
+will be verified by an actual backup/isolated restore rehearsal. See private
+data/maintenance-handoff-full-test-proof-20261114.json. Do not restart yet.
+
 ### Eddie's part
 
 1. Save work on both computers. Stop other agents from editing Mesh, and leave

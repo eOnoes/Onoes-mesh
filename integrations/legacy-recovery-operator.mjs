@@ -496,6 +496,12 @@ async function main() {
       'The console source must be pinned in the reviewed scope before preparing the plan.');
     const planBytes=readFileSync((localFile(planPath,1048576),planPath));
     const plan=JSON.parse(planBytes.toString('utf8'));
+    // The handoff's preboot authority is pinned by the same frozen scope/plan.
+    // Its deadline must also bound the freshly confirmed postboot authorization.
+    const windowPath=scope.additionalSources?.windowApproval;
+    const authorizationExpiresAt=windowPath?JSON.parse(readFileSync((localFile(windowPath,1048576),windowPath),'utf8')).expiresAt:undefined;
+    requireValue(!scope.additionalSources?.maintenanceHandoff||typeof authorizationExpiresAt==='string',
+      'The standalone handoff requires its pinned maintenance-window deadline.');
     const inspect=()=>{
       checkScope();
       requireValue(sha(readFileSync(planPath))===sha(planBytes),'Console plan changed.');
@@ -503,7 +509,7 @@ async function main() {
     };
     const terminal=createInterface({input:process.stdin,output:process.stdout});
     try {
-      const result=await runLegacyRecoveryConsole({scope,plan,inspect,
+      const result=await runLegacyRecoveryConsole({scope,plan,inspect,authorizationExpiresAt,
         observe:()=>observeLegacyRecovery({...scope,sendIds:scope.bindings.map(b=>b.sendId),sourceFiles}),
         confirm:async prompt=>{
           process.stdout.write(JSON.stringify(prompt,null,2)+'\n');
