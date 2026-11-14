@@ -63,6 +63,7 @@ export function legacyRecoverySources(workspace) {
     relayLaunchPolicy: resolve(workspace, 'integrations/relay-service.ps1'),
     relayLaunchBinding: resolve(workspace, 'integrations/relay-runtime-binding.ps1'),
     relayConfiguration: 'D:/Dev/Onoes-Relay/config.json',
+    relayLoginLauncher: 'D:/Dev/Onoes-Relay/tools/start-relay.cmd',
     // Freeze the actual initialization/recovery/control paths qualified by the
     // isolated native startup test, not only the outward Runs API adapter.
     ...Object.fromEntries([

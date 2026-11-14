@@ -1536,3 +1536,61 @@ The owner cross-app/other-PC writer-scope fact and exact publication through149a
 remain pending. No real record was excluded/retried/retired, no model was loaded,
 no paid agent task was sent, no service restart/boot was scheduled. Goal remains
 ACTIVE18/21/parent84; production workers, Rook and live Mind remain off.
+
+
+## Offline retained-record recovery candidate — 2026-11-14
+
+Implemented locally; NOT live recovery approval or activation. This supersedes
+only the earlier milestone's statement that offline containment was unimplemented.
+The operator now requires mesh/legacy-operator-scope/v2 with containment
+worker_services_offline; old v1 scopes are deliberately rejected. It covers two
+disabled scheduled restart owners, all three parked login shortcuts (including
+Onoes Relay.lnk), the native profile lock, and eight exclusive loopback resources:
+IPv4/IPv6 for ports 3081, 4123, 8642 and 8787. The actual Relay login CMD is now a
+required frozen source. No real shortcut, task, service or credential was changed.
+
+A retained review remains a fact witness with canRelease:false. The operator may
+join the exact three reviewed retained rows only to a later same-machine boot,
+held offline resources, a paused/drained private Mesh lease, all eight exact
+original receipt checks, and separate exact owner authorization. The latter must
+also bind maintenanceMode=worker_services_offline, quietWorkspaceConfirmed=true
+(boolean), and retainedReviewSha256 matching the pinned review. Generic old
+approval, old boot, changed rows/proofs/sources/controls or an occupied Relay socket
+denies apply. Review, both qualification artifacts, all four qualification helpers
+and all 30 qualified source files are frozen with the plan and rechecked.
+
+Disposable tests verify that the successful joined path writes only eight
+historical_outcome_unknown administrative recovery entries, leaves every original
+send and all retained records unchanged, and keeps dispatch paused. Final-boundary
+row/proof/shortcut drift rolls back completely. No original worker retirement is
+inferred; no retry, replacement dispatch, Done state or automatic resume is added.
+Focused tests:21/21 pass, data/offline-retained-focused-tests.log. The first full
+run could not connect to disposable localhost servers under restricted execution
+(EACCES); its log is preserved. A normal-permission full run is recorded separately.
+
+The exact backup-nightly.cmd action and Python cmd_create/cmd_verify/main routing
+were inspected read-only: create/verify do not launch the Relay app. The separate
+drill command can start a restored test app but is not selected by that task.
+Create can prune its existing backup library and conditionally send encrypted
+backups under its existing configuration; none was invoked or changed here.
+This is a targeted restart-owner inventory, not universal absence proof.
+
+Smallest future operator sequence (NOT authorization to execute):
+1. Resolve the pending cross-app/other-PC writer-scope fact and independently
+   review the exact retained rows and current source-qualified candidate.
+2. Prepare the explicit v2 scope/plan from canonical identities; review any drift.
+3. Obtain approval for a concrete offline maintenance window covering service
+   shutdown, known restart controls and later boot; preserve exact process custody.
+4. With workers offline after that boot, inspect again and obtain the exact
+   time-limited plan/review-bound quiet-window authorization. Do not manufacture
+   this assertion from missing activity or mock cards.
+5. Apply once under real leases; verify only the eight administrative entries,
+   unchanged original records and paused dispatch. Report result before any
+   separately authorized restoration/resume. Unknown state leaves the hold intact.
+
+No real approved retained review, v2 scope, plan or quiet-window authorization was
+created. The existing private draft remains not_approved. Production workers,
+Rook and live Mind remain off; live legacy holds remain. Goal ACTIVE18/21/parent84.
+Pending exact publication through149ac87 does not include this later candidate.
+
+Full normal-permission npm test completed exit0: 605 checks (Node 40+1+30+92+321; Python 104+17). All summaries zero failures. Proof data/offline-retained-source-proof.json binds the three executable/test sources. No live recovery performed.

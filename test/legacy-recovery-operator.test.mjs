@@ -13,7 +13,7 @@ import { createDispatchBarrier } from '../lib/workroom-dispatch-barrier.mjs';
 import { nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { legacyRecoveryFingerprint as hash } from '../lib/workroom-legacy-evidence.mjs';
 import { readLegacyRows, legacyRecoverySources } from '../integrations/legacy-recovery-plan.mjs';
-import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, inspectRetainedRecords, verifyRetainedReview, verifyReplayRecords, verifyStartupControls, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
+import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, inspectRetainedRecords, verifyRetainedReview, verifyReplayRecords, verifyStartupControls, verifyDeploymentScope, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
 
 const test = process.platform === 'win32' && process.arch === 'x64' ? nodeTest : nodeTest.skip;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -57,18 +57,22 @@ async function fixture() {
   const originalDir = join(dir, 'Start Menu', 'Programs', 'Startup'); mkdirSync(originalDir, { recursive: true });
   const taskObservations = ['Hermes_Gateway', 'Onoes Deep Watchdog'].map(name => ({ name, path: '\\', enabled: false, state: 'Disabled',
     actions: [{ Execute: 'synthetic.exe', Arguments: '', WorkingDirectory: '' }], principal: { UserId: 'SYNTHETIC', LogonType: 'Interactive', RunLevel: 'Limited' } }));
-  const shortcuts = ['Onoes Deep (DSH A2A).lnk', 'Onoes DeepSeek Harness Web.lnk'].map((name, i) => {
+  const shortcuts = ['Onoes Deep (DSH A2A).lnk', 'Onoes DeepSeek Harness Web.lnk', 'Onoes Relay.lnk'].map((name, i) => {
     const parked = join(dir, 'parked-' + i + '.lnk'); writeFileSync(parked, 'Synthetic shortcut ' + i);
     return { original: join(originalDir, name), parked, sha256: sha(readFileSync(parked)) };
   });
-  const seed = createServer(); await new Promise(resolve => seed.listen(0, '127.0.0.1', resolve));
-  const port = seed.address().port; await new Promise(resolve => seed.close(resolve));
-  assert.ok(![3081, 4123, 4320, 8452, 8453, 8642].includes(port));
+  const ports = [];
+  while (ports.length < 4) {
+    const seed = createServer(); await new Promise(resolve => seed.listen(0, '127.0.0.1', resolve));
+    const port = seed.address().port; await new Promise(resolve => seed.close(resolve));
+    assert.ok(![3081, 4123, 4320, 8452, 8453, 8642, 8787].includes(port));
+    if (!ports.includes(port)) ports.push(port);
+  }
   const lock = join(dir, 'gateway.lock'); writeFileSync(lock, 'Synthetic lock');
-  const scope = { schema: 'mesh/legacy-operator-scope/v1', owner: 'Eddie', locality: 'desktop_echo_dsh_only',
+  const scope = { schema: 'mesh/legacy-operator-scope/v2', containment: 'worker_services_offline', owner: 'Eddie', locality: 'desktop_echo_dsh_only',
     workspace: realpathSync.native(process.cwd()), databasePath, databaseIdentity: databaseFileIdentity(databasePath),
     relay: { path: relayPath, identity: databaseFileIdentity(relayPath) }, hermes: { path: hermesPath, identity: databaseFileIdentity(hermesPath) },
-    dsh: { path: dshPath, sha256: sha(readFileSync(dshPath)) }, bindings, nativeResources: { profileLocks: [lock], endpoints: [['127.0.0.1', port], ['::1', port]] },
+    dsh: { path: dshPath, sha256: sha(readFileSync(dshPath)) }, bindings, nativeResources: { profileLocks: [lock], endpoints: ports.flatMap(port => [['127.0.0.1', port], ['::1', port]]) },
     startup: { tasks: taskObservations.map(({ name, path, actions, principal }) => ({ name, path, definitionFingerprint: hash({ actions, principal }) })), shortcuts } };
   const scopePath = join(dir, 'scope.json'); writeFileSync(scopePath, JSON.stringify(scope));
   const options = { scopePath, scopeSha256: sha(readFileSync(scopePath)), planPath: join(dir, 'plan.json') };
@@ -161,7 +165,7 @@ test('startup checks reject enabled or changed tasks, active login shortcuts, ch
 });
 
 test('the final composed guard rolls back when replay becomes uncertain or its exact input changes before commit', async () => {
-  for (const corruption of ['status', 'echoText', 'dshSnapshot']) {
+  for (const corruption of ['status', 'echoText', 'dshSnapshot', 'relayShortcut']) {
   const f = await fixture();
   try {
     await runLegacyOperator({ ...f.options, action: 'prepare' }, f.runtime); f.boot();
@@ -169,13 +173,14 @@ test('the final composed guard rolls back when replay becomes uncertain or its e
     const runtime = { ...f.runtime, startupReader() {
       if (++checks === 4) {
         if (corruption === 'dshSnapshot') writeFileSync(f.scope.dsh.path, JSON.stringify([...f.tasks, { id: 'unreviewed-task', history: [] }]));
+        else if (corruption === 'relayShortcut') writeFileSync(f.scope.startup.shortcuts[2].original, readFileSync(f.scope.startup.shortcuts[2].parked));
         else if (corruption === 'echoText') f.hermes.prepare("UPDATE session_admissions SET payload_json=? WHERE admission_id='admission-0'").run(JSON.stringify({ text: 'Different original' }));
         else f.hermes.prepare("UPDATE session_admissions SET status='unknown' WHERE admission_id='admission-0'").run();
       }
       return structuredClone(f.taskObservations);
     } };
     await assert.rejects(runLegacyOperator({ ...f.options, action: 'apply', ...f.authorize() }, runtime),
-      corruption === 'dshSnapshot' ? /reviewed hash/ : corruption === 'echoText' ? /Echo request text/ : /unresolved native/);
+      corruption === 'relayShortcut' ? /login shortcut remains active/ : corruption === 'dshSnapshot' ? /reviewed hash/ : corruption === 'echoText' ? /Echo request text/ : /unresolved native/);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n, 0);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n, 0);
     assert.equal(f.barrier.status().state, 'paused'); assert.equal(f.barrier.status().held, false);
@@ -366,18 +371,20 @@ function retainedFixture(f) {
   seal();return { review, relay, native, save, seal };
 }
 
-test('the exact retained review matches synthetic evidence without mutating records or bypassing the live recovery queue guard', async () => {
+test('a matching retained review cannot replace later-boot and exact quiet-window authority', async () => {
   const f = await fixture();
   try {
-    await runLegacyOperator({ ...f.options,action:'prepare' },f.runtime);f.boot();
     retainedFixture(f);
+    await runLegacyOperator({ ...f.options,action:'prepare' },f.runtime);
+    await assert.rejects(runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime),/later_pc_boot/);
+    f.boot();
     const rows=()=>hash({relay:f.relay.prepare('SELECT * FROM outbox').all(),native:f.hermes.prepare('SELECT * FROM session_admissions').all()});
     const before=rows(), result=verifyRetainedReview(f.scope);
     assert.equal(result.status,'matched_review_only');assert.equal(result.canRelease,false);assert.equal(result.workerRetirementEstablished,false);
     assert.equal(rows(),before);
     const inspected=await runLegacyOperator({...f.options,action:'inspect'},f.runtime);
-    assert.equal(inspected.retainedReview.status,'matched_review_only');assert.equal(inspected.controls.status,'blocked');assert.equal(inspected.canRelease,false);
-    await assert.rejects(runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime),/unresolved queued/);
+    assert.equal(inspected.retainedReview.status,'matched_review_only');assert.equal(inspected.controls.status,'verified');assert.equal(inspected.canRelease,false);
+    await assert.rejects(runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime),/quiet-window authority/);
     assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
     assert.equal(rows(),before);
   } finally {f.close();}
@@ -422,6 +429,96 @@ test('retained reviews require exact pinned proofs, complete source sets, curren
       if(change==='reviewBytes')writeFileSync(f.scope.retainedReview.path,'{}');
       if(change==='malformed'){writeFileSync(f.scope.retainedReview.path,'PRIVATE_BAD_JSON');f.scope.retainedReview.sha256=sha(readFileSync(f.scope.retainedReview.path));}
       assert.throws(()=>verifyRetainedReview(f.scope),change==='malformed'?/not valid JSON/:undefined);
+    }finally{f.close();}
+  }
+});
+
+test('offline v2 refuses the old layout, an active Relay login entry, or missing Relay socket coverage', async()=>{
+  const f=await fixture();
+  try{
+    const save=()=>{writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));};
+    f.scope.schema='mesh/legacy-operator-scope/v1';save();assert.throws(()=>loadOperatorScope(f.options.scopePath,f.options.scopeSha256),/offline v2/);
+    f.scope.schema='mesh/legacy-operator-scope/v2';const link=f.scope.startup.shortcuts.pop();save();assert.throws(()=>loadOperatorScope(f.options.scopePath,f.options.scopeSha256),/startup owners/);
+    f.scope.startup.shortcuts.push(link);save();verifyStartupControls(f.scope,f.taskObservations);
+    writeFileSync(link.original,readFileSync(link.parked));assert.throws(()=>verifyStartupControls(f.scope,f.taskObservations),/login shortcut remains active/);
+    const production=structuredClone(f.scope),at=suffix=>resolve(homedir(),suffix);
+    production.databasePath=resolve(production.workspace,'data/workroom-preview/tasks.sqlite');
+    production.relay.path=resolve('D:/Dev/Onoes-Relay/.private/relay.sqlite3');production.hermes.path=at('AppData/Local/hermes/state.db');production.dsh.path=at('.dsh/a2a/runtime/tasks/a2a-tasks.json');
+    production.nativeResources={profileLocks:[at('AppData/Local/hermes/gateway.lock')],endpoints:[3081,4123,8642,8787].flatMap(port=>[['127.0.0.1',port],['::1',port]])};
+    production.startup.shortcuts=production.startup.shortcuts.map(item=>({...item,original:at('AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/'+item.original.split(/[\\/]/).at(-1))}));
+    verifyDeploymentScope(production);
+    production.nativeResources.endpoints=production.nativeResources.endpoints.filter(([,port])=>port!==8787);
+    assert.throws(()=>verifyDeploymentScope(production),/eight worker loopback/);
+  }finally{f.close();}
+});
+
+test('a worker listener on the fourth offline socket prevents recovery and partial leases are released',async()=>{
+  const f=await fixture();let contender;
+  try{
+    await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();
+    const [host,port]=f.scope.nativeResources.endpoints[6];contender=createServer();await new Promise(done=>contender.listen(port,host,done));
+    await assert.rejects(runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime));
+    assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
+    assert.equal(f.barrier.status().held,false);
+    await new Promise(done=>contender.close(done));contender=null;
+    const result=await runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime);
+    assert.equal(result.dispatchRemainsPaused,true);assert.equal(f.barrier.status().held,false);
+  }finally{if(contender)await new Promise(done=>contender.close(done));f.close();}
+});
+
+
+function retainedAuthority(f, changes = {}) {
+  const approval=f.authorize();const record=JSON.parse(readFileSync(approval.authorizationPath,'utf8'));
+  Object.assign(record,{maintenanceMode:'worker_services_offline',quietWorkspaceConfirmed:true,
+    retainedReviewSha256:f.scope.retainedReview.sha256},changes);
+  writeFileSync(approval.authorizationPath,JSON.stringify(record));
+  approval.authorizationSha256=sha(readFileSync(approval.authorizationPath));return approval;
+}
+
+test('offline recovery preserves all retained rows and original sends under exact later-boot quiet-window authority',async()=>{
+  const f=await fixture();
+  try{
+    retainedFixture(f);
+    const originals=()=>hash({sends:f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),
+      relay:f.relay.prepare('SELECT * FROM outbox ORDER BY idem_key').all(),native:f.hermes.prepare('SELECT * FROM session_admissions ORDER BY admission_id').all()});
+    const before=originals();await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();
+    const result=await runLegacyOperator({...f.options,action:'apply',...retainedAuthority(f)},f.runtime);
+    assert.equal(result.disposition,'historical_outcome_unknown');assert.equal(result.dispatchRemainsPaused,true);
+    assert.equal(originals(),before);assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n,8);
+    assert.equal(f.barrier.status().state,'paused');assert.equal(f.barrier.status().held,false);
+  }finally{f.close();}
+});
+
+test('retained offline authority cannot omit its exact review hash or replace a quiet-window confirmation',async()=>{
+  for(const changes of [{quietWorkspaceConfirmed:false},{quietWorkspaceConfirmed:'true'},
+    {maintenanceMode:'online'},{retainedReviewSha256:'0'.repeat(64)}]){
+    const f=await fixture();
+    try{
+      retainedFixture(f);await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();
+      await assert.rejects(runLegacyOperator({...f.options,action:'apply',...retainedAuthority(f,changes)},f.runtime),/quiet-window authority/);
+      assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
+      assert.equal(f.barrier.status().held,false);
+    }finally{f.close();}
+  }
+});
+
+test('retained row or proof drift at the final offline boundary rolls back the entire recovery',async()=>{
+  for(const change of ['row','proof','shortcut']){
+    const f=await fixture();
+    try{
+      const r=retainedFixture(f);await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();
+      let checks=0;const runtime={...f.runtime,startupReader(){
+        if(++checks===4){
+          if(change==='row')f.relay.prepare("UPDATE outbox SET content='Changed during recovery' WHERE idem_key='old-dsh'").run();
+          if(change==='proof')writeFileSync(r.review.qualifications.native.path,'{}');
+          if(change==='shortcut')writeFileSync(f.scope.startup.shortcuts[2].original,readFileSync(f.scope.startup.shortcuts[2].parked));
+        }
+        return structuredClone(f.taskObservations);
+      }};
+      await assert.rejects(runLegacyOperator({...f.options,action:'apply',...retainedAuthority(f)},runtime));
+      assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
+      assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n,0);
+      assert.equal(f.barrier.status().state,'paused');assert.equal(f.barrier.status().held,false);
     }finally{f.close();}
   }
 });

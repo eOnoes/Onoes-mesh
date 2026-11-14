@@ -19,6 +19,9 @@ const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const key = path => process.platform === 'win32' ? path.toLowerCase() : path;
 const same = (a, b) => fingerprint(a) === fingerprint(b);
+const retainedRelayFiles = ['relay_server.py', 'relay_a2a.py', 'relay_a2a_reconcile.py', 'relay_auth.py', 'relay_budget.py',
+    'relay_channels.py', 'relay_config.py', 'relay_db.py', 'relay_hermes.py', 'relay_inbox.py', 'relay_mcp.py',
+    'relay_native_receipts.py', 'relay_notify.py', 'relay_openclaw.py', 'relay_sessions.py', 'relay_webpush.py'];
 function requireValue(condition, message) { if (!condition) throw Error(message); }
 // Relay's Python str.strip includes U+0085 and U+001C..001F and excludes
 // U+FEFF. JavaScript trim has different boundaries; never normalize interiors.
@@ -42,6 +45,15 @@ function readPinned(path, expectedSha256, maxBytes = 1048576) {
     bytes.length <= maxBytes && sha(bytes) === expectedSha256, 'Operator input changed or its reviewed hash does not match.');
   return bytes;
 }
+function readPinnedObject(input) {
+    const bytes = readPinned(input?.path, input?.sha256);
+    let value;
+    try { value = JSON.parse(bytes.toString('utf8')); }
+    catch { throw Error('Retained review input is not valid JSON.'); }
+    requireValue(value && typeof value === 'object' && !Array.isArray(value), 'Retained review inputs must be JSON objects.');
+    return value;
+}
+
 function readonly(path, identity, action) {
   localFile(path);
   requireValue(databaseFileIdentity(path) === identity, 'Replay database identity changed.');
@@ -126,20 +138,13 @@ export function inspectRetainedRecords(scope) {
       'No route, runtime/startup or worker-containment qualification is supplied by this report.'] };
 }
 
-// A source-bound review witness, deliberately NOT an eligibility exception.
-// Enrollment still requires a separately reviewed containment policy; the strict
-// queue guards below never consume this result as permission to recover.
+// A source-bound fact witness, never a capability. Offline recovery must join
+// this with the later boot, actual held resources and separate owner quiet-window
+// authority; a matching review by itself cannot recover anything.
 export function verifyRetainedReview(scope) {
   const descriptor = scope.retainedReview;
   if (!descriptor) return { status: 'not_supplied', canRelease: false };
-  const json = input => {
-    const bytes = readPinned(input?.path, input?.sha256);
-    let value;
-    try { value = JSON.parse(bytes.toString('utf8')); }
-    catch { throw Error('Retained review input is not valid JSON.'); }
-    requireValue(value && typeof value === 'object' && !Array.isArray(value), 'Retained review inputs must be JSON objects.');
-    return value;
-  };
+  const json = readPinnedObject;
   const review = json(descriptor);
   requireValue(review.schema === 'mesh/retained-record-review/v1' && review.owner === 'Eddie' &&
     review.decision === 'preserve_without_retry_or_retirement' &&
@@ -174,11 +179,8 @@ export function verifyRetainedReview(scope) {
       item.startup === i + 1 && item.syntheticModelCalls === (i === 0 ? 1 : 0) && item.unknownRemainedPaused === true &&
       item.blockedFollowerRemainedQueued === true && item.safeRequestCompleted === true && item.gatewayCoordinatorPreservedRows === true),
   'The reviewed native coordinator qualification is incomplete.');
-  const relayFiles = ['relay_server.py', 'relay_a2a.py', 'relay_a2a_reconcile.py', 'relay_auth.py', 'relay_budget.py',
-    'relay_channels.py', 'relay_config.py', 'relay_db.py', 'relay_hermes.py', 'relay_inbox.py', 'relay_mcp.py',
-    'relay_native_receipts.py', 'relay_notify.py', 'relay_openclaw.py', 'relay_sessions.py', 'relay_webpush.py'];
-  requireValue(same(Object.keys(relay.sourceSha256 || {}).sort(), relayFiles.slice().sort()), 'Incomplete Relay qualification source set.');
-  for (const file of relayFiles) readPinned(resolve('D:/Dev/Onoes-Relay', file), relay.sourceSha256[file]);
+  requireValue(same(Object.keys(relay.sourceSha256 || {}).sort(), retainedRelayFiles.slice().sort()), 'Incomplete Relay qualification source set.');
+  for (const file of retainedRelayFiles) readPinned(resolve('D:/Dev/Onoes-Relay', file), relay.sourceSha256[file]);
   const nativeRoot = resolve(homedir(), 'AppData/Local/hermes/hermes-agent');
   const nativeFiles = Object.entries(legacyRecoverySources(scope.workspace)).filter(([name]) => name.startsWith('hermesRecovery'));
   requireValue(nativeFiles.length === 14 && Object.keys(native.sourceSha256 || {}).length === 14,
@@ -193,7 +195,7 @@ export function verifyRetainedReview(scope) {
   for (const helper of helpers) readPinned(resolve(scope.workspace, 'integrations', helper), native.helperSha256[helper]);
   return { status: 'matched_review_only', retainedRecords: 3, qualificationSources: 30,
     canRelease: false, workerRetirementEstablished: false,
-    remaining: ['Runtime route/loaded-source binding', 'Separate original-writer containment', 'Live recovery authorization and enrollment'] };
+    remaining: ['Later same-machine boot and actual offline worker leases', 'Exact owner quiet-window authorization', 'Live activation is not granted by this witness'] };
 }
 
 export function verifyReplayRecords(scope, targets) {
@@ -202,6 +204,12 @@ export function verifyReplayRecords(scope, targets) {
     scope.bindings.every(t => targets.some(original => original.sendId === t.sendId && original.agentId === t.agentId)), 'Replay bindings must cover exactly the eight original sends.');
   requireValue(scope.bindings.filter(t => t.agentId === 'echo').length === 6 &&
     scope.bindings.filter(t => t.agentId === 'dsh').length === 2, 'The reviewed six Echo / two DSH route is required.');
+  let retained = null;
+  if (scope.retainedReview) {
+    requireValue(scope.schema === 'mesh/legacy-operator-scope/v2' && scope.containment === 'worker_services_offline',
+      'Retained records require the reviewed offline v2 scope.');
+    retained = verifyRetainedReview(scope);
+  }
   // Workroom stores the rendered delivery separately from the user's short text.
   // Relay strips that delivery's outer whitespace before transport admission.
   const originalDeliveries = readonly(scope.databasePath, scope.databaseIdentity, db => new Map(scope.bindings.map(binding => {
@@ -214,7 +222,7 @@ export function verifyReplayRecords(scope, targets) {
   })));
   readonly(scope.relay.path, scope.relay.identity, db => {
     const states = db.prepare('SELECT DISTINCT state FROM outbox').all().map(row => row.state);
-    requireValue(states.every(state => ['accepted', 'failed', 'dead'].includes(state)), 'Relay has unresolved queued deliveries; recovery stays blocked.');
+    requireValue(retained?.status === 'matched_review_only' || states.every(state => ['accepted', 'failed', 'dead'].includes(state)), 'Relay has unresolved queued deliveries; recovery stays blocked.');
     for (const binding of scope.bindings) {
       const rows = db.prepare('SELECT idem_key,agent_id,session_id,state,transport_ref,content FROM outbox WHERE idem_key=?').all(binding.sendId);
       requireValue(rows.length === 1 && rows[0].agent_id === binding.agentId && rows[0].session_id === binding.conversationId &&
@@ -223,7 +231,7 @@ export function verifyReplayRecords(scope, targets) {
     }
   });
   readonly(scope.hermes.path, scope.hermes.identity, db => {
-    requireValue(db.prepare("SELECT COUNT(*) AS n FROM session_admissions WHERE status IS NULL OR status!='terminal'").get().n === 0,
+    requireValue(retained?.status === 'matched_review_only' || db.prepare("SELECT COUNT(*) AS n FROM session_admissions WHERE status IS NULL OR status!='terminal'").get().n === 0,
       'Hermes has unresolved native admissions; recovery stays blocked.');
     for (const binding of scope.bindings.filter(t => t.agentId === 'echo')) {
       const rows = db.prepare('SELECT admission_id,request_id,target_session_id,payload_digest,status,outcome,owner_epoch,generation FROM session_admissions WHERE admission_id=?').all(binding.admissionId);
@@ -282,8 +290,8 @@ export function readWindowsStartupTasks(tasks) {
 }
 
 export function verifyStartupControls(scope, observations) {
-  requireValue(scope.startup?.tasks?.length === 2 && scope.startup.shortcuts?.length === 2 && observations.length === 2,
-    'Both scheduled restart owners and both login shortcuts must be covered.');
+  requireValue(scope.startup?.tasks?.length === 2 && scope.startup.shortcuts?.length === 3 && observations.length === 2,
+    'Both scheduled restart owners and all three worker login shortcuts must be covered.');
   for (const task of scope.startup.tasks) {
     const matches = observations.filter(row => row.name === task.name && row.path === task.path);
     requireValue(matches.length === 1 && matches[0].enabled === false && matches[0].state === 'Disabled' &&
@@ -295,13 +303,13 @@ export function verifyStartupControls(scope, observations) {
       !existsSync(item.original) && !/[\\/]Startup[\\/]/i.test(item.parked), 'A reviewed login shortcut remains active or is not safely parked.');
     readPinned(item.parked, item.sha256, 65536);
   }
-  return { disabledTasks: 2, parkedShortcuts: 2 };
+  return { disabledTasks: 2, parkedShortcuts: 3 };
 }
 
 export function loadOperatorScope(scopePath, expectedSha256) {
   const scope = JSON.parse(readPinned(scopePath, expectedSha256));
-  requireValue(scope.schema === 'mesh/legacy-operator-scope/v1' && scope.owner === 'Eddie' &&
-    scope.locality === 'desktop_echo_dsh_only', 'Reviewed owner and desktop-only scope are required.');
+  requireValue(scope.schema === 'mesh/legacy-operator-scope/v2' && scope.containment === 'worker_services_offline' && scope.owner === 'Eddie' &&
+    scope.locality === 'desktop_echo_dsh_only', 'Reviewed owner, desktop-only scope and offline v2 containment are required.');
   requireValue(key(realpathSync.native(scope.workspace)) === key(resolve(scope.workspace)) &&
     key(realpathSync.native(process.cwd())) === key(scope.workspace), 'Run from the exact reviewed Mesh workspace.');
   localFile(scope.databasePath);
@@ -311,10 +319,10 @@ export function loadOperatorScope(scopePath, expectedSha256) {
   requireValue(digest(scope.dsh?.sha256), 'A separately reviewed DSH task-store snapshot hash is required.');
   requireValue(same(scope.startup.tasks.map(t => t.name).sort(), ['Hermes_Gateway', 'Onoes Deep Watchdog'].sort()) &&
     new Set(scope.startup.tasks.map(t => t.path + t.name)).size === 2 &&
-    new Set(scope.startup.shortcuts.map(t => key(resolve(t.original)))).size === 2,
+    new Set(scope.startup.shortcuts.map(t => key(resolve(t.original)))).size === 3,
   'The exact reviewed startup owners are required.');
   requireValue(same(scope.startup.shortcuts.map(t => resolve(t.original).split(/[\\/]/).at(-1)).sort(),
-    ['Onoes Deep (DSH A2A).lnk', 'Onoes DeepSeek Harness Web.lnk'].sort()), 'Both DSH login entries must be covered.');
+    ['Onoes Deep (DSH A2A).lnk', 'Onoes DeepSeek Harness Web.lnk', 'Onoes Relay.lnk'].sort()), 'Both DSH login entries and the Relay login entry must be covered.');
   requireValue(scope.bindings?.length === 8 && scope.bindings.every(b => b.conversationId && digest(b.nativeFingerprint)) &&
     scope.bindings.every(b => typeof (b.agentId === 'echo' ? b.admissionId : b.nativeTaskId) === 'string' &&
       (b.agentId === 'echo' ? b.admissionId : b.nativeTaskId).length > 0) &&
@@ -328,6 +336,20 @@ export function loadOperatorScope(scopePath, expectedSha256) {
   'Both independently pinned DSH originating message boundaries are required.');
   const sourceFiles = { ...legacyRecoverySources(scope.workspace), operatorScope: scopePath, operatorRunner: fileURLToPath(import.meta.url),
     dshTaskStoreSnapshot: scope.dsh.path };
+  if (scope.retainedReview) {
+    const review = readPinnedObject(scope.retainedReview);
+    readPinnedObject(review.qualifications?.relay); readPinnedObject(review.qualifications?.native);
+    Object.assign(sourceFiles, {
+      retainedReviewRecord: scope.retainedReview.path,
+      retainedRelayQualification: review.qualifications.relay.path,
+      retainedNativeQualification: review.qualifications.native.path,
+      retainedRelayQualifier: resolve(scope.workspace, 'integrations/qualify-relay-retained-startup.py'),
+      retainedNativeParent: resolve(scope.workspace, 'integrations/qualify-native-retained-startup.py'),
+      retainedNativePeer: resolve(scope.workspace, 'integrations/qualify-native-retained-peer.py'),
+      retainedNativeRecovery: resolve(scope.workspace, 'integrations/qualify-native-retained-recovery.py'),
+    });
+    retainedRelayFiles.forEach((file, index) => { sourceFiles['retainedRelayModule' + index] = resolve('D:/Dev/Onoes-Relay', file); });
+  }
   for (const [name, path] of Object.entries(scope.additionalSources || {})) {
     requireValue(/^[a-zA-Z][a-zA-Z0-9]{0,63}$/.test(name) && !['constructor', 'prototype'].includes(name) &&
       !Object.hasOwn(sourceFiles, name), 'Source names cannot override the required recovery implementation.');
@@ -349,8 +371,8 @@ export function verifyDeploymentScope(scope) {
   requireValue(scope.nativeResources?.profileLocks?.length === 1 &&
     exact(scope.nativeResources.profileLocks[0], at('AppData/Local/hermes/gateway.lock')) &&
     same(scope.nativeResources.endpoints?.map(JSON.stringify).sort(),
-      [3081, 4123, 8642].flatMap(port => [['127.0.0.1', port], ['::1', port]]).map(JSON.stringify).sort()),
-  'The full reviewed native profile and six loopback endpoints are required.');
+      [3081, 4123, 8642, 8787].flatMap(port => [['127.0.0.1', port], ['::1', port]]).map(JSON.stringify).sort()),
+  'The full reviewed native profile and eight worker loopback endpoints are required.');
   const startup = at('AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup');
   requireValue(scope.startup.shortcuts.every(item => exact(item.original, resolve(startup, item.original.split(/[\\/]/).at(-1)))) &&
     scope.startup.tasks.every(task => task.path === '\\'), 'The reviewed login and scheduled-task locations are required.');
@@ -395,8 +417,21 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
   }
   requireValue(assessment.status === 'ready_for_operator_review' && controls.status === 'verified',
     'Recovery remains blocked: ' + [...assessment.reasons, controls.reason].filter(Boolean).join('; '));
-  const authorize = await createLegacyAuthorizationReader({ recordPath: authorizationPath, expectedSha256: authorizationSha256,
+  const baseAuthorize = await createLegacyAuthorizationReader({ recordPath: authorizationPath, expectedSha256: authorizationSha256,
     planHash: plan.planHash, host: observation.host, bootedAt: observation.bootedAt });
+  const checkOwner = requestedPlanHash => {
+    const owner = baseAuthorize.checkSync(requestedPlanHash);
+    if (scope.retainedReview) {
+      const record = readPinnedObject({ path: authorizationPath, sha256: authorizationSha256 });
+      requireValue(record.maintenanceMode === 'worker_services_offline' && record.quietWorkspaceConfirmed === true &&
+        record.retainedReviewSha256 === scope.retainedReview.sha256,
+      'Exact owner quiet-window authority for this retained review is required.');
+    }
+    return owner;
+  };
+  const authorize = async requestedPlanHash => checkOwner(requestedPlanHash);
+  Object.defineProperty(authorize, 'checkSync', { value: checkOwner });
+  await authorize(plan.planHash);
   let nativeLease, meshLease, db;
   try {
     nativeLease = await holdWindowsNativeMaintenance(scope.nativeResources);
