@@ -76,8 +76,8 @@ database and sidecars.
 This handoff gives the proposed sequence and owner actions. It is NOT yet a
 ready-to-run maintenance bundle. Before asking for the window, Nims must finish
 the exact eight-send/three-record review, confirm the qualified sources still
-match, prepare the v3 scope inputs and standalone postboot authority/result
-handoff, and verify the stop/restore launchers. Final plan freezing necessarily
+match, prepare the v3 scope inputs, verify the standalone console in the complete
+postboot handoff, and verify the stop/restore launchers. Final plan freezing necessarily
 follows approved startup suspension. Do not fabricate an approved scope or
 postboot authority from Eddie's editor-coverage confirmation.
 
@@ -93,6 +93,37 @@ match the saved inventory; the same three retained queue records and source/stor
 identities are unchanged. The new exact eight-send/three-record draft remains
 not_approved. No synthetic tests were rerun for this documentation/preparation-only
 slice. Machine-readable result: data/maintenance-handoff-preparation-20261114.json.
+
+### Standalone console candidate
+
+The existing operator now has an interactive `console` action. It uses the same
+scope validation, live inspection and guarded apply path. Before preparing its
+plan, the reviewed scope must pin `lib/workroom-legacy-console.mjs` under
+`additionalSources.maintenanceConsole`. No override, restart or service-control
+action is added. The console command takes the same reviewed scope path/hash and
+plan path as inspect; the final handoff will supply their actual values.
+
+It shows the full plan hash and eight send IDs, asks Eddie to confirm all other
+editors remain closed, and requires the displayed RECOVER phrase. Enter cancels.
+It inspects again after confirmation and refuses a changed/unready plan. A later
+boot on the exact host is required before creating a ten-minute owner record.
+The existing approval reader validates that record, and the existing operator
+rechecks the actual scope, stores, runtime boundaries and authority through commit.
+
+Receipts live in data/maintenance-console with exclusive, flushed writes. A
+per-plan apply-intent file is saved before apply. After an exception or abrupt
+exit, another console cannot apply the same plan blindly; inspect the original
+plan/ledger and receipt directory. A returned result is saved separately and must
+confirm dispatch remains paused. No send retry, fake retirement or auto-resume
+is added. The console does not restore launchers or schedule a reboot.
+
+All54 focused console/authorization/operator/native checks passed. These include
+an actual disposable child exiting after intent but before a result, subsequent
+no-retry refusal, cancellation, same-boot denial, changed readiness and the real
+CLI refusing noninteractive invocation. The console's positive apply callback is
+synthetic; this is not a live postboot apply or whole-window acceptance. The first
+broader run rejected the fixture's Windows short path; only fixture path
+canonicalization changed. Initial failures are retained in data/legacy-console-*.
 
 ## Historical proposal and qualification record
 

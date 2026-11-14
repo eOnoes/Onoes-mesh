@@ -4,8 +4,8 @@
 
 First local release: **18/21 complete**. This is a private release candidate.
 Recovery baseline: **c438166**; current runtime-observation candidate is recorded below.
-Latest full local gate: **620 checks passed (499 Node +121 Python), exit0**.
-The proof binds the tested recovery sources: data/maintenance-final-test-proof.json.
+Latest full local gate: **628 checks passed (507 Node +121 Python), exit0**.
+The proof binds the tested console/recovery sources: data/legacy-console-full-test-proof.json.
 The latest verified milestone backup contains 15 cards and passed all seven restore
 checks; exact archived recovery source hashes also match the test proof. See
 E:/App-Backups/ONOes-Mesh/LATEST.json for the authoritative backup location.

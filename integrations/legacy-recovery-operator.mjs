@@ -14,6 +14,8 @@ import { createLegacyAuthorizationReader } from '../lib/workroom-legacy-authoriz
 import { issueLegacyRecoveryPermit, createLegacyRecoveryStore } from '../lib/workroom-legacy-recovery.mjs';
 import { makeLegacyRecoveryPlan, assessLegacyRecovery, legacyRecoveryFingerprint as fingerprint } from '../lib/workroom-legacy-evidence.mjs';
 import { observeLegacyRecovery, legacyRecoverySources } from './legacy-recovery-plan.mjs';
+import { runLegacyRecoveryConsole } from '../lib/workroom-legacy-console.mjs';
+import { createInterface } from 'node:readline/promises';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
@@ -480,6 +482,35 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
 
 async function main() {
   const [action, scopePath, scopeSha256, planPath, authorizationPath, authorizationSha256, ...extra] = process.argv.slice(2);
+  if (action === 'console') {
+    requireValue(scopePath && scopeSha256 && planPath && !authorizationPath && !authorizationSha256 && !extra.length &&
+      process.stdin.isTTY && process.stdout.isTTY,
+    'Use console <absolute-scope.json> <reviewed-scope-sha256> <plan.json> in an interactive local terminal.');
+    const { scope, sourceFiles, checkScope } = loadOperatorScope(scopePath, scopeSha256);
+    verifyDeploymentScope(scope);
+    requireValue(scope.additionalSources?.maintenanceConsole === resolve(scope.workspace, 'lib/workroom-legacy-console.mjs'),
+      'The console source must be pinned in the reviewed scope before preparing the plan.');
+    const planBytes=readFileSync((localFile(planPath,1048576),planPath));
+    const plan=JSON.parse(planBytes.toString('utf8'));
+    const inspect=()=>{
+      checkScope();
+      requireValue(sha(readFileSync(planPath))===sha(planBytes),'Console plan changed.');
+      return runLegacyOperator({action:'inspect',scopePath,scopeSha256,planPath});
+    };
+    const terminal=createInterface({input:process.stdin,output:process.stdout});
+    try {
+      const result=await runLegacyRecoveryConsole({scope,plan,inspect,
+        observe:()=>observeLegacyRecovery({...scope,sendIds:scope.bindings.map(b=>b.sendId),sourceFiles}),
+        confirm:async prompt=>{
+          process.stdout.write(JSON.stringify(prompt,null,2)+'\n');
+          return terminal.question('Type the displayed RECOVER phrase to approve, or Enter to cancel: ');
+        },
+        apply:approval=>runLegacyOperator({action:'apply',scopePath,scopeSha256,planPath,...approval}),
+      });
+      process.stdout.write(JSON.stringify(result)+'\n');
+    } finally { terminal.close(); }
+    return;
+  }
   if (action === 'diagnose') {
     requireValue(process.argv.length === 3, 'Use diagnose with no scope, overrides or approval arguments.');
     const workspace = realpathSync.native(process.cwd());
