@@ -1090,3 +1090,36 @@ is not exhaustive startup proof, live recovery approval, or a restore-ready expo
 The model engine/configuration and all running apps were left alone. The existing
 pending exact publication through149ac87 does not authorize this later milestone.
 Goal ACTIVE; first local release18/21/parent84; original eight holds remain uncleared.
+
+### Broker provenance audit - 2026-11-14 UTC
+
+Read-only follow-up located the separate Codex chat `AI vm Onoes-exec`
+(01a1cff6-ca69-7670-bb8a-447bebae4463) and its project at D:/Onoes-exec.
+The current reports/console-uac-diagnosis-checkpoint.json and reports/phase1.md
+describe a VM-image bootstrap awaiting an owner UAC diagnostic, with execution
+disabled and qualification false. Those are that project's recorded observations,
+not a fresh broker/provider query or authority to act from Mesh. No broker API,
+VM operation, service control or message to the other chat was performed here.
+
+The installed Invoke-HyperVWorker.ps1 accepts fixed image-builder operations;
+its closed job schema has image/seed hashes and an installer-boot flag, rather
+than a workspace command. This identifies that wrapper's role only. It does not
+qualify the broker's complete RPC surface or establish historical worker use.
+
+Fresh current-source inspection traces mainboardNativeConnection through
+nativeGatewayWorkerOptions/createNativeGatewayTransport to the Python
+native_gateway_transport.py helper, which discovers the existing loopback Hermes
+gateway and forwards session/prompt RPC. No direct broker call exists in those
+inspected functions. This is a positive trace of the current bridge, not proof
+that Hermes tools, unindexed edits or historical runs never used the broker.
+The broad Hermes text search timed out with zero files scanned and stale-index
+warnings; it supplies no negative evidence. Do not cite it as absence proof.
+
+Keep the broker as a conservative native-runtime refusal. Do not stop or enroll
+this separate project to unblock Mesh. Its own checkpoint cannot retire Mesh's
+eight original writers, clear their holds, or authorize a recovery window. The
+remaining practical handoff must resolve how this running service is treated
+under an explicitly reviewed bounded policy before promising a runnable window.
+Private audit evidence: data/broker-provenance-audit.json. No executable source
+changed; the existing full620 proof remains the source-test result, not live
+recovery evidence. No phone recheck is needed for this documentation-only audit.
