@@ -7,6 +7,16 @@ anything on the laptop, and authorized preparing these steps. The earlier
 editor-coverage question is RESOLVED. This is preparation, not authorization to
 stop services, restart Windows or apply recovery. No restart is scheduled.
 
+Update: Eddie separately approved startup preparation only. Stage A is now
+COMPLETE: the four previously enabled tasks are disabled, the guardian remains
+disabled, and all three original login links are parked with verified hashes.
+Mesh remains healthy on the same owned process. Automatic login/recovery starts
+are temporarily suspended; do not restart or close the running apps before the
+next reviewed handoff. No app/service/model stop or recovery apply was performed.
+The original-state manifest is immutable historical evidence; its false approval
+flag is not the current status. Current status is in stageA-result.json and the
+freshly re-exported stageA-custody-readback.json in the preparation directory.
+
 Purpose: preserve the eight old sends and their unknown historical outcomes,
 then record a separately authorized local maintenance boundary. This does not
 mark the old jobs successful or enable automatic workers, Rook or Mind.
@@ -40,7 +50,7 @@ data/maintenance-window-preparation-20261114/startup-restore-manifest.json.
 It contains original enabled flags, five XML copies and three byte-identical
 shortcut copies with hashes and original/parked paths. No originals were changed.
 
-Limited stage A proposal: disable only the five named root-path tasks and move
+Completed, separately approved stage A scope: disable only the five named root-path tasks and move
 only the three named Startup links to the manifest's Parked-startup-links folder.
 The guardian is already disabled; preserve that state. Do not stop a running task,
 app or service, restart Windows, change model state or apply recovery in this
@@ -68,10 +78,12 @@ their automatic login/recovery starts will be suspended until restoration.
 
 Five exact root-path tasks: `Hermes_Gateway`, `Onoes Deep Watchdog`,
 `ONOes Mesh Workroom Recovery`, `DSH Local Model Supervisor`, and
-`Hermes_Gateway_Guardian`. Fresh November 14 inventory matches all five earlier
-definition hashes. The first four are enabled/Ready; the guardian is already
-disabled and must remain disabled on restoration. These observations do not
-authorize task control.
+`Hermes_Gateway_Guardian`. The original November 14 inventory matched all five
+earlier definition hashes. After approved stage A, all five are Disabled; only
+the four previously enabled tasks changed. The guardian must remain disabled on
+restoration. Actual disabled definition hashes and copies were read back against
+fresh exports; these are available for the v3 scope. No later restart/apply
+authority is implied by that completed startup-only change.
 
 Three exact links: `Onoes Deep (DSH A2A).lnk`,
 `Onoes DeepSeek Harness Web.lnk`, and `Onoes Relay.lnk` in the user's Startup
@@ -96,6 +108,22 @@ database and sidecars.
 
 ### Remaining package work - no live controls changed
 
+Update after completed stage A: startup controls changed only within the approved
+scope above. A read-only attempt to assemble the full draft found a candidate
+compatibility defect: verifyReplayRecords requires transport_ref=NULL for all
+eight Relay receipts. Actual selected receipts have six Echo NULL references and
+two DSH `a2a:<nativeTaskId>` references. Those DSH references identify the same two
+original task records; they must be preserved, not cleared or replaced to satisfy
+the candidate. No scope draft or preboot plan was produced by the failed builder.
+Evidence: data/legacy-relay-reference-compatibility-20261114.json.
+
+Next fix must bind the exact accepted agent-specific receipt and its full selected
+receipt fingerprint to the reviewed scope, with changed/substituted references
+denied. Retain the existing native-task/request equality and origin checks. Add a
+deployed-shape disposable regression before relying on the candidate. The628 gate
+predates this finding and does not prove compatibility with these actual receipts.
+No historical retirement, replay, hold release or receipt mutation is authorized.
+
 This handoff gives the proposed sequence and owner actions. It is NOT yet a
 ready-to-run maintenance bundle. Before asking for the window, Nims must finish
 the exact eight-send/three-record review, confirm the qualified sources still
@@ -116,6 +144,18 @@ match the saved inventory; the same three retained queue records and source/stor
 identities are unchanged. The new exact eight-send/three-record draft remains
 not_approved. No synthetic tests were rerun for this documentation/preparation-only
 slice. Machine-readable result: data/maintenance-handoff-preparation-20261114.json.
+
+Stage A execution evidence: the initial preflight found omitted default Enabled
+elements in the exported task XML and made no changes. In-memory comparisons of
+all five definitions then verified that masking only Enabled accepts that change
+and rejects unrelated XML changes. The unelevated attempt was denied by Windows;
+fresh readback confirmed original settings and zero moved links. The same-account,
+startup-only helper passed preview, then Windows UAC launched its signed
+PowerShell host; retained child21008 exited0 with a verified result. The helper
+has no stop/reboot/model/recovery action. Both failure evidence and successful
+per-change journal remain preserved. No security/ACL/execution-policy settings
+were changed. E backup sidecars preserve both original and approved-current
+states, separately labeled. Proof: data/startup-stageA-backup-proof.json.
 
 ### Standalone console candidate
 

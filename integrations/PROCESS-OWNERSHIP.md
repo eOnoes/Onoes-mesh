@@ -93,7 +93,11 @@ ACTIVE18/21/parent84; production workers, Rook and live Mind remain off.
 Fresh read-only status reports Mesh healthy. Its recovery task runs every minute;
 the DSH watchdog repeats every five minutes. The candidate now checks all five
 known scheduled owners, including the model supervisor and the already-disabled
-Hermes guardian, plus the three login links. Nothing was disabled or stopped.
+Hermes guardian, plus the three login links. After Eddie separately approved
+startup preparation, the four enabled tasks were disabled and the three links
+were parked; the guardian remains disabled. Running Mesh is healthy on the same
+owned process. No app/service/model stop or reboot was performed. Automatic login
+and recovery starts remain suspended until deliberate restoration.
 
 The inventory, original-state table, unresolved broker ownership and proposed
 stop/restore sequence have one canonical home:

@@ -13,7 +13,7 @@ E:/App-Backups/ONOes-Mesh/LATEST.json for the authoritative backup location.
 | Local release lane | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Owner confirmed card create/edit/drag/reload, themes, resume, rotation/draft, offline reconnect and starting the scoped team from phone. | Complete a useful production team workflow without operator rescue after enrollment; preserve prior phone checks. |
-| C4 final release/custody/owner acceptance | Local 620-check gate; verified source/data backup; candidate recovery and launch-custody tests. | Qualify the actual deployed release and exact service custody, then obtain owner acceptance. Candidate tests do not qualify a running deployment. |
+| C4 final release/custody/owner acceptance | Local 628-check gate; verified source/data backup; candidate recovery and launch-custody tests. | Qualify the actual deployed release and exact service custody, then obtain owner acceptance. Candidate tests do not qualify a running deployment. |
 | D1-D4 main-PC Nemotron | Owner phone load/chat/unload plus backend receipts and loaded Inference/Control runtime/GPU agreement; idle fix installed and exact-source qualification passed. | Accepted for this first main-PC profile. Other profiles and machines remain later. |
 | E2 bounded production team | Isolated file-and-terminal build plus independent Nims review passed, with original transcript/test evidence and reopened-board result. | Resolve legacy holds through reviewed maintenance, then enroll and qualify the actual production route. |
 
@@ -62,7 +62,12 @@ See the latest runtime-candidate section below and the detailed legacy recovery 
 Fresh read-only Relay status remains healthy on its unchanged launcher/listener;
 its legacy launch receipt remains unverified. Managed launch-input capture is
 implemented for a future owned start, not retroactively attested. The actual login
-CMD/shortcut was not changed. No worker maintenance or PC restart is scheduled.
+CMD bytes remain unchanged. Eddie approved startup preparation only: four tasks
+are now disabled and the three login shortcuts are parked with verified hashes;
+the already-disabled guardian stays off. Mesh remains healthy on the same process.
+Automatic login/recovery starts are temporarily suspended. No app/service/model
+stop, PC restart or recovery apply was performed or authorized by that approval.
+Current restore and disabled-source evidence is in the canonical recovery plan.
 
 Full shared Onoes-Mind context/skills/MCP, external-app integration and three-machine
 inference remain unfinished. Production workers, Rook and live Mind remain off.
