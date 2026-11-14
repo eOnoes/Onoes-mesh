@@ -536,3 +536,52 @@ recovery using an isolated real store/runtime before preparing a narrow retained
 record contract; separately establish old-writer containment. No maintenance
 window should be requested as though those conditions are already satisfied.
 Full goal stays active, local release 18/21 / parent84. No new phone check needed.
+
+
+### Native retained-request recovery: profile PASS; coordinator HELD — 2026-11-14
+
+Previous goal turn was PROGRESS: actual copied Relay import/startup/restart
+passed, old retrying rows were preserved, and E: restore checks passed. This
+turn produced stronger native runtime evidence and a concrete remaining wiring
+dependency; it did not activate recovery or change any live record.
+
+Added a Windows adaptation of Hermes's shared-authority recovery fixture. It
+archives committed source, overlays existing tracked changes into a disposable
+source tree, uses a fresh isolated home/store and an ephemeral loopback fake
+model, and blocks subprocesses, external DNS/connections and non-fixture SQLite
+stores. Only its own captured synthetic crash process is terminated.
+
+PASS on exact snapshot data/mesh-native-retained-2jznu2x_: real GatewayRunner,
+SessionDB, authority initialization and recover_profile_native_sessions. Four
+route/auth rejection cases preserve rows. After a crash the started person
+request becomes unknown and stays paused, its follower stays queued, and the
+independent safe request completes once. Second startup makes zero model calls
+and does not consider the completed request pending. Both safe and blocked rows
+match exactly between the two saved recovery receipts. This is real native
+runtime/store/provider-wire execution with synthetic adapter/provider data,
+not AST extraction. Nine installed source hashes matched before/after.
+
+Real-data preservation read: all 25 board tables match the prior E: snapshot,
+15 cards remain, and the three retained records/fingerprints are unchanged.
+Evidence: data/native-retained-startup-qualification.json and
+data/native-retained-preservation-proof.json. The earlier passing helper hashes
+belong to that snapshot, not to the newly extended candidate scripts.
+
+HELD: extending through recover_gateway_native_sessions uncovered the missing
+real session-control-server bootstrap. The full coordinator expects
+runner.session_control_server; start_gateway_api does not install it. Current
+three new helper files preserve this failing extension deliberately. They are
+not a passing full-startup qualification or production installer. Exact latest
+failure: data/mesh-native-retained-ekmetn0q/recover-1.log; assessment:
+data/native-retained-coordinator-held.json. Native/Relay installed source and
+running services were not modified or restarted, no real model was loaded and
+no paid agent call occurred. Earlier fixture setup failures are retained in
+their individual ignored data/mesh-native-retained-* directories.
+
+NEXT: use indexed source to find and install the real session-control-server
+startup in this disposable fixture, then rerun the outer coordinator against
+these actual unknown/queued/terminal states. Do not invent a server stub,
+weaken the global queue guard or treat source/method tests as full startup.
+Separate original-worker containment and owner authority still precede live
+recovery. No restart should be requested as though these prerequisites passed.
+Goal remains ACTIVE, local-release18/21 / parent84; C1/C4/E2 remain.
