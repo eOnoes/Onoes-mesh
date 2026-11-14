@@ -86,3 +86,18 @@ The owner cross-app/other-PC writer-scope fact and exact publication through149a
 remain pending. No real record was excluded/retried/retired, no model was loaded,
 no paid agent task was sent, no service restart/boot was scheduled. Goal remains
 ACTIVE18/21/parent84; production workers, Rook and live Mind remain off.
+
+
+## Current maintenance ownership — 2026-11-14 UTC
+
+Fresh read-only status reports Mesh healthy. Its recovery task runs every minute;
+the DSH watchdog repeats every five minutes. The candidate now checks all five
+known scheduled owners, including the model supervisor and the already-disabled
+Hermes guardian, plus the three login links. Nothing was disabled or stopped.
+
+The inventory, original-state table, unresolved broker ownership and proposed
+stop/restore sequence have one canonical home:
+[LEGACY-WORKER-RECOVERY-PLAN.md](LEGACY-WORKER-RECOVERY-PLAN.md).
+Codex infrastructure and the stopped/disabled legacy HermesAgent service remain
+untouched. An observed PID or name is not lifecycle authority. The real compiled
+broker refusal test and full620-code gate do not authorize service control.

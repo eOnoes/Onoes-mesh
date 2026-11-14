@@ -1018,3 +1018,75 @@ three worker shortcuts and two known tasks are enough for that expanded window.
 A fresh boot/quiet window and owner writer-scope decision remain unapproved.
 No process/service/model/startup or real store was changed during qualification.
 Goal ACTIVE; local release18/21/parent84. Keep original holds and Rook/Mind off.
+
+
+## Verified restart owners and draft quiet-window plan — 2026-11-14 UTC
+
+Read-only Windows inventory confirms the named Mesh launcher still reports healthy.
+Task definitions were exported privately and all five exports match the inventory
+fingerprints. Three matching login shortcuts remain present. Nothing was disabled,
+parked, started, stopped, re-registered or scheduled by this work.
+
+| Existing task identity | Observed overall state | Restoration rule for a future approved window |
+| --- | --- | --- |
+| ONOes Mesh Workroom Recovery | Enabled/Ready; logon and every1minute | Preserve its prior flag; coordinate with named Mesh ownership so Ensure cannot respawn Mesh during recovery. |
+| DSH Local Model Supervisor | Enabled/Running; logon | Requires separately approved model-service downtime and fresh idle/STOPPED checks; preserve existing engine bindings. |
+| Hermes_Gateway | Enabled/Ready; logon | The task flag is not proof the background gateway is stopped; use approved lifecycle/custody. |
+| Onoes Deep Watchdog | Enabled/Ready; every5minutes | Pause this restart source during the window, then restore its prior flag. |
+| Hermes_Gateway_Guardian | ALREADY DISABLED; stored logon/5minute triggers | Keep disabled. Never enable it just because other entries are restored. |
+
+Actual login links are Onoes Deep (DSH A2A).lnk, Onoes DeepSeek Harness Web.lnk
+and Onoes Relay.lnk. Their existing targets/window styles were only read. Relay's
+daily backup task is not a proven restart owner and remains outside the five-task
+set. An initial broad name pattern also matched Windows RunFullMemoryDiagnostic;
+it was excluded as unrelated and is explicitly rejected as a substitute in tests.
+Name matches and discovered PIDs are orientation data, never stop authority.
+
+The operator's existing v3 candidate now requires all FIVE exact task identities,
+all disabled/not Running, plus the three parked links. Missing/substituted owners,
+re-enabling or still-running owners during final validation deny/roll back recovery.
+The observed runtime set also covers wscript.exe/cscript.exe, used by the actual
+launchers, and onoes-broker.exe, discovered through service metadata. These are
+refusal checks, not service integration, qualification or control permission.
+
+Additional service findings are kept separate: HermesAgent is Stopped/Disabled;
+CodexSandboxService.OpenAI.Codex is running Codex infrastructure and stays protected.
+OnoesExecBroker is Running/Manual at C:/Program Files/OnoesExec/bin/onoes-broker.exe.
+A native observer using only disposable resources detected that exact compiled
+runtime and refused, without a broker API call or service action. Echo's bounded
+question returned UNKNOWN for its relationship to current Workroom, lifecycle
+owner and runbook. Do not invent that relationship or stop/start the broker.
+
+Proposed sequence, NOT an executable or approved maintenance procedure:
+1. Resolve the pending writer-scope fact and agree the bounded quiet-window policy,
+   actual downtime and timing. No PC restart is queued. Other-agent/PC activity
+   cannot be inferred from this targeted inventory or process-name snapshots.
+2. Re-read ownership and state immediately before changes, make the manual Ebackup,
+   retain exact original task/link definitions and flags, and verify current model/
+   work activity through the approved interfaces. Preserve already-disabled entries.
+3. Only after exact approval, suspend the known restart sources/links and follow
+   verified lifecycle commands. Named Mesh ownership is available; the whole-window
+   stop/start paths and broker implications need review before this becomes runnable.
+   Protect the DSH host/ancestors and avoid terminating anything by search/name.
+4. Stage the exact approved preboot scope/plan and arrange the separately approved
+   preserving restart. Prepare a practical standalone operator handoff: the broad
+   runtime-name check can refuse unrelated agent/helper processes, so reopening
+   agent apps after login cannot be assumed to provide a quiet operator environment.
+   No staged live scope/plan or postboot authority was created here.
+5. After that boot, inspect fresh state and apply only under exact current authority
+   and held resources. Unexpected ingress or drift leaves the hold intact. Never
+   retry uncertain sends, fabricate retirement, or mark original jobs successful.
+6. Review the result while dispatch remains paused. Restore only approved prior
+   flags/owned services after source/receipt/no-replay checks; keep the guardian and
+   legacy HermesAgent disabled. Broker/Codex infrastructure get no control actions
+   from this plan. Worker/Rook/Mind enrollment remains separately gated.
+
+Focused42 native/operator checks passed before the compiled broker name addition.
+Final full620 checks include that addition and passed, exit0:
+Node40+1+30+92+336; Python104+17. Exact three-source proof:
+data/maintenance-final-test-proof.json. Keep the initial red guard test and the
+read-only owner inventory/definition snapshots private under data. This snapshot
+is not exhaustive startup proof, live recovery approval, or a restore-ready export.
+The model engine/configuration and all running apps were left alone. The existing
+pending exact publication through149ac87 does not authorize this later milestone.
+Goal ACTIVE; first local release18/21/parent84; original eight holds remain uncleared.

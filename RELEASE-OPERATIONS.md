@@ -4,8 +4,8 @@
 
 First local release: **18/21 complete**. This is a private release candidate.
 Recovery baseline: **c438166**; current runtime-observation candidate is recorded below.
-Latest full local gate: **618 checks passed (497 Node +121 Python), exit0**.
-The proof binds the tested recovery sources: data/worker-runtime-cleanup-proof.json.
+Latest full local gate: **620 checks passed (499 Node +121 Python), exit0**.
+The proof binds the tested recovery sources: data/maintenance-final-test-proof.json.
 The latest verified milestone backup contains 15 cards and passed all seven restore
 checks; exact archived recovery source hashes also match the test proof. See
 E:/App-Backups/ONOes-Mesh/LATEST.json for the authoritative backup location.
@@ -13,7 +13,7 @@ E:/App-Backups/ONOes-Mesh/LATEST.json for the authoritative backup location.
 | Local release lane | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Owner confirmed card create/edit/drag/reload, themes, resume, rotation/draft, offline reconnect and starting the scoped team from phone. | Complete a useful production team workflow without operator rescue after enrollment; preserve prior phone checks. |
-| C4 final release/custody/owner acceptance | Local 618-check gate; verified source/data backup; candidate recovery and launch-custody tests. | Qualify the actual deployed release and exact service custody, then obtain owner acceptance. Candidate tests do not qualify a running deployment. |
+| C4 final release/custody/owner acceptance | Local 620-check gate; verified source/data backup; candidate recovery and launch-custody tests. | Qualify the actual deployed release and exact service custody, then obtain owner acceptance. Candidate tests do not qualify a running deployment. |
 | D1-D4 main-PC Nemotron | Owner phone load/chat/unload plus backend receipts and loaded Inference/Control runtime/GPU agreement; idle fix installed and exact-source qualification passed. | Accepted for this first main-PC profile. Other profiles and machines remain later. |
 | E2 bounded production team | Isolated file-and-terminal build plus independent Nims review passed, with original transcript/test evidence and reopened-board result. | Resolve legacy holds through reviewed maintenance, then enroll and qualify the actual production route. |
 
@@ -33,7 +33,8 @@ pending scope question. Mock cards do not answer it.
 The offline recovery candidate is implemented and locally tested, not ready for
 live recovery. It now requires a reviewed v3 offline scope with the full mandatory
 runtime-name set, a later same-machine boot, exact owner quiet-window approval,
-paused/drained Mesh lease, native profile/socket exclusions and held file barriers.
+paused/drained Mesh lease, native profile/socket exclusions, all five known scheduled restart controls,
+three login links and held file barriers.
 Actual Windows snapshots refuse covered runtimes outside the retained observer
 ancestry. Fence v2 describes scoped observations; it removes universal writer
 coverage claims and explicitly does not exclude future direct execution.
@@ -42,7 +43,7 @@ Echo reviewed the five source/test files and confirmed those limits are stated
 honestly. It found a failed-close tracking bug; that was reproduced and corrected
 with a red/green regression, followed by the full618-test pass. The cleanup delta
 has local verification, not a second independent review. Exact source hashes and
-review/cleanup attribution are in data/worker-runtime-cleanup-proof.json.
+review/cleanup attribution are in data/maintenance-final-test-proof.json.
 
 The bounded containment policy still needs explicit owner review/approval before
 any live window. Other-app/other-PC writers remain unknown. Snapshot absence,
@@ -1780,3 +1781,14 @@ three worker shortcuts and two known tasks are enough for that expanded window.
 A fresh boot/quiet window and owner writer-scope decision remain unapproved.
 No process/service/model/startup or real store was changed during qualification.
 Goal ACTIVE; local release18/21/parent84. Keep original holds and Rook/Mind off.
+
+
+## Verified restart owners — 2026-11-14 UTC
+
+The latest inventory/quiet-window draft is maintained in
+[integrations/LEGACY-WORKER-RECOVERY-PLAN.md](integrations/LEGACY-WORKER-RECOVERY-PLAN.md).
+The guard requires five exact scheduled owners and three parked login links; the
+already-disabled guardian stays disabled. Full620 local checks pass. The compiled
+OnoesExec broker is detected but its role remains unknown; no service action or
+live recovery is approved. Private inventory and source proof:
+data/maintenance-owner-inventory-proof.json and data/maintenance-final-test-proof.json.

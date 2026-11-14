@@ -57,7 +57,7 @@ async function fixture() {
   }
   const dshPath = join(dir, 'dsh.json'); writeFileSync(dshPath, JSON.stringify(tasks));
   const originalDir = join(dir, 'Start Menu', 'Programs', 'Startup'); mkdirSync(originalDir, { recursive: true });
-  const taskObservations = ['Hermes_Gateway', 'Onoes Deep Watchdog'].map(name => ({ name, path: '\\', enabled: false, state: 'Disabled',
+  const taskObservations = ['Hermes_Gateway', 'Onoes Deep Watchdog', 'ONOes Mesh Workroom Recovery', 'DSH Local Model Supervisor', 'Hermes_Gateway_Guardian'].map(name => ({ name, path: '\\', enabled: false, state: 'Disabled',
     actions: [{ Execute: 'synthetic.exe', Arguments: '', WorkingDirectory: '' }], principal: { UserId: 'SYNTHETIC', LogonType: 'Interactive', RunLevel: 'Limited' } }));
   const shortcuts = ['Onoes Deep (DSH A2A).lnk', 'Onoes DeepSeek Harness Web.lnk', 'Onoes Relay.lnk'].map((name, i) => {
     const parked = join(dir, 'parked-' + i + '.lnk'); writeFileSync(parked, 'Synthetic shortcut ' + i);
@@ -607,4 +607,35 @@ test('forged saved runtime clearance is rejected even when the evidence hash is 
       assert.equal(store.read(target.taskId,target.sendId),null);
     }
   }finally{f.close();}
+});
+
+
+test('all five known restart owners are required; a missing Mesh/model/guardian or an unrelated Windows task cannot substitute',async()=>{
+  const f=await fixture();try{
+    assert.deepEqual(verifyStartupControls(f.scope,f.taskObservations),{disabledTasks:5,parkedShortcuts:3});
+    for(const name of ['ONOes Mesh Workroom Recovery','DSH Local Model Supervisor','Hermes_Gateway_Guardian']){
+      const scope=structuredClone(f.scope);scope.startup.tasks=scope.startup.tasks.filter(task=>task.name!==name);
+      assert.throws(()=>verifyStartupControls(scope,f.taskObservations),/restart owners/);
+      writeFileSync(f.options.scopePath,JSON.stringify(scope));assert.throws(()=>loadOperatorScope(f.options.scopePath,sha(readFileSync(f.options.scopePath))),/startup owners/);
+    }
+    const scope=structuredClone(f.scope);scope.startup.tasks.find(task=>task.name==='ONOes Mesh Workroom Recovery').name='RunFullMemoryDiagnostic';
+    writeFileSync(f.options.scopePath,JSON.stringify(scope));assert.throws(()=>loadOperatorScope(f.options.scopePath,sha(readFileSync(f.options.scopePath))),/startup owners/);
+    assert.throws(()=>verifyStartupControls(scope,f.taskObservations),/restart owners/);
+  }finally{f.close();}
+});
+
+test('re-enabled or still-running Mesh/model/guardian restart owners at the final guard roll back recovery',async()=>{
+  for(const name of ['ONOes Mesh Workroom Recovery','DSH Local Model Supervisor','Hermes_Gateway_Guardian'])for(const running of [false,true]){
+    const f=await fixture();try{
+      await runLegacyOperator({...f.options,action:'prepare'},f.runtime);f.boot();let checks=0;
+      const runtime={...f.runtime,startupReader(){
+        if(++checks===4){const task=f.taskObservations.find(task=>task.name===name);task.enabled=!running;task.state=running?'Running':'Ready';}
+        return structuredClone(f.taskObservations);
+      }};
+      await assert.rejects(runLegacyOperator({...f.options,action:'apply',...f.authorize()},runtime),/restart owner/);
+      assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'workroom_legacy_recover%'").get().n,0);
+      assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM workroom_events WHERE kind='legacy_recovery_recorded'").get().n,0);
+      assert.equal(f.barrier.status().state,'paused');assert.equal(f.barrier.status().held,false);
+    }finally{f.close();}
+  }
 });

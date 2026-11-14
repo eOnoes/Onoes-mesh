@@ -19,6 +19,8 @@ const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const key = path => process.platform === 'win32' ? path.toLowerCase() : path;
 const same = (a, b) => fingerprint(a) === fingerprint(b);
+const requiredRestartTaskNames = Object.freeze(['Hermes_Gateway','Onoes Deep Watchdog',
+  'ONOes Mesh Workroom Recovery','DSH Local Model Supervisor','Hermes_Gateway_Guardian'].sort());
 const retainedRelayFiles = ['relay_server.py', 'relay_a2a.py', 'relay_a2a_reconcile.py', 'relay_auth.py', 'relay_budget.py',
     'relay_channels.py', 'relay_config.py', 'relay_db.py', 'relay_hermes.py', 'relay_inbox.py', 'relay_mcp.py',
     'relay_native_receipts.py', 'relay_notify.py', 'relay_openclaw.py', 'relay_sessions.py', 'relay_webpush.py'];
@@ -290,8 +292,10 @@ export function readWindowsStartupTasks(tasks) {
 }
 
 export function verifyStartupControls(scope, observations) {
-  requireValue(scope.startup?.tasks?.length === 2 && scope.startup.shortcuts?.length === 3 && observations.length === 2,
-    'Both scheduled restart owners and all three worker login shortcuts must be covered.');
+  requireValue(scope.startup?.tasks?.length === requiredRestartTaskNames.length && scope.startup.shortcuts?.length === 3 &&
+    observations.length === requiredRestartTaskNames.length &&
+    same(scope.startup.tasks.map(task=>task.name).sort(),requiredRestartTaskNames),
+    'All five scheduled restart owners and all three worker login shortcuts must be covered.');
   for (const task of scope.startup.tasks) {
     const matches = observations.filter(row => row.name === task.name && row.path === task.path);
     requireValue(matches.length === 1 && matches[0].enabled === false && matches[0].state === 'Disabled' &&
@@ -303,7 +307,7 @@ export function verifyStartupControls(scope, observations) {
       !existsSync(item.original) && !/[\\/]Startup[\\/]/i.test(item.parked), 'A reviewed login shortcut remains active or is not safely parked.');
     readPinned(item.parked, item.sha256, 65536);
   }
-  return { disabledTasks: 2, parkedShortcuts: 3 };
+  return { disabledTasks: requiredRestartTaskNames.length, parkedShortcuts: 3 };
 }
 
 export function loadOperatorScope(scopePath, expectedSha256) {
@@ -319,8 +323,8 @@ export function loadOperatorScope(scopePath, expectedSha256) {
   requireValue(digest(scope.dsh?.sha256), 'A separately reviewed DSH task-store snapshot hash is required.');
   requireValue(Array.isArray(scope.nativeResources?.workerRuntimeNames) && scope.nativeResources.workerRuntimeNames.length>0, 'The reviewed worker runtime class set is required.');
   nativeResourceFingerprint(scope.nativeResources);
-  requireValue(same(scope.startup.tasks.map(t => t.name).sort(), ['Hermes_Gateway', 'Onoes Deep Watchdog'].sort()) &&
-    new Set(scope.startup.tasks.map(t => t.path + t.name)).size === 2 &&
+  requireValue(same(scope.startup.tasks.map(t => t.name).sort(), requiredRestartTaskNames) &&
+    new Set(scope.startup.tasks.map(t => t.path + t.name)).size === requiredRestartTaskNames.length &&
     new Set(scope.startup.shortcuts.map(t => key(resolve(t.original)))).size === 3,
   'The exact reviewed startup owners are required.');
   requireValue(same(scope.startup.shortcuts.map(t => resolve(t.original).split(/[\\/]/).at(-1)).sort(),
