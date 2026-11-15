@@ -4,7 +4,8 @@
 
 First local release: **18/21 complete**. This remains a private release candidate;
 the wider Onoes-Mesh goal is unfinished. Recovery/runtime code milestone: f35f5c6.
-The latest integrated local suite passed **648 checks (518 Node +130 Python)**.
+The latest integrated local suite passed **651 checks (521 Node +130 Python)**.
+Two scroll checks also passed, including the later prepend-position regression.
 Thirty separate PowerShell safeguard checks passed. These are local qualification,
 not acceptance of a completed production recovery or worker deployment.
 
