@@ -4,7 +4,10 @@
 
 First local release: **18/21 complete**. This remains a private release candidate;
 the wider Onoes-Mesh goal is unfinished. Recovery confirmation milestone: ccce8cb.
-The latest integrated local suite passed **661 checks (531 Node +130 Python)**.
+The latest source-matched candidate suite passed **673 checks (543 Node +130 Python)**.
+The integrated checkout passed 21 focused browser/connection checks. Its new
+observation guard still awaits the approved Mesh-only reload; source integration
+is not proof that the running process has loaded the guard.
 Two scroll checks also passed, including the later prepend-position regression.
 Thirty separate PowerShell safeguard checks passed. These are local qualification,
 not acceptance of a completed production recovery or worker deployment.
@@ -14,7 +17,9 @@ not acceptance of a completed production recovery or worker deployment.
 - [x] Phone cards: create, edit, touch-drag, saved state, themes, background return,
   rotation/drafts and offline reconnect accepted by Eddie. Preserve those results.
 - [x] Main-PC Nemotron: phone load/chat/unload and idle-stop qualification accepted.
-  Other model profiles and machines remain later work.
+  Preserve this earlier acceptance; it does not qualify the different model
+  manager now observed on the PC. Its binary/source binding and controls remain
+  unverified. Other model profiles and machines remain later work.
 - [x] Manual/milestone source and data backups on E:, including actual isolated
   restore checks. The latest verified snapshot contains 15 cards; all seven
   restoration checks passed. This is a second drive, not off-device protection.
@@ -27,6 +32,15 @@ not acceptance of a completed production recovery or worker deployment.
   and authenticated live Relay/Mesh reads passed. Eddie accepted separate messages and older history on his phone.
 - [x] Clear recovery prompts and outcomes integrated; typo correction is bounded
   and repeats preflight/deadline checks before an exact confirmation.
+- [x] Model ownership guard and clear unverified-connection notice integrated
+  locally, backed up on E:, and tested without live model HTTP or operations.
+- [ ] Apply and verify the observation guard in the running Mesh process after
+  the pending exact Mesh-only reload approval.
+- [ ] Restore ordinary Relay/Echo availability after the separate service-start
+  approval; their earlier phone history acceptance remains valid evidence.
+- [ ] Establish the current Rust manager binary/source/engine binding before
+  qualifying its read-only status and operation controls. Do not send guessed
+  POST routes: general POST handling can load or evict a model.
 - [ ] Resolve the eight historical writer holds through fresh reviewed recovery.
   The completed window is closed; do not rerun its launchers or restart again.
 - [ ] Enroll and qualify a useful bounded production team workflow on the phone.
@@ -36,7 +50,7 @@ not acceptance of a completed production recovery or worker deployment.
 | Remaining local gate | Evidence already preserved | What still proves completion |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Accepted card/phone checks and phone scoped-team start. | A useful production team request finishes without operator rescue after enrollment. |
-| C4 final release, ownership and acceptance | 661 local checks, verified backup/restore, exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
+| C4 final release, ownership and acceptance | 673 candidate checks, 21 integrated focused checks, verified backup/restore and exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
 | E2 bounded production team | Isolated file-and-terminal build and independent Nims review passed with retained evidence. | Recover the old holds through the reviewed boundary, enroll the deployed route and qualify the actual team cycle. |
 
 ### Latest ordinary-app milestone - compact Relay directory
