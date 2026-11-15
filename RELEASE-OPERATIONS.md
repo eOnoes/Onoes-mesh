@@ -49,18 +49,26 @@ Windows-wide setting or execution policy. The actual unchanged handoff code was
 tested with the replacement metadata in an isolated copy. Preview passed, a wrong
 executable hash refused, and Recover/Restore refused missing live authority.
 
-**Next owner decision is pending:** approve the tested replacement handoff and one
-additional manual restart. Approval will be followed by fresh checks, archival of
-the old inputs, a new frozen plan and explicit ready instructions. No automatic
-restart is scheduled. Do not reuse the old confirmation phrases or run Restore.
-The recovery folder's human instructions currently say STOP.
+**Replacement recovery is on hold at Eddie's request.** Do not activate that
+proposal, schedule another PC restart or reuse the old confirmation phrases.
+Resume that maintenance only after a later explicit owner decision and fresh
+checks. The current recovery-folder instructions remain marked STOP.
 
-Startup triggers remain suspended. Post-restart app/service availability has not
-been accepted. Eight historical work sends remain intact with unknown original
-outcomes; the three unrelated pending records are not retried or cleared. Mesh
-dispatch is paused. Production workers, Rook and live Mind remain off. No model
-was loaded for these qualification checks. See the detailed current operator
-handoff in integrations/LEGACY-WORKER-RECOVERY-PLAN.md.
+Mesh was brought back through its existing named launcher without a PC restart.
+The named process is healthy, the private Tailscale page returned HTTP200, and
+all15 saved cards remain. A before/after fingerprint confirms the eight original
+sends are unchanged. Mesh dispatch remains paused, unheld and drained. No recovery
+ledger was applied, no model was loaded, and other agent services were not started.
+Evidence: data/no-restart-mesh-resume-proof-20261114.json. This app-health result
+does not replace the remaining production-team and owner release checks.
+
+Windows startup triggers remain temporarily suspended; that configuration has
+not been restored by starting Mesh. Production workers, Rook and live Mind remain
+off. Preserve the three unrelated pending records. The standalone recovery is
+parked while ordinary authorized work that does not need a restart may continue.
+See integrations/LEGACY-WORKER-RECOVERY-PLAN.md for the preserved maintenance
+history and data/maintenance-window-refresh-proposal-20261114/owner-decision.json
+for Eddie's current decision.
 
 ### Staged Relay correction
 
