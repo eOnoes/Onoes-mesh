@@ -79,3 +79,14 @@ against the real chosen checkpoint authority before deployment.
 Mesh stays usable. Its historical recovery holds, paused worker gate, pending
 phone Relay acceptance and first-local-release18/21 state are unchanged. No PC
 restart or model/agent task is part of this preparation.
+
+## Approved development result - November15,2026
+
+Eddie approved bounded recovery-policy development/testing in this chat. An
+inactive candidate is now under integrations/mind-recovery-candidate.23actual
+candidate checks and5unchanged canonical Phase1B regressions pass. The strict
+default and frozen canonical source remain unchanged. No live keys/store/access.
+The synthetic authority demonstrates protocol behavior, not production currentness
+or whole-PC/same-login rollback resistance. Real authority selection/qualification,
+private runtime storage and operator integration remain before live setup. Read
+the candidate README and private data/mind-checkpoint-candidate-proof-20261114.json.
