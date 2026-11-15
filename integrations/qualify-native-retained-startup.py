@@ -2,6 +2,7 @@
 Only the owned synthetic crash peer is terminated. No live service is restarted.
 """
 import hashlib
+import argparse
 import importlib.util
 import json
 import os
@@ -17,11 +18,23 @@ from datetime import datetime, timezone
 
 def main():
     workspace = Path(__file__).resolve().parent.parent
-    if Path.cwd().resolve() != workspace or sys.argv[1:]:
-        raise RuntimeError('Run from the Mesh workspace, with no overrides')
+    if Path.cwd().resolve() != workspace:
+        raise RuntimeError('Run from the Mesh workspace')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output-dir', type=Path)
+    args = parser.parse_args()
+    output_directory = workspace / 'data'
+    if args.output_dir is not None:
+        selected = args.output_dir.absolute()
+        resolved = selected.resolve(strict=True)
+        if selected != resolved or not resolved.is_dir() or not resolved.is_relative_to(workspace / 'data') or resolved == workspace / 'data' or any(resolved.iterdir()):
+            raise RuntimeError('Output must be a fresh, empty directory inside workspace data.')
+        output_directory = resolved
     native = Path('C:/Users/eMitchell109/AppData/Local/hermes/hermes-agent')
     executable = Path('C:/Users/eMitchell109/AppData/Local/hermes/tools/python-3.14.9+20261021-win32-x64/python.exe')
     helper = Path(__file__).with_name('qualify-native-retained-peer.py')
+    helper_names = ['qualify-native-retained-startup.py', 'qualify-native-retained-peer.py', 'qualify-native-retained-recovery.py']
+    helper_hashes = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in helper_names}
     names = ['gateway/session_authority.py','gateway/session_unattended_unknown.py','gateway/run_runtime.py',
         'gateway/session_local_recovery.py','gateway/session_bot.py','gateway/session_envelope.py',
         'hermes_state.py','hermes_state_runtime.py','hermes_state_runtime_workers.py',
@@ -90,25 +103,30 @@ def main():
         if result.returncode:
             raise RuntimeError('Native recovery fixture failed; see ' + str(root / ('recover-' + str(index) + '.log')))
         receipt = json.loads((root / 'state/recovery-receipt.json').read_text())
+        assert receipt['coordinatorIsPrimaryRecovery'] is True
         assert receipt['model_calls'] == expected and receipt['gatewayCoordinatorPreservedRows'] is True
         assert sorted(receipt['recovery'].values()) == (['ready','unknown_execution'] if index == 1 else ['unknown_execution'])
         (root / ('recovery-receipt-' + str(index) + '.json')).write_text(json.dumps(receipt,indent=2)+'\n')
         runs.append({'startup':index,'syntheticModelCalls':expected,'unknownRemainedPaused':True,
-            'blockedFollowerRemainedQueued':True,'safeRequestCompleted':True,'gatewayCoordinatorPreservedRows':True})
+            'blockedFollowerRemainedQueued':True,'safeRequestCompleted':True,'gatewayCoordinatorPreservedRows':True,
+            'coordinatorIsPrimaryRecovery':receipt['coordinatorIsPrimaryRecovery']})
     first = json.loads((root / 'recovery-receipt-1.json').read_text())
     second = json.loads((root / 'recovery-receipt-2.json').read_text())
     assert first['safe'] == second['safe'] and first['blocked'] == second['blocked']
     assert all(hashlib.sha256((native / name).read_bytes()).hexdigest() == digest for name,digest in hashes.items())
+    assert all(hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() == digest for name,digest in helper_hashes.items())
     proof = {'schema':'mesh/native-retained-startup-qualification/v1','observedAt':datetime.now(timezone.utc).isoformat(),
         'directory':str(root),'sourceSha256':hashes,'ownedFixtureCrashExitCode':crash_exit,'recoveries':runs,
-        'helperSha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['qualify-native-retained-startup.py','qualify-native-retained-peer.py','qualify-native-retained-recovery.py']},
+        'helperSha256':helper_hashes,
+        'coordinatorIsPrimaryRecovery':all(run['coordinatorIsPrimaryRecovery'] for run in runs),
         'sourceArchiveSha256':hashlib.sha256(archive.read_bytes()).hexdigest(),
         'liveStoreOpened':False,'liveServiceRestarted':False,'originalWorkerRetirementEstablished':False,
         'limits':['Real profile ownership, GatewayRunner/SessionDB/runtime initialization, Windows control server, API startup and full native recovery coordinator; synthetic messaging adapter and local fake model.',
             'Does not run the whole gateway service entry point or prove loaded production bytes, original worker retirement or remote writer coverage.',
             'No retained-record exemption or live recovery activation authorized.']}
-    output = workspace / 'data/native-retained-startup-qualification.json'
-    output.write_text(json.dumps(proof,indent=2)+'\n')
+    output = output_directory / 'native-retained-startup-qualification.json'
+    with output.open('x' if args.output_dir is not None else 'w', encoding='utf-8') as stream:
+        stream.write(json.dumps(proof,indent=2)+'\n')
     print(json.dumps({'proof':str(output),'directory':str(root),'recoveries':runs}))
 
 

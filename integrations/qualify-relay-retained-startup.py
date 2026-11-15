@@ -4,6 +4,7 @@ Copies source modules only, uses a fresh synthetic store/config, blocks networki
 then exercises actual import, startup loops, shutdown and restart. No peer is used.
 """
 import asyncio
+import argparse
 import hashlib
 import importlib
 import json
@@ -121,7 +122,18 @@ def main():
     workspace = Path(__file__).resolve().parent.parent
     if Path.cwd().resolve() != workspace:
         raise RuntimeError('Run from the Mesh workspace')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output-dir', type=Path)
+    args = parser.parse_args()
+    output_directory = workspace / 'data'
+    if args.output_dir is not None:
+        selected = args.output_dir.absolute()
+        resolved = selected.resolve(strict=True)
+        if selected != resolved or not resolved.is_dir() or not resolved.is_relative_to(workspace / 'data') or resolved == workspace / 'data' or any(resolved.iterdir()):
+            raise RuntimeError('Output must be a fresh, empty directory inside workspace data.')
+        output_directory = resolved
     source = Path('D:/Dev/Onoes-Relay')
+    helper_bytes = Path(__file__).read_bytes()
     python = source / '.venv/Scripts/python.exe'
     if not python.is_file(): raise RuntimeError('Installed Relay interpreter is missing')
     with tempfile.TemporaryDirectory(prefix='mesh-relay-retained-', dir=workspace / 'data') as temporary:
@@ -134,7 +146,7 @@ def main():
             data = file.read_bytes()
             hashes[file.name] = hashlib.sha256(data).hexdigest()
             (fixture / file.name).write_bytes(data)
-        shutil.copyfile(__file__, fixture / 'qualification.py')
+        (fixture / 'qualification.py').write_bytes(helper_bytes)
         (fixture / 'static').mkdir()
         config = {'agents': {aid: {'name': aid, 'backend': 'a2a', 'url': 'http://127.0.0.1:9',
             'api_key': 'synthetic-fixture-key-not-a-credential', 'demo_fallback': False} for aid in ['dsh', 'cyony']}}
@@ -143,8 +155,8 @@ def main():
         env.update(HOME=str(fixture), USERPROFILE=str(fixture), APPDATA=str(fixture / 'appdata'),
             LOCALAPPDATA=str(fixture / 'local'), RELAY_CONFIG_PATH=str(fixture / 'config.json'),
             RELAY_SESSION_DB=str(fixture / 'sessions.sqlite3'), PYTHONDONTWRITEBYTECODE='1', PYTHONUTF8='1')
-        child_log = workspace / 'data/relay-retained-startup-child.log'
-        with child_log.open('w', encoding='utf-8') as output:
+        child_log = output_directory / 'relay-retained-startup-child.log'
+        with child_log.open('x' if args.output_dir is not None else 'w', encoding='utf-8') as output:
             result = subprocess.run([str(python), '-X', 'utf8', str(fixture / 'qualification.py'), '--child'],
                 cwd=fixture, env=env, stdout=output, stderr=subprocess.STDOUT, text=True, timeout=30,
                 creationflags=subprocess.CREATE_NO_WINDOW)
@@ -154,17 +166,19 @@ def main():
             raise RuntimeError('Isolated startup qualification failed:\n' + result.stderr[-6000:])
         actual = json.loads(result.stdout.strip().splitlines()[-1])
         assert all(hashlib.sha256(file.read_bytes()).hexdigest() == hashes[file.name] for file in source_files)
+        assert Path(__file__).read_bytes() == helper_bytes
         proof = {'schema': 'mesh/relay-retained-startup-qualification/v1', 'observedAt': datetime.now(timezone.utc).isoformat(),
-            'sourceSha256': hashes, **actual, 'liveDeploymentChanged': False, 'liveStoreOpened': False,
+            'sourceSha256': hashes, 'qualificationHelperSha256': hashlib.sha256(helper_bytes).hexdigest(),
+            **actual, 'liveDeploymentChanged': False, 'liveStoreOpened': False,
             'limitations': ['Actual copied Relay import/startup/loops/message/shutdown/restart, synthetic A2A agents and rows; transport replaced by a spy.',
                 'No OpenClaw agent or Hermes backend in this fixture; no full native-gateway startup, loaded-version or prior-writer retirement proof.',
                 'Does not authorize retained-record exclusions or recovery activation.']}
-        output = workspace / 'data/relay-retained-startup-qualification.json'
-        output.write_text(json.dumps(proof, indent=2) + '\n', encoding='utf-8')
+        output = output_directory / 'relay-retained-startup-qualification.json'
+        with output.open('x' if args.output_dir is not None else 'w', encoding='utf-8') as stream:
+            stream.write(json.dumps(proof, indent=2) + '\n')
         print(json.dumps({'output': str(output), 'cases': actual['cases']}))
 
 
 if __name__ == '__main__':
     if sys.argv[1:] == ['--child']: child()
-    elif not sys.argv[1:]: main()
-    else: raise SystemExit('No overrides are supported')
+    else: main()

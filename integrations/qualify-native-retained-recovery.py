@@ -112,6 +112,7 @@ async def recover_probe(runner, adapter, source, peer):
     assert rows(authority, safe_sid) == initial
     assert not peer.requests
     from gateway.run_runtime import recover_gateway_native_sessions
+    coordinator_started_without_prior_requests = len(peer.requests) == 0
     recovered = await recover_gateway_native_sessions(runner)
     assert recovered[blocked_sid] == 'unknown_execution', recovered
     live = authority.sessions.get(safe_sid)
@@ -143,6 +144,7 @@ async def recover_probe(runner, adapter, source, peer):
     assert len(peer.requests) == calls_before_coordinator, 'Gateway recovery coordinator resent work'
 
     evidence = {'safe': safe, 'blocked': blocked, 'model_calls': len(peer.requests),
+                'coordinatorIsPrimaryRecovery': coordinator_started_without_prior_requests,
                 'deliveries': adapter.deliveries, 'recovery': recovered, 'gatewayCoordinatorPreservedRows': True}
     Path(os.environ['HERMES_HOME'], 'recovery-receipt.json').write_text(json.dumps(evidence, indent=2))
     print(json.dumps(evidence))

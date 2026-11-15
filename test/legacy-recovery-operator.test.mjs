@@ -21,6 +21,22 @@ import { readMaintenanceRecovery } from '../integrations/read-maintenance-recove
 const test = process.platform === 'win32' && process.arch === 'x64' ? nodeTest : nodeTest.skip;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
+test('qualification reruns reject outside or occupied output folders without replacing old evidence',()=>{
+ const originals=['data/relay-retained-startup-qualification.json','data/relay-retained-startup-child.log','data/native-retained-startup-qualification.json'];
+ const before=new Map(originals.filter(existsSync).map(p=>[p,sha(readFileSync(p))]));
+ for(const script of ['qualify-relay-retained-startup.py','qualify-native-retained-startup.py']){
+  const outside=realpathSync.native(mkdtempSync(join(tmpdir(),'mesh-qualification-outside-')));
+  const occupied=realpathSync.native(mkdtempSync(join(resolve('data'),'mesh-qualification-occupied-')));
+  writeFileSync(join(occupied,'preserve.txt'),'preserve existing evidence');
+  for(const output of [outside,occupied]){
+   const result=spawnSync('python',['-B',join('integrations',script),'--output-dir',output],{encoding:'utf8',windowsHide:true,timeout:10000});
+   assert.equal(result.error,undefined);assert.notEqual(result.status,0);assert.match(result.stderr,/fresh, empty directory inside workspace data/);
+  }
+  assert.equal(readFileSync(join(occupied,'preserve.txt'),'utf8'),'preserve existing evidence');
+ }
+ for(const [p,digest] of before)assert.equal(sha(readFileSync(p)),digest);
+});
+
 async function fixture() {
   const dir = realpathSync.native(mkdtempSync(join(tmpdir(), 'mesh-operator-')));
   const databasePath = join(dir, 'tasks.sqlite'), store = openTaskStore(databasePath), db = new DatabaseSync(databasePath);
