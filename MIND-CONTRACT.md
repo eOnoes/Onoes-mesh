@@ -293,3 +293,15 @@ format/KDF fail without releasing keys. Returned buffers are local runtime
 material, never agent/MCP/browser/log output. The envelope protects integrity
 keys, not SQLite database contents. Runtime vault protection, private folder
 permissions, secure user password entry and real setup/activation remain open.
+
+
+## Workroom project-history recorder audit - November15,2026
+
+See WORKROOM-MIND-SYNC-AUDIT.md for the current read-only source audit of Mesh
+and canonical Mind76c0273. Recommend one deterministic outbox/receipt adapter,
+not another agent or the local-test task scheduler. Workroom owns task stages;
+Mind owns canonical project identity and records source-bound progress facts.
+Shared write authorization, full-envelope event binding, confirmed receipts and
+correction/deletion replay rules need a qualified Mind-owned API. One Done card
+does not complete a project. No database/key/service/principal was created or
+activated. This audit changes no runtime and does not close local C1/C4/E2.
