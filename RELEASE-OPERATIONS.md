@@ -70,6 +70,23 @@ See integrations/LEGACY-WORKER-RECOVERY-PLAN.md for the preserved maintenance
 history and data/maintenance-window-refresh-proposal-20261114/owner-decision.json
 for Eddie's current decision.
 
+### Restore-only closeout prepared (no PC restart)
+
+A separate private helper is prepared to undo only the temporary startup
+suspension: restore the original four enabled task flags and three login links;
+keep the guardian disabled. It uses a distinct restore-only authorization file,
+schema and decision. It cannot accept the old recovery authorization and does
+not invoke Node, apply recovery or resume Mesh dispatch. The original helper,
+plan and replacement-window proposal remain unchanged.
+
+The current signed Windows host is pinned up front. Twenty-four source-guard
+cases passed; the actual read-only startup preview passed and Apply without new
+authorization refused. The startup-mutation and rollback body is unchanged from
+the previously reviewed helper. Live restoration remains NOT RUN and requires
+Eddie's restore-only approval and ordinary Windows administrator consent. Normal
+startup triggers may resume Echo/DSH/model services; no PC restart is involved.
+Evidence: data/startup-restore-only-qualification-20261114.json.
+
 ### Staged Relay correction
 
 The observed agent-list response was 351919 bytes because it included chat
