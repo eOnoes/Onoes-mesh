@@ -189,3 +189,37 @@ The actual Mesh service was read-only checked running/healthy under its named
 owner receipt. All live services, canonical Mind source and activation gates stay
 unchanged. Next local priority: remaining Mesh release blockers; retain the Mind
 operator/factory adoption requirement for the later approved live connection.
+
+
+## Source handoff inventory - November15,2026 (inactive)
+
+Bounded source audit at Mind76c0273 / Mesh1cc75c0. This is an adoption map,
+not production writer enrollment or permission to initialize/connect Mind.
+
+| Path / symbol | Current behavior | Required adoption |
+| --- | --- | --- |
+| Mind store_init.initialize_new_ledger | Returns a plain Ledger through __new__/__init__, not Ledger(...) | Keep bootstrap private; close it before the separately reviewed protected runtime opener. A constructor-only search misses this factory. |
+| Mind store_init.restore_new_ledger | Strict reviewed-history restore returns a plain Ledger | Preserve strict default; recovery output is not automatically a runtime writer. |
+| Candidate restore_checkpoint_candidate | Verified checkpoint restore returns a plain writable Ledger | Add an explicit inactive restore-to-protected-host handoff; close plain handle before returning protected handle. Never fall back to plain Ledger on failure. |
+| Candidate initialize_checkpointed_candidate | Plain bootstrap and restore rehearsal; closes both before receipt; runtimeEnrollment=false | Keep setup/rehearsal offline. Later runtime enrollment must explicitly reopen via protected host, not reuse bootstrap handles. |
+| Candidate CheckpointedLedgerCandidate | Checks private files, source identity, current history and bound authority before writable use | Reuse this existing opener; no second memory store or new security authority. |
+| Mind recall_http.ReadOnlyRecallLedger | mode=ro and query_only=ON; separate read-only recall path | Preserve read-only connection. Do not replace with a writable host. Reviewed store identity/scope binding remains separate. |
+| Mind bridge.BridgeServer / worker.SyntheticWorkerAdapter | Accept injected Ledger; bridge has test-runtime defaults | Future runtime composer must supply reviewed writer and real identity; these classes are not deployed-writer evidence. |
+| Mind pre_runtime_campaign / scripts/run_performance_campaign | Plain constructors in synthetic/performance fixtures | Keep fixtures distinct from runtime enrollment; passing them does not qualify a live writer. |
+
+Next bounded implementation: an INACTIVE handoff around existing checkpoint
+restore and protected opener, using disposable data only. Acceptance must prove
+that the plain restored handle closes before protected reopen; a later managed
+purge is retained and replayed; wrong identity, authority or stale history refuses
+handoff; failed reopen preserves outputs without returning an unprotected writer;
+and no service/agent access or automatic runtime enrollment occurs. A recovered
+copy must not silently become a second active writer: approved source selection
+and original-writer retirement remain separate runtime gates.
+
+Audit limits: exact key symbol bodies were fresh, but early global searches
+reported stale index and the reference tool ignored file_pattern. This is a
+bounded source inventory, not whole-machine/dynamic-call absence proof. Canonical
+Mind code, strict restore, live services and all activation gates are unchanged.
+No tests rerun for this documentation-only audit; prior56-case results retain
+their original scopes. Private source-hash proof:
+data/mind-factory-handoff-audit-20261115.json.

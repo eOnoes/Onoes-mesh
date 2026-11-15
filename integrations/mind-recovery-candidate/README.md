@@ -292,3 +292,10 @@ The actual Mesh service was read-only checked running/healthy under its named
 owner receipt. All live services, canonical Mind source and activation gates stay
 unchanged. Next local priority: remaining Mesh release blockers; retain the Mind
 operator/factory adoption requirement for the later approved live connection.
+
+
+## Source handoff inventory - November15,2026 (inactive)
+Canonical adoption table and next disposable-data acceptance checks are in
+MIND-SETUP-READINESS.md under the same heading. Source-bound audit proof:
+data/mind-factory-handoff-audit-20261115.json. No factory/service was changed,
+no live store or keys opened, and no runtime writer enrolled by this audit.
