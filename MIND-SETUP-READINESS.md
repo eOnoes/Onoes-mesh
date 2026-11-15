@@ -223,3 +223,19 @@ Mind code, strict restore, live services and all activation gates are unchanged.
 No tests rerun for this documentation-only audit; prior56-case results retain
 their original scopes. Private source-hash proof:
 data/mind-factory-handoff-audit-20261115.json.
+
+
+## Offline protected restore handoff - candidate qualification
+
+The restore-to-protected-host implementation proposed in the inventory above is
+now implemented locally and remains inactive.17 temporary host/handoff checks pass
+on source-stable code. It closes the plain handle before protected reopen, uses
+only retained history into a new recovery-local file, refuses shared external
+history and rechecks an intervening deletion. Failed reopen preserves artifacts
+and returns no unprotected writer. See candidate README and private proof:
+data/mind-protected-restore-handoff-proof-20261115-r2.json.
+
+This advances the bounded recovery handoff, not real factory enrollment or
+exclusive writer retirement. Canonical Mind, operator bootstrap, read-only recall
+and services remain unchanged. No live setup/access, keys, credentials, PC restart,
+model operation or paid agent task. Full Mind/Mesh suites were not repeated.

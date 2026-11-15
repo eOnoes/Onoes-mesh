@@ -11,7 +11,7 @@ import threading
 from onoes_mind import Ledger
 from onoes_mind.enrollment_store import qualify_private_storage
 from checkpoint_candidate import (context, history_view, purge_checkpoint_candidate,
-                                  require, read_plain)
+                                  require, read_plain, restore_checkpoint_candidate)
 from persistent_authority import PersistentAuthorityCandidate
 
 
@@ -68,3 +68,30 @@ class CheckpointedLedgerCandidate(Ledger):
         require(self._checkpoint_thread == threading.get_ident(),
                 'Deletion requires the managed checkpoint path.')
         return super()._append_deletion(record_id, tombstone_id, purge_time)
+
+
+def restore_checkpointed_candidate(snapshot, destination, deletion_history, authority, *,
+                                   audit_key, deletion_key, store_id, environment, review_ref):
+    """Offline candidate handoff; never return an unprotected restored writer.
+
+    The caller must separately establish exclusive/offline source selection before
+    any runtime use. This helper neither retires other writers nor enrolls a
+    service. Failures preserve recovery artifacts for deliberate inspection.
+    Canonical strict restore and the ordinary bootstrap API are unchanged.
+    """
+    require(type(authority) is PersistentAuthorityCandidate,
+            'Explicit separately bound persistent authority required.')
+    require(deletion_history is None,
+            'Protected restore requires retained history into a new recovery-local file.')
+    restored = restore_checkpoint_candidate(snapshot, destination, deletion_history, authority,
+        audit_key=audit_key, deletion_key=deletion_key, store_id=store_id,
+        environment=environment, review_ref=review_ref)
+    try:
+        history = restored.deletion_ledger_path
+    finally:
+        restored.close()
+    # Revalidate current authority/history/identity through the existing opener
+    # after closing the plain handle. If it refuses, there is no plain fallback.
+    return CheckpointedLedgerCandidate(destination, history, authority,
+        audit_key=audit_key, deletion_key=deletion_key, store_id=store_id,
+        environment=environment)

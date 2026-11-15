@@ -299,3 +299,34 @@ Canonical adoption table and next disposable-data acceptance checks are in
 MIND-SETUP-READINESS.md under the same heading. Source-bound audit proof:
 data/mind-factory-handoff-audit-20261115.json. No factory/service was changed,
 no live store or keys opened, and no runtime writer enrolled by this audit.
+
+
+## Offline recovery-to-protected-writer handoff (inactive)
+
+restore_checkpointed_candidate now composes the existing verified checkpoint
+restore with CheckpointedLedgerCandidate. It closes the ordinary restored handle
+before reopening through the existing identity/history/authority checks. Failure
+never returns an ordinary writer, never retries, and preserves attempted outputs.
+Only deletion_history=None is accepted: the independently retained authenticated
+chain is recovered into a new destination-local file. Even a current externally
+supplied history is refused, so a recovered writer cannot append to the original
+store's history through this helper. Explicit-history recovery remains available
+through the separate offline restore candidate.
+
+17 actual private TEMP host/handoff checks PASS with source hashes stable before
+and after. This includes the existing9 host regressions and8 handoff cases: closed
+plain handle before protected reopen, later managed deletion retained/replayed,
+failed protected reopen with closed plain handle/preserved artifacts, wrong
+identity, stale supplied history, unbound authority, current external history,
+and authoritative deletion advancing in the close/reopen gap (stale copy refused).
+The initial15-case pass is historical; the final changed source is qualified by
+data/mind-protected-restore-handoff-proof-20261115-r2.json and its log.
+
+This does not establish exclusive runtime ownership or retire another writer.
+The caller must independently establish offline/exclusive source selection before
+any real runtime use. No production factory/service imports this helper. Canonical
+Mind, strict restore, operator bootstrap and read-only recall remain unchanged.
+No live store, key, service, agent identity or automatic enrollment is activated.
+No full Mind/Mesh suite or independent review is claimed. Remaining: reviewed real
+factory adoption, runtime identity/authority/custody, source ownership/retirement,
+operator invocation, and explicit live-setup/access approval.

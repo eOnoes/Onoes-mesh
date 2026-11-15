@@ -1,19 +1,22 @@
 """Actual canonical Ledger through opt-in adapter; disposable data only."""
 from pathlib import Path
 import secrets
+import sqlite3
 import shutil
 import subprocess
 import sys
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, 'D:/Dev/Onoes-Mind')
 from onoes_mind import Ledger
 from onoes_mind.recall_binding import prepare_store_identity
 from checkpoint_candidate import (CheckpointRecoveryError, purge_checkpoint_candidate,
                                   publish_snapshot_candidate, restore_checkpoint_candidate)
-from checkpointed_ledger_candidate import CheckpointedLedgerCandidate
+import checkpointed_ledger_candidate as host_module
+from checkpointed_ledger_candidate import CheckpointedLedgerCandidate, restore_checkpointed_candidate
 from persistent_authority import PersistentAuthorityCandidate
 from test_persistent_authority import PRIVATE_ACL
 
@@ -123,6 +126,112 @@ class CheckpointedLedgerTests(unittest.TestCase):
                 operation_id='bad-callback',store_id=self.store_id,environment=self.environment,
                 canonical_purge=lambda *args:self.fail('arbitrary callback executed'))
         self.assertEqual(len(self.ledger.search(self.token,'banana')),1)
+
+    def prepare_restore(self):
+        snapshot=self.root/'handoff-snapshot.sqlite'
+        publish_snapshot_candidate(self.ledger,snapshot,self.authority,
+            store_id=self.store_id,environment=self.environment)
+        self.ledger.close()
+        return snapshot,self.root/'handoff.sqlite'
+
+    def restore_host(self,snapshot,destination,history=None,**overrides):
+        arguments=dict(store_id=self.store_id,environment=self.environment,
+                       review_ref='fixture:offline-handoff',**self.keys)
+        arguments.update(overrides)
+        return restore_checkpointed_candidate(snapshot,destination,history,self.authority,**arguments)
+
+    def test_restore_handoff_closes_plain_handle_before_protected_open(self):
+        snapshot,destination=self.prepare_restore()
+        plain=[]
+        def capture(*args,**kwargs):
+            result=restore_checkpoint_candidate(*args,**kwargs);plain.append(result);return result
+        def checked_open(*args,**kwargs):
+            self.assertEqual(len(plain),1)
+            with self.assertRaises(sqlite3.ProgrammingError):plain[0].db.execute('SELECT 1')
+            return CheckpointedLedgerCandidate(*args,**kwargs)
+        with patch.object(host_module,'restore_checkpoint_candidate',side_effect=capture), \
+             patch.object(host_module,'CheckpointedLedgerCandidate',side_effect=checked_open):
+            restored=self.restore_host(snapshot,destination)
+        try:
+            self.assertIsInstance(restored,CheckpointedLedgerCandidate)
+            self.assertEqual(len(restored.search(self.token,'banana')),1)
+            with self.assertRaises(CheckpointRecoveryError):
+                restored.purge(self.token,self.record,'PURGE:'+self.record)
+        finally:restored.close()
+
+    def test_restore_handoff_managed_delete_is_retained_and_replayed(self):
+        snapshot,destination=self.prepare_restore()
+        restored=self.restore_host(snapshot,destination)
+        try:
+            receipt=restored.purge(self.token,self.record,'PURGE:'+self.record,
+                                  operation_id='recovered-writer-delete')
+            self.assertTrue(receipt['checkpointAcknowledged'])
+            with self.authority.hold(self.store_id,self.environment) as lease:
+                self.assertEqual(lease.history(),restored.deletion_ledger_path.read_bytes())
+        finally:restored.close()
+        recovered_again=self.restore_host(snapshot,self.root/'handoff-again.sqlite')
+        try:self.assertEqual(recovered_again.search(self.token,'banana'),[])
+        finally:recovered_again.close()
+
+    def test_restore_handoff_failed_protected_open_preserves_outputs_and_closes_plain(self):
+        snapshot,destination=self.prepare_restore();plain=[]
+        def capture(*args,**kwargs):
+            result=restore_checkpoint_candidate(*args,**kwargs);plain.append(result);return result
+        with patch.object(host_module,'restore_checkpoint_candidate',side_effect=capture), \
+             patch.object(host_module,'CheckpointedLedgerCandidate',side_effect=CheckpointRecoveryError('fixture refusal')):
+            with self.assertRaisesRegex(CheckpointRecoveryError,'fixture refusal'):
+                self.restore_host(snapshot,destination)
+        self.assertTrue(destination.is_file())
+        self.assertTrue(Path(str(destination)+'.deletions.jsonl').is_file())
+        self.assertEqual(len(plain),1)
+        with self.assertRaises(sqlite3.ProgrammingError):plain[0].db.execute('SELECT 1')
+
+    def test_restore_handoff_wrong_identity_creates_no_output(self):
+        snapshot,destination=self.prepare_restore()
+        with self.assertRaises(CheckpointRecoveryError):
+            self.restore_host(snapshot,destination,store_id='00000000-0000-4000-8000-000000000000')
+        self.assertFalse(destination.exists())
+        self.assertFalse(Path(str(destination)+'.deletions.jsonl').exists())
+
+    def test_restore_handoff_refuses_stale_history_before_output(self):
+        snapshot=self.root/'handoff-snapshot.sqlite'
+        publish_snapshot_candidate(self.ledger,snapshot,self.authority,
+            store_id=self.store_id,environment=self.environment)
+        stale=self.root/'stale-history.jsonl';stale.write_bytes(self.history.read_bytes())
+        self.purge();self.ledger.close();destination=self.root/'handoff.sqlite'
+        with self.assertRaises(CheckpointRecoveryError):self.restore_host(snapshot,destination,stale)
+        self.assertFalse(destination.exists())
+
+    def test_restore_handoff_refuses_unbound_authority_before_output(self):
+        snapshot,destination=self.prepare_restore()
+        with self.assertRaises(CheckpointRecoveryError):
+            restore_checkpointed_candidate(snapshot,destination,None,object(),store_id=self.store_id,
+                environment=self.environment,review_ref='fixture:offline-handoff',**self.keys)
+        self.assertFalse(destination.exists())
+
+    def test_restore_handoff_refuses_even_current_external_history(self):
+        snapshot,destination=self.prepare_restore()
+        original=self.history.read_bytes()
+        with self.assertRaisesRegex(CheckpointRecoveryError,'recovery-local'):
+            self.restore_host(snapshot,destination,self.history)
+        self.assertFalse(destination.exists())
+        self.assertEqual(self.history.read_bytes(),original)
+
+    def test_restore_handoff_rechecks_history_after_plain_handle_closes(self):
+        snapshot,destination=self.prepare_restore()
+        def changed_during_handoff(*args,**kwargs):
+            # Simulate an otherwise-retired source advancing the authority in the
+            # close/reopen gap. This must refuse the now-stale restored copy.
+            original=self.open_host()
+            try:
+                original.purge(self.token,self.record,'PURGE:'+self.record,
+                               operation_id='fixture:intervening-delete')
+            finally:original.close()
+            return CheckpointedLedgerCandidate(*args,**kwargs)
+        with patch.object(host_module,'CheckpointedLedgerCandidate',side_effect=changed_during_handoff):
+            with self.assertRaises(CheckpointRecoveryError):self.restore_host(snapshot,destination)
+        self.assertTrue(destination.exists())
+        self.assertTrue(Path(str(destination)+'.deletions.jsonl').exists())
 
 
 if __name__=='__main__':unittest.main()
