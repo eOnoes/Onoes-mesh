@@ -1,5 +1,38 @@
 # Onoes-Mind setup readiness
 
+## Trusted native reader configuration - implemented, not activated
+
+Eddie selected deliberately shared facts across projects for the planned reader.
+The canonical scope is project/onoes-mind/shared; agent-private memory stays out.
+That planning choice does not authorize creating live credentials/grants/access.
+
+startApp now accepts mindRecallOptions only as trusted in-process native-host
+configuration. No HTTP, CLI flag or ambient environment selects a reader. Normal
+startup stays disconnected, and fixture/native options cannot be mixed. The
+closed descriptor fixes mesh-recall, one canonical shared scope, store UUID,
+environment and review reference. Browser status exposes only configured/source.
+The actual client also rejects any result outside the fixed shared scope.
+
+The memory view distinguishes canonical shared facts from synthetic fixtures and
+refuses unknown configured sources. It still requires explicit checks/reads and
+clears private or stale results on lost admission. Configured is not a claim that
+the reader is reachable, enrolled or authorized by that status response.
+
+Full local npm test passes681 checks (551Node,130Python), with all2334 tracked
+source files unchanged during the run. Six additional actual-JS-client/canonical
+HTTP fixture regressions pass. The first full run refused an old source-less UI
+fixture; its failure is preserved, the fixture now states its source, and a new
+actual-view test proves unknown sources cannot enable reads.
+
+This is constructor support, not the complete production installer. reviewRef is
+a reference, not proof of owner consent. The trusted native host must still
+qualify private service-credential custody, the exact BoundRecallLedger process
+and physical binding, and the separate live authorization before supplying the
+object. No profile, service principal/credential, grant or reader is enrolled.
+No live Mesh reload, Mind access, model action, worker activation or restart.
+Earlier fixture-only wiring statements below describe the preceding milestone.
+
+
 ## Read-only connection qualification - synthetic only
 
 30 focused checks pass:21 existing canonical recall/binding tests,3 existing Mesh

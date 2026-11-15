@@ -82,6 +82,12 @@ export function createMindWorkspace({root, request, openTask, doc = globalThis.d
 }
 
 
+export function recallConnection(status){
+ if(status?.configured===true&&status.source==='canonical_ledger')return {configured:true,source:'canonical_ledger',message:'Shared Onoes-Mind reader configured. Search deliberately shared project facts; agent-private memory is excluded.'};
+ if(status?.configured===true&&status.source==='disposable_fixture')return {configured:true,source:'disposable_fixture',message:'Synthetic test reader configured. No live memory access. Choose a query to read.'};
+ return {configured:false,source:'not_configured',message:status?.configured===true?'Memory reader source could not be verified. No records were read.':'Onoes-Mind reader is not connected. Saved Workroom context remains available.'};
+}
+
 export function createMindRecallView({root,request,doc=globalThis.document}){
  const node=(tag,text='')=>{const n=doc.createElement(tag);n.textContent=text;if(tag==='p')n.style.overflowWrap='anywhere';return n;};
  const section=node('section');section.className='box section-gap';
@@ -91,7 +97,7 @@ export function createMindRecallView({root,request,doc=globalThis.document}){
  const read=node('button','Read matching memories');read.type='button';
  const clear=node('button','Clear memory view');clear.type='button';
  const state=node('p','Memory connection not checked. Saved Workroom context above is a separate source.');state.setAttribute('role','status');
- const results=node('div');let available=false,configured=false,busy=false,epoch=0;
+ const results=node('div');let available=false,configured=false,busy=false,epoch=0,readerSource='not_configured';
  section.append(node('h2','Onoes-Mind memory'),check,label,query,read,clear,state,results);root.append(section);
  const controls=()=>{check.disabled=!available||busy;query.disabled=!available||!configured||busy;read.disabled=query.disabled||!query.value.trim();clear.disabled=!available;};
  function reset(message){epoch++;busy=false;results.replaceChildren();state.textContent=message;controls();}
@@ -99,7 +105,7 @@ export function createMindRecallView({root,request,doc=globalThis.document}){
  clear.addEventListener('click',()=>{query.value='';reset('Memory view cleared. Source records were not changed.');});
  check.addEventListener('click',async()=>{
   if(!available||busy)return;reset('Checking the configured reader…');busy=true;controls();const turn=epoch;
-  try{const status=await request('/api/mind/status');if(turn!==epoch||!available)return;configured=status?.configured===true;state.textContent=configured?'Synthetic test reader configured. No live memory access. Choose a query to read.':'Onoes-Mind reader is not connected. Saved Workroom context remains available.';}
+  try{const status=await request('/api/mind/status');if(turn!==epoch||!available)return;const connection=recallConnection(status);configured=connection.configured;readerSource=connection.source;state.textContent=connection.message;}
   catch{if(turn===epoch){configured=false;state.textContent='Memory connection unavailable. No records were read.';}}
   finally{if(turn===epoch){busy=false;controls();}}
  });
@@ -109,12 +115,13 @@ export function createMindRecallView({root,request,doc=globalThis.document}){
   try{
    const snapshot=await request('/api/mind/recall',{method:'POST',body:JSON.stringify({query:query.value.trim(),limit:8})});if(turn!==epoch||!available)return;
    if(snapshot?.schema!=='onoes-mind-recall/v1'||snapshot.source!=='canonical_ledger'||!Array.isArray(snapshot.records))throw Error('Invalid memory response');
-   results.append(node('p',`Source: Onoes-Mind canonical ledger · read ${snapshot.observedAt} · request ${snapshot.requestId}. Synthetic fixture only; source claims are not independent verification.`));
+   const sourceNote=readerSource==='disposable_fixture'?'Synthetic fixture only; source claims are not independent verification.':'Read-only shared project facts; source claims are not independent verification.';
+   results.append(node('p',`Source: Onoes-Mind canonical ledger · read ${snapshot.observedAt} · request ${snapshot.requestId}. ${sourceNote}`));
    for(const record of snapshot.records){const card=node('article');card.className='box section-gap';card.append(node('p',`Record ${record.record_id} · project ${record.project_id} · scope ${record.scope_id}`),node('p',record.claim),node('p',`Source class ${record.source_class} · observed ${record.observed_at||'not recorded'} · hash ${record.payload_hash}`));for(const p of record.provenance||[])card.append(node('p',`${p.type}: ${p.ref} · ${p.content_hash}`));results.append(card);}
    if(!snapshot.records.length)results.append(node('p','No matching records in the reader’s permitted scopes.'));
    state.textContent='Memory snapshot retrieved. Read again for corrections or deletion updates.';
   }catch{if(turn===epoch)reset('Memory read unavailable or invalid. Previous results cleared.');}
   finally{if(turn===epoch){busy=false;controls();}}
  });
- controls();return {setAvailable(value){available=Boolean(value);if(!available){configured=false;query.value='';reset('Private memory view cleared. Reconnect and check the reader again.');}else controls();}};
+ controls();return {setAvailable(value){available=Boolean(value);if(!available){configured=false;readerSource='not_configured';query.value='';reset('Private memory view cleared. Reconnect and check the reader again.');}else controls();}};
 }

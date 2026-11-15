@@ -552,3 +552,13 @@ the reviewed canonical Mind source, then run:
 Synthetic revision transactions test read visibility, not a correction API or
 protected production writer. Shared area semantics and pending production wiring
 are recorded in MIND-SETUP-READINESS.md.
+
+## Native Mesh constructor support (inactive)
+
+The reviewed in-process mindRecallOptions seam now keeps canonical and fixture
+configuration separate, returns the accurate source label, and enforces a fixed
+shared response scope.681 full Mesh checks pass (551Node/130Python), plus6actual
+client/reader regressions. This does not install a live host, validate credential
+custody or authorize access. Native enrollment must qualify the exact read-only
+process/binding and private credential before using that trusted constructor.
+No HTTP, CLI or ambient environment enables it; default remains disconnected.
