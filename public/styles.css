@@ -1345,6 +1345,7 @@ footer{background:transparent}
 .workroom-task-sheet[open]{display:flex;flex-direction:column;overflow:hidden}
 .workroom-task-sheet .workroom-sheet-toolbar{position:static;flex:0 0 auto;gap:8px}
 .workroom-sheet-content{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 2px;scroll-padding-block:12px}
+.workroom-writeup,.workroom-card-summary>p{white-space:pre-wrap;overflow-wrap:anywhere}
 .workroom-sheet-footer{flex:0 0 auto;border-top:1px solid var(--border);background:var(--surface);padding:10px 0 max(2px,env(safe-area-inset-bottom))}
 .workroom-sheet-footer p{margin:0 0 6px;color:var(--muted);font-size:12px}
 .workroom-sheet-action-row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}

@@ -1938,3 +1938,36 @@ use the existing owner task and qualified source, never start a duplicate or
 substitute an engine. Evidence:data/main-pc-inference-service-restored-20261114.json.
 This does not retire a Mesh worker, clear any historical hold or complete the
 remaining production-team/release gates. Local release remains18/21.
+
+
+## Visible project checklist and readable card text
+
+The existing Finish Onoes-Mesh -- all assessed stages card now summarizes the
+current18/21release status, accepted phone/Relay checks, restored idle Inference,
+verified backups and remaining recovery/team/Mind/external-machine work. Its
+result/evidence text was updated through normal local admission and the canonical
+revision-checked PATCH. Progress revision84became85; the goal, checklist states,
+lane and pending review were preserved. Only that progress row and one expected
+progress event changed. All other cards, saved sends and worker holds are identical.
+The previous full card record is retained privately before the change.
+
+Actual browser inspection exposed collapsed newlines in long card paragraphs.
+Saved description and summary paragraphs now preserve line breaks and wrap long
+text, using scoped classes and textContent as before. No Markdown/HTML execution
+was added. The actual private UI was verified at desktop and390px phone widths:
+pre-wrap active, no horizontal overflow and the card fits the viewport. The
+temporary browser viewport was reset afterward. No app/service restart was needed
+for this static display correction.
+
+Existing21focused card/edit/load/asset checks and the design/syntax guard passed.
+The APP03-CONTRACT frozen-pin check was skipped because that file is absent; this
+does not substitute for any held recovery qualification. The prior653full-suite
+run preceded this display-only correction and was not repeated for it. Evidence:
+data/parent-goal-refresh-proof-20261114.json and
+data/workroom-multiline-display-proof-20261114.json.
+
+Workroom link: https://emitchell.tail8c4a75.ts.net:8453/#workroom
+Open the existing Finish Onoes-Mesh card in To do to read the overview. No new
+card or worker was created, review was not approved and project completion was
+not asserted. The original eight historical holds and no-extra-restart decision
+remain in force.

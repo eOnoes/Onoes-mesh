@@ -193,10 +193,11 @@ if(root){
     details.append(content,actionBar);
     const dialogStatus=el('p');dialogStatus.setAttribute('role','status');content.append(dialogStatus);
     if(teamRequestNotice(teamPolicy))content.append(el('p',teamRequestNotice(teamPolicy)));
-    content.append(el('h2',selected.title),el('p',selected.description));
+    const writeup=el('p',selected.description);writeup.className='workroom-writeup';
+    content.append(el('h2',selected.title),writeup);
     if(selected.flow?.state==='clarification')content.append(el('h3','Clarification requested · '+new Date(selected.flow.askedAt).toLocaleString()),el('p',selected.flow.question));
     if(teamPolicy?.simpleFlow&&selected.flow?.ownerNote)content.append(el('h3','Your requested changes'),el('p',selected.flow.ownerNote));
-    const summary=el('section');
+    const summary=el('section');summary.className='workroom-card-summary';
     summary.append(el('p',`${selected.workroom.project||'No project'} · ${selected.workroom.owner||'Unassigned'} · ${stageName}`),el('h3','Goal'),el('p',selected.progress.goal||'No goal saved yet.'));
     const checklist=el('ul');for(const step of selected.progress.checklist)checklist.append(el('li',`${step.status==='done'?'✓':step.status==='working'?'→':'○'} ${step.text} — ${step.status}`));summary.append(checklist);
     summary.append(el('h3','Result'),el('p',selected.progress.result||'No result recorded yet.'),el('p',teamPolicy?.simpleFlow?(selected.workroom.stage==='done'?'Independent checks passed. Your acceptance is separate.':'Team verification: '+selected.progress.decision):'Review: '+selected.progress.decision));
