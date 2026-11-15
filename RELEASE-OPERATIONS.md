@@ -4,7 +4,7 @@
 
 First local release: **18/21 complete**. This remains a private release candidate;
 the wider Onoes-Mesh goal is unfinished. Recovery/runtime code milestone: f35f5c6.
-The latest post-restart local suite passed **633 checks (512 Node +121 Python)**.
+The latest integrated local suite passed **648 checks (518 Node +130 Python)**.
 Thirty separate PowerShell safeguard checks passed. These are local qualification,
 not acceptance of a completed production recovery or worker deployment.
 
@@ -21,7 +21,8 @@ not acceptance of a completed production recovery or worker deployment.
 - [x] Original Windows startup restored and independently verified without another PC restart.
 - [x] Replacement launchers qualified in isolation after a changed Windows
   PowerShell fingerprint and inherited PowerShell module-path issue were found.
-- [x] Compact Relay directory candidate qualified in isolation: 36 checks passed.
+- [x] Compact Relay directory deployed: isolated qualification, full 648-check gate,
+  and authenticated live Relay/Mesh reads passed. Phone selector check is pending.
 - [ ] Resolve the historical writer holds through separately resumed reviewed
   recovery; additional PC restarts remain on hold.
 - [ ] Enroll and qualify a useful bounded production team workflow on the phone.
@@ -31,13 +32,30 @@ not acceptance of a completed production recovery or worker deployment.
 | Remaining local gate | Evidence already preserved | What still proves completion |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Accepted card/phone checks and phone scoped-team start. | A useful production team request finishes without operator rescue after enrollment. |
-| C4 final release, ownership and acceptance | 633 local checks, verified backup/restore, exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
+| C4 final release, ownership and acceptance | 648 local checks, verified backup/restore, exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
 | E2 bounded production team | Isolated file-and-terminal build and independent Nims review passed with retained evidence. | Recover the old holds through the reviewed boundary, enroll the deployed route and qualify the actual team cycle. |
+
+### Latest ordinary-app milestone - compact Relay directory
+
+Local commit8072c52 completes the compact-directory integration. The live Relay
+service returned401 without authentication and200 with it:4 agents,666bytes,
+metadata only. Mesh's admitted normalized directory returned200 with5 agents
+(including its existing local Nims route). The phone controller uses that bounded
+directory. Transcript and send routes retain their pinned conversation semantics.
+Mesh was reloaded through its named owner; all15cards and8original send rows are
+unchanged, dispatch remains paused. No PC restart or real agent send occurred.
+Launch inputs match the Relay owner receipt; this does not attest historical
+loaded bytes or release old writer holds. Phone selector acceptance is pending.
+
+Proof: integrations/relay-agent-directory-qualification.json; private live reads
+are in data/relay-directory-live-proof-20261114.json and
+data/relay-directory-mesh-live-proof-20261114.json. The complete passing log is
+data/relay-directory-phone-integrated-final-pass-20261114.log.
 
 ### Current interruption and next action
 
 Eddie approved the original manual window and restarted the PC. The old plan was
-prepared, but **no recovery apply or startup restoration occurred**. Its launcher
+prepared, but **no recovery apply or startup restoration occurred in that first attempt**. Startup was subsequently restored through the separate approved closeout below. Its launcher
 refuses a changed Windows PowerShell executable fingerprint. That executable has
 a valid Microsoft Windows signature; the precise cause of the change is unknown.
 Mesh runtime files still match their qualified source. The original inputs remain

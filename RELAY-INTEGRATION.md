@@ -6,6 +6,18 @@ history and may retain its existing cache. Mesh Workroom's existing SQLite store
 owns tasks, plans, handoffs, task-linked replies and review decisions.
 There is no new scheduler, duplicate conversation store or imported sandbox tree.
 
+## Compact directory - November15,2026
+
+Agent discovery now uses admitted GET /api/relay/native/api/agents. Mesh requests
+Relay GET /api/agents?view=directory with its existing server-side authentication.
+Relay projects the approved8metadata fields, at most128agents and65536bytes; it
+refuses excess instead of truncating the list. Default/full Relay reads remain
+compatible. Mesh retains its262144byte response cap and exact-session send guard.
+Only the two client directory reads changed; conversation history and Send still
+use their existing /relay/api/... proxy and pinned session paths described below.
+The648-check local gate and actual authenticated live directory reads passed.
+This does not qualify long transcript pagination or enable workers/Rook/Mind.
+
 ## Ordinary conversation
 
 The Relay tab has one composer and one submit handler. It sends ordinary text to

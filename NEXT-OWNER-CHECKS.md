@@ -13,7 +13,12 @@ reload, both themes, background/resume, rotation with an unsaved draft, network
 reconnection, starting a scoped team from the phone, and main-PC Nemotron
 load/chat/unload ending STOPPED. Do not repeat these simply because work resumed.
 
-The next useful phone check is a complete production team workflow after the
+Focused ordinary-app check: open
+[Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay), refresh and open the agent
+selector. Echo should appear without an oversized-response error. No send is
+needed. This narrow check is pending; preserve all accepted phone results above.
+
+The next production phone check is a complete production team workflow after the
 legacy recovery and production enrollment have been qualified. That prerequisite
 is not ready: automatic assignment, Rook and live Mind remain off. No phone test,
 restart or service change is requested by this document. When ready, Nims will
