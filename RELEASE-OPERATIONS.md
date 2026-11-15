@@ -1,81 +1,105 @@
 # Mesh private release candidate
 
-## Current release status - 2026-11-14 UTC
+## Current release status - 2026-11-14 Chicago
 
-First local release: **18/21 complete**. This is a private release candidate.
-Recovery baseline: **c438166**; current runtime-observation candidate is recorded below.
-Latest full local gate: **630 checks passed (509 Node +121 Python), exit0**.
-The proof binds the tested recovery sources: data/relay-receipt-compat-full-test-proof.json.
-The latest verified milestone backup contains 15 cards and passed all seven restore
-checks; exact archived recovery source hashes also match the test proof. See
-E:/App-Backups/ONOes-Mesh/LATEST.json for the authoritative backup location.
+First local release: **18/21 complete**. This remains a private release candidate;
+the wider Onoes-Mesh goal is unfinished. Recovery/runtime code milestone: f35f5c6.
+The latest post-restart local suite passed **633 checks (512 Node +121 Python)**.
+Thirty separate PowerShell safeguard checks passed. These are local qualification,
+not acceptance of a completed production recovery or worker deployment.
 
-| Local release lane | Current evidence | Remaining acceptance |
+### Running checklist
+
+- [x] Phone cards: create, edit, touch-drag, saved state, themes, background return,
+  rotation/drafts and offline reconnect accepted by Eddie. Preserve those results.
+- [x] Main-PC Nemotron: phone load/chat/unload and idle-stop qualification accepted.
+  Other model profiles and machines remain later work.
+- [x] Manual/milestone source and data backups on E:, including actual isolated
+  restore checks. The latest verified snapshot contains 15 cards; all seven
+  restoration checks passed. This is a second drive, not off-device protection.
+- [x] Standalone recovery and restore handoff built and locally qualified.
+- [x] Replacement launchers qualified in isolation after a changed Windows
+  PowerShell fingerprint and inherited PowerShell module-path issue were found.
+- [x] Compact Relay directory candidate qualified in isolation: 36 checks passed.
+- [ ] Activate an explicitly approved replacement maintenance window and freeze
+  its new exact plan; complete actual recovery and restore startup configuration.
+- [ ] Enroll and qualify a useful bounded production team workflow on the phone.
+- [ ] Verify deployed service ownership and obtain Eddie's final local-release
+  acceptance. Local tests do not replace those checks.
+
+| Remaining local gate | Evidence already preserved | What still proves completion |
 | --- | --- | --- |
-| C1 useful phone workflow without rescue | Owner confirmed card create/edit/drag/reload, themes, resume, rotation/draft, offline reconnect and starting the scoped team from phone. | Complete a useful production team workflow without operator rescue after enrollment; preserve prior phone checks. |
-| C4 final release/custody/owner acceptance | Local 630-check gate; verified source/data backup; candidate recovery and launch-custody tests. | Qualify the actual deployed release and exact service custody, then obtain owner acceptance. Candidate tests do not qualify a running deployment. |
-| D1-D4 main-PC Nemotron | Owner phone load/chat/unload plus backend receipts and loaded Inference/Control runtime/GPU agreement; idle fix installed and exact-source qualification passed. | Accepted for this first main-PC profile. Other profiles and machines remain later. |
-| E2 bounded production team | Isolated file-and-terminal build plus independent Nims review passed, with original transcript/test evidence and reopened-board result. | Resolve legacy holds through reviewed maintenance, then enroll and qualify the actual production route. |
+| C1 useful phone workflow without rescue | Accepted card/phone checks and phone scoped-team start. | A useful production team request finishes without operator rescue after enrollment. |
+| C4 final release, ownership and acceptance | 633 local checks, verified backup/restore, exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
+| E2 bounded production team | Isolated file-and-terminal build and independent Nims review passed with retained evidence. | Recover the old holds through the reviewed boundary, enroll the deployed route and qualify the actual team cycle. |
 
-Workroom: https://emitchell.tail8c4a75.ts.net:8453/#workroom
-Inference: https://emitchell.tail8c4a75.ts.net:8453/#inference
-These are phone links, not requests to repeat accepted checks. Whole-device health
-meters remain distinct from verified model ownership. Last qualified model cycle
-ended STOPPED; no model was loaded for this candidate milestone.
+### Current interruption and next action
 
-**Automatic assignments remain off.** Eight historical accepted work sends still
-lack original whole-writer retirement evidence. Their original sends remain intact;
-no live recovery ledger was applied. A completed reply/card, missing run mapping,
-inactivity or restart alone never establishes retirement. Eddie confirmed Workroom
-used only Echo/DSH on this desktop and now confirms all other Mesh editors,
-including laptop agents, can remain closed during recovery. This resolves the
-owner coverage question; technical containment and exact window authority remain
-separate. Mock cards never establish original worker retirement.
+Eddie approved the original manual window and restarted the PC. The old plan was
+prepared, but **no recovery apply or startup restoration occurred**. Its launcher
+refuses a changed Windows PowerShell executable fingerprint. That executable has
+a valid Microsoft Windows signature; the precise cause of the change is unknown.
+Mesh runtime files still match their qualified source. The original inputs remain
+preserved; neither a signature nor a restart is substituted for the pinned checks.
 
-The offline recovery candidate is implemented and locally tested, not ready for
-live recovery. It now requires a reviewed v3 offline scope with the full mandatory
-runtime-name set, a later same-machine boot, exact owner quiet-window approval,
-paused/drained Mesh lease, native profile/socket exclusions, all five known scheduled restart controls,
-three login links and held file barriers.
-Actual Windows snapshots refuse covered runtimes outside the retained observer
-ancestry. Fence v2 describes scoped observations; it removes universal writer
-coverage claims and explicitly does not exclude future direct execution.
+The replacement candidate refreshes that one executable pin, gives the new window
+its own identity and corrects three CMD launchers. Their child-only environment
+reset lets Windows PowerShell use its own normal module paths; it changes no
+Windows-wide setting or execution policy. The actual unchanged handoff code was
+tested with the replacement metadata in an isolated copy. Preview passed, a wrong
+executable hash refused, and Recover/Restore refused missing live authority.
 
-Echo reviewed the five source/test files and confirmed those limits are stated
-honestly. It found a failed-close tracking bug; that was reproduced and corrected
-with a red/green regression, followed by the full618-test pass. The cleanup delta
-has local verification, not a second independent review. Exact source hashes and
-review/cleanup attribution are in data/maintenance-final-test-proof.json.
+**Next owner decision is pending:** approve the tested replacement handoff and one
+additional manual restart. Approval will be followed by fresh checks, archival of
+the old inputs, a new frozen plan and explicit ready instructions. No automatic
+restart is scheduled. Do not reuse the old confirmation phrases or run Restore.
+The recovery folder's human instructions currently say STOP.
 
-The bounded containment policy still needs explicit owner review/approval before
-any live window. Eddie has confirmed other Mesh editors can stay closed; that
-confirmation does not prove technical worker retirement. Snapshot absence,
-listed-file protection or tests do not establish universal/continuous exclusion.
-No real approved retained review, v3 scope or live quiet-window authorization exists.
-Original eight holds remain; no retry, fake retirement or automatic resume occurs.
-The runtime-name check is deliberately conservative and can also refuse unrelated
-applications, including a separate Mesh server and model supervisor. A proposed
-window must identify exact startup/stop/restore owners and its wider downtime;
-never infer permission to terminate a listed PID. Existing deployment remains live.
-See the latest runtime-candidate section below and the detailed legacy recovery plan.
+Startup triggers remain suspended. Post-restart app/service availability has not
+been accepted. Eight historical work sends remain intact with unknown original
+outcomes; the three unrelated pending records are not retried or cleared. Mesh
+dispatch is paused. Production workers, Rook and live Mind remain off. No model
+was loaded for these qualification checks. See the detailed current operator
+handoff in integrations/LEGACY-WORKER-RECOVERY-PLAN.md.
 
-Fresh read-only Relay status remains healthy on its unchanged launcher/listener;
-its legacy launch receipt remains unverified. Managed launch-input capture is
-implemented for a future owned start, not retroactively attested. The actual login
-CMD bytes remain unchanged. Eddie approved startup preparation only: four tasks
-are now disabled and the three login shortcuts are parked with verified hashes;
-the already-disabled guardian stays off. Mesh remains healthy on the same process.
-Automatic login/recovery starts are temporarily suspended. No app/service/model
-stop, PC restart or recovery apply was performed or authorized by that approval.
-Current restore and disabled-source evidence is in the canonical recovery plan.
+### Staged Relay correction
 
-Full shared Onoes-Mind context/skills/MCP, external-app integration and three-machine
-inference remain unfinished. Production workers, Rook and live Mind remain off.
-Last verified published milestone is f2362ee; exact publication through 149ac87 is
-pending and does not cover newer local commits. Current exact-source Nemotron
-qualification: integrations/nemotron-full-native-qualification.json and
-integrations/nemotron-idle-fix-qualification.json. Sections below retain historical
-counts and earlier implementation states; they are not the current operator guide.
+The observed agent-list response was 351919 bytes because it included chat
+history; Mesh's existing response cap is 262144 bytes. The isolated candidate
+adds a metadata-only view to the same existing route. Normal/full output remains
+unchanged. It returns all agents or refuses the request; its separate limits are
+128 agents and 65536 bytes. Mesh keeps its existing cap, bearer authentication,
+loopback, redirect and exact-conversation guards. Nine synthetic FastAPI endpoint
+cases and 27 Node consumer/HTTP bridge cases passed. No live source, service or
+recovery input was changed, and no real agent message was sent.
+
+The Relay candidate is **not deployed**. Finish recovery first; changing Relay
+source now would invalidate the startup-source proof in the frozen old window.
+Then qualify the installed authentication/startup boundary, deploy both sides
+together and check the actual compact read before enabling dispatch. Conversation
+history pagination remains a separate follow-up; compact discovery does not solve
+long-history retrieval. Evidence: data/relay-directory-candidate-20261114/qualification.json.
+
+### Broader stages remain in scope
+
+Canonical Onoes-Mind memory, shared context across Relay/optional Telegram, shared
+skills/MCP tooling and external-app integrations remain unfinished. The existing
+Mind selected-task reader is not a live canonical-memory connection. The memory
+store's identity, permissions and live binding still need their own reviewed work.
+After local operation is solid, extend inference and health monitoring from the
+main PC to the laptop and AI box; their live enrollment is not claimed here.
+
+After app restoration: [Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom)
+and [Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference).
+These links are references, not requests to repeat accepted phone tests.
+
+Current private evidence: data/windows-component-refresh-qualification-20261114.json
+and data/maintenance-window-refresh-proposal-20261114/PROPOSAL.json. Backups remain
+manual/milestone only under E:/App-Backups/ONOes-Mesh; read LATEST.json for the current
+verified source/data snapshot. New proposal/candidate evidence is in clearly named
+sidecars. Local commits are saved; GitHub publication still needs exact approval
+and the required workflow-cost checks. Historical sections below retain earlier
+counts, running-process claims and approvals; they are not current instructions.
 
 ## One-time legacy recovery preparation (inactive)
 
