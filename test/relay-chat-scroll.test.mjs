@@ -6,7 +6,7 @@ import {mockUI,flush} from './app-ui-fixture.mjs';
 test('Relay keeps both speakers and preserves reading position when a reply arrives',async()=>{
  const ui=mockUI();await flush();
  let messages=[{id:1,k:'you',t:'Test'}];
- ui.context.chatRequest=async route=>route==='/relay/api/agents'?[{id:'echo',name:'Echo',conversation_id:'session-1'}]:{messages};
+ ui.context.chatRequest=async route=>route==='/api/relay/native/api/agents'?[{id:'echo',name:'Echo',conversation_id:'session-1'}]:{messages};
  vm.runInContext('var scrollChat=createRelayChat({request:chatRequest});scrollChat.setAvailable(true)',ui.context);await flush();
  const transcript=ui.ids.get('relay-chat');transcript.clientHeight=300;transcript.scrollHeight=1500;
  ui.ids.get('relay-chat-agent').value='echo';await ui.ids.get('relay-chat-agent').events.change();await flush();

@@ -91,7 +91,7 @@ test('MOCK UI: Mind uses admitted GET and clears selected context and titles on 
 test('MOCK UI: actual ordinary chat sends once through admission, never creates a task, and clears on lock',async()=>{
  const ui=mockUI({responder:(route,options)=>response(route.endsWith('bootstrap')?201:200,
    route.endsWith('bootstrap')?{csrfToken:'j'.repeat(43),expiresAt:Date.now()+60000}:
-   route==='/relay/api/agents'?[{id:'echo',name:'Echo',conversation_id:'session-one'}]:
+   route==='/api/relay/native/api/agents'?[{id:'echo',name:'Echo',conversation_id:'session-one'}]:
    route==='/relay/api/mesh-capabilities'?{taskSessionBinding:1}:
    route.endsWith('/messages')?{messages:[{id:'msg-one',k:'ag',t:'Existing source history'}]}:
    route==='/relay/api/agents/echo/message'?{ok:true}:bodyFor(route))});
