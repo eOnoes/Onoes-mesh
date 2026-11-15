@@ -521,3 +521,11 @@ existing D: data identity/empty contents unchanged. Real setup preview passes bu
 no keys/database/archive/service were initialized. No restart. Private receipts
 are under data/mind-storage-preparation-20261115; live initialization still needs
 its own owner-reviewed local password handoff.
+
+
+Owner handoff readiness: a private source-pinned preview-first launcher and local
+steps are prepared under data/mind-first-setup-handoff-20261115. Actual preview,
+missing-initialization-approval and changed-request guards pass without opening
+password prompts or creating live keys/data. Positive live mode and owner keyboard
+acceptance remain unrun. Exact owner approval is next; no memory/service grants
+or restart are bundled with empty-store/key/first-backup initialization.

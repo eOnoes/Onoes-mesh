@@ -1,6 +1,29 @@
 # Onoes-Mind setup readiness
 
 
+## Owner-run first initialization handoff ready, still locked
+
+The private handoff now fixes the exact five approved runtime folders, proposed
+first canonical store/environment, encrypted E: archive, current owner and49
+participating source/runtime files. The local launcher defaults to preview and
+refuses initialization unless Eddie's separate approval binds the exact request
+and launcher. Source/tool changes refuse execution. No passwords are command
+arguments/environment or recorded in a transcript; the existing entry receives
+local interactive input directly. Its native key/backup flow remains the separately
+qualified13-case implementation, with no live positive-mode run yet.
+
+Three actual guard checks pass: real preview, initialization refusal without
+approval, and changed-request refusal. All runtime folders remain empty; no archive,
+keys, database or service was created. Batch shortcut and real owner keyboard/
+password interaction have not been opened for live use. The source-pinned handoff
+and clear steps are in private data/mind-first-setup-handoff-20261115.
+
+Next owner decision: approve real empty-store/key/first-backup initialization and
+choose whether to open the local window now or later. No agent credentials, memory
+access, workers, Rook, service enrollment or restart are included. Folder approval
+is already fulfilled and does not authorize this new step.
+
+
 ## Current live preparation - folders complete, store still absent
 
 Eddie approved the exact empty support folders, asked for a repo/data clarification,
