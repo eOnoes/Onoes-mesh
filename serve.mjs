@@ -29,6 +29,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { startApp, ROOT } from './server.mjs';
 import {createSupervisorObservation} from './lib/supervisor-observation.mjs';
+import {SUPERVISOR_MODEL_PORTS} from './lib/supervisor-port-owner.mjs';
 import {supervisorControlView} from './public/control-models.mjs';
 
 const run = promisify(execFile);
@@ -36,9 +37,9 @@ const run = promisify(execFile);
 const PREVIEW_PORT = Number(process.env.MESH_PREVIEW_PORT ?? 4317);
 const DATA_DIR = process.env.MESH_DATA_DIR ?? 'test/app03-mesh';
 const RELAY_ORIGIN = process.env.MESH_RELAY_ORIGIN ?? 'http://127.0.0.1:8787';
-// Supervised ports first (18090 Flash-Next, 18091 Qwen3.6, 8098 the llama.cpp exception),
-// then the ad-hoc ports a hand-launched engine might use.
-const STRATA_PORTS = [18095, 18090, 18091, 8098, 60409, 8080, 1234, 8000];
+// Managed ports require the owner-gated observer, including when observation is disabled.
+const STRATA_PORTS = [18095, 18090, 18091, 8098, 60409, 8080, 1234, 8000]
+  .filter(port=>!SUPERVISOR_MODEL_PORTS.includes(port));
 const supervisorObservationEnabled=process.env.MESH_STANDALONE!=='1'&&process.env.MESH_MODEL_OBSERVATION==='1';
 const readSupervisorModels=createSupervisorObservation({enabled:supervisorObservationEnabled});
 const KEY_FILE = process.env.MESH_GATE_KEY_FILE ?? 'D:/Dev/Onoes-Relay/.private/relay.key';
@@ -200,8 +201,9 @@ async function comfyStatus() {
 async function strataHealth() {
   for (const port of STRATA_PORTS) {
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(1500) });
-      if (!res.ok) continue;
+      const options={method:'GET',redirect:'manual',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(1500)};
+      const res = await fetch(`http://127.0.0.1:${port}/health`, options);
+      if (!res.ok || res.redirected) continue;
       const health = await res.json();
       if (!health || !health.status) continue;
       // The supervisor answers /health on these ports while serving nothing:
@@ -211,12 +213,12 @@ async function strataHealth() {
         || health.loaded === true
         || ['ok', 'loaded', 'ready', 'busy'].includes(String(health.status).toLowerCase());
       if (!servable || health.servable === false) continue;
-      const props = await fetch(`http://127.0.0.1:${port}/props`, { signal: AbortSignal.timeout(1500) })
-        .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      const props = await fetch(`http://127.0.0.1:${port}/props`, {...options,signal:AbortSignal.timeout(1500)})
+        .then((r) => (r.ok&&!r.redirected ? r.json() : null)).catch(() => null);
             // The supervisor's /health omits max_context, so ask /v1/models as well - without
       // it the Control pane shows a blank context on a loaded model.
-      const models = await fetch(`http://127.0.0.1:${port}/v1/models`, { signal: AbortSignal.timeout(1500) })
-        .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      const models = await fetch(`http://127.0.0.1:${port}/v1/models`, {...options,signal:AbortSignal.timeout(1500)})
+        .then((r) => (r.ok&&!r.redirected ? r.json() : null)).catch(() => null);
       return { port, health, props, models };
     } catch { /* try the next port */ }
   }
