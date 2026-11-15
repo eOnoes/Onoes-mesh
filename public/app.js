@@ -494,6 +494,10 @@ export function renderInference(snapshot) {
 function renderSupervisorModels(value) {
   const root=$('local-model-catalog');
   localModelObservation=undefined;root.replaceChildren();
+  const connectionNotice=value?.schemaVersion==='mesh-supervisor-observation/v1'&&value.source==='none'&&
+    Array.isArray(value.models)&&value.models.some(row=>row?.reason==='supervisor_identity_unverified')
+    ?'Model connection needs verification. Whether a model is loaded is unknown.':null;
+  if(connectionNotice){root.textContent=connectionNotice;return;}
   if(value?.schemaVersion!=='mesh-supervisor-observation/v1' || value.source!=='local_supervisor' || !Array.isArray(value.models)) {
     root.textContent='Model observations unavailable. Connect and refresh local status.';return;
   }

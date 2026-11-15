@@ -5,6 +5,11 @@ const lanes=new Map([
   ['qwen3.8-27b',{label:'Qwen3.8 27B',runtime:'llama.cpp',port:8098}],
   ['nemotron-3.5-bolt-74b-a9b',{label:'Nemotron 3.5 Bolt 74B A9B',runtime:'llama.cpp',port:8099}],
 ]);
+export function supervisorConnectionNotice(snapshot){
+  return snapshot?.schemaVersion==='mesh-supervisor-observation/v1'&&snapshot.source==='none'&&
+    Array.isArray(snapshot.models)&&snapshot.models.some(row=>row?.reason==='supervisor_identity_unverified')
+    ?'Model connection needs verification. Whether a model is loaded is unknown.':null;
+}
 export function supervisorControlView(snapshot,now=Date.now()){
   const fresh=snapshot?.schemaVersion==='mesh-supervisor-observation/v1'&&snapshot.source==='local_supervisor'&&
     Number.isSafeInteger(snapshot.expiresAt)&&snapshot.expiresAt>now&&snapshot.expiresAt<=now+5000&&Array.isArray(snapshot.models);
@@ -19,7 +24,7 @@ export function supervisorControlView(snapshot,now=Date.now()){
   const note=resident?'The supervisor reports this model loaded. Ownership, GPU mapping and model controls remain separately verified.':
     empty?'No supervised model is reported loaded. This is a read-only observation.':
     conflict?'The supervisor returned conflicting resident observations. Refresh status; residency is unconfirmed.':
-    'Current supervised model residency is unknown. Previous model details are cleared.';
+    supervisorConnectionNotice(snapshot)||'Current supervised model residency is unknown. Previous model details are cleared.';
   const lane=resident&&lanes.get(resident.id);
   const models=resident?[{name:lane.label,residency:'reported_loaded'}]:[];
   return {
