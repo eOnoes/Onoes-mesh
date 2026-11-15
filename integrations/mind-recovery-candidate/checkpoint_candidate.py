@@ -3,7 +3,8 @@
 The supplied authority is a TRUST BOUNDARY: it must independently retain the latest
 acknowledged head, fence producers during hold(), and durably block recovery before
 purge. Merely implementing this interface, signing a file, or passing a review string
-does not establish freshness. The accompanying authority is a disposable test fixture.
+does not establish freshness. The original authority is a disposable fixture; the
+persistent authority candidate is also inactive and needs a reviewed live binding.
 """
 from dataclasses import dataclass
 from pathlib import Path

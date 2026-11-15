@@ -94,3 +94,51 @@ end-to-end acceptance. Do not change the frozen core, its pins, the existing str
 default or any live binding as a side effect of this candidate.
 
 No live initialization or connection is recommended solely by these test results.
+
+## Persistent local journal candidate
+
+`persistent_authority.py` now supplies a concrete inactive authority implementation.
+Creation is explicit, requires an empty privately permissioned directory and an
+explicitly selected canonical producer, and returns a binding to the journal's
+authority UUID, Mind store/environment and physical file identity. Opening never
+creates a replacement file or adopts a copied journal under the old binding.
+It reuses Mind's private-storage qualification; it changes no ACL itself.
+
+Every operation uses a transactional current head. Pending purge intents and exact
+completion receipts are durable. Recovery holds the same write exclusion as the
+managed producer. Required logical state is checked in addition to SQLite integrity;
+a missing or malformed head is not accepted as an empty/current journal. Leases
+expire when their transaction exits and cannot be used afterward.
+
+The private journal tests use real temporary Windows ACLs and owned child processes
+that deliberately exit before acknowledgement, immediately before its SQLite
+COMMIT, and just after successful acknowledgement but before a response. They do
+not simulate a disk power failure inside SQLite's engine or restart the PC.
+
+### Proposed placement for later owner review; no directory created
+
+An operator-managed current-state directory outside all dated restore packages:
+`E:/App-Backups/ONOes-Mind/CURRENT-CHECKPOINT/current-checkpoint.sqlite`.
+This proposal uses the already chosen separate E: drive but selects no live trust
+root and changes no permission. A private directory and its retained binding need
+separate review before use. Do not treat the ordinary backup root's existing
+permissions as sufficient, or restore this current journal along with a dated
+memory snapshot and call it current evidence.
+
+The journal must update whenever a managed deletion occurs; those are runtime
+safety writes, not periodic backups. That behavior must be explicit in activation
+approval. Ordinary backups remain manual/milestone-only; no schedule was added.
+If the current journal is lost, replaced, uncertain or cannot be independently
+identified, recovery stays blocked. There is no automatic fallback to an older
+archived journal or a newly generated identity.
+
+Scope: privately retained, separately selected current state protects the intended
+data-only restore journey and managed-operation interruption. The provider still
+cannot establish freshness after rollback of the current journal itself, replacement
+by a privileged/same-login writer, or loss/rollback of the whole PC. A file UUID and
+HMAC do not solve that. Stronger threats require a separately protected authority
+and explicit operational design; they are not silently claimed here.
+
+Next: qualify actual placement/permissions and bind every real deletion writer to
+this protocol, then qualify the operator-host integration in disposable data.
+No real journal, keys, memory store, agent grant or service has been provisioned.

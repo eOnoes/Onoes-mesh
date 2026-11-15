@@ -90,3 +90,17 @@ The synthetic authority demonstrates protocol behavior, not production currentne
 or whole-PC/same-login rollback resistance. Real authority selection/qualification,
 private runtime storage and operator integration remain before live setup. Read
 the candidate README and private data/mind-checkpoint-candidate-proof-20261114.json.
+
+## Persistent authority development result - November15,2026
+
+The inactive candidate now has an explicit-create/open private local journal
+provider with store/environment/authority UUID and physical-file binding, durable
+purge intent and acknowledgement, current-head validation and transaction-scoped
+leases.38composed checks PASS122.005s, including actual temporary Windows ACLs
+and owned-child exits before/before-COMMIT/after acknowledgement. No PC restart
+or real data involved. Copied/missing journals are not silently adopted/recreated.
+Proposed current-state location under the E: Mind root is for review only; runtime
+updates on deletion, real permissions/independent source selection and all real
+writers/host integration remain unqualified. It does not protect against rollback
+of the journal itself, same-login/admin replacement or a whole-PC rollback.
+See candidate README and data/mind-persistent-authority-proof-20261114.json.
