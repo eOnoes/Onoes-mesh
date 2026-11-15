@@ -1,5 +1,33 @@
 # Onoes-Mind setup readiness
 
+## Read-only connection qualification - synthetic only
+
+30 focused checks pass:21 existing canonical recall/binding tests,3 existing Mesh
+client/default-disabled-route tests and6 new composed checks using Mesh's actual
+JavaScript client against the canonical BoundRecallLedger HTTP server. They cover
+shared-only results/provenance, caller-scope denial, writer-token refusal, extra
+or writable-grant refusal, next-read revocation/identity changes, compatible clone
+rejection, current-revision/supersession visibility and purge absence. The reader
+remains query-only and synthetic database bytes are unchanged by recall.
+
+The first composed run hit a test-only Windows cleanup error: a SQLite clone
+connection context commits but does not close the connection. Explicit close
+fixed the fixture; the retained second run passes6/6 in6.759s. Canonical21 tests
+pass13.707s; Mesh3 tests pass. No product boundary code changed.
+
+The dedicated mesh-recall principal, purpose-specific credential and exact
+store/file/environment/scope binding already exist in canonical code. Current
+Mind writes shared project facts into one area, project/onoes-mind/shared, across
+project IDs. That is not a per-project restriction. Owner scope preference is
+pending; private-agent memory remains excluded from either proposed connection.
+
+Production Mesh currently has only its standalone fixture injection seam and
+reports any configured reader as a fixture. A reviewed production configuration
+path and accurate source label still need implementation before activation.
+No live reader, principal, credential, grant, service or memory access was created.
+Corrections above are synthetic committed transactions, not a qualified writer
+API. Real protected writer enrollment and exclusive ownership remain separate.
+
 ## Current milestone - real empty canonical store completed, inactive
 
 Eddie completed the corrected local operator journey and confirmed its COMPLETE

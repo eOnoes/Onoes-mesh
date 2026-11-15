@@ -537,3 +537,18 @@ missing-initialization-approval and changed-request guards pass without opening
 password prompts or creating live keys/data. Positive live mode and owner keyboard
 acceptance remain unrun. Exact owner approval is next; no memory/service grants
 or restart are bundled with empty-store/key/first-backup initialization.
+
+## Cross-client read-only qualification
+
+test_bound_recall_mesh.py is an explicitly invoked, synthetic TEMP-only suite.
+It drives the real Mesh JavaScript recall client over loopback to canonical
+BoundRecallLedger/RecallServer.6 cases pass; canonical recall suites21 and Mesh
+client/disabled-route3 pass separately (30focused checks total). No live store or
+credential is read and no production reader is configured. Set PYTHONPATH to
+the reviewed canonical Mind source, then run:
+
+    python -m unittest discover -s integrations/mind-recovery-candidate -p test_bound_recall_mesh.py -v
+
+Synthetic revision transactions test read visibility, not a correction API or
+protected production writer. Shared area semantics and pending production wiring
+are recorded in MIND-SETUP-READINESS.md.
