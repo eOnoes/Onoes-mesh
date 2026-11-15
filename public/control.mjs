@@ -30,30 +30,58 @@ export function hostTelemetryState(snapshot, now = Date.now()) {
   return now - sampled > 15000 ? 'stale' : 'fresh';
 }
 
+export function inferenceModelLabel(snapshot, now = Date.now()) {
+  if(hostTelemetryState(snapshot,now)!=='fresh')return 'Unknown';
+  const engine=supervisorControlView(snapshot?.modelObservation,now).engine;
+  if(engine.loaded===false)return 'No';
+  if(engine.loaded!==true)return 'Unknown';
+  return ({'qwen3.8-flash-next-iq3-s':'Qwen3.8-Flash-Next','qwen3.6-35b-a3b-ud-q6_k_xl':'Qwen3.6-35B','qwen3.8-27b':'Qwen3.8-27B','nemotron-3.5-bolt-74b-a9b':'Nemotron3.5-Bolt'})[engine.modelAlias]||'Unknown';
+}
+function pixelReading(kind,label,pct) {
+  const valid=Number.isFinite(pct)&&pct>=0&&pct<=100;
+  const patterns={ram:['0000000000','0000000000','0111111110','0101010110','0111111110','0010101000','0000000000','0000000000','0000000000'],gpu:['0000000000','0111111110','0100110010','0101001010','0100110010','0111111110','0010101000','0000000000','0000000000'],cpu:['0010101000','0111111110','1100000011','0101111010','1101001011','0101111010','1100000011','0111111110','0010101000']};
+  const line=el('div','pixel-reading'),icon=el('span','pixel-icon');icon.setAttribute?.('aria-hidden','true');
+  for(const bit of patterns[kind].join(''))icon.append(el('i',bit==='1'?'is-on':null));
+  const copy=el('div','pixel-reading-copy'),head=el('div','pixel-reading-head');
+  head.append(el('span',null,label),el('strong',null,valid?`${Math.round(pct)}%`:'Unknown'));
+  const bar=el('div','pixel-reading-bar');bar.setAttribute?.('aria-hidden','true');
+  for(let i=0;i<10;i++)bar.append(el('i',valid&&i<Math.ceil(pct/10)?'is-on':null));
+  copy.append(head,bar);line.append(icon,copy);return line;
+}
 function renderInferenceHost() {
   if (!inferenceHost) return;
-  const freshness = hostTelemetryState(data);
-  const renderKey = JSON.stringify([freshness, data?.generatedAt, data?.host, data?.gpu?.name, data?.gpu?.vramUsedMiB, data?.gpu?.vramTotalMiB, data?.gpu?.utilPct, data?.system?.cpuLoadPct, data?.ram?.usedGB, data?.ram?.totalGB, data?.ram?.usedPct]);
+  const freshness = hostTelemetryState(data),modelLabel=inferenceModelLabel(data);
+  const summary=document.getElementById('inference-loaded-summary');
+  if(summary&&summary.textContent!==`Model loaded: ${modelLabel}`)summary.textContent=`Model loaded: ${modelLabel}`;
+  const location=document.getElementById('inference-location');
+  if(location)location.textContent=typeof data?.host==='string'?data.host.slice(0,120):"Echo's PC";
+  const renderKey = JSON.stringify([freshness, modelLabel, data?.generatedAt, data?.host, data?.gpu?.name, data?.gpu?.vramUsedMiB, data?.gpu?.vramTotalMiB, data?.gpu?.utilPct, data?.system?.cpuLoadPct, data?.ram?.usedGB, data?.ram?.totalGB, data?.ram?.usedPct]);
   if (renderKey === inferenceHostKey) return;
   inferenceHostKey = renderKey;
   inferenceHost.replaceChildren();
-  if (freshness !== 'fresh') {
+  const meters=el('div','pixel-readings'),fresh=freshness==='fresh';
+  meters.append(pixelReading('ram','RAM',fresh?data.ram?.usedPct:null),pixelReading('gpu','GPU',fresh?data.gpu?.utilPct:null),pixelReading('cpu','CPU',fresh?data.system?.cpuLoadPct:null));
+  inferenceHost.append(meters);
+  if (!fresh) {
     inferenceHost.append(el('p', 'fine', `PC readings ${freshness}. Previous readings are cleared; model controls are unchanged.`));
     return;
   }
-  inferenceHost.append(el('p', 'fine', `Checked ${data.generatedAt} · ${typeof data.host === 'string' ? data.host.slice(0, 120) : 'this PC'}`));
+  const hardware=el('details','section-gap');hardware.append(el('summary',null,'Hardware details'));
+  hardware.append(el('p', 'fine', `Checked ${data.generatedAt} · ${typeof data.host === 'string' ? data.host.slice(0, 120) : 'this PC'}`));
   const cpu = data.system?.cpuLoadPct, ram = data.ram;
-  inferenceHost.append(row('CPU use', Number.isFinite(cpu) && cpu >= 0 && cpu <= 100 ? `${cpu}%` : null));
+  hardware.append(row('CPU use', Number.isFinite(cpu) && cpu >= 0 && cpu <= 100 ? `${cpu}%` : null));
   const validRam = Number.isFinite(ram?.usedGB) && Number.isFinite(ram?.totalGB) && ram.usedGB >= 0 && ram.totalGB > 0 && ram.usedGB <= ram.totalGB;
-  inferenceHost.append(row('RAM', validRam ? `${ram.usedGB} / ${ram.totalGB} GB` : null));
-  inferenceHost.append(row('RAM use', Number.isFinite(ram?.usedPct) && ram.usedPct >= 0 && ram.usedPct <= 100 ? `${ram.usedPct}%` : null));
+  hardware.append(row('RAM', validRam ? `${ram.usedGB} / ${ram.totalGB} GB` : null));
+  hardware.append(row('RAM use', Number.isFinite(ram?.usedPct) && ram.usedPct >= 0 && ram.usedPct <= 100 ? `${ram.usedPct}%` : null));
   const gpu = data.gpu;
-  inferenceHost.append(row('GPU', typeof gpu?.name === 'string' ? gpu.name.slice(0, 160) : null));
+  hardware.append(row('GPU', typeof gpu?.name === 'string' ? gpu.name.slice(0, 160) : null));
   const validVram = Number.isFinite(gpu?.vramUsedMiB) && Number.isFinite(gpu?.vramTotalMiB) && gpu.vramUsedMiB >= 0 && gpu.vramTotalMiB > 0 && gpu.vramUsedMiB <= gpu.vramTotalMiB;
-  inferenceHost.append(row('VRAM', validVram ? `${gpu.vramUsedMiB} / ${gpu.vramTotalMiB} MiB` : null));
+  hardware.append(row('VRAM', validVram ? `${gpu.vramUsedMiB} / ${gpu.vramTotalMiB} MiB` : null));
   const util = gpu?.utilPct;
-  inferenceHost.append(row('GPU use', Number.isFinite(util) && util >= 0 && util <= 100 ? `${util}%` : null));
-  inferenceHost.append(el('p', 'fine', 'Read-only PC readings shared with Control. They do not identify a model\'s GPU or enable its controls.'));
+  hardware.append(row('GPU use', Number.isFinite(util) && util >= 0 && util <= 100 ? `${util}%` : null));
+  hardware.append(el('p', 'fine', 'Read-only PC readings shared with Control. They do not identify a model\'s GPU or enable its controls.'));
+  hardware.append(el('p','fine','GPU memory includes Windows and other apps. It does not prove whether a model is loaded.'));
+  inferenceHost.append(hardware);
 }
 
 function level(pct, table = LEVELS) {

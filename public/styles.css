@@ -1506,3 +1506,15 @@ html[data-theme=light] .workroom-sheet h2{font-family:var(--display);text-transf
 #panel-inference,#panel-inference .box{min-width:0;max-width:100%}
 #panel-inference pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}
 #panel-inference .actions{flex-wrap:wrap}
+
+/* Compact, pixel-style hardware readings. Percentages remain text-accessible. */
+#panel-inference .pixel-readings{display:grid;gap:14px}
+#panel-inference .pixel-reading{display:grid;grid-template-columns:60px minmax(0,1fr);align-items:center;gap:16px}
+#panel-inference .pixel-icon{display:grid;grid-template-columns:repeat(10,5px);grid-auto-rows:5px;gap:1px;color:var(--accent,currentColor)}
+#panel-inference .pixel-icon i{display:block}
+#panel-inference .pixel-icon .is-on{background:currentColor}
+#panel-inference .pixel-reading-copy{min-width:0}
+#panel-inference .pixel-reading-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px}
+#panel-inference .pixel-reading-bar{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;color:var(--accent,currentColor)}
+#panel-inference .pixel-reading-bar i{display:block;height:8px;border:1px solid currentColor;opacity:.25}
+#panel-inference .pixel-reading-bar .is-on{background:currentColor;opacity:1}

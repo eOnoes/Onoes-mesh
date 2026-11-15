@@ -26,16 +26,16 @@ test('CPU counter reset, changed topology and zero sampling time cannot report u
 test('shared host readings age, clear on failure and never invoke model controls', async () => {
   const originals = Object.fromEntries(['document','fetch','setInterval','setTimeout','clearTimeout'].map(key => [key, globalThis[key]]));
   const makeNode = () => ({ children: [], textContent: '',dataset:{},style:{},append(...nodes) { this.children.push(...nodes); }, replaceChildren(...nodes) { this.children = nodes; } });
-  const host = makeNode(),control=makeNode(), timers = [], requests = [];
+  const host = makeNode(),control=makeNode(),summary=makeNode(),location=makeNode(), timers = [], requests = [];
   let fail = false,hold=false,honorAbort=false;const held=[],events={},timeouts=[];
   const sample = { generatedAt: new Date().toISOString(), host: 'Test PC', system:{cpuLoadPct:12},ram:{usedGB:16,totalGB:64,usedPct:25},gpu: {name:'Test GPU',vramUsedMiB:100,vramTotalMiB:32000,utilPct:5} };
   const text = node => [node.textContent, ...node.children.map(text)].join(' ');
   try {
-    globalThis.document = {hidden:false,addEventListener:(name,fn)=>{events[name]=fn;}, getElementById: id => id === 'inference-host-telemetry' ? host : id==='ctl-root'?control:null, querySelectorAll: () => [], createElement: makeNode };
+    globalThis.document = {hidden:false,addEventListener:(name,fn)=>{events[name]=fn;}, getElementById: id => id === 'inference-host-telemetry' ? host : id==='ctl-root'?control:id==='inference-loaded-summary'?summary:id==='inference-location'?location:null, querySelectorAll: () => [], createElement: makeNode };
     globalThis.fetch = async (url,options) => { requests.push(url);if(hold)return new Promise((resolve,reject)=>{held.push({resolve,signal:options?.signal});if(honorAbort)options.signal.addEventListener('abort',()=>reject(Error('aborted')),{once:true});});if (fail) throw Error('offline'); return {ok:true,json:async()=>sample}; };
     globalThis.setTimeout=(fn,ms)=>{const t={fn,ms};timeouts.push(t);return t;};globalThis.clearTimeout=t=>{if(t)t.cleared=true;};
     globalThis.setInterval = (fn, interval) => { timers.push({fn,interval}); return timers.length; };
-    const {hostTelemetryState} = await import('../public/control.mjs');
+    const {hostTelemetryState,inferenceModelLabel} = await import('../public/control.mjs');
     await new Promise(resolve => setImmediate(resolve));
     const now = Date.now();
     assert.equal(hostTelemetryState({generatedAt:new Date(now).toISOString()}, now), 'fresh');
@@ -43,6 +43,15 @@ test('shared host readings age, clear on failure and never invoke model controls
     assert.equal(hostTelemetryState({generatedAt:new Date(now+5001).toISOString()}, now), 'unknown');
     assert.equal(hostTelemetryState({generatedAt:'invalid'}, now), 'unknown');
     assert.equal(hostTelemetryState(null, now), 'unavailable');
+    assert.equal(summary.textContent,'Model loaded: Unknown');assert.equal(location.textContent,'Test PC');
+    const modelReading={...sample,modelObservation:{schemaVersion:'mesh-supervisor-observation/v1',source:'local_supervisor',expiresAt:Date.now()+5000,models:['qwen3.8-flash-next-iq3-s','qwen3.6-35b-a3b-ud-q6_k_xl','qwen3.8-27b','nemotron-3.5-bolt-74b-a9b'].map(id=>({id,state:'ready',loaded:false}))}};
+    assert.equal(inferenceModelLabel(modelReading),'No');
+    modelReading.modelObservation.models[0].state='reported_loaded';modelReading.modelObservation.models[0].loaded=true;
+    assert.equal(inferenceModelLabel(modelReading),'Qwen3.8-Flash-Next');
+    modelReading.modelObservation.models[1].state='reported_loaded';modelReading.modelObservation.models[1].loaded=true;
+    assert.equal(inferenceModelLabel(modelReading),'Unknown');
+    modelReading.modelObservation.expiresAt=Date.now()-1;assert.equal(inferenceModelLabel(modelReading),'Unknown');
+    assert.equal(inferenceModelLabel({...sample,gpu:{utilPct:0,vramUsedMiB:0}}),'Unknown','zero GPU usage cannot establish unloaded status');
     assert.match(text(host), /Test GPU/);
     assert.match(text(host), /100 \/ 32000 MiB/);
     assert.match(text(host), /CPU use 12%/);assert.match(text(host), /RAM 16 \/ 64 GB/);assert.match(text(host), /RAM use 25%/);
@@ -73,8 +82,8 @@ test('shared host readings age, clear on failure and never invoke model controls
     sample.generatedAt=new Date().toISOString();
     sample.modelObservation={schemaVersion:'mesh-supervisor-observation/v1',source:'local_supervisor',expiresAt:Date.now()+5000,models:[{id:'nemotron-3.5-bolt-74b-a9b',state:'reported_loaded',loaded:true}]};
     sample.engine={name:'strata',modelShort:'wrong earlier lane',loaded:false};sample.services=[];
-    await timers.find(timer=>timer.interval===4000).fn();assert.match(text(control),/Nemotron/);assert.match(text(control),/reported loaded/);assert.doesNotMatch(text(control),/wrong earlier lane/);
-    sample.modelObservation.expiresAt=Date.now()-1;timers.find(timer=>timer.interval===1000).fn();assert.doesNotMatch(text(control),/Nemotron/);assert.match(text(control),/unknown/);
+    await timers.find(timer=>timer.interval===4000).fn();assert.equal(summary.textContent,'Model loaded: Nemotron3.5-Bolt');assert.match(text(control),/Nemotron/);assert.match(text(control),/reported loaded/);assert.doesNotMatch(text(control),/wrong earlier lane/);
+    sample.modelObservation.expiresAt=Date.now()-1;timers.find(timer=>timer.interval===1000).fn();assert.equal(summary.textContent,'Model loaded: Unknown');assert.doesNotMatch(text(control),/Nemotron/);assert.match(text(control),/unknown/);
     fail = true;
     await timers.find(timer => timer.interval === 4000).fn();
     assert.match(text(host), /unavailable/);
