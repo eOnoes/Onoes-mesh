@@ -86,7 +86,7 @@ test('actual admitted server team start uses the native binding and holds a mism
     res.setHeader('Content-Type','application/json');
     if(req.method!=='GET')posts++;
     if(req.headers.authorization!=='Bearer '+token){res.writeHead(401);res.end('{}');return;}
-    if(req.url==='/api/agents'){res.end(JSON.stringify(agents));return;}
+    if(req.url==='/api/agents?view=directory'){res.end(JSON.stringify(agents));return;}
     if(req.url==='/api/mesh-capabilities'){res.end('{"taskSessionBinding":1}');return;}
     res.writeHead(503);res.end('{}');
   });

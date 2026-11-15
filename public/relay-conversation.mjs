@@ -56,7 +56,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
     if(!available||initializing)return;
     const turn=epoch,read=++reads;
     try {
-      const list=await request('/relay/api/agents');
+      const list=await request('/api/relay/native/api/agents');
       if(!current(turn)||read!==reads)return;
       if(!Array.isArray(list))throw Error('Agent list unavailable.');
       agents=list.filter(a=>identity(a.id)).map(a=>({id:a.id,name:typeof a.name==='string'?a.name:a.id,sessionId:identity(a.conversation_id)?a.conversation_id:null,status:a.status||'unknown'}));
@@ -90,7 +90,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
       if(pending&&(!same(pending,target)||pending.hash!==hash))throw Error('An earlier send is uncertain. Retry its exact original text and destination; a new send is paused.');
       const capabilities=await request('/relay/api/mesh-capabilities');if(!current(turn))return;
       if(capabilities?.taskSessionBinding!==1)throw Error('Relay session binding is unavailable. Nothing was sent.');
-      const list=await request('/relay/api/agents');if(!current(turn))return;
+      const list=await request('/api/relay/native/api/agents');if(!current(turn))return;
       const peer=Array.isArray(list)&&list.find(a=>a.id===target.agentId);
       if(!peer||(!pending&&peer.conversation_id!==target.sessionId)){live=false;throw Error('Selected destination changed. Nothing was sent; explicitly select the current conversation.');}
       if(!pending){const receipt={version:2,id:uuid(),agentId:target.agentId,sessionId:target.sessionId,hash};persist(receipt);pending=receipt;}

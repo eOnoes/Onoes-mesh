@@ -231,7 +231,7 @@ test('missing receiver capability and expired admission dispatch nothing',async(
 test('task bridge sends expected conversation and rejects changed session before sending',async()=>{
   const conversationId=randomUUID();let current=conversationId;const calls=[];
   const relay=await createRelayHttpLink({baseUrl:'http://127.0.0.1:1',token:'test-only',fetchImpl:async(url,options)=>{
-    calls.push([url,options]);return new Response(JSON.stringify(url.endsWith('/api/agents')?[{id:'echo',backend:'hermes',conversation_id:current}]:{ok:true}),{headers:{'Content-Type':'application/json'}});
+    calls.push([url,options]);return new Response(JSON.stringify(url.endsWith('/api/agents?view=directory')?[{id:'echo',backend:'hermes',conversation_id:current}]:{ok:true}),{headers:{'Content-Type':'application/json'}});
   }});
   const body={...message(),conversationId};await relay.taskMessage(body,()=>true);
   assert.equal(JSON.parse(calls[1][1].body).expectedConversationId,conversationId);

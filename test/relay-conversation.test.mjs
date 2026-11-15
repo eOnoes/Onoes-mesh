@@ -12,7 +12,7 @@ function fixture({storage=new Map(),intercept}={}) {
   const request=async(route,options)=>{
     calls.push({route,options});if(offline)throw Error('offline');
     const result=intercept?.(route,options);if(result!==undefined)return result;
-    if(route==='/relay/api/agents')return structuredClone(agents);
+    if(route==='/api/relay/native/api/agents')return structuredClone(agents);
     if(route==='/relay/api/mesh-capabilities')return {taskSessionBinding:1};
     if(route.endsWith('/messages'))return structuredClone(history);
     if(options?.method==='POST'){
@@ -71,7 +71,7 @@ test('An accepted send with a lost response resolves by duplicate receipt even a
   assert.ok(posts.every(c=>JSON.parse(c.options.body).id===id&&JSON.parse(c.options.body).expectedConversationId==='one'));assert.equal(f.receipts.size,1);assert.equal(f.storage.size,0);
 });
 test('Unavailable capability/storage and changed preflight destination never dispatch',async()=>{
-  for(const intercept of [(r)=>r.endsWith('mesh-capabilities')?{}:undefined,(r)=>r==='/relay/api/agents'&&swap?[]:undefined]){
+  for(const intercept of [(r)=>r.endsWith('mesh-capabilities')?{}:undefined,(r)=>r==='/api/relay/native/api/agents'&&swap?[]:undefined]){
     var swap=false;const f=fixture({intercept});await f.ready();swap=true;f.core.setDraft('blocked');await f.core.send();assert.equal(f.receipts.size,0);
   }
   const f=fixture();await f.ready();f.storage.set=()=>{throw Error('storage full');};f.core.setDraft('not sent');await f.core.send();assert.equal(f.receipts.size,0);
@@ -89,7 +89,7 @@ test('Slow Relay reads coalesce repeated polls and still paint the completed his
   let hold=false,releaseList,releaseHistory;
   const f=fixture({intercept:r=>{
     if(!hold)return;
-    if(r==='/relay/api/agents')return new Promise(resolve=>releaseList=resolve);
+    if(r==='/api/relay/native/api/agents')return new Promise(resolve=>releaseList=resolve);
     if(r.endsWith('/messages'))return new Promise(resolve=>releaseHistory=resolve);
   }});
   await f.ready();f.core.setDraft('keep my draft');hold=true;const before=f.calls.length;
@@ -140,4 +140,13 @@ test('Static HTTP serves the exact conversation module; the app no longer binds 
   const app=await startApp({dataDir:'data/relay-chat-http-'+randomUUID()});
   try{const res=await fetch(app.url+'/relay-conversation.mjs');assert.equal(res.status,200);assert.equal(await res.text(),await readFile(new URL('../public/relay-conversation.mjs',import.meta.url),'utf8'));}finally{await app.close();}
   const appSource=await readFile(new URL('../public/app.js',import.meta.url),'utf8');assert.ok(!appSource.includes("$('relay-form').addEventListener('submit'"));
+});
+
+
+test('Phone conversation discovery uses the bounded Mesh agent API for its directory',async()=>{
+  const f=fixture();await f.ready();
+  assert.ok(f.calls.some(call=>call.route==='/api/relay/native/api/agents'));
+  assert.equal(f.calls.some(call=>call.route==='/relay/api/agents'),false);
+  assert.equal(f.core.state().destination.agentId,'echo');
+  assert.equal(f.core.state().live,true);
 });

@@ -122,7 +122,7 @@ for(const format of ['fenced','raw','incomplete','invalid','build'])test(`actual
   const peer=http.createServer(async(req,res)=>{
     res.setHeader('Content-Type','application/json');
     if(req.headers.authorization!=='Bearer '+token){res.writeHead(401);res.end('{}');return;}
-    if(req.url==='/api/agents'&&req.method==='GET'){res.end(JSON.stringify([
+    if(req.url==='/api/agents?view=directory'&&req.method==='GET'){res.end(JSON.stringify([
       {id:'echo',backend:'hermes',status:'idle',conversation_id:'fixture-echo'},
       {id:'nims',backend:'codex',status:'idle',conversation_id:'fixture-nims'}]));return;}
     if(req.url==='/api/nims/capabilities'||req.url==='/api/mesh-capabilities'){res.end('{"taskSessionBinding":1}');return;}
@@ -204,7 +204,7 @@ test('expired access records its actual HTTP status without dispatch or malforme
 
 test('unenrolled or untyped process capability stops the team before any model submission',{timeout:60000},async()=>{
   const peer=http.createServer((req,res)=>{res.setHeader('Content-Type','application/json');
-    if(req.url==='/api/agents'){res.end(JSON.stringify([{id:'echo',backend:'hermes',status:'idle',conversation_id:'fixture-echo'},
+    if(req.url==='/api/agents?view=directory'){res.end(JSON.stringify([{id:'echo',backend:'hermes',status:'idle',conversation_id:'fixture-echo'},
       {id:'nims',backend:'codex',status:'idle',conversation_id:'fixture-nims'}]));return;}
     res.writeHead(503);res.end('{}');});
   await new Promise(resolve=>peer.listen(0,'127.0.0.1',resolve));

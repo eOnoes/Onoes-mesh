@@ -110,7 +110,7 @@ test('real team endpoint refuses competing start/resume with admission intact an
   res.setHeader('Content-Type','application/json');
   if(req.method!=='GET')posts++;
   if(req.headers.authorization!=='Bearer '+token){res.writeHead(401);res.end('{}');return;}
-  if(req.method==='GET'&&req.url==='/api/agents'){res.end(JSON.stringify(agents));return;}
+  if(req.method==='GET'&&req.url==='/api/agents?view=directory'){res.end(JSON.stringify(agents));return;}
   res.writeHead(503);res.end('{}');
  });
  const dataDir='data/team-admission-http-'+randomUUID();mkdirSync(join(ROOT,dataDir));

@@ -83,7 +83,7 @@ test('real plan endpoint keeps admission/CSRF, validates connected assignments a
  const previous={};for(const key of ['MESH_RELAY_MODE','MESH_RELAY_URL','MESH_RELAY_TOKEN_FILE'])previous[key]=process.env[key];
  const {writeFileSync}=await import('node:fs');const {resolve}=await import('node:path');
  const token='fixture-'+randomUUID(),tokenPath=join(mkdtempSync(join(tmpdir(),'mesh-plan-http-')),'key');writeFileSync(tokenPath,token);
- const peers=http.createServer((req,res)=>{res.setHeader('Content-Type','application/json');if(req.headers.authorization!=='Bearer '+token){res.writeHead(401);res.end('{}');return;}if(req.url==='/api/agents'){res.end(JSON.stringify([{id:'echo',backend:'hermes',conversation_id:'e',status:'idle'},{id:'dsh',backend:'a2a',conversation_id:'d',status:'idle'}]));return;}res.writeHead(503);res.end('{}');});
+ const peers=http.createServer((req,res)=>{res.setHeader('Content-Type','application/json');if(req.headers.authorization!=='Bearer '+token){res.writeHead(401);res.end('{}');return;}if(req.url==='/api/agents?view=directory'){res.end(JSON.stringify([{id:'echo',backend:'hermes',conversation_id:'e',status:'idle'},{id:'dsh',backend:'a2a',conversation_id:'d',status:'idle'}]));return;}res.writeHead(503);res.end('{}');});
  await new Promise(r=>peers.listen(0,'127.0.0.1',r));
  process.env.MESH_RELAY_MODE='http';process.env.MESH_RELAY_URL='http://127.0.0.1:'+peers.address().port;process.env.MESH_RELAY_TOKEN_FILE=tokenPath;
  const dataDir='data/plan-http-'+randomUUID();let app;let headers;

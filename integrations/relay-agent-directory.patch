@@ -1,0 +1,29 @@
+--- a/relay_server.py
++++ b/relay_server.py
+@@ -1955,7 +1955,10 @@
+ 
+ 
+ @app.get("/api/agents")
+-def list_agents():
++def list_agents(view: str = "full"):
++    from fastapi import HTTPException
++    if view not in ("full", "directory"):
++        raise HTTPException(status_code=400, detail="Unsupported agent-list view")
+     snapshots = []
+     for a in AGENTS.values():
+         adapter = _native_openclaw(a)
+@@ -1968,6 +1971,14 @@
+             snapshots.append(initial)
+         else:
+             snapshots.append(a.snapshot())
++    if view == "directory":
++        if len(snapshots) > 128:
++            raise HTTPException(status_code=503, detail="Agent directory exceeds its count limit")
++        fields = ("id", "name", "backend", "device", "status", "conversation_id", "approval", "budget")
++        response = JSONResponse([{key: item.get(key) for key in fields} for item in snapshots])
++        if len(response.body) > 65536:
++            raise HTTPException(status_code=503, detail="Agent directory exceeds its byte limit")
++        return response
+     return JSONResponse(snapshots)
+ 
+ 

@@ -1,0 +1,22 @@
+{
+  "schema": "mesh/relay-agent-directory-qualification/v1",
+  "status": "integrated-final-ui-gate-pending-not-loaded",
+  "relayOriginalSha256": "070076dd0d1ae059d88993ae047e093e9abf150b858c2e25526ccf6a63f8dadb",
+  "relayCandidateSha256": "730b3fee9dc3468d64344f5f471eeab582554f8e8b7900f5f6edd7a5d072695a",
+  "meshCandidateSha256": "6de57ed98f16ef513c28ae039644ec0c3804ffe139de8f87d512afa8f36dbe3f",
+  "componentCasesPassed": 36,
+  "copiedStartupCyclesPassed": 2,
+  "copiedAuthHttpChecksPerCycle": 7,
+  "copiedApplicationNetworkOrProcessAttempts": 0,
+  "metadataByteLimit": 65536,
+  "metadataAgentLimit": 128,
+  "meshResponseLimitUnchanged": 262144,
+  "liveAcceptance": "not run",
+  "workerActivation": false,
+  "fullIntegratedChecksBeforePhoneRoute": 647,
+  "phoneConversationCasesPassed": 14,
+  "latestFullGate": "failed in initial check.mjs after phone directory-path update; inspect preserved log",
+  "liveRelayStarted": false,
+  "meshReloaded": false,
+  "pcRestart": false
+}

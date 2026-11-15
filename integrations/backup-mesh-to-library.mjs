@@ -34,6 +34,7 @@ entries.push('integrations/guide-team-post-maintenance-qualification.json');
 for(const name of ['integrations/relay-result-evidence/relay_native_receipts.py','integrations/relay-result-evidence/README.md','integrations/dsh-web-autostart/start-dsh-web.ps1','integrations/dsh-web-autostart/start-hidden.vbs','integrations/dsh-web-autostart/README.md'])entries.push(name);
 entries.push('integrations/legacy-recovery-plan.mjs');
 entries.push('integrations/legacy-recovery-operator.mjs');
+for(const name of ['integrations/relay-agent-directory.patch','integrations/relay-agent-directory-qualification.json'])entries.push(name);
 for(const name of ['integrations/mesh-maintenance-handoff.ps1','integrations/read-maintenance-recovery.mjs','integrations/LEGACY-WORKER-RECOVERY-PLAN.md','test/maintenance-handoff-guards.ps1'])entries.push(name);
 entries.sort();
 // Keep the operational contracts with the UI/code they describe.
