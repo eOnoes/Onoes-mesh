@@ -142,3 +142,56 @@ and explicit operational design; they are not silently claimed here.
 Next: qualify actual placement/permissions and bind every real deletion writer to
 this protocol, then qualify the operator-host integration in disposable data.
 No real journal, keys, memory store, agent grant or service has been provisioned.
+
+## Inactive first-time operator journey
+
+`operator_setup_candidate.py` joins the prepared native key enrollment, empty-store
+initialization, separately bound journal, first registered backup and an actual
+unchanged-history restore rehearsal. All three directories must already exist,
+be privately permissioned, empty and disjoint. It changes no ACL and has no CLI.
+
+The first backup includes the snapshot, matching metadata, exact encrypted key
+package (portable password protection plus current-account runtime protection),
+matching deletion history and human restore notes. The rehearsal reopens keys
+from the exported encrypted package and reads the backup's history. It does not
+silently depend on the originals remaining on D:. No raw key or password is
+returned in a receipt or written to the backup.
+The snapshot itself is ordinary SQLite, not password-encrypted by the key package;
+the backup directory's private permissions are required to protect its contents.
+
+Cancellation creates no ledger/journal/backup. A later failure preserves its keys,
+store, journal or snapshot for inspection and records no final success receipt.
+The successful candidate receipt is saved only after the source and rehearsal
+connections close. It explicitly has `activated=false`, `runtimeEnrollment=false`
+and `recoveryQualified=false`; `candidateRehearsal=PASS` is not live qualification.
+
+This first-time journey is for an EMPTY store with no principals or memory records.
+It is not a general backup scheduler or a live recovery command. The real D: folder
+was checked by names/ACL only and remained empty/private; no live key/store file
+was opened. No actual E: checkpoint or initialization-backup directory was created.
+
+### Remaining history-retention requirement
+
+The journal currently retains heads/receipts, not the complete tombstone log. The
+initial backup copies its matching history, but after later deletions that copy
+can be stale. If the newer authoritative history is lost, a hash in the journal
+cannot reconstruct it. Recovery must refuse instead of resurrecting forgotten
+records. Before any live memory records, retain the complete acknowledged deletion
+chain independently and qualify recovery after loss of the original data/history.
+The empty-store rehearsal must not be presented as proof of that later journey.
+
+Real setup still needs explicit owner approval for protected keys and destinations,
+local owner password entry/custody, the actual current-history trust/retention model
+and a reviewed operator invocation. No service or agent grants are included.
+
+### Whole-journey qualification
+
+9operator checks passed on the final source in323.270seconds. The runner hashed
+its candidate and canonical dependencies before/after; all stayed unchanged. The
+checks cover the native encrypted enrollment through actual backup-only restore,
+cancellation, occupied/overlapping folders, journal/rehearsal/late-receipt failure
+preservation, and closure before the final receipt. The backup-only test parks
+the original key/history files during actual restore.38prior recovery/journal
+checks remain separately evidenced with their implementation sources unchanged.
+No full Mesh/full Mind suite or real setup was run.
+Private proof:data/mind-whole-operator-final-qualification-20261114.json.

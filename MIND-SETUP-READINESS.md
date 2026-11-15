@@ -104,3 +104,34 @@ updates on deletion, real permissions/independent source selection and all real
 writers/host integration remain unqualified. It does not protect against rollback
 of the journal itself, same-login/admin replacement or a whole-PC rollback.
 See candidate README and data/mind-persistent-authority-proof-20261114.json.
+
+## Current first-time operator integration
+
+The inactive operator_setup_candidate joins the canonical protected native key
+enrollment and empty-store initializer to the separate private journal, first
+registered backup and actual unchanged-history restore rehearsal. Preflight
+requires three empty, disjoint private directories; no permission is changed by
+the API. The first backup includes SQLite/metadata, the encrypted key package,
+matching deletion history and restore notes. Rehearsal reads the exported key
+package/history rather than requiring originals on D:. Keys are never returned
+in a receipt. Final success is saved only after source/rehearsal handles close;
+activated/runtimeEnrollment/recoveryQualified remain false.
+
+A fresh names/ACL-only check found D:/App-Data/Onoes-Mind empty and privately
+permissioned; no database/key content was opened and no Ecurrent journal folder
+was created. See data/mind-live-folder-metadata-preflight-20261114.json.
+
+Before live memory use, retain the full acknowledged current deletion chain
+independently: the present journal has heads/receipts, not a recoverable complete
+chain. Initial empty-history recovery cannot qualify after-deletion recovery if
+the newer original history is lost. No live setup approval is requested by this
+operator code or its temporary-data tests. Current test proof is recorded in
+data/mind-whole-operator-qualified-proof-20261114.json once the source-bound run
+finishes; earlier pre-export results remain separate.
+
+Current whole-journey qualification completed:9PASS323.270s, source-stable before/
+after hashes; first backup includes encrypted key package/history and actual
+rehearsal succeeds with the original key/history copies temporarily unavailable.
+The earlier38recovery/journal source hashes still match their proof. These are
+separate checks, not a claimed47case combined full-suite run. Live Mind stays off.
+Final evidence:data/mind-whole-operator-final-qualification-20261114.json.
