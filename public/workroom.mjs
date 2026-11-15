@@ -4,7 +4,7 @@ import {saveCardBrief} from './workroom-edit.mjs';
 import {createBoardLoader,createCardOpener} from './workroom-load.mjs';
 import {handoffStatus,taskTimeline,cardNextAction,nativeWorkerStatus} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
-import {createPlanEditor,scopedTeamStatus} from './workroom-plan.mjs';
+import {createPlanEditor,scopedTeamStatus,teamRequestNotice} from './workroom-plan.mjs';
 const root=document.getElementById('workroom-board');
 const request=(...args)=>window.meshWorkroom.request(...args);
 const stages=[['backlog','Backlog'],['ready','Ready'],['working','Working'],['needs_you','Needs you'],['done','Done']];
@@ -18,10 +18,12 @@ if(root){
   const refresh=el('button','Refresh board');refresh.type='button';
   const projectFilter=el('input');projectFilter.placeholder='Filter by project';projectFilter.setAttribute('aria-label','Filter board by project');
   const status=el('p');status.setAttribute('role','status');
+  const maintenanceNotice=el('p');maintenanceNotice.setAttribute('role','status');maintenanceNotice.hidden=true;
+  const paintMaintenance=()=>{maintenanceNotice.textContent=teamRequestNotice(teamPolicy);maintenanceNotice.hidden=!maintenanceNotice.textContent;};
   const board=el('div');board.className='workroom-lanes';
   let checkingStatus='';
   const boardLoader=createBoardLoader({request,onBoard(result){
-    tasks=result.tasks;teamPolicy=result.teamPolicy||null;agentsKnown=false;draw();
+    tasks=result.tasks;teamPolicy=result.teamPolicy||null;agentsKnown=false;paintMaintenance();draw();
     root.dataset.managedFlow=teamPolicy?.simpleFlow?'1':'0';
     if(teamPolicy?.simpleFlow){const lead=document.getElementById('create-owner');if(lead){lead.required=false;lead.hidden=true;document.querySelector('label[for="create-owner"]')?.setAttribute('hidden','');if(lead.nextElementSibling)lead.nextElementSibling.textContent='Ideas stay unassigned in To do. Move to In progress for the team to inspect them.';}}
     checkingStatus=`${tasks.length} saved tasks · Checking agent connections…`;status.textContent=checkingStatus;
@@ -34,7 +36,7 @@ if(root){
   let returnFocus=null;
   function closeDetails(){viewEpoch++;clearTimeout(followTimer);const id=selected?.id;details.close();selected=null;pending=null;(Array.from(board.querySelectorAll('[data-task-id]')).find(node=>node.dataset.taskId===id)||returnFocus)?.focus();}
   details.addEventListener('cancel',event=>{if(busy){event.preventDefault();return;}event.preventDefault();closeDetails();});
-  root.append(heading,description,refresh,projectFilter,dragHelp,status,board,details);
+  root.append(heading,description,refresh,projectFilter,dragHelp,maintenanceNotice,status,board,details);
   const createButton=el('button','+ New task');createButton.type='button';
   refresh.before(createButton);
   const helpButton=el('button','? Help');helpButton.type='button';helpButton.setAttribute('aria-label','Workroom walkthrough');
@@ -127,7 +129,7 @@ if(root){
   window.meshWorkroom.onClear(()=>{
     boardLoader.clear();cardOpener.clear();agentsKnown=false;root.dataset.managedFlow='0';
     viewEpoch++;clearTimeout(followTimer);
-    tasks=[];selected=null;agents=[];pending=null;teamPolicy=null;
+    tasks=[];selected=null;agents=[];pending=null;teamPolicy=null;paintMaintenance();
     details.close();details.replaceChildren();board.replaceChildren();
     createDialog.close();createForm.reset();createStatus.textContent='';
     pendingMove=null;moveDialog.close();moveNote.textContent='';moveNotice.textContent='';moveOwner.replaceChildren();
@@ -178,7 +180,7 @@ if(root){
     const epoch=++viewEpoch;clearTimeout(followTimer);
     const opened=await request('/api/workroom/'+id);
     if(epoch!==viewEpoch)return;
-    selected=opened.task;teamPolicy=opened.teamPolicy||null;
+    selected=opened.task;teamPolicy=opened.teamPolicy||null;paintMaintenance();
     // Never carry an uncertain message into another task.
     pending=null;details.replaceChildren();details.classList.add('workroom-task-sheet');details.classList.toggle('workroom-simple-flow',Boolean(teamPolicy?.simpleFlow));
     const content=el('div');content.className='workroom-sheet-content';
@@ -190,6 +192,7 @@ if(root){
     const close=el('button','Close card');close.type='button';close.addEventListener('click',()=>{if(!busy)closeDetails();});toolbar.append(stageBadge,close);details.append(toolbar);
     details.append(content,actionBar);
     const dialogStatus=el('p');dialogStatus.setAttribute('role','status');content.append(dialogStatus);
+    if(teamRequestNotice(teamPolicy))content.append(el('p',teamRequestNotice(teamPolicy)));
     content.append(el('h2',selected.title),el('p',selected.description));
     if(selected.flow?.state==='clarification')content.append(el('h3','Clarification requested · '+new Date(selected.flow.askedAt).toLocaleString()),el('p',selected.flow.question));
     if(teamPolicy?.simpleFlow&&selected.flow?.ownerNote)content.append(el('h3','Your requested changes'),el('p',selected.flow.ownerNote));
@@ -397,6 +400,7 @@ if(root){
     for(const [phase,label] of [['plan','Ask for a plan · no edits'],['work','Prepare worker request'],['review','Request independent review']]){
       const button=el('button',phase==='plan'&&['echo','nims'].includes(selected.workroom.owner)?'Ask '+(selected.workroom.owner==='nims'?'Nims':'Echo')+' to plan · no edits':label);button.type='button';button.disabled=(phase==='plan'?(!agents.some(a=>a.id===selected.workroom.owner&&a.conversation_id)&&!workerAgent.options.length):!workerAgent.options.length)||selected.status==='done'||selected.progress.decision==='approved'||(phase==='plan'&&selected.workroom.owner==='nims'&&!agents.some(a=>a.id==='nims'&&a.conversation_id))||(phase!=='plan'&&selected.plan&&selected.plan.state!=='locked')||(phase==='review'&&(!selected.worker||!selected.progress.result.trim()||!selected.progress.evidence.trim()||selected.progress.checklist.some(step=>step.status!=='done')));
       const dispatch=()=>act(async()=>{
+        if(teamRequestNotice(teamPolicy))throw new Error(teamRequestNotice(teamPolicy));
         if(!editor.hidden)throw new Error('Save or cancel edits before sending a handoff.');
         if(planEditor?.isDirty())throw new Error('Save or lock the plan changes before sending a handoff.');
         const choice=phase==='review'?reviewerAgent:workerAgent;const agent=agents.find(agent=>agent.id===(phase==='plan'&&['echo','nims'].includes(selected.workroom.owner)?selected.workroom.owner:choice.value));
@@ -407,7 +411,9 @@ if(root){
         await request('/api/workroom/'+id+'/handoff',{method:'POST',body:JSON.stringify(body)});
         pendingHandoffs.delete(phase);await load();await open(id);status.textContent=`${phase} handoff accepted. Acceptance is not completion.`;
       });
+      button.disabled=button.disabled||Boolean(teamRequestNotice(teamPolicy));
       if(phase==='work')button.addEventListener('click',()=>{
+        if(teamRequestNotice(teamPolicy)){dialogStatus.textContent=teamRequestNotice(teamPolicy);return;}
         if(!editor.hidden){dialogStatus.textContent='Save or cancel edits before preparing worker execution.';return;}
         if(planEditor?.isDirty()){dialogStatus.textContent='Save or lock the plan changes before preparing worker execution.';return;}
         team.querySelector('.worker-preview')?.remove();

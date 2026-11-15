@@ -35,7 +35,12 @@ export function createPlanEditor({task,agents,onSave,document}){
 }
 
 
+export function teamRequestNotice(policy){
+  return policy?.dispatch?.state==='paused'?'Agent requests are paused for maintenance. You can still create, edit and organize cards. Refresh the board after maintenance.':'';
+}
+
 export function scopedTeamStatus(plan,policy){
+  const notice=teamRequestNotice(policy);if(notice)return {matches:false,message:notice};
   if(policy?.schema!=='mesh-team-policy/v1'||typeof policy.workspace!=='string'||!policy.workspace||!Array.isArray(policy.builderIds)||!Array.isArray(policy.reviewerIds)||policy.actionLimit!==50)return {matches:false,message:'Automatic team policy unavailable. Refresh before starting or resuming.'};
   const same=typeof plan?.workspace==='string'&&plan.workspace.replace(/\\/g,'/').replace(/\/+$/,'').toLowerCase()===policy.workspace.replace(/\\/g,'/').replace(/\/+$/,'').toLowerCase();
   const roles=policy.builderIds.includes(plan?.workerId)&&policy.reviewerIds.includes(plan?.reviewerId)&&plan?.workerId!==plan?.reviewerId;

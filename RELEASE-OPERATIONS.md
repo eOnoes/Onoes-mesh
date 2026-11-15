@@ -4,7 +4,7 @@
 
 First local release: **18/21 complete**. This remains a private release candidate;
 the wider Onoes-Mesh goal is unfinished. Recovery/runtime code milestone: f35f5c6.
-The latest integrated local suite passed **651 checks (521 Node +130 Python)**.
+The latest integrated local suite passed **653 checks (523 Node +130 Python)**.
 Two scroll checks also passed, including the later prepend-position regression.
 Thirty separate PowerShell safeguard checks passed. These are local qualification,
 not acceptance of a completed production recovery or worker deployment.
@@ -23,7 +23,7 @@ not acceptance of a completed production recovery or worker deployment.
 - [x] Replacement launchers qualified in isolation after a changed Windows
   PowerShell fingerprint and inherited PowerShell module-path issue were found.
 - [x] Compact Relay directory deployed: isolated qualification, full 648-check gate,
-  and authenticated live Relay/Mesh reads passed. Phone selector check is pending.
+  and authenticated live Relay/Mesh reads passed. Eddie accepted separate messages and older history on his phone.
 - [ ] Resolve the historical writer holds through separately resumed reviewed
   recovery; additional PC restarts remain on hold.
 - [ ] Enroll and qualify a useful bounded production team workflow on the phone.
@@ -33,7 +33,7 @@ not acceptance of a completed production recovery or worker deployment.
 | Remaining local gate | Evidence already preserved | What still proves completion |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Accepted card/phone checks and phone scoped-team start. | A useful production team request finishes without operator rescue after enrollment. |
-| C4 final release, ownership and acceptance | 648 local checks, verified backup/restore, exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
+| C4 final release, ownership and acceptance | 653 local checks, verified backup/restore, exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
 | E2 bounded production team | Isolated file-and-terminal build and independent Nims review passed with retained evidence. | Recover the old holds through the reviewed boundary, enroll the deployed route and qualify the actual team cycle. |
 
 ### Latest ordinary-app milestone - compact Relay directory
@@ -46,7 +46,7 @@ directory. Transcript and send routes retain their pinned conversation semantics
 Mesh was reloaded through its named owner; all15cards and8original send rows are
 unchanged, dispatch remains paused. No PC restart or real agent send occurred.
 Launch inputs match the Relay owner receipt; this does not attest historical
-loaded bytes or release old writer holds. Phone selector acceptance is pending.
+loaded bytes or release old writer holds. Eddie confirmed separate messages and older history work on his actual phone.
 
 Proof: integrations/relay-agent-directory-qualification.json; private live reads
 are in data/relay-directory-live-proof-20261114.json and
@@ -116,7 +116,7 @@ later resumes that work; restored startup controls no longer match their frozen
 suspended-state assumptions. Continue ordinary local app corrections without a
 PC restart while keeping old holds and worker pause intact.
 
-### Staged Relay correction
+### Historical staged Relay correction (subsequently deployed)
 
 The observed agent-list response was 351919 bytes because it included chat
 history; Mesh's existing response cap is 262144 bytes. The isolated candidate
@@ -127,9 +127,9 @@ loopback, redirect and exact-conversation guards. Nine synthetic FastAPI endpoin
 cases and 27 Node consumer/HTTP bridge cases passed. No live source, service or
 recovery input was changed, and no real agent message was sent.
 
-The Relay candidate is **not deployed**. Finish recovery first; changing Relay
+At that staging checkpoint the candidate was **not deployed**; the proposed sequencing was recovery first. Changing Relay
 source now would invalidate the startup-source proof in the frozen old window.
-Then qualify the installed authentication/startup boundary, deploy both sides
+The later deployed milestone above supersedes this historical staging note. Its planned checks were to qualify the installed authentication/startup boundary and deploy both sides
 together and check the actual compact read before enabling dispatch. Conversation
 history pagination remains a separate follow-up; compact discovery does not solve
 long-history retrieval. Evidence: data/relay-directory-candidate-20261114/qualification.json.
@@ -1880,3 +1880,31 @@ project, without qualifying its complete runtime or historical worker use. See t
 canonical plan broker provenance audit. No service action or live recovery is
 approved. Private inventory and source proof:
 data/maintenance-owner-inventory-proof.json and data/maintenance-final-test-proof.json.
+
+
+## Current Workroom maintenance notice and phone acceptance
+
+Eddie accepted the actual phone Relay history: his messages and Echo replies stay
+separate, older history loads and reading position is usable. Preserve this
+acceptance; do not repeat the prior phone/model checklist merely after a resume.
+
+The admitted board/card policy now reports only dispatch state, read-only. While
+paused, Workroom explains that agent requests are paused for maintenance and
+that saved cards can still be created, edited and organized. New plan/build/review
+handoffs and automatic team start/resume controls are unavailable during the pause.
+The notice is advisory UI; the backend admission barrier remains authoritative.
+It adds no resume/recovery switch, does not release a writer or mark a card Done.
+
+The full local npm test suite passed653checks (523Node+130Python).50targeted
+checks also passed. Actual Tailscale browser verification showed the board notice,
+all15cards, the card notice, enabled Edit card and disabled new handoff controls.
+Before/after read-only hashes of all27SQLite tables are identical, including all
+21saved sends; the original8historical holds remain preserved. Dispatch remains
+paused at generation1, unheld with no new sends. Only named Mesh was reloaded;
+no PC/model/Relay/Mind/Rook restart or worker activation occurred. Evidence:
+data/workroom-maintenance-notice-full-20261114.log and
+data/workroom-maintenance-notice-live-proof-20261114.json.
+
+Local-release18/21 and C1/C4/E2 remain open. The existing owner hold on additional
+PC restarts remains in force. Next: assess remaining useful local work against
+these gates without substituting test passes for actual production-team acceptance.

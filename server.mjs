@@ -347,7 +347,10 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       if (workroomRoute) {
         if (!store || executionPersistenceFailed) throw new TaskError(503, 'Workroom unavailable.');
         const id=workroomRoute[1];
-        if(req.method==='GET' && !workroomRoute[2]) return send(200,id?{task:store.workroom.get(id),teamPolicy:{...automationPolicy(ROOT),...(process.env.MESH_SIMPLE_FLOW==='1'?{simpleFlow:true}:{})}}:{tasks:store.workroom.list(),teamPolicy:{...automationPolicy(ROOT),...(process.env.MESH_SIMPLE_FLOW==='1'?{simpleFlow:true}:{})}});
+        if(req.method==='GET' && !workroomRoute[2]) {
+          const teamPolicy={...automationPolicy(ROOT),dispatch:{state:store.workroom.dispatch.status().state},...(process.env.MESH_SIMPLE_FLOW==='1'?{simpleFlow:true}:{})};
+          return send(200,id?{task:store.workroom.get(id),teamPolicy}:{tasks:store.workroom.list(),teamPolicy});
+        }
         if(!id) throw new TaskError(405,'Method not allowed.');
         if(workroomRoute[2]==='claim'&&req.method==='GET')return send(200,{flow:store.workroom.get(id).flow??null});
         if(workroomRoute[2]==='owner-review'&&req.method==='POST')return send(200,store.workroom.ownerReview(id,context.body));
