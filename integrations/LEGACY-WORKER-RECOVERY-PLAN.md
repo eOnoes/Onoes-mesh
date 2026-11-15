@@ -1,6 +1,31 @@
 # Historical worker recovery — proposal for review
 
-## Current maintenance handoff - November 14, 2026
+## Current state: startup restored without another PC restart
+
+Eddie approved restore-only closeout (call_c763f3256c5646008885be73ea4c6fee).
+The separate strict restore-only helper completed; independent Windows readback
+matched all original task definitions, restored the four original enabled flags
+and three exact login links, and kept the guardian disabled. The completed owner
+authorization is archived under its successful Restore-attempt directory; its
+active filename is retired. No PC restart or legacy recovery apply occurred.
+
+Mesh remains healthy on the same owned PID21832, private Tailscale HTTP200,15
+saved cards, unchanged eight original sends. Dispatch is paused/unheld/drained;
+no recovery ledger entries exist. Rook, production workers and live Mind remain
+off. Normal restored startup triggers may run. Extra PC restarts stay on hold.
+
+The old full-window source/preboot records are preserved as history, NOT active
+instructions. Their suspended-startup assumptions no longer match the restored
+Windows state. Neither old02/03 nor the unactivated replacement should be run.
+Any later full recovery needs fresh planning and explicit owner steering; do not
+repeat the declined restart request or silently repin/reuse the old authority.
+
+Evidence: data/startup-restore-only-completion-20261114.json;
+data/startup-restore-only-independent-readback-20261114.json;
+data/startup-restore-only-app-invariants-20261114.json. No new inference load,
+agent task, memory access or credential change was part of this closeout.
+
+## Historical maintenance preparation - November 14, 2026
 
 Eddie confirmed that all other apps/agents editing Mesh can stay closed, including
 anything on the laptop, and authorized preparing these steps. The earlier

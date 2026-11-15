@@ -18,11 +18,12 @@ not acceptance of a completed production recovery or worker deployment.
   restore checks. The latest verified snapshot contains 15 cards; all seven
   restoration checks passed. This is a second drive, not off-device protection.
 - [x] Standalone recovery and restore handoff built and locally qualified.
+- [x] Original Windows startup restored and independently verified without another PC restart.
 - [x] Replacement launchers qualified in isolation after a changed Windows
   PowerShell fingerprint and inherited PowerShell module-path issue were found.
 - [x] Compact Relay directory candidate qualified in isolation: 36 checks passed.
-- [ ] Activate an explicitly approved replacement maintenance window and freeze
-  its new exact plan; complete actual recovery and restore startup configuration.
+- [ ] Resolve the historical writer holds through separately resumed reviewed
+  recovery; additional PC restarts remain on hold.
 - [ ] Enroll and qualify a useful bounded production team workflow on the phone.
 - [ ] Verify deployed service ownership and obtain Eddie's final local-release
   acceptance. Local tests do not replace those checks.
@@ -62,30 +63,39 @@ ledger was applied, no model was loaded, and other agent services were not start
 Evidence: data/no-restart-mesh-resume-proof-20261114.json. This app-health result
 does not replace the remaining production-team and owner release checks.
 
-Windows startup triggers remain temporarily suspended; that configuration has
-not been restored by starting Mesh. Production workers, Rook and live Mind remain
-off. Preserve the three unrelated pending records. The standalone recovery is
-parked while ordinary authorized work that does not need a restart may continue.
-See integrations/LEGACY-WORKER-RECOVERY-PLAN.md for the preserved maintenance
-history and data/maintenance-window-refresh-proposal-20261114/owner-decision.json
-for Eddie's current decision.
+Normal Windows startup configuration is now restored and independently verified.
+Production workers, Rook and live Mind remain off. The three unrelated pending
+records and eight historical sends remain preserved. Legacy recovery is parked;
+Eddie's hold on additional PC restarts remains in force.
 
-### Restore-only closeout prepared (no PC restart)
+### Restore-only closeout completed (no PC restart)
 
-A separate private helper is prepared to undo only the temporary startup
-suspension: restore the original four enabled task flags and three login links;
-keep the guardian disabled. It uses a distinct restore-only authorization file,
-schema and decision. It cannot accept the old recovery authorization and does
-not invoke Node, apply recovery or resume Mesh dispatch. The original helper,
-plan and replacement-window proposal remain unchanged.
+Eddie separately approved original startup restoration. The helper completed with
+Windows administrator elevation and a successful retained process result. Fresh
+independent reads verified all five task definitions against the original
+snapshots: the original four are enabled and the guardian is still disabled.
+All three login shortcuts are back in their original locations with exact hashes;
+the parked locations are empty. The used restore-only authorization was archived
+after terminal success and independent verification, preventing its active reuse.
 
-The current signed Windows host is pinned up front. Twenty-four source-guard
-cases passed; the actual read-only startup preview passed and Apply without new
-authorization refused. The startup-mutation and rollback body is unchanged from
-the previously reviewed helper. Live restoration remains NOT RUN and requires
-Eddie's restore-only approval and ordinary Windows administrator consent. Normal
-startup triggers may resume Echo/DSH/model services; no PC restart is involved.
-Evidence: data/startup-restore-only-qualification-20261114.json.
+Mesh stayed healthy on the same owned process, and the private Tailscale page
+returned HTTP200. All15 saved cards and the exact eight original send records
+are intact. Dispatch remains paused/unheld with zero admissions; no recovery
+ledger entry was recorded. No model load or explicit service-start request was
+sent by this closeout. Restored tasks may run their original normal triggers.
+
+Twenty-four actual-source safeguard checks and the read-only preview preceded
+the live operation. Actual restoration and independent Windows readback now pass;
+that does not complete C1/C4/E2 or qualify an automatic worker route. Evidence:
+data/startup-restore-only-completion-20261114.json,
+data/startup-restore-only-independent-readback-20261114.json and
+data/startup-restore-only-app-invariants-20261114.json.
+
+Do not run the old02/03 desktop recovery scripts. Both historical full-window
+plans and the unactivated replacement proposal require fresh planning if Eddie
+later resumes that work; restored startup controls no longer match their frozen
+suspended-state assumptions. Continue ordinary local app corrections without a
+PC restart while keeping old holds and worker pause intact.
 
 ### Staged Relay correction
 
