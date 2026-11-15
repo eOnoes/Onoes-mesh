@@ -1,10 +1,10 @@
 # Mesh private release candidate
 
-## Current release status - 2026-11-14 Chicago
+## Current release status - 2026-11-15 Chicago
 
 First local release: **18/21 complete**. This remains a private release candidate;
-the wider Onoes-Mesh goal is unfinished. Recovery/runtime code milestone: f35f5c6.
-The latest integrated local suite passed **653 checks (523 Node +130 Python)**.
+the wider Onoes-Mesh goal is unfinished. Recovery confirmation milestone: ccce8cb.
+The latest integrated local suite passed **661 checks (531 Node +130 Python)**.
 Two scroll checks also passed, including the later prepend-position regression.
 Thirty separate PowerShell safeguard checks passed. These are local qualification,
 not acceptance of a completed production recovery or worker deployment.
@@ -19,13 +19,16 @@ not acceptance of a completed production recovery or worker deployment.
   restore checks. The latest verified snapshot contains 15 cards; all seven
   restoration checks passed. This is a second drive, not off-device protection.
 - [x] Standalone recovery and restore handoff built and locally qualified.
-- [x] Original Windows startup restored and independently verified without another PC restart.
+- [x] Original Windows startup restored after the latest approved manual window;
+  all five task definitions/flags and three login links independently verified.
 - [x] Replacement launchers qualified in isolation after a changed Windows
   PowerShell fingerprint and inherited PowerShell module-path issue were found.
 - [x] Compact Relay directory deployed: isolated qualification, full 648-check gate,
   and authenticated live Relay/Mesh reads passed. Eddie accepted separate messages and older history on his phone.
-- [ ] Resolve the historical writer holds through separately resumed reviewed
-  recovery; additional PC restarts remain on hold.
+- [x] Clear recovery prompts and outcomes integrated; typo correction is bounded
+  and repeats preflight/deadline checks before an exact confirmation.
+- [ ] Resolve the eight historical writer holds through fresh reviewed recovery.
+  The completed window is closed; do not rerun its launchers or restart again.
 - [ ] Enroll and qualify a useful bounded production team workflow on the phone.
 - [ ] Verify deployed service ownership and obtain Eddie's final local-release
   acceptance. Local tests do not replace those checks.
@@ -33,7 +36,7 @@ not acceptance of a completed production recovery or worker deployment.
 | Remaining local gate | Evidence already preserved | What still proves completion |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Accepted card/phone checks and phone scoped-team start. | A useful production team request finishes without operator rescue after enrollment. |
-| C4 final release, ownership and acceptance | 653 local checks, verified backup/restore, exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
+| C4 final release, ownership and acceptance | 661 local checks, verified backup/restore, exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
 | E2 bounded production team | Isolated file-and-terminal build and independent Nims review passed with retained evidence. | Recover the old holds through the reviewed boundary, enroll the deployed route and qualify the actual team cycle. |
 
 ### Latest ordinary-app milestone - compact Relay directory
@@ -53,68 +56,42 @@ are in data/relay-directory-live-proof-20261114.json and
 data/relay-directory-mesh-live-proof-20261114.json. The complete passing log is
 data/relay-directory-phone-integrated-final-pass-20261114.log.
 
-### Current interruption and next action
+### Current recovery outcome and next action
 
-Eddie approved the original manual window and restarted the PC. The old plan was
-prepared, but **no recovery apply or startup restoration occurred in that first attempt**. Startup was subsequently restored through the separate approved closeout below. Its launcher
-refuses a changed Windows PowerShell executable fingerprint. That executable has
-a valid Microsoft Windows signature; the precise cause of the change is unknown.
-Mesh runtime files still match their qualified source. The original inputs remain
-preserved; neither a signature nor a restart is substituted for the pinned checks.
+The latest approved window reached a valid later PC boot. Console preflight was
+ready for operator review, with startup controls and retained review verified.
+The console then returned **cancelled**, before creating an apply intent or
+changing the historical outcomes. Original startup was restored: four original
+tasks enabled, guardian disabled, and three login links with their original
+hashes. No unresolved child remains. Eddie's other jobs may run.
 
-The replacement candidate refreshes that one executable pin, gives the new window
-its own identity and corrects three CMD launchers. Their child-only environment
-reset lets Windows PowerShell use its own normal module paths; it changes no
-Windows-wide setting or execution policy. The actual unchanged handoff code was
-tested with the replacement metadata in an isolated copy. Preview passed, a wrong
-executable hash refused, and Recover/Restore refused missing live authority.
+The **eight historical holds remain unresolved**. Three unrelated retained records
+were preserved. Do not rerun this window, reuse its approvals or start another
+PC restart. Its desktop shortcuts are marked CLOSED. Private evidence:
+`data/recovery-window-20261114-resume-b8c4cf2e/OWNER-RETURN-CLOSEOUT.json` and
+`data/maintenance-console/7b90f6f2-0920-4bb2-84c2-e0a32a49628d/result.json`.
 
-**Replacement recovery is on hold at Eddie's request.** Do not activate that
-proposal, schedule another PC restart or reuse the old confirmation phrases.
-Resume that maintenance only after a later explicit owner decision and fresh
-checks. The current recovery-folder instructions remain marked STOP.
+The old console mapped blank and mismatched answers to "cancelled". It did not
+save the entered value, so the exact input cannot be reconstructed. The integrated
+correction distinguishes cancellation from exhausted mismatches, shows the short
+exact phrase plainly, and allows at most three confirmation attempts. Each
+re-entry checks the same plan and deadline. Mismatched input is never saved.
+Final output says RECOVERY NOT APPLIED, RECOVERY RECORDED or RECOVERY OUTCOME
+UNCERTAIN. Uncertain outcomes prohibit retry and restoration. The guarded
+operator and one-apply intent remain unchanged.
 
-Mesh was brought back through its existing named launcher without a PC restart.
-The named process is healthy, the private Tailscale page returned HTTP200, and
-all15 saved cards remain. A before/after fingerprint confirms the eight original
-sends are unchanged. Mesh dispatch remains paused, unheld and drained. No recovery
-ledger was applied, no model was loaded, and other agent services were not started.
-Evidence: data/no-restart-mesh-resume-proof-20261114.json. This app-health result
-does not replace the remaining production-team and owner release checks.
+The actual integrated suite passed 661 checks. Forty-nine focused recovery checks
+and a disposable real-terminal typo/cancel sequence passed before integration.
+This is code qualification, **not successful live recovery or production-team
+enrollment**. Evidence: `data/confirmation-feedback-integrated-full-tests-20261115.log`
+and the existing private checkpoint. The candidate is backed up on E:.
 
-Normal Windows startup configuration is now restored and independently verified.
-Production workers, Rook and live Mind remain off. The three unrelated pending
-records and eight historical sends remain preserved. Legacy recovery is parked;
-Eddie's hold on additional PC restarts remains in force.
-
-### Restore-only closeout completed (no PC restart)
-
-Eddie separately approved original startup restoration. The helper completed with
-Windows administrator elevation and a successful retained process result. Fresh
-independent reads verified all five task definitions against the original
-snapshots: the original four are enabled and the guardian is still disabled.
-All three login shortcuts are back in their original locations with exact hashes;
-the parked locations are empty. The used restore-only authorization was archived
-after terminal success and independent verification, preventing its active reuse.
-
-Mesh stayed healthy on the same owned process, and the private Tailscale page
-returned HTTP200. All15 saved cards and the exact eight original send records
-are intact. Dispatch remains paused/unheld with zero admissions; no recovery
-ledger entry was recorded. No model load or explicit service-start request was
-sent by this closeout. Restored tasks may run their original normal triggers.
-
-Twenty-four actual-source safeguard checks and the read-only preview preceded
-the live operation. Actual restoration and independent Windows readback now pass;
-that does not complete C1/C4/E2 or qualify an automatic worker route. Evidence:
-data/startup-restore-only-completion-20261114.json,
-data/startup-restore-only-independent-readback-20261114.json and
-data/startup-restore-only-app-invariants-20261114.json.
-
-Do not run the old02/03 desktop recovery scripts. Both historical full-window
-plans and the unactivated replacement proposal require fresh planning if Eddie
-later resumes that work; restored startup controls no longer match their frozen
-suspended-state assumptions. Continue ordinary local app corrections without a
-PC restart while keeping old holds and worker pause intact.
+Next: use the corrected UI only with a fresh coordinated plan, exact current
+source/record/startup checks and a separately approved maintenance window.
+Keep production dispatch, automatic workers, Rook and live Mind off. Preserve
+accepted phone checks; this console change needs no repeat phone test.
+Earlier failed-window, executable-fingerprint and restore-only evidence remains
+preserved in private records and Git history; it grants no new authority.
 
 ### Historical staged Relay correction (subsequently deployed)
 
