@@ -1,6 +1,17 @@
 # Onoes-Mind setup readiness
 
 
+## Next owner action: private support folders only
+
+A prepared folder action passed9 Windows TEMP checks, including actual canonical
+ACL qualification, WhatIf and refusal boundaries. The exact reviewed C:/D: support
+folder plan and ordinary E: encrypted-backup parent are in the private checkpoint.
+Default preview creates nothing. No live folders or permissions have been applied.
+The existing approved D: data folder stays unchanged. Approval for this step is
+folder preparation only; keys, the empty database, runtime/memory access and
+services still require their separate reviewed operator handoff. No restart.
+
+
 ## Current archive-backed first-setup entry
 
 The preview-first local entry now includes encrypted E: export and an actual

@@ -477,3 +477,38 @@ guard. No live folder creation/ACL changes, keys, database, service, credentials
 or memory connection were performed. Proposed C: journal/D: private staging/E:
 ciphertext layout still needs exact owner review and custody approval. No PC or
 app restart is required by this operator flow; automatic workers/Rook/Mind stay off.
+
+
+## Reviewed empty support-folder action (not applied)
+
+prepare_storage.ps1 prepares only absent empty support directories. Default is
+read-only preview. It requires a bounded exact private JSON plan and its SHA256,
+the current reviewed Windows owner, ordinary existing anchors, NTFS for private
+folders, no overlapping existing data, and an explicit ordered list of all new
+parents. Existing targets are never altered. Duplicate fields/targets, wrong
+owner/fingerprint, out-of-anchor paths and reparse ancestry are refused.
+
+Only after separately approved -Apply does it create the listed folders. Private
+folders get exactly operator/SYSTEM/Administrators FullControl with inheritance
+disabled, using the canonical folder action's ACL rules. No existing parent/data
+permissions are changed. An optional ordinary encrypted-archive parent can be on
+exFAT. It writes no key/database/credential/service or startup setting. WhatIf
+performs preflight and creates nothing. Failures preserve partial empty folders
+for review; no deletion, cleanup or retry. A stable operator-controlled filesystem
+is required; this is not hostile concurrent replacement isolation.
+
+9 actual Windows checks PASS21.913 seconds, runner22.05seconds, with captured
+Python/PowerShell hashes stable. Tests use owned TEMP folders for actual apply
+and canonical private-folder qualification. Existing target/permissions, owner,
+fingerprint, anchor, junction and actual E: exFAT refusals are covered. The E:
+case is refusal-only; no E: private target is created. Proof:
+data/mind-storage-action-proof-20261115.json. This is not a full Mind/app test run.
+
+The exact live proposal stays private under data/mind-storage-preparation-20261115.
+It creates six private C:/D: parent/support folders and one ordinary E: encrypted
+backup parent, leaving the approved existing D: data folder unchanged. No actual
+support folders or permissions have been applied. Owner approval is required
+before this action; folder approval never authorizes real keys/store/activation.
+The original canonical prepare-private-storage.ps1 for the existing D: folder is
+unchanged and must not be rerun. Actual no-change preview evidence and the script/
+plan fingerprints are kept with the private proposal before requesting approval.
