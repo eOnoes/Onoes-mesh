@@ -305,3 +305,14 @@ Shared write authorization, full-envelope event binding, confirmed receipts and
 correction/deletion replay rules need a qualified Mind-owned API. One Done card
 does not complete a project. No database/key/service/principal was created or
 activated. This audit changes no runtime and does not close local C1/C4/E2.
+
+
+## Current protected-setup requalification - November15,2026
+
+See MIND-SETUP-READINESS.md. Current native setup fixture12cases PASS at Mind76c0273;
+no real keys/store/service used. A valid empty snapshot with unchanged deletion
+history reproduced canonical strict-newer refusal before destination creation.
+The guide already records this policy gap and an owner-decision-pending equal-
+history amendment. Live setup is not recommended until a qualified recovery
+contract exists. Do not manufacture deletions, silently relax frozen restore,
+or substitute adjacent hashes for independently trusted current evidence.
