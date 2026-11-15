@@ -15,9 +15,9 @@ import uuid
 
 from onoes_mind.enrollment_store import qualify_private_storage
 from checkpoint_candidate import (Head, SnapshotReceipt, context, history_view,
-                                   canonical, require, CheckpointRecoveryError)
+                                   canonical, require, sha, CheckpointRecoveryError)
 
-SCHEMA = 'onoes-mind-checkpoint-authority-candidate/v1'
+SCHEMA = 'onoes-mind-checkpoint-authority-candidate/v2'
 
 
 def digest(value):
@@ -59,7 +59,7 @@ class PersistentAuthorityCandidate:
         require(bounded_id(review_ref), 'Explicit source review reference required.')
         root = qualify_private_storage(directory)
         require(not any(root.iterdir()), 'A new empty private authority directory is required.')
-        head, _ = history_view(ledger, ledger.deletion_ledger_path, store_id, environment)
+        head, lines = history_view(ledger, ledger.deletion_ledger_path, store_id, environment)
         path = root / 'current-checkpoint.sqlite'
         descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         os.close(descriptor)
@@ -71,12 +71,14 @@ class PersistentAuthorityCandidate:
             db.executescript('CREATE TABLE identity(id INTEGER PRIMARY KEY CHECK(id=1),body TEXT NOT NULL);'
                 'CREATE TABLE head(id INTEGER PRIMARY KEY CHECK(id=1),body TEXT NOT NULL,blocked INTEGER NOT NULL CHECK(blocked IN(0,1)));'
                 'CREATE TABLE snapshots(dbhash TEXT,metahash TEXT,body TEXT NOT NULL,PRIMARY KEY(dbhash,metahash));'
+                'CREATE TABLE history(id INTEGER PRIMARY KEY CHECK(id=1),body BLOB NOT NULL);'
                 "CREATE TABLE purges(id TEXT PRIMARY KEY,hash TEXT NOT NULL,ticket TEXT NOT NULL,prior TEXT NOT NULL,state TEXT NOT NULL CHECK(state IN('pending','completed')),receipt TEXT);")
             with db:
                 db.execute('INSERT INTO identity VALUES(1,?)', (canonical(dict(schema=SCHEMA,
                     authority_id=authority_id, store_id=store_id, environment=environment,
                     review_ref=review_ref)).decode(),))
                 db.execute('INSERT INTO head VALUES(1,?,0)', (canonical(asdict(head)).decode(),))
+                db.execute('INSERT INTO history VALUES(1,?)', (b''.join(lines),))
         finally:
             db.close()
         info = path.stat()
@@ -119,7 +121,21 @@ class PersistentAuthorityCandidate:
         require(row is not None and row[1] in (0, 1), 'Authority head is missing or invalid.')
         head = Head(**json.loads(row[0]))
         self._validate_head(head)
+        self._history(db, head)
         return head, row[1]
+
+    def _history(self, db, head):
+        row = db.execute('SELECT body FROM history WHERE id=1').fetchone()
+        raw = row[0] if row else None
+        self._validate_history(raw, head)
+        return raw
+
+    def _validate_history(self, raw, head):
+        # Producer authenticates the exact bytes before admission. Recovery also
+        # re-authenticates with Mind's canonical HMAC verifier before any output.
+        require(type(raw) is bytes and 0 < len(raw) <= 16 * 1024 * 1024
+                and raw.endswith(b'\n') and len(raw.splitlines()) == head.sequence + 1
+                and sha(raw) == head.history_sha256, 'Retained deletion history is missing or invalid.')
 
     def _validate_head(self, head):
         require(type(head) is Head and head.store_id == self.binding.store_id
@@ -156,10 +172,11 @@ class PersistentAuthorityCandidate:
                        (operation_id, payload_hash, ticket, canonical(asdict(head)).decode()))
         return {'completed':False, 'ticket':ticket}
 
-    def ack_purge(self, operation_id, payload_hash, ticket, head):
+    def ack_purge(self, operation_id, payload_hash, ticket, head, history=None):
         require(bounded_id(operation_id) and digest(payload_hash) and bounded_id(ticket),
                 'Exact purge acknowledgement identity required.')
         self._validate_head(head)
+        self._validate_history(history, head)
         with self._transaction() as db:
             row = db.execute('SELECT hash,ticket,prior,state,receipt FROM purges WHERE id=?', (operation_id,)).fetchone()
             require(row is not None and (row[0], row[1]) == (payload_hash, ticket), 'Purge ticket mismatch.')
@@ -170,11 +187,14 @@ class PersistentAuthorityCandidate:
                 return receipt
             prior = Head(**json.loads(row[2]))
             current, blocked = self._head(db)
+            previous_history = self._history(db, current)
             require(blocked == 1 and current == prior and head.sequence == prior.sequence + 1
-                    and head.history_sha256 != prior.history_sha256, 'Purge head does not follow its durable intent.')
+                    and head.history_sha256 != prior.history_sha256
+                    and history.startswith(previous_history), 'Purge head does not follow its durable intent.')
             receipt = dict(operationId=operation_id, checkpointAcknowledged=True,
                            sequence=head.sequence, historySha256=head.history_sha256)
             db.execute('UPDATE head SET body=?,blocked=0 WHERE id=1', (canonical(asdict(head)).decode(),))
+            db.execute('UPDATE history SET body=? WHERE id=1', (history,))
             db.execute("UPDATE purges SET state='completed',receipt=? WHERE id=?", (canonical(receipt).decode(),operation_id))
         return receipt
 
@@ -192,6 +212,10 @@ class AuthorityLease:
     def current(self):
         self._check()
         return self.head
+
+    def history(self):
+        self._check()
+        return self.authority._history(self.db, self.head)
 
     def assert_current(self, expected):
         self._check()

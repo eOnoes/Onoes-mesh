@@ -89,14 +89,16 @@ def history_view(ledger, path, store_id, environment):
     identity = ledger.db.execute('SELECT store_id,environment FROM recall_store_identity').fetchall()
     require(ledger.environment_id == environment and len(identity) == 1
             and tuple(identity[0]) == (store_id, environment), 'Producer/history store identity mismatch.')
-    raw = read_plain(path, 16 * 1024 * 1024)
+    raw = path.data if type(path) is CapturedHistory else read_plain(path, 16 * 1024 * 1024)
+    require(type(raw) is bytes and len(raw) <= 16 * 1024 * 1024, 'Input exceeds bound.')
     old_path = ledger.deletion_ledger_path
     try:
         # Canonical verification must authenticate THESE immutable bytes, rather
         # than reopening a pathname which could temporarily point at other bytes.
         ledger.deletion_ledger_path = CapturedHistory(raw)
         require(ledger.verify_deletion_ledger(), 'Deletion chain is invalid.')
-        require(read_plain(path, 16 * 1024 * 1024) == raw, 'Deletion history changed.')
+        if type(path) is not CapturedHistory:
+            require(read_plain(path, 16 * 1024 * 1024) == raw, 'Deletion history changed.')
     finally:
         ledger.deletion_ledger_path = old_path
     lines = raw.splitlines(keepends=True)
@@ -185,8 +187,9 @@ def purge_checkpoint_candidate(ledger, token, record_id, confirmation, authority
             'Explicit fenced purge admission required before mutation.')
     # begin_purge must durably fence restoration BEFORE the canonical writer runs.
     ledger.purge(token, record_id, confirmation)
-    head, _ = history_view(ledger, ledger.deletion_ledger_path, store_id, environment)
-    receipt = acknowledged(authority.ack_purge(operation_id, payload_hash, admission['ticket'], head))
+    head, lines = history_view(ledger, ledger.deletion_ledger_path, store_id, environment)
+    receipt = acknowledged(authority.ack_purge(operation_id, payload_hash, admission['ticket'], head,
+                                              b''.join(lines)))
     require(receipt['sequence'] == head.sequence, 'Purge acknowledgement head mismatch.')
     return receipt
 
@@ -216,7 +219,9 @@ def restore_checkpoint_candidate(snapshot, destination, deletion_history, author
                     == (store_id, environment), 'Checkpoint identity mismatch.')
             probe, sequence, database_hash, metadata_hash = snapshot_ram(
                 snapshot, audit_key, deletion_key, store_id, environment)
-            actual, lines = history_view(probe, deletion_history, store_id, environment)
+            recovered_history = deletion_history is None
+            selected_history = CapturedHistory(lease.history()) if recovered_history else deletion_history
+            actual, lines = history_view(probe, selected_history, store_id, environment)
             require(current == actual, 'Current checkpoint and deletion history disagree.')
             receipt = lease.snapshot_receipt(database_hash, metadata_hash)
             expected = SnapshotReceipt(store_id, environment, database_hash, metadata_hash,
@@ -235,6 +240,15 @@ def restore_checkpoint_candidate(snapshot, destination, deletion_history, author
                                              (entry['tombstone_id'], row[0], entry['record_fingerprint'], entry['purged_at']))
             require(probe.integrity_report()['status'] == 'PASS', 'Replayed snapshot failed integrity.')
             lease.assert_current(current)
+            if recovered_history:
+                # A new recovery-local copy; never overwrite or depend on the lost
+                # source history. Keep it on a later failure for inspection.
+                deletion_history = Path(str(target) + '.deletions.jsonl')
+                descriptor = os.open(deletion_history, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                with os.fdopen(descriptor, 'wb') as stream:
+                    stream.write(b''.join(lines))
+                    stream.flush()
+                    os.fsync(stream.fileno())
             # Reserve once, without replacing a target created after preflight.
             descriptor = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
             os.close(descriptor)

@@ -135,3 +135,32 @@ rehearsal succeeds with the original key/history copies temporarily unavailable.
 The earlier38recovery/journal source hashes still match their proof. These are
 separate checks, not a claimed47case combined full-suite run. Live Mind stays off.
 Final evidence:data/mind-whole-operator-final-qualification-20261114.json.
+
+
+## Full deletion-history retention candidate - qualification pending
+
+The inactive v2 journal now retains the complete acknowledged chain atomically
+with its head and purge receipt. Recovery can obtain the held chain even when
+the original database/history are unavailable, authenticate it through canonical
+Mind code, replay deletions, and create a fresh recovery-local history. The earlier
+head-only limitation is addressed in candidate code, not yet live-qualified.
+See integrations/mind-recovery-candidate/README.md. Current composed proof will be
+data/mind-retained-history-qualified-proof-20261114.json; older 38/9 proofs are
+historical and do not qualify changed sources. Live setup, all real writer binding,
+independent review, actual current-history placement/custody and operator approval
+remain outstanding. No activation or new real key/store is authorized.
+
+
+Full-history candidate qualification completed:56checks PASS422.497s in one
+composed run (23recovery,9operator setup,24persistent journal). Candidate and
+canonical dependency hashes stayed identical before/after and at final inspection.
+Actual cases include two later deletions followed by source-history loss, original
+database/history unavailability, full-chain retention after owned process exit,
+missing/stale retained history, divergent acknowledgement, and an internally
+consistent forged head/hash rejected by canonical HMAC authentication before any
+restore output. Existing destination history is preserved.
+Evidence:data/mind-retained-history-qualified-proof-20261114.json and composed log.
+This supersedes the pending qualification above. No independent reviewer, full Mesh
+or full Mind suite, live placement/permissions, real writer enrollment or activation
+was performed. The unchanged canonical restore remains strict. The next step is
+reviewed operator/real-writer integration; no live initialization is implied.

@@ -2,6 +2,7 @@
 from dataclasses import asdict, replace
 from pathlib import Path
 import json
+import hashlib
 import secrets
 import shutil
 import sqlite3
@@ -217,6 +218,107 @@ class PersistentAuthorityTests(unittest.TestCase):
             db.execute('UPDATE head SET body=?',(json.dumps(body),));db.commit()
         finally:db.close()
         with self.assertRaises(CheckpointRecoveryError):PersistentAuthorityCandidate(self.binding)
+
+    def test_lost_original_database_and_history_restore_from_retained_chain(self):
+        self.publish();self.purge()
+        expected = self.history.read_bytes()
+        self.ledger.close()
+        self.source.rename(self.root/'unavailable-original.sqlite')
+        self.history.rename(self.root/'unavailable-original-history.jsonl')
+        self.assertFalse(self.source.exists());self.assertFalse(self.history.exists())
+        self.authority=PersistentAuthorityCandidate(self.binding)
+        restored=restore_checkpoint_candidate(self.snapshot,self.target,None,self.authority,
+            store_id=self.store_id,environment=self.environment,review_ref='fixture:lost-source',**self.keys)
+        try:
+            self.assertEqual(restored.search(self.token,'banana'),[])
+            self.assertEqual(restored.integrity_report()['status'],'PASS')
+            self.assertEqual(restored.deletion_ledger_path.read_bytes(),expected)
+        finally:restored.close()
+
+    def test_retained_chain_replays_multiple_deletions_after_history_loss(self):
+        other=self.ledger.remember(self.token,dict(event_id='fixture-other',claim='fixture orange',
+            kind='project_fact',project_id='onoes-mind',requested_visibility='shared'))['record_id']
+        self.publish();self.purge()
+        purge_checkpoint_candidate(self.ledger,self.token,other,'PURGE:'+other,self.authority,
+            operation_id='second-purge',store_id=self.store_id,environment=self.environment)
+        self.history.rename(self.root/'unavailable-history.jsonl')
+        restored=restore_checkpoint_candidate(self.snapshot,self.target,None,self.authority,
+            store_id=self.store_id,environment=self.environment,review_ref='fixture:lost-history',**self.keys)
+        try:
+            self.assertEqual(restored.search(self.token,'banana'),[])
+            self.assertEqual(restored.search(self.token,'orange'),[])
+            self.assertEqual(len(restored.deletion_ledger_path.read_bytes().splitlines()),3)
+        finally:restored.close()
+
+    def test_missing_or_stale_retained_chain_refuses_reopen(self):
+        initial=self.history.read_bytes();self.publish();self.purge()
+        for raw in (initial,b'broken\n'):
+            db=sqlite3.connect(self.authority.path)
+            try:db.execute('UPDATE history SET body=?',(raw,));db.commit()
+            finally:db.close()
+            with self.assertRaises(CheckpointRecoveryError):PersistentAuthorityCandidate(self.binding)
+        self.assertFalse(self.target.exists())
+
+    def test_ack_without_full_history_keeps_intent_blocked(self):
+        actual,_=history_view(self.ledger,self.history,self.store_id,self.environment)
+        admitted=self.authority.begin_purge('no-chain','a'*64,actual)
+        self.ledger.purge(self.token,self.record,'PURGE:'+self.record)
+        head,_=history_view(self.ledger,self.history,self.store_id,self.environment)
+        with self.assertRaises(CheckpointRecoveryError):
+            self.authority.ack_purge('no-chain','a'*64,admitted['ticket'],head)
+        with self.assertRaises(CheckpointRecoveryError):
+            with self.authority.hold(self.store_id,self.environment):self.fail('missing chain acknowledged')
+
+    def test_crash_after_ack_retains_full_chain_for_source_free_restore(self):
+        self.publish();self.crash_child('after_ack')
+        self.history.rename(self.root/'unavailable-history.jsonl')
+        restored=restore_checkpoint_candidate(self.snapshot,self.target,None,self.authority,
+            store_id=self.store_id,environment=self.environment,review_ref='fixture:after-crash',**self.keys)
+        try:self.assertEqual(restored.search(self.token,'banana'),[])
+        finally:restored.close()
+
+    def test_expired_lease_cannot_export_retained_history(self):
+        with self.authority.hold(self.store_id,self.environment) as lease:
+            self.assertEqual(lease.history(),self.history.read_bytes())
+        with self.assertRaises(CheckpointRecoveryError):lease.history()
+
+    def test_retained_chain_hash_alone_cannot_replace_canonical_authentication(self):
+        self.publish();self.purge()
+        lines=self.history.read_bytes().splitlines(keepends=True)
+        entry=json.loads(lines[-1]);entry['record_fingerprint']='f'*64
+        lines[-1]=(json.dumps(entry)+'\n').encode()
+        raw=b''.join(lines)
+        head=Head(self.store_id,self.environment,1,hashlib.sha256(raw).hexdigest())
+        db=sqlite3.connect(self.authority.path)
+        try:
+            db.execute('UPDATE history SET body=?',(raw,))
+            db.execute('UPDATE head SET body=?',(json.dumps(asdict(head)),));db.commit()
+        finally:db.close()
+        # An internally consistent hash/head still fails the actual HMAC chain.
+        with self.assertRaises(CheckpointRecoveryError):
+            restore_checkpoint_candidate(self.snapshot,self.target,None,self.authority,
+                store_id=self.store_id,environment=self.environment,review_ref='fixture:bad-chain',**self.keys)
+        self.assertFalse(self.target.exists())
+        self.assertFalse(Path(str(self.target)+'.deletions.jsonl').exists())
+
+    def test_divergent_history_cannot_acknowledge_pending_purge(self):
+        actual,_=history_view(self.ledger,self.history,self.store_id,self.environment)
+        admitted=self.authority.begin_purge('divergent','a'*64,actual)
+        self.ledger.purge(self.token,self.record,'PURGE:'+self.record)
+        raw=self.history.read_bytes().replace(b'\n',b' \n',1)
+        head=Head(self.store_id,self.environment,1,hashlib.sha256(raw).hexdigest())
+        with self.assertRaises(CheckpointRecoveryError):
+            self.authority.ack_purge('divergent','a'*64,admitted['ticket'],head,raw)
+        with self.assertRaises(CheckpointRecoveryError):
+            with self.authority.hold(self.store_id,self.environment):self.fail('divergence acknowledged')
+
+    def test_recovered_history_never_overwrites_existing_destination_history(self):
+        self.publish();self.purge()
+        existing=Path(str(self.target)+'.deletions.jsonl');existing.write_bytes(b'preserve me')
+        with self.assertRaises(CheckpointRecoveryError):
+            restore_checkpoint_candidate(self.snapshot,self.target,None,self.authority,
+                store_id=self.store_id,environment=self.environment,review_ref='fixture:occupied',**self.keys)
+        self.assertEqual(existing.read_bytes(),b'preserve me');self.assertFalse(self.target.exists())
 
 
 if __name__=='__main__':unittest.main()

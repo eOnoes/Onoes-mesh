@@ -88,7 +88,7 @@ class FixtureAuthority:
             db.execute('INSERT INTO purges VALUES(?,?,?,?,NULL)', (operation_id, payload_hash, ticket, 'pending'))
         return {'completed': False, 'ticket': ticket}
 
-    def ack_purge(self, operation_id, payload_hash, ticket, head):
+    def ack_purge(self, operation_id, payload_hash, ticket, head, history=None):
         if self.fail_ack:
             raise CheckpointRecoveryError('Fixture checkpoint acknowledgement unavailable.')
         with closing(self.connect()) as db, db:

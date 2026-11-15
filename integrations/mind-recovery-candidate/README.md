@@ -195,3 +195,46 @@ the original key/history files during actual restore.38prior recovery/journal
 checks remain separately evidenced with their implementation sources unchanged.
 No full Mesh/full Mind suite or real setup was run.
 Private proof:data/mind-whole-operator-final-qualification-20261114.json.
+
+
+## Retained full-history candidate (development, not activated)
+
+The v2 journal stores the complete acknowledged deletion-history bytes alongside
+its head. Initialization captures the canonical verified chain. Managed purge
+acknowledgement requires the complete successor chain, verifies hash, line count
+and exact previous-byte prefix, and commits chain/head/receipt together. Missing
+or inconsistent retained bytes refuse journal open; v1 is not silently migrated.
+The producer authenticates the exact bytes with Mind's canonical verifier before
+acknowledgement. This provider is still a trusted internal boundary, not a public
+API that accepts arbitrary caller-provided heads.
+
+Passing deletion_history=None to the inactive restore candidate selects the held
+journal's immutable retained bytes. Restore re-authenticates those bytes with the
+canonical HMAC-chain verifier, checks the independently registered snapshot, and
+replays deletions in RAM before reserving any destination. Only then does it write
+a new fsynced recovery-local history beside the new restored database. Existing
+outputs are preserved; later failed outputs remain for inspection. Explicit-path
+restore continues to require that supplied history match the current journal.
+
+This supersedes the implementation gap above, subject to the pending composed
+qualification. It does not qualify a live E: journal, protect against rollback of
+the journal itself or whole-PC loss, enroll real deletion writers, or grant Mind
+access. The previous 38/9 proofs describe their historical source versions; they
+do not attest to these changed sources. Current proof, after the run completes:
+data/mind-retained-history-qualified-proof-20261114.json. No real database, keys,
+services, private permissions or scheduler were changed.
+
+
+Full-history candidate qualification completed:56checks PASS422.497s in one
+composed run (23recovery,9operator setup,24persistent journal). Candidate and
+canonical dependency hashes stayed identical before/after and at final inspection.
+Actual cases include two later deletions followed by source-history loss, original
+database/history unavailability, full-chain retention after owned process exit,
+missing/stale retained history, divergent acknowledgement, and an internally
+consistent forged head/hash rejected by canonical HMAC authentication before any
+restore output. Existing destination history is preserved.
+Evidence:data/mind-retained-history-qualified-proof-20261114.json and composed log.
+This supersedes the pending qualification above. No independent reviewer, full Mesh
+or full Mind suite, live placement/permissions, real writer enrollment or activation
+was performed. The unchanged canonical restore remains strict. The next step is
+reviewed operator/real-writer integration; no live initialization is implied.
