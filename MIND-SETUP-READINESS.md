@@ -1,5 +1,23 @@
 # Onoes-Mind setup readiness
 
+## Current status - November15,2026
+
+Mind remains OFF: no live store, keys, scope/credentials, runtime enrollment or
+memory/tool access has been created by this work. The recovery/journal, protected
+writer and offline protected-restore candidates are prepared locally. The new
+preview-first operator entry passed9 source-stable TEMP checks in103.795seconds,
+including actual native fixture-key enrollment, first backup and restore rehearsal.
+The17 protected host/handoff checks remain a separate proof; no combined full Mind
+suite or independent-review pass is claimed.
+
+The sections below are dated build history, not evidence of live activation.
+Before recommending real initialization: review actual source/authority placement,
+private folders and recovery custody, exclusive writer/runtime bindings, and the
+exact operator invocation. Eddie must separately approve live setup. The earlier
+empty-folder approval and these test passes do not authorize it. No PC restart is
+required by this entry. See candidate README for its safe default and limitations.
+
+
 November14 Chicago / November15 UTC,2026. Owner: Eddie. Operators: Echo and Nims.
 
 ## What is ready

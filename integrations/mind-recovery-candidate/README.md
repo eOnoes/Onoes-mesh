@@ -330,3 +330,36 @@ No live store, key, service, agent identity or automatic enrollment is activated
 No full Mind/Mesh suite or independent review is claimed. Remaining: reviewed real
 factory adoption, runtime identity/authority/custody, source ownership/retirement,
 operator invocation, and explicit live-setup/access approval.
+
+
+## Preview-first operator entry (inactive)
+
+operator_setup_entry.py exposes the existing complete setup journey; the default
+only checks selected folder metadata/private ACLs and prints a preview. It does
+not create folders or keys, alter permissions, contact services, or enroll agents.
+Help needs no Mind import: python integrations/mind-recovery-candidate/operator_setup_entry.py --help
+
+The reviewed canonical Mind package must be available on PYTHONPATH for preview
+or setup. Supply explicit --directory, --authority-directory, --backup-directory,
+--environment-id, --owner-ref, --authority-ref and --review-ref; no live paths or
+environment are defaulted. Three existing private, empty, disjoint folders are
+required. Omit --initialize for preview. No live invocation is approved here.
+
+After separate owner approval only, --initialize additionally requires an
+--approval-ref and a local interactive terminal. It displays the preview, asks
+for CREATE EMPTY MIND STORE, then rechecks directory identities/emptiness before
+calling the unchanged setup candidate. The approval reference/typed phrase are
+deliberate-action checks, not an authentication system or proof that approval
+actually exists. The recovery password goes only in the existing native secure
+prompt, never a command argument, chat or output. A fixed inactive completion
+projection omits keys/envelopes and requires the actual rehearsal receipt. Native
+failure text is not echoed; outputs are preserved with no retry or cleanup.
+
+9 actual entry checks PASS103.795s on source-stable code, including one complete
+native TEMP setup/backup/restore journey; other checks cover preview/cancellation,
+missing approval reference, noninteractive refusal, changed destinations, secret
+error suppression and help. Existing operator code was unchanged; its earlier
+suite is separate evidence. Proof:data/mind-operator-entry-proof-20261115.json.
+No live paths, private permissions, keys or services were changed; no full Mind
+or full Mesh result is claimed by these9 checks. Real authority/source selection,
+exclusive runtime ownership and owner-reviewed initialization remain outstanding.
