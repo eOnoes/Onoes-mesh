@@ -73,6 +73,37 @@ handoff helpers; its packager whitelist was extended after the full suite and
 will be verified by an actual backup/isolated restore rehearsal. See private
 data/maintenance-handoff-full-test-proof-20261114.json. Do not restart yet.
 
+### Postboot component drift and replacement proposal - November 14
+
+The November14 approved plan was prepared, but no apply or restoration occurred.
+After the owner restarted, Node's read-only inspection verified the later boot
+and retained review. That check did not transitively validate the preparation's
+Windows binary pins. The real launcher then refused a changed Windows PowerShell
+SHA256. The current component has a valid Microsoft Windows signature and version
+10.0.26100.9818; the precise reason for the change has not been established.
+All other prepared runtime pins and the Mesh source remain unchanged.
+
+An isolated launcher check also exposed inherited PowerShell7 module-path settings
+when launching Windows PowerShell5. The proposed three CMD replacements use
+setlocal and clear PSModulePath only for their child process so Windows
+PowerShell rebuilds its standard paths. No global environment, execution policy
+or security setting is changed. Candidate binding files use exact UTF8 LF bytes.
+The unchanged handoff code passes Preview against the refreshed candidate pins;
+a deliberately wrong binary hash still refuses. All three actual candidate CMD
+launchers passed in the isolated fixture, including missing-authority denial.
+The post-restart full suite passed633 tests, plus30 PowerShell guard checks and
+the real read-only startup preview. These are not live recovery acceptance.
+
+The original inputs and receipts remain frozen. Private replacement proposal:
+data/maintenance-window-refresh-proposal-20261114/PROPOSAL.json; evidence:
+data/windows-component-refresh-qualification-20261114.json. It has no authority.
+Do not silently repin or backdate the original plan. Activation requires Eddie's
+exact replacement-window approval, archiving the originals, fresh source/queue
+checks, a newly frozen plan and one separately approved additional manual restart.
+Before any next ready statement, run the actual launcher Preview against ALL
+pins as well as Node inspection. After reboot recheck those pins before claiming
+readiness. Keep dispatch paused and all original jobs/retained records preserved.
+
 ### Eddie's part
 
 1. Save work on both computers. Stop other agents from editing Mesh, and leave
