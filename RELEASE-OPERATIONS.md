@@ -5,9 +5,10 @@
 First local release: **18/21 complete**. This remains a private release candidate;
 the wider Onoes-Mesh goal is unfinished. Recovery confirmation milestone: ccce8cb.
 The latest source-matched candidate suite passed **673 checks (543 Node +130 Python)**.
-The integrated checkout passed 21 focused browser/connection checks. Its new
-observation guard still awaits the approved Mesh-only reload; source integration
-is not proof that the running process has loaded the guard.
+The approved Mesh-only reload loaded the observation guard. Relay and Echo are
+running through their unchanged existing launchers; authenticated read-only
+directory checks passed. The compact pixel dashboard was checked live at phone
+width in both themes. Current model-manager controls remain unqualified.
 Two scroll checks also passed, including the later prepend-position regression.
 Thirty separate PowerShell safeguard checks passed. These are local qualification,
 not acceptance of a completed production recovery or worker deployment.
@@ -34,10 +35,13 @@ not acceptance of a completed production recovery or worker deployment.
   and repeats preflight/deadline checks before an exact confirmation.
 - [x] Model ownership guard and clear unverified-connection notice integrated
   locally, backed up on E:, and tested without live model HTTP or operations.
-- [ ] Apply and verify the observation guard in the running Mesh process after
-  the pending exact Mesh-only reload approval.
-- [ ] Restore ordinary Relay/Echo availability after the separate service-start
-  approval; their earlier phone history acceptance remains valid evidence.
+- [x] Applied the observation guard through the approved Mesh-only reload;
+  saved task data and model-service identity remained unchanged.
+- [x] Restored ordinary Relay/Echo availability after explicit service-start
+  approval. Both service owners listen; Relay authentication and Echo directory
+  presence passed. Earlier phone history acceptance remains valid evidence.
+- [x] Compact phone Inference: location, verified short model status and pixel
+  RAM/GPU/CPU meters. Dark/light phone views and expiry/unknown handling passed.
 - [ ] Establish the current Rust manager binary/source/engine binding before
   qualifying its read-only status and operation controls. Do not send guessed
   POST routes: general POST handling can load or evict a model.
