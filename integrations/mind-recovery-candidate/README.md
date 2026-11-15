@@ -562,3 +562,22 @@ client/reader regressions. This does not install a live host, validate credentia
 custody or authorize access. Native enrollment must qualify the exact read-only
 process/binding and private credential before using that trusted constructor.
 No HTTP, CLI or ambient environment enables it; default remains disconnected.
+
+## Private recall credential and owned reader adapter
+
+native_recall_candidate.py has no CLI/startup/provisioning action. Explicit calls
+seal/load an already issued purpose-specific service token in current-user DPAPI
+bound to the full reviewed store/file/scope context, under canonical private-file
+checks. NativeRecallHost owns its read-only reader/listener; native_options returns
+secret-bearing constructor input for trusted code only. Never print/serialize it
+to a file, command argument, environment, browser or ordinary log.
+
+9 Windows TEMP tests pass90.441s, including actual Mesh native factory/client use
+and post-revocation denial. Run explicitly with canonical Mind on PYTHONPATH:
+
+    python -m unittest discover -s integrations/mind-recovery-candidate -p test_native_recall_candidate.py -v
+
+This reuses the canonical generic DPAPI primitive with distinct purpose entropy;
+it does not put a service token into integrity-key slots or create a writer token.
+No real key/credential/store was read. Independent process attestation, protected
+provisioning, native launch enrollment and separate live approval remain open.

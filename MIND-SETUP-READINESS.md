@@ -1,5 +1,30 @@
 # Onoes-Mind setup readiness
 
+## Inactive private service custody and owned reader adapter
+
+9actual Windows checks pass90.441s for native_recall_candidate.py. It protects an
+already issued purpose-specific recall token using canonical current-user DPAPI
+with separate purpose/binding entropy. Private NTFS/owner ACL checks precede use;
+exclusive writes preserve existing/partial files. Loading verifies the exact
+store/file/scope/context and current service authentication before returning a
+token only to trusted native code. No password or integrity key is repurposed.
+
+NativeRecallHost explicitly starts only its own canonical BoundRecallLedger and
+loopback RecallServer. Its status contains no token; native_options is secret-
+bearing in-memory constructor input, never a browser/CLI/log response. The actual
+Mesh native factory/client read through this adapter in a temporary fixture.
+Wrong binding, tamper, weak storage, ordinary writer token and revoked access
+refuse. Closing releases the owned listener and SQLite handle.
+
+No real credential, principal, grant, profile, listener or host was created. This
+library has no provisioning, CLI, installer, startup or process-killing action.
+Current-account protection is not same-login/admin isolation; independent native
+process identity and a complete approved launch/provisioning workflow are still
+required. Same-account Windows fixtures are qualified, not different-user runs.
+The earlier681-check Mesh runtime source still matches; that full suite was not
+repeated for these isolated inactive additions. Live access remains off.
+
+
 ## Trusted native reader configuration - implemented, not activated
 
 Eddie selected deliberately shared facts across projects for the planned reader.
