@@ -1,6 +1,23 @@
 # Onoes-Mind setup readiness
 
 
+## Current archive-backed first-setup entry
+
+The preview-first local entry now includes encrypted E: export and an actual
+archive-sourced protected restore before its final inactive completion receipt.
+13 TEMP checks pass238.627s, runner238.816s; original key/history and private backup
+artifacts are unavailable during the positive archive readback. Failure preserves
+files and reports partial setup instead of completion. Echoed password fallback
+is refused. No live initialization, permissions, keys or services were changed.
+
+Five explicit private NTFS folders and the qualified tool/encrypted destination
+are now required. See candidate README for current flags; the earlier entry's
+three-folder/seven-flag instructions are historical. Exact C:/D: folder/custody
+preparation and owner-run native password entry remain before any real setup.
+Memory, runtime enrollment, workers and Rook stay off. No restart is required.
+Proof:data/mind-encrypted-operator-proof-20261115.json (13-case suite only).
+
+
 ## Actual E: storage constraint and encrypted-backup slice
 
 The canonical recovery guide already warned that E: is exFAT. Fresh metadata

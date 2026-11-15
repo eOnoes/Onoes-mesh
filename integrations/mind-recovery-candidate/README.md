@@ -332,7 +332,7 @@ factory adoption, runtime identity/authority/custody, source ownership/retiremen
 operator invocation, and explicit live-setup/access approval.
 
 
-## Preview-first operator entry (inactive)
+## Earlier preview-first entry (archive settings superseded below)
 
 operator_setup_entry.py exposes the existing complete setup journey; the default
 only checks selected folder metadata/private ACLs and prints a preview. It does
@@ -429,3 +429,51 @@ storage, not a scheduled backup. No new C:/D: private directories were created.
 This remains local-PC custody, not off-device/whole-PC rollback protection.
 Next: reviewed secure local password/operator integration and actual layout/
 permission/runtime binding approval. No live initialization is authorized.
+
+
+## Archive-backed first-setup entry (inactive, supersedes earlier entry settings)
+
+operator_setup_entry now requires the qualified encrypted archive path as part of
+first setup. Preview remains read-only. The five explicit private empty disjoint
+NTFS folders are data, current authority, first snapshot/rehearsal, archive work,
+and archive readback. Additional required flags are --archive-staging-directory,
+--archive-rehearsal-directory, --encrypted-backup and --archive-tool. The encrypted
+destination's parent must exist; the destination must be absent and outside those
+private folders. The pinned tool is checked before keys are created. No live paths
+or passwords are defaulted; --help still needs no canonical Mind import.
+
+After separately approved local interactive confirmation, the operator enters and
+confirms the saved archive password through getpass's masked local input. Echoed
+fallback raises an error; there are no password flags/environment/MCP/browser
+inputs. Matching/valid passwords and rechecked folder/tool identities precede
+native key enrollment. The existing native recovery-key screen remains unchanged.
+The operator must retain the archive password and recovery-key password separately
+in the password manager (they need not be the same). Never send them to an agent.
+
+After the existing private NTFS setup/rehearsal closes, the entry exports and
+verifies the encrypted destination, unpacks that actual archive into private NTFS
+readback, obtains keys from that recovered encrypted key package, and performs an
+actual protected empty-store restore against the separately held current authority.
+Only after that handle closes does it exclusively write
+setup-with-encrypted-backup-receipt.json and print setup_complete_inactive.
+The older checkpointed-initialization-receipt is bootstrap evidence only. A later
+archive failure explicitly reports that an empty store exists and overall setup
+did not finish; no final completion, deletion, automatic retry or activation.
+
+13 actual Windows TEMP entry checks PASS238.627s (runner238.816s), captured Python
+and archive-tool hashes stable. The positive native journey uses the real E:
+archive with original key/history and private-backup artifacts made unavailable;
+its final receipt check proves the recovered handle is closed. It does not remove
+the original empty source database. Other cases cover failure preservation,
+password mismatch, echoed-input fallback refusal, existing archive, confirmation,
+noninteractive/missing-approval refusal, changed folders, native cancellation,
+secret error suppression, preview and help. Fixture passwords only. The unchanged
+archive component's earlier7-case suite is separate evidence, not a combined full
+Mind run. Proof:data/mind-encrypted-operator-proof-20261115.json.
+
+The native getpass interaction still needs real operator keyboard acceptance;
+fixture tests substitute only its input values and exercise the echo-fallback
+guard. No live folder creation/ACL changes, keys, database, service, credentials
+or memory connection were performed. Proposed C: journal/D: private staging/E:
+ciphertext layout still needs exact owner review and custody approval. No PC or
+app restart is required by this operator flow; automatic workers/Rook/Mind stay off.
