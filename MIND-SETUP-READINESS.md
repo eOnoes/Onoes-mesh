@@ -1,5 +1,33 @@
 # Onoes-Mind setup readiness
 
+## Current milestone - real empty canonical store completed, inactive
+
+Eddie completed the corrected local operator journey and confirmed its COMPLETE
+terminal result. The reviewed real empty canonical Mind store, protected key
+package/current journal and first encrypted E: archive now exist. The final
+receipt reports both initial and archive-sourced restore rehearsals PASS, zero
+principals/records, activated=false and runtimeEnrollment=false.
+
+Independent read-only checks matched setup identities and all49 participating
+source/tool pins, qualified all five private roots and required files with Mind's
+canonical permission checker, matched all four initial-backup artifact hashes,
+and matched the real encrypted archive bytes to the final receipt. This verifier
+did not open the database or read passwords/plain keys. Count/integrity claims
+remain attributable to the reviewed completed setup, not a second database audit.
+
+Do not rerun initialization. The empty canonical instance is established; live
+agent memory, service identities, shared scopes, writer enrollment and MCP access
+remain disconnected and unapproved. recoveryQualified=false is retained: this
+setup rehearsal does not establish whole-PC disaster recovery or rollback safety.
+No PC/service restart or other-build interruption occurred.
+
+Next: review a read-only binding record for this exact store, one proposed shared
+project scope and dedicated service-identity contract. No service credentials or
+scope grants have been created. Private verified receipts and binding draft stay
+local; no store UUID, journal binding, passwords or key packages are published.
+Earlier failure/locked/not-initialized descriptions below are preserved history.
+
+
 ## Current owner attempt - initialization approved, completion not verified
 
 Eddie approved the exact empty canonical store, protected keys/current journal and
