@@ -4,7 +4,9 @@
 
 First local release: **18/21 complete**. This remains a private release candidate;
 the wider Onoes-Mesh goal is unfinished. Recovery confirmation milestone: ccce8cb.
-The latest source-matched candidate suite passed **673 checks (543 Node +130 Python)**.
+The integrated a0b36b8 app code passed **676 checks (546 Node +130 Python)**.
+The separate inactive Mind protected-handoff17 and setup-entry9 checks also passed;
+they are not a combined full Mind suite or live-memory qualification.
 The approved Mesh-only reload loaded the observation guard. Relay and Echo are
 running through their unchanged existing launchers; authenticated read-only
 directory checks passed. The compact pixel dashboard was checked live at phone
@@ -54,7 +56,7 @@ not acceptance of a completed production recovery or worker deployment.
 | Remaining local gate | Evidence already preserved | What still proves completion |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Accepted card/phone checks and phone scoped-team start. | A useful production team request finishes without operator rescue after enrollment. |
-| C4 final release, ownership and acceptance | 673 candidate checks, 21 integrated focused checks, verified backup/restore and exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
+| C4 final release, ownership and acceptance | 676 integrated app checks, separate Mind candidate proofs, verified backup/restore and exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
 | E2 bounded production team | Isolated file-and-terminal build and independent Nims review passed with retained evidence. | Recover the old holds through the reviewed boundary, enroll the deployed route and qualify the actual team cycle. |
 
 ### Latest ordinary-app milestone - compact Relay directory
@@ -74,9 +76,23 @@ are in data/relay-directory-live-proof-20261114.json and
 data/relay-directory-mesh-live-proof-20261114.json. The complete passing log is
 data/relay-directory-phone-integrated-final-pass-20261114.log.
 
-### Current recovery outcome and next action
+### Current recovery state: deferred, startup restored
 
-The latest approved window reached a valid later PC boot. Console preflight was
+Eddie has three other projects building and explicitly ruled out another PC
+restart. The November15 preparation window was closed without recovery apply.
+All five original task definitions/flags and three login links were independently
+verified restored; the guardian remains disabled. No running apps were stopped.
+The eight old job holds remain unchanged. Four unrelated retained records were
+observed during that later preparation; preserve and recheck them in any future
+window. No further operator action is pending. Do not open the CLOSED shortcuts,
+schedule a restart, or prepare another interruption until Eddie chooses downtime.
+
+Current private closeout: data/recovery-window-20261115-7c8741f0/CLOSEOUT.json
+and RESTORE-ONLY-VERIFIED.json. The record below describes the earlier window.
+
+### Earlier completed recovery window: not applied
+
+The earlier November14 approved window reached a valid later PC boot. Console preflight was
 ready for operator review, with startup controls and retained review verified.
 The console then returned **cancelled**, before creating an apply intent or
 changing the historical outcomes. Original startup was restored: four original
@@ -104,7 +120,8 @@ This is code qualification, **not successful live recovery or production-team
 enrollment**. Evidence: `data/confirmation-feedback-integrated-full-tests-20261115.log`
 and the existing private checkpoint. The candidate is backed up on E:.
 
-Next: use the corrected UI only with a fresh coordinated plan, exact current
+At a later owner-chosen maintenance window, use the corrected UI only with a fresh
+coordinated plan, exact current
 source/record/startup checks and a separately approved maintenance window.
 Keep production dispatch, automatic workers, Rook and live Mind off. Preserve
 accepted phone checks; this console change needs no repeat phone test.
@@ -138,6 +155,20 @@ store's identity, permissions and live binding still need their own reviewed wor
 After local operation is solid, extend inference and health monitoring from the
 main PC to the laptop and AI box; their live enrollment is not claimed here.
 
+Prepared locally: protected recovery-to-writer handoff and a preview-first Mind
+setup entry. The entry checks private empty folders before the separately approved
+interactive native key/setup/first-backup/rehearsal path. No live paths, keys,
+database, runtime writer, memory access or MCP permissions were enrolled. Actual
+source/authority placement, private-folder custody, exclusive runtime ownership
+and owner-reviewed initialization remain. See MIND-SETUP-READINESS.md for current
+status and distinguish its historical build records from activation.
+
+The a0b36b8 milestone is published and remote-verified. The complete integrated
+source archive (2329 files) and separate qualification proofs are hash-verified in
+E:/App-Backups/Onoes-Mesh/Milestones/Local-app-and-Mind-candidates-2026-11-15-a0b36b8.
+Backups remain manual/milestone only. Future tested milestone pushes are authorized
+by Eddie's November15 standing instruction; workflow-cost checks still apply.
+
 After app restoration: [Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom)
 and [Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference).
 These links are references, not requests to repeat accepted phone tests.
@@ -146,8 +177,8 @@ Current private evidence: data/windows-component-refresh-qualification-20261114.
 and data/maintenance-window-refresh-proposal-20261114/PROPOSAL.json. Backups remain
 manual/milestone only under E:/App-Backups/ONOes-Mesh; read LATEST.json for the current
 verified source/data snapshot. New proposal/candidate evidence is in clearly named
-sidecars. Local commits are saved; GitHub publication still needs exact approval
-and the required workflow-cost checks. Historical sections below retain earlier
+sidecars. Tested milestones may be published under Eddie's standing authorization,
+with destination, local-verification and workflow-cost checks before every push. Historical sections below retain earlier
 counts, running-process claims and approvals; they are not current instructions.
 
 ## One-time legacy recovery preparation (inactive)
