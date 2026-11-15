@@ -15,6 +15,8 @@ const relayTab = document.getElementById('tab-relay');
 const controlTab = document.getElementById('tab-control');
 const sessionsPanel = document.getElementById('rail-sessions');
 const scopedConversation = Boolean(document.getElementById('relay-chat-agent'));
+const mobileViewport = window.matchMedia('(max-width: 759px)');
+const isMobile = () => mobileViewport.matches;
 
 const isRelay = () => relayTab?.getAttribute('aria-selected') === 'true';
 const isControl = () => controlTab?.getAttribute('aria-selected') === 'true';
@@ -23,7 +25,7 @@ const defaultView = () => (isRelay() && !scopedConversation ? 'sessions' : isCon
 function setRail(view) {
   if (!shell) return;
   shell.dataset.rail = view;
-  if (menuLink) menuLink.setAttribute('aria-expanded', String(view === 'menu'));
+  if (menuLink) menuLink.setAttribute('aria-expanded', String(isMobile() ? document.body.dataset.sheet === 'nav' : view === 'menu'));
   if (sessionsLink) sessionsLink.setAttribute('aria-expanded', String(view === 'sessions'));
 }
 
@@ -41,6 +43,7 @@ function applyTabDefault() {
 
 if (menuLink) {
   menuLink.addEventListener('click', () => {
+    if (isMobile()) return;
     const view = shell?.dataset.rail;
     // on a tab that owns a rail of its own, [menu] toggles between the two
     if (isRelay() || isControl()) setRail(view === 'menu' ? defaultView() : 'menu');
@@ -152,6 +155,7 @@ function buildPicker() {
 
 if (picker) {
   picker.addEventListener('click', (event) => {
+    if (isMobile()) return;
     event.stopPropagation();
     buildPicker();
     pickerPanel.hidden = !pickerPanel.hidden;
@@ -184,15 +188,17 @@ buildPicker();
 // content, and closes on tap. Either closes on selection.
 // ---------------------------------------------------------------------------------
 const sheetScrim = document.getElementById('sheet-scrim');
-const isMobile = () => window.matchMedia('(max-width: 759px)').matches;
 
 function openSheet(kind) {
+  if (kind !== 'picker' && pickerPanel) { pickerPanel.hidden = true; picker?.setAttribute('aria-expanded', 'false'); }
   document.body.dataset.sheet = kind;
+  if (menuLink) menuLink.setAttribute('aria-expanded', String(kind === 'nav'));
   if (sheetScrim) sheetScrim.hidden = false;
 }
 
 function closeSheets() {
   delete document.body.dataset.sheet;
+  if (menuLink) menuLink.setAttribute('aria-expanded', String(!isMobile() && shell?.dataset.rail === 'menu'));
   if (sheetScrim) sheetScrim.hidden = true;
   if (pickerPanel) pickerPanel.hidden = true;
   if (picker) picker.setAttribute('aria-expanded', 'false');
@@ -244,3 +250,7 @@ document.addEventListener('click', (event) => {
   closeSheets();
 });
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeSheets(); });
+
+// Crossing layouts closes only temporary overlays; drafts and selected workspace stay intact.
+mobileViewport.addEventListener('change', closeSheets);
+closeSheets();
