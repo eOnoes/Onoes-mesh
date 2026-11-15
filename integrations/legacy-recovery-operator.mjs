@@ -14,7 +14,7 @@ import { createLegacyAuthorizationReader } from '../lib/workroom-legacy-authoriz
 import { issueLegacyRecoveryPermit, createLegacyRecoveryStore } from '../lib/workroom-legacy-recovery.mjs';
 import { makeLegacyRecoveryPlan, assessLegacyRecovery, legacyRecoveryFingerprint as fingerprint } from '../lib/workroom-legacy-evidence.mjs';
 import { observeLegacyRecovery, legacyRecoverySources } from './legacy-recovery-plan.mjs';
-import { runLegacyRecoveryConsole } from '../lib/workroom-legacy-console.mjs';
+import { runLegacyRecoveryConsole, formatLegacyRecoveryPrompt, formatLegacyRecoveryResult } from '../lib/workroom-legacy-console.mjs';
 import { createInterface } from 'node:readline/promises';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -512,12 +512,12 @@ async function main() {
       const result=await runLegacyRecoveryConsole({scope,plan,inspect,authorizationExpiresAt,
         observe:()=>observeLegacyRecovery({...scope,sendIds:scope.bindings.map(b=>b.sendId),sourceFiles}),
         confirm:async prompt=>{
-          process.stdout.write(JSON.stringify(prompt,null,2)+'\n');
-          return terminal.question('Type the displayed RECOVER phrase to approve, or Enter to cancel: ');
+          process.stdout.write(formatLegacyRecoveryPrompt(prompt));
+          return terminal.question('Your confirmation: ');
         },
         apply:approval=>runLegacyOperator({action:'apply',scopePath,scopeSha256,planPath,...approval}),
       });
-      process.stdout.write(JSON.stringify(result)+'\n');
+      process.stdout.write(formatLegacyRecoveryResult(result));
     } finally { terminal.close(); }
     return;
   }

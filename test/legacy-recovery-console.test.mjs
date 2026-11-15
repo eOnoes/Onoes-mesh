@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { runLegacyRecoveryConsole } from '../lib/workroom-legacy-console.mjs';
+import { runLegacyRecoveryConsole, formatLegacyRecoveryPrompt, formatLegacyRecoveryResult } from '../lib/workroom-legacy-console.mjs';
 import { createLegacyAuthorizationReader } from '../lib/workroom-legacy-authorization.mjs';
 
 function fixture(t) {
@@ -111,4 +111,89 @@ test('the real console CLI refuses a noninteractive invocation before touching a
   const child=spawnSync(process.execPath,['integrations/legacy-recovery-operator.mjs','console',
     'missing-scope.json','a'.repeat(64),'missing-plan.json'],{encoding:'utf8',timeout:10000,windowsHide:true});
   assert.equal(child.status,1);assert.match(child.stderr,/interactive local terminal/);
+});
+
+
+function feedbackFixture() {
+  const workspace=realpathSync.native(mkdtempSync(join(tmpdir(),'mesh-confirmation-feedback-')));
+  mkdirSync(join(workspace,'data'));
+  const plan={planHash:'a'.repeat(64),host:'synthetic-host',preparedAt:'2020-01-01T00:00:00.000Z',
+    disposition:'historical_outcome_unknown',targets:Array.from({length:8},(_,i)=>({sendId:`synthetic-${i}`}))};
+  const scope={workspace,retainedReview:{sha256:'b'.repeat(64)}};
+  const calls={inspect:0,observe:0,apply:0,confirm:0};
+  const ready=()=>({planHash:plan.planHash,targetCount:8,status:'ready_for_operator_review',
+    controls:{status:'verified'},retainedReview:{status:'matched_review_only'}});
+  const options={scope,plan,inspect:async()=>{calls.inspect++;return ready();},
+    observe:async()=>{calls.observe++;return {host:plan.host,bootedAt:'2025-01-01T00:00:00.000Z'};},
+    apply:async()=>{calls.apply++;return {planHash:plan.planHash,disposition:plan.disposition,
+      dispatchRemainsPaused:true,recoveryId:'synthetic-recovery'};},
+    confirm:async prompt=>{calls.confirm++;return prompt.phrase;}};
+  const attempt=join(workspace,'data/maintenance-console',plan.planHash+'.attempt.json');
+  return {options,calls,ready,attempt,plan};
+}
+
+test('blank confirmation cancels once and explains that recovery was not applied',async()=>{
+  const f=feedbackFixture();f.options.confirm=async()=>{f.calls.confirm++;return '';};
+  const r=await runLegacyRecoveryConsole(f.options);
+  assert.equal(r.status,'cancelled');assert.equal(r.reason,'operator_cancelled');
+  assert.equal(f.calls.confirm,1);assert.equal(f.calls.apply,0);assert.equal(f.calls.observe,0);
+  assert.equal(existsSync(f.attempt),false);assert.match(formatLegacyRecoveryResult(r),/RECOVERY NOT APPLIED/);
+});
+
+test('mismatch retries are bounded and never retain a pasted private value',async()=>{
+  const f=feedbackFixture(),privateValue='private-value-that-must-not-be-saved';
+  f.options.confirm=async p=>{assert.equal(p.attempt,++f.calls.confirm);assert.equal(p.maxAttempts,3);return privateValue;};
+  const r=await runLegacyRecoveryConsole(f.options);
+  assert.equal(r.status,'cancelled');assert.equal(r.reason,'confirmation_mismatch');
+  assert.equal(f.calls.confirm,3);assert.equal(f.calls.inspect,3);assert.equal(f.calls.apply,0);
+  assert.equal(existsSync(f.attempt),false);
+  for(const name of readdirSync(r.receiptDirectory))assert.equal(readFileSync(join(r.receiptDirectory,name),'utf8').includes(privateValue),false);
+  assert.match(formatLegacyRecoveryResult(r),/did not match after three attempts/);
+});
+
+test('exact confirmation after a typo rechecks state and creates only one apply intent',async()=>{
+  const f=feedbackFixture();f.options.confirm=async p=>++f.calls.confirm===1?'RECOVER typo':p.phrase;
+  const r=await runLegacyRecoveryConsole(f.options);
+  assert.equal(r.status,'operator_returned');assert.equal(f.calls.confirm,2);
+  assert.equal(f.calls.inspect,3);assert.equal(f.calls.observe,1);assert.equal(f.calls.apply,1);
+  assert.equal(existsSync(f.attempt),true);assert.match(formatLegacyRecoveryResult(r),/RECOVERY RECORDED/);
+  await assert.rejects(()=>runLegacyRecoveryConsole(f.options),/prior apply attempt/);
+  assert.equal(f.calls.apply,1);
+});
+
+test('a changed preflight blocks reconfirmation before another prompt or apply',async()=>{
+  const f=feedbackFixture();f.options.inspect=async()=>++f.calls.inspect===1?f.ready():{...f.ready(),controls:{status:'blocked'}};
+  f.options.confirm=async()=>{f.calls.confirm++;return 'not exact';};
+  const r=await runLegacyRecoveryConsole(f.options);
+  assert.equal(r.status,'blocked');assert.equal(r.reason,'preconfirmation_state_changed');
+  assert.equal(f.calls.confirm,1);assert.equal(f.calls.observe,0);assert.equal(f.calls.apply,0);
+  assert.equal(existsSync(f.attempt),false);
+});
+
+test('approval expiry during a typo correction stops before another prompt',async t=>{
+  const f=feedbackFixture();let now=Date.now();t.mock.method(Date,'now',()=>now);
+  f.options.authorizationExpiresAt=new Date(now+1000).toISOString();
+  f.options.confirm=async()=>{f.calls.confirm++;now+=1001;return 'wrong';};
+  const r=await runLegacyRecoveryConsole(f.options);
+  assert.equal(r.status,'blocked_expired_window');assert.equal(f.calls.confirm,1);
+  assert.equal(f.calls.apply,0);assert.equal(existsSync(f.attempt),false);
+});
+
+test('plain prompt highlights the exact short phrase without raw JSON',()=>{
+  const text=formatLegacyRecoveryPrompt({message:'Keep other editors closed.',planHash:'a'.repeat(64),
+    targetCount:8,attempt:2,maxAttempts:3,phrase:'RECOVER '+ 'a'.repeat(12),receiptDirectory:'synthetic-evidence'});
+  assert.match(text,/No recovery has been applied/);assert.match(text,/attempt 2 of 3/);
+  assert.match(text,/\nRECOVER a{12}\n/);assert.match(text,/Enter without typing to cancel/);
+  assert.equal(text.includes('a'.repeat(64)),false);assert.equal(text.includes('"targetCount"'),false);
+});
+
+test('uncertain and malformed success receipts never display recorded or permit restoration',()=>{
+  for(const r of [{status:'outcome_unknown_inspect_same_plan'},{status:'unrecognized_status'},{},
+    {status:'operator_returned',planHash:'a'.repeat(64),result:{dispatchRemainsPaused:true}},
+    {status:'operator_returned',planHash:'a'.repeat(64),result:{planHash:'b'.repeat(64),
+      disposition:'historical_outcome_unknown',dispatchRemainsPaused:true,recoveryId:'synthetic'}}]){
+    const text=formatLegacyRecoveryResult({...r,receiptDirectory:'synthetic-evidence'});
+    assert.match(text,/RECOVERY OUTCOME UNCERTAIN/);assert.match(text,/Do not retry recovery or restore startup/);
+    assert.equal(text.includes('RECOVERY RECORDED'),false);
+  }
 });
