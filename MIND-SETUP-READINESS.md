@@ -1,7 +1,29 @@
 # Onoes-Mind setup readiness
 
 
-## Next owner action: private support folders only
+## Current live preparation - folders complete, store still absent
+
+Eddie approved the exact empty support folders, asked for a repo/data clarification,
+then explicitly confirmed keeping data outside D:/Dev/Onoes-Mind. No action was
+started during that hold. The approved hash-bound folder action then completed.
+The six new private C:/D: folders passed Mind's separate canonical permission
+checker; the ordinary E: archive parent is empty. The existing D:/App-Data/Onoes-Mind
+folder remains empty with the same filesystem identity. No existing folder ACL,
+keys, database, credentials, service, startup setting or model operation changed.
+
+Actual setup-entry preview passed against the five real runtime folders, current
+qualified tool and proposed encrypted archive. All five folders remain empty and
+no archive was created. This preview is not approval to initialize. Next: prepare
+the exact owner-reviewed secure local key/empty-store/first-encrypted-backup run.
+It needs local password entry, but no PC or app restart or other-build interruption.
+Runtime grants and live memory access remain separate later gates.
+
+Current private evidence: data/mind-storage-preparation-20261115/POSTCONDITIONS.json
+and ACTUAL-SETUP-PREVIEW.json. Earlier proposal/test sections below are build history;
+their 'not applied' wording is superseded by this dated operational record.
+
+
+## Earlier support-folder proposal (now applied and verified)
 
 A prepared folder action passed9 Windows TEMP checks, including actual canonical
 ACL qualification, WhatIf and refusal boundaries. The exact reviewed C:/D: support

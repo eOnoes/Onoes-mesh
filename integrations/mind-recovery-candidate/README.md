@@ -512,3 +512,12 @@ before this action; folder approval never authorizes real keys/store/activation.
 The original canonical prepare-private-storage.ps1 for the existing D: folder is
 unchanged and must not be rerun. Actual no-change preview evidence and the script/
 plan fingerprints are kept with the private proposal before requesting approval.
+
+
+Approved operational folder result: after repo/data clarification Eddie confirmed
+the outside-repo layout. Exact folder action applied and independently verified;
+all six C:/D: private folders pass canonical checks, E: archive parent empty, and
+existing D: data identity/empty contents unchanged. Real setup preview passes but
+no keys/database/archive/service were initialized. No restart. Private receipts
+are under data/mind-storage-preparation-20261115; live initialization still needs
+its own owner-reviewed local password handoff.
