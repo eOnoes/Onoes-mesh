@@ -238,3 +238,57 @@ This supersedes the pending qualification above. No independent reviewer, full M
 or full Mind suite, live placement/permissions, real writer enrollment or activation
 was performed. The unchanged canonical restore remains strict. The next step is
 reviewed operator/real-writer integration; no live initialization is implied.
+
+
+## Opt-in checkpointed host candidate (inactive)
+
+CheckpointedLedgerCandidate opens an existing explicitly selected private source
+and independently bound journal. It checks the source identity in read-only mode
+before constructing the canonical Ledger, then checks current authenticated
+history and source integrity while holding the authority. Missing source/history
+are not initialized or silently adopted.
+
+The host requires a stable operation_id for purge, retains canonical operator
+authentication/confirmation, and uses the existing durable intent/acknowledgement
+protocol. Its append hook refuses ordinary direct/base-class delete calls and
+cross-thread use of another operation's permit. A reentrant per-host lock protects
+the managed call. The shared helper accepts only the exact canonical purge bound
+to that same ledger when the adapter selects a writer explicitly.
+
+This is an opt-in trusted application API, NOT a sandbox against arbitrary Python,
+SQL, same-login/admin access or an independently opened legacy Ledger. No existing
+factory, service or runtime import has been changed. A restored plain Ledger must
+not be enrolled as a production writer without the reviewed protected host. All
+actual host factories and recovery handoffs must be enumerated/enrolled before
+claiming every real writer is protected; that remains an activation prerequisite.
+
+Bounded source review: current Ledger.purge appends authenticated history and then
+updates source state; strict Ledger.restore separately replays history offline.
+LifecycleWorker.apply refuses PURGED proposals; its transition method is metadata
+state handling, not a canonical Ledger purge. Indexed module searches located no
+other direct .purge caller, but the index reported stale globally; this is not
+whole-machine or dynamic-call absence proof. The current runtime/factory inventory
+remains unqualified. Canonical source is untouched.
+
+Nine actual host checks passed in92.850s with private TEMP source/journal folders.
+Earlier fixture failures are retained separately: Windows refused the initial TEMP
+root permission change; canonical qualification also correctly refused an inherited
+journal folder. The corrected fixture protects dedicated TEMP source/journal
+folders explicitly; no production permission or privilege setting was changed.
+A source-bound composed recovery/journal/host run is pending at
+data/mind-checkpointed-host-qualified-proof-20261114.json. The earlier56case
+retained-history/operator proof describes its earlier source version and does not
+qualify this changed helper/host. No independent or live verification is claimed.
+
+
+Protected-host qualification completed:56checks PASS257.144s in one composed
+run (23recovery,24persistent journal,9host). All candidate/canonical dependency
+hashes were stable before/after and at final verification. This is a different
+56case suite from the earlier retained-history/operator run: the native operator
+setup suite was not repeated. Its unchanged implementation remains separately
+evidenced; no combined full-Mind or full-Mesh pass is claimed. Proof and log:
+data/mind-checkpointed-host-qualified-proof-20261114.json and composed-tests log.
+The actual Mesh service was read-only checked running/healthy under its named
+owner receipt. All live services, canonical Mind source and activation gates stay
+unchanged. Next local priority: remaining Mesh release blockers; retain the Mind
+operator/factory adoption requirement for the later approved live connection.

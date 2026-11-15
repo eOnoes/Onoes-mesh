@@ -164,9 +164,12 @@ def publish_snapshot_candidate(ledger, snapshot, authority, *, store_id, environ
 
 
 def purge_checkpoint_candidate(ledger, token, record_id, confirmation, authority, *,
-                               operation_id, store_id, environment):
+                               operation_id, store_id, environment, canonical_purge=None):
     """No deletion success before durable acknowledgement. Uncertain intent stays blocked."""
     context(store_id, environment)
+    require(canonical_purge is None or (getattr(canonical_purge, '__self__', None) is ledger
+            and getattr(canonical_purge, '__func__', None) is Ledger.purge),
+            'Only the bound canonical purge may be selected.')
     require(isinstance(operation_id, str) and 0 < len(operation_id) <= 128,
             'Stable bounded purge operation ID required.')
     require(ledger.authenticate(token) == 'operator' and confirmation == 'PURGE:' + record_id,
@@ -186,7 +189,7 @@ def purge_checkpoint_candidate(ledger, token, record_id, confirmation, authority
             and str(uuid.UUID(admission['ticket'])) == admission['ticket'],
             'Explicit fenced purge admission required before mutation.')
     # begin_purge must durably fence restoration BEFORE the canonical writer runs.
-    ledger.purge(token, record_id, confirmation)
+    (canonical_purge if canonical_purge is not None else ledger.purge)(token, record_id, confirmation)
     head, lines = history_view(ledger, ledger.deletion_ledger_path, store_id, environment)
     receipt = acknowledged(authority.ack_purge(operation_id, payload_hash, admission['ticket'], head,
                                               b''.join(lines)))

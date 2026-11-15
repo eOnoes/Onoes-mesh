@@ -164,3 +164,28 @@ This supersedes the pending qualification above. No independent reviewer, full M
 or full Mind suite, live placement/permissions, real writer enrollment or activation
 was performed. The unchanged canonical restore remains strict. The next step is
 reviewed operator/real-writer integration; no live initialization is implied.
+
+
+## Protected writer-host preparation
+
+An inactive opt-in CheckpointedLedgerCandidate now makes the ordinary host API
+require the managed deletion path and stable operation IDs. Existing canonical
+Ledger/factories, services and restore core are unchanged. Nine temporary host
+checks passed; composed regression qualification is pending. See candidate README
+and data/mind-checkpointed-host-qualified-proof-20261114.json. This is not a
+whole-machine writer inventory or security boundary against arbitrary Python/SQL.
+Every real factory and restored writer must still explicitly adopt the reviewed
+host before live memory can be considered protected. Live setup stays off.
+
+
+Protected-host qualification completed:56checks PASS257.144s in one composed
+run (23recovery,24persistent journal,9host). All candidate/canonical dependency
+hashes were stable before/after and at final verification. This is a different
+56case suite from the earlier retained-history/operator run: the native operator
+setup suite was not repeated. Its unchanged implementation remains separately
+evidenced; no combined full-Mind or full-Mesh pass is claimed. Proof and log:
+data/mind-checkpointed-host-qualified-proof-20261114.json and composed-tests log.
+The actual Mesh service was read-only checked running/healthy under its named
+owner receipt. All live services, canonical Mind source and activation gates stay
+unchanged. Next local priority: remaining Mesh release blockers; retain the Mind
+operator/factory adoption requirement for the later approved live connection.
