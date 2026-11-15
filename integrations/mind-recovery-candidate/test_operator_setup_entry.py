@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import unittest
 import uuid
 import warnings
@@ -17,6 +18,72 @@ import checkpointed_ledger_candidate as protected
 
 class TerminalInput(io.StringIO):
     def isatty(self):return True
+
+
+class SetupDiagnosticTests(unittest.TestCase):
+    """Fixed diagnostics only; no native enrollment or live destinations."""
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.root=Path(self.temp.name).resolve()
+        self.outcome=self.root/'outcome.json'
+        self.args=[]
+        for name in ('directory','authority-directory','backup-directory','environment-id','owner-ref',
+                     'authority-ref','review-ref','archive-staging-directory','archive-rehearsal-directory',
+                     'encrypted-backup','archive-tool'):
+            self.args+=['--'+name,'fixture']
+        self.run_args=self.args+['--initialize','--approval-ref','fixture:approved',
+                                '--outcome-file',str(self.outcome)]
+        self.plan={'directories':{'directory':str(self.root/'runtime')},'createsNothing':True}
+        self.preview=patch.object(entry,'preview_setup',return_value=self.plan)
+        self.preview.start();self.addCleanup(self.preview.stop)
+
+    def test_mismatch_is_durable_and_does_not_reveal_values_or_initialize(self):
+        output=io.StringIO()
+        with patch.object(entry,'archive_password',side_effect=['fixture-first-secret','fixture-other-secret']), \
+             patch.object(entry,'initialize') as initialize:
+            self.assertEqual(entry.main(self.run_args,input_stream=TerminalInput('CREATE EMPTY MIND STORE\n'),output=output),1)
+            initialize.assert_not_called()
+        result=json.loads(self.outcome.read_text())
+        self.assertEqual(result['reason'],'BACKUP_PASSWORD_MISMATCH')
+        self.assertFalse(result['initializationConfirmed'])
+        for value in ('fixture-first-secret','fixture-other-secret'):
+            self.assertNotIn(value,output.getvalue()+self.outcome.read_text())
+
+    def test_short_password_explains_rule_before_native_enrollment(self):
+        with patch.object(entry,'archive_password',return_value='fixture-short'),patch.object(entry,'initialize') as init:
+            self.assertEqual(entry.main(self.run_args,input_stream=TerminalInput('CREATE EMPTY MIND STORE\n'),output=io.StringIO()),1)
+            init.assert_not_called()
+        self.assertEqual(json.loads(self.outcome.read_text())['reason'],'BACKUP_PASSWORD_RULES')
+
+    def test_unknown_native_error_is_redacted_and_preserved_as_fixed_stage(self):
+        with patch.object(entry,'archive_password',return_value='fixture-valid-long-password'), \
+             patch.object(entry,'initialize',side_effect=ValueError('fixture-secret-native-detail')) as init:
+            output=io.StringIO()
+            self.assertEqual(entry.main(self.run_args,input_stream=TerminalInput('CREATE EMPTY MIND STORE\n'),output=output),1)
+            self.assertEqual(init.call_count,1)
+        self.assertEqual(json.loads(self.outcome.read_text())['reason'],'NATIVE_INITIALIZATION_FAILED')
+        self.assertNotIn('fixture-secret-native-detail',self.outcome.read_text()+output.getvalue())
+
+    def test_existing_result_is_preserved_and_refuses_before_password_input(self):
+        self.outcome.write_text('preserve previous result')
+        with patch.object(entry,'archive_password') as reader,patch.object(entry,'initialize') as init:
+            self.assertEqual(entry.main(self.run_args,input_stream=TerminalInput('CREATE EMPTY MIND STORE\n'),output=io.StringIO()),1)
+            reader.assert_not_called();init.assert_not_called()
+        self.assertEqual(self.outcome.read_text(),'preserve previous result')
+
+    def test_preview_creates_no_result_file(self):
+        self.assertEqual(entry.main(self.args+['--outcome-file',str(self.outcome)],output=io.StringIO()),0)
+        self.assertFalse(self.outcome.exists())
+
+    def test_cancel_keeps_fixed_durable_result(self):
+        self.assertEqual(entry.main(self.run_args,input_stream=TerminalInput('\n'),output=io.StringIO()),2)
+        self.assertEqual(json.loads(self.outcome.read_text())['status'],'cancelled')
+
+    def test_password_prompts_distinguish_entry_and_confirmation(self):
+        with patch.object(entry.getpass,'getpass',return_value='fixture') as reader:
+            entry.archive_password();entry.archive_password(confirm=True)
+        self.assertIn('Enter saved BACKUP ARCHIVE',reader.call_args_list[0].args[0])
+        self.assertIn('Confirm saved BACKUP ARCHIVE',reader.call_args_list[1].args[0])
 
 
 @unittest.skipUnless(sys.platform=='win32','Native Windows key protection')

@@ -78,12 +78,13 @@ def initialize(arguments):
          'owner_ref','authority_ref','review_ref')})
 
 
-def archive_password():
+def archive_password(*, confirm=False):
     # Fail closed if getpass would fall back to echoed input. Never accept a
     # password from command arguments, environment, browser or an agent channel.
     with warnings.catch_warnings():
         warnings.simplefilter('error',getpass.GetPassWarning)
-        return getpass.getpass('Saved encrypted-backup password (hidden): ')
+        return getpass.getpass(('Confirm' if confirm else 'Enter')+
+                               ' saved BACKUP ARCHIVE password (hidden): ')
 
 
 def finish_encrypted_backup(arguments, result, password):
@@ -135,6 +136,7 @@ def parser():
         result.add_argument('--'+flag,required=True)
     result.add_argument('--initialize',action='store_true',help='Separately approved, interactive empty setup only.')
     result.add_argument('--approval-ref',help='Reference to the exact owner approval, never a password or key.')
+    result.add_argument('--outcome-file',help='New local file for a fixed, nonsecret setup result; never a transcript.')
     return result
 
 
@@ -144,6 +146,24 @@ def main(argv=None, *, input_stream=None, output=None):
     outgoing=sys.stdout if output is None else output
     password=confirmation=None
     initialized=False
+    stage='preflight'
+    outcome=None
+    status='setup_failed'
+    reason='PREFLIGHT_REFUSED'
+    messages={
+        'PREFLIGHT_REFUSED':'The local approval, locations or tool checks did not pass.',
+        'OUTCOME_DESTINATION_UNAVAILABLE':'The new local result file could not be reserved. Preserve existing files.',
+        'CONFIRMATION_CANCELLED':'The creation phrase was not confirmed; initialization was not started.',
+        'HIDDEN_PASSWORD_INPUT_UNAVAILABLE':'Hidden password input was unavailable. No echoed input is allowed.',
+        'BACKUP_PASSWORD_MISMATCH':'The two BACKUP ARCHIVE password entries did not match.',
+        'BACKUP_PASSWORD_RULES':'Use a saved backup password of 16-256 UTF-8 bytes, without tabs or other control characters.',
+        'LOCATIONS_CHANGED':'A reviewed location or archive tool changed during confirmation.',
+        'NATIVE_INITIALIZATION_FAILED':'The protected key/store setup did not finish. Preserve any attempted files.',
+        'NATIVE_CANCELLED':'The recovery-key window was cancelled; no completed store was reported.',
+        'RECEIPT_INVALID':'The store setup did not return the required inactive result.',
+        'ARCHIVE_REHEARSAL_FAILED':'The encrypted backup or its recovery rehearsal did not finish.',
+        'INTERRUPTED':'The operator interrupted setup. Preserve any attempted files.',
+        'COMPLETE':'The empty store, encrypted backup and archive recovery rehearsal completed; access remains off.'}
     try:
         if arguments.initialize:
             reference(arguments.approval_ref)
@@ -152,26 +172,47 @@ def main(argv=None, *, input_stream=None, output=None):
         print(json.dumps(plan,indent=2),file=outgoing)
         if not arguments.initialize:
             return 0
+        if arguments.outcome_file:
+            reason='OUTCOME_DESTINATION_UNAVAILABLE'
+            target=Path(arguments.outcome_file)
+            require(target.is_absolute() and target.parent.resolve(strict=True)==target.parent
+                    and not any(target.is_relative_to(Path(root)) for root in plan['directories'].values()),
+                    'Select a separate local result file.')
+            # Exclusive creation refuses an existing file, including a symlink.
+            # Only fixed codes are stored; never exception text, input or keys.
+            outcome=target.open('x',encoding='utf-8')
+        stage='confirmation';reason='CONFIRMATION_CANCELLED'
         print('Continue only with Eddie\'s separate approval for these exact locations.\n'
               'Type CREATE EMPTY MIND STORE to continue, or press Enter to cancel.\n'
               'The recovery password belongs only in the native secure prompt.',file=outgoing,flush=True)
         if incoming.readline().rstrip('\r\n')!='CREATE EMPTY MIND STORE':
+            status='cancelled'
             print('Cancelled. No initialization was started.',file=outgoing)
             return 2
-        print('Save the encrypted-backup password in your password manager. It is required to open backups.',
+        print('Create and save a NEW backup archive password in your password manager before entering it.\n'
+              'Use at least 16 characters (20 or more recommended). Enter the SAME password twice.\n'
+              'The separate recovery-key window will use a different saved password.',
               file=outgoing,flush=True)
-        password=archive_password();confirmation=archive_password()
+        stage='archive-password-input';reason='HIDDEN_PASSWORD_INPUT_UNAVAILABLE'
+        password=archive_password();confirmation=archive_password(confirm=True)
         from encrypted_backup_candidate import password_bytes
+        stage='archive-password-match';reason='BACKUP_PASSWORD_MISMATCH'
         require(password==confirmation,'Backup passwords do not match.')
+        stage='archive-password-rules';reason='BACKUP_PASSWORD_RULES'
         password_bytes(password);confirmation=None
+        stage='location-recheck';reason='LOCATIONS_CHANGED'
         require(preview_setup(arguments)==plan, 'A selected directory or tool changed; stop for review.')
+        stage='native-initialization';reason='NATIVE_INITIALIZATION_FAILED'
+        print('Backup password accepted. Opening the separate RECOVERY KEYS window next.',file=outgoing,flush=True)
         result=initialize(arguments)
         initialized=result.get('initialized') is True
         if result.get('cancelled') is True:
             require(result.get('initialized') is False and result.get('activated') is False,
                     'Invalid cancellation result.')
             print('Cancelled at the secure prompt. No store was initialized.',file=outgoing)
+            status='cancelled';reason='NATIVE_CANCELLED'
             return 2
+        stage='initialization-receipt';reason='RECEIPT_INVALID'
         require(result.get('schema')=='onoes-mind-checkpointed-setup-candidate/v1'
                 and result.get('initialized') is True and result.get('activated') is False
                 and result.get('runtimeEnrollment') is False and result.get('recoveryQualified') is False
@@ -181,10 +222,13 @@ def main(argv=None, *, input_stream=None, output=None):
                 'Setup did not return a complete inactive receipt.')
         # Completion belongs to the actual E:-archive readback and protected
         # restore, not just the earlier private NTFS bootstrap receipt.
+        stage='archive-rehearsal';reason='ARCHIVE_REHEARSAL_FAILED'
         summary=finish_encrypted_backup(arguments,result,password)
         print(json.dumps(summary,indent=2),file=outgoing)
+        status='setup_complete_inactive';reason='COMPLETE';stage='complete'
         return 0
     except KeyboardInterrupt:
+        status='interrupted';reason='INTERRUPTED'
         print(('Empty store exists; setup stopped. Memory access is off. ' if initialized else 'Stopped. ')
               +'Preserve any attempted files for review; do not retry automatically.',file=outgoing)
         return 130
@@ -199,6 +243,19 @@ def main(argv=None, *, input_stream=None, output=None):
         return 1
     finally:
         password=confirmation=None  # Reference clearing, not complete memory erasure.
+        if arguments.initialize:
+            print('Setup result: '+reason+' - '+messages[reason],file=outgoing,flush=True)
+        if outcome is not None:
+            try:
+                json.dump(dict(schema='onoes-mind-operator-outcome/v1',status=status,
+                    stage=stage,reason=reason,message=messages[reason],
+                    initializationConfirmed=initialized,activated=False,runtimeEnrollment=False),outcome,indent=2)
+                outcome.write('\n');outcome.flush();os.fsync(outcome.fileno())
+            except OSError:
+                print('Local result file could not be saved. Preserve files and the final screen; do not retry.',
+                      file=outgoing,flush=True)
+            finally:
+                outcome.close()
 
 
 if __name__=='__main__':

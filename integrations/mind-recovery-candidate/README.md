@@ -1,5 +1,12 @@
 # Inactive Mind checkpoint-recovery candidate
 
+Current 2026-11-15 owner state: empty-store/key/first-backup initialization is
+approved, but the first manual attempt failed before any runtime artifact was
+created. Live memory and all services remain off. MIND-SETUP-READINESS.md records
+the current diagnostics correction and remaining real operator acceptance.
+Earlier non-approval wording below describes historical development scope.
+
+
 Eddie approved development/testing of the equal-history recovery proposal in this
 chat. He did **not** approve live setup, key creation, memory access, a new authority
 service, deployment or changes to the default recovery rule.

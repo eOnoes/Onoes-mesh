@@ -1,5 +1,24 @@
 # Onoes-Mind setup readiness
 
+## Current owner attempt - initialization approved, completion not verified
+
+Eddie approved the exact empty canonical store, protected keys/current journal and
+first encrypted backup, then manually opened the local handoff. The owner saw a
+setup-failure message after password entry; the window closed before its text was
+retained. Read-only inspection found all five runtime folders empty and no archive
+or final receipt. The precise failure cause is unknown; a rejected password is
+not established. No live setup retry has been performed.
+
+A focused correction passed20 tests (257.419s): distinct backup entry/confirmation
+labels, advance password requirements, fixed failure codes and an optional
+exclusive local outcome file containing no passwords, keys or exception text.
+The separate diagnostics-r2 handoff is repinned to tested code and the existing
+owner approval for the same scope. Its real-path preview, missing-approval guard
+and literal close-confirmation checks pass. No automatic live retry was run.
+No memory access, agent credentials, service, worker or restart is authorized.
+Earlier locked/not-opened descriptions below are historical, superseded here.
+
+
 
 ## Owner-run first initialization handoff ready, still locked
 
