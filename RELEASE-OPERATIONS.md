@@ -1908,3 +1908,33 @@ data/workroom-maintenance-notice-live-proof-20261114.json.
 Local-release18/21 and C1/C4/E2 remain open. The existing owner hold on additional
 PC restarts remains in force. Next: assess remaining useful local work against
 these gates without substituting test passes for actual production-team acceptance.
+
+
+## Main-PC Inference availability restored - November15 UTC
+
+A read-only actual-page check found fresh CPU/RAM/GPU counters but unverified
+model status. Native GET /mesh/v1/status refused the connection; all four model
+ports were unbound. The existing enabled DSH Local Model Supervisor login task
+was Ready/stopped. Why it had stopped was not established. Its main and bridge
+source hashes still matched the installed qualification; the runtime lock was
+reviewed, with no alternate engine or endpoint selected.
+
+After checking the task's exact existing action and loopback-only empty startup,
+the same unchanged hidden task was started once. No task definition, source,
+Windows permission, model file, credential, public exposure or PC startup setting
+was changed. All four listeners are loopback-only under that one supervisor.
+The qualified native GET client verified the current bridge/source identity,
+empty ownership and no active command. Actual Tailscale Inference then showed
+STOPPED/FRESH with load proposal available and chat/Stop/Unload disabled. No
+model load, chat, cycle or PC restart was performed. Nemotron stays unloaded.
+
+NVIDIA's own read-only counter query confirms the displayed GPU name and
+32760MiB capacity. PC hardware readings remain separate from model GPU identity.
+No other model profile, laptop or AI-box lane is qualified by this check.
+
+Operational lesson: restoring an enabled login task is not evidence that its
+service is running now. Verify service status separately after maintenance;
+use the existing owner task and qualified source, never start a duplicate or
+substitute an engine. Evidence:data/main-pc-inference-service-restored-20261114.json.
+This does not retire a Mesh worker, clear any historical hold or complete the
+remaining production-team/release gates. Local release remains18/21.
