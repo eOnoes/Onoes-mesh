@@ -1496,3 +1496,7 @@ html[data-theme=light] .workroom-sheet h2{font-family:var(--display);text-transf
 #relay-task-progress li{margin:8px 0}
 
 #relay-task-progress .workroom-sheet-toolbar{position:sticky;top:0;z-index:1}
+
+/* Keep the closed board-steward status compact above the Relay conversation. */
+#rook-notices:not([open]){min-height:44px;flex-shrink:0;padding-block:0;margin-block:0}
+#rook-notices>summary{padding-block:10px}

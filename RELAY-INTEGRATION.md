@@ -215,3 +215,14 @@ encountered an unrelated broken worktree reference; no Git repair was attempted.
 F2's documented compatibility decision is complete. Background delivery, canonical
 Mind memory/skills/MCP and full release acceptance are still unfinished. No service,
 credential, subscription, notification or scheduler was activated by this decision.
+
+## Compact closed board-steward status - November15,2026
+
+The closed Rook notice keeps a44pixel summary tap target without the generic
+box padding/margins. Actual desktop1280 and phone390x844 browser views both
+measure45pixels for the closed panel; the open panel still exposes its controls.
+Actual Tailscale browser checks selected Echo and loaded10older messages while
+preserving the same reading offset. Browser viewport emulation is not Eddie
+accepting the feature on his physical phone. No send or worker action occurred.
+This CSS-only change used browser layout checks; the earlier651full and2scroll
+test results remain separate. Evidence:data/relay-compact-status-browser-proof-20261114.json.
