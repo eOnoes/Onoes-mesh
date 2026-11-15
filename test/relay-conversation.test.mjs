@@ -14,7 +14,7 @@ function fixture({storage=new Map(),intercept}={}) {
     const result=intercept?.(route,options);if(result!==undefined)return result;
     if(route==='/api/relay/native/api/agents')return structuredClone(agents);
     if(route==='/relay/api/mesh-capabilities')return {taskSessionBinding:1};
-    if(route.endsWith('/messages'))return structuredClone(history);
+    if(route.split('?')[0].endsWith('/messages'))return structuredClone(history);
     if(options?.method==='POST'){
       const body=JSON.parse(options.body),aid=route.split('/')[4];
       assert.deepEqual(Object.keys(body).sort(),['expectedConversationId','id','text']);
@@ -31,7 +31,7 @@ function fixture({storage=new Map(),intercept}={}) {
 }
 test('Relay chooses no fallback agent and sends once only to the explicit displayed conversation',async()=>{
   const f=fixture();await f.core.setAvailable(true);assert.equal(f.core.state().destination,null);
-  assert.equal(f.calls.some(c=>c.route.endsWith('/messages')),false);
+  assert.equal(f.calls.some(c=>c.route.split('?')[0].endsWith('/messages')),false);
   await f.core.select('echo');f.core.setDraft('ordinary message');await Promise.all([f.core.send(),f.core.send()]);
   assert.equal(f.calls.filter(c=>c.options?.method==='POST').length,1);assert.equal(f.receipts.size,1);
   assert.equal(f.core.state().draft,'');assert.equal(f.storage.size,0);
@@ -77,7 +77,7 @@ test('Unavailable capability/storage and changed preflight destination never dis
   const f=fixture();await f.ready();f.storage.set=()=>{throw Error('storage full');};f.core.setDraft('not sent');await f.core.send();assert.equal(f.receipts.size,0);
 });
 test('Privacy clearance drops late history/acknowledgments and all draft/history content without replay',async()=>{
-  let release,hold=false;const f=fixture({intercept:r=>hold&&r.endsWith('/messages')?new Promise(resolve=>release=resolve):undefined});
+  let release,hold=false;const f=fixture({intercept:r=>hold&&r.split('?')[0].endsWith('/messages')?new Promise(resolve=>release=resolve):undefined});
   await f.ready();f.core.setDraft('private');hold=true;const reading=f.core.refresh();await new Promise(resolve=>setImmediate(resolve));
   await f.core.setAvailable(false);release({messages:[{t:'late secret'}]});await reading;
   assert.equal(f.core.state().destination,null);assert.deepEqual(f.core.state().messages,[]);assert.equal(f.core.state().draft,'');assert.equal(f.core.state().agents.length,0);
@@ -90,7 +90,7 @@ test('Slow Relay reads coalesce repeated polls and still paint the completed his
   const f=fixture({intercept:r=>{
     if(!hold)return;
     if(r==='/api/relay/native/api/agents')return new Promise(resolve=>releaseList=resolve);
-    if(r.endsWith('/messages'))return new Promise(resolve=>releaseHistory=resolve);
+    if(r.split('?')[0].endsWith('/messages'))return new Promise(resolve=>releaseHistory=resolve);
   }});
   await f.ready();f.core.setDraft('keep my draft');hold=true;const before=f.calls.length;
   const first=f.core.refresh();await new Promise(resolve=>setImmediate(resolve));
@@ -107,7 +107,7 @@ test('Slow Relay reads coalesce repeated polls and still paint the completed his
 
 test('Selecting another conversation bypasses an old slow read without allowing its late result to repaint',async()=>{
   let hold=false,release;
-  const f=fixture({intercept:r=>hold&&r.includes('/echo/')&&r.endsWith('/messages')?new Promise(resolve=>release=resolve):undefined});
+  const f=fixture({intercept:r=>hold&&r.includes('/echo/')&&r.split('?')[0].endsWith('/messages')?new Promise(resolve=>release=resolve):undefined});
   await f.ready();hold=true;const old=f.core.refresh();await new Promise(resolve=>setImmediate(resolve));
   await f.core.select('deep');assert.equal(f.core.state().destination.agentId,'deep');
   assert.equal(f.core.state().messages[0].t,'Original history');
@@ -117,7 +117,7 @@ test('Selecting another conversation bypasses an old slow read without allowing 
 
 test('A locked and reconnected Relay does not wait for or accept the previous admission read',async()=>{
   let hold=false,release;
-  const f=fixture({intercept:r=>hold&&r.endsWith('/messages')?new Promise(resolve=>release=resolve):undefined});
+  const f=fixture({intercept:r=>hold&&r.split('?')[0].endsWith('/messages')?new Promise(resolve=>release=resolve):undefined});
   await f.ready();hold=true;const old=f.core.refresh();await new Promise(resolve=>setImmediate(resolve));
   await f.core.setAvailable(false);hold=false;await f.core.setAvailable(true);await f.core.select('echo');
   assert.equal(f.core.state().live,true);release({messages:[{t:'Old admission secret'}]});await old;
@@ -149,4 +149,46 @@ test('Phone conversation discovery uses the bounded Mesh agent API for its direc
   assert.equal(f.calls.some(call=>call.route==='/relay/api/agents'),false);
   assert.equal(f.core.state().destination.agentId,'echo');
   assert.equal(f.core.state().live,true);
+});
+
+
+test('Paged history keeps older messages through polling and preserves the pinned draft',async()=>{
+ const rows=(first,last)=>Array.from({length:last-first+1},(_,i)=>({id:first+i,k:'ag',t:'Message '+(first+i)}));
+ let latest={messages:rows(21,30),oldest_id:21,newest_id:30,has_more:true};
+ const f=fixture({intercept:r=>{
+  if(!r.includes('/messages?'))return;
+  const u=new URL(r,'http://fixture');assert.equal(u.searchParams.get('limit'),'10');
+  return u.searchParams.get('before')?{messages:rows(11,20),oldest_id:11,newest_id:20,has_more:true}:latest;
+ }});
+ await f.ready();assert.equal(f.core.state().hasOlder,true);f.core.setDraft('keep this');
+ await Promise.all([f.core.loadOlder(),f.core.loadOlder()]);
+ assert.equal(f.calls.filter(c=>c.route.includes('&before=')).length,1);
+ assert.equal(f.core.state().messages.length,20);
+ latest={messages:rows(28,37),oldest_id:28,newest_id:37,has_more:true};await f.core.refresh();
+ assert.deepEqual(f.core.state().messages.map(m=>Number(m.id)),Array.from({length:27},(_,i)=>i+11));
+ assert.equal(f.core.state().draft,'keep this');assert.equal(f.core.state().destination.sessionId,'one');
+ assert.equal(f.receipts.size,0);assert.equal(f.storage.size,0);
+});
+
+test('Paged history fills a large reconnect gap forward without skipping replies',async()=>{
+ const rows=(first,last)=>Array.from({length:last-first+1},(_,i)=>({id:first+i,t:'Message '+(first+i)}));let reconnect=false;
+ const f=fixture({intercept:r=>{
+  if(!r.includes('/messages?'))return;
+  const after=new URL(r,'http://fixture').searchParams.get('after');
+  if(after)return {messages:rows(31,40),oldest_id:31,newest_id:40,has_more:true};
+  return reconnect?{messages:rows(51,60),oldest_id:51,newest_id:60,has_more:true}:{messages:rows(21,30),oldest_id:21,newest_id:30,has_more:true};
+ }});
+ await f.ready();reconnect=true;await f.core.refresh();
+ assert.equal(f.calls.at(-1).route.endsWith('&after=30'),true);
+ assert.deepEqual(f.core.state().messages.map(m=>Number(m.id)),Array.from({length:20},(_,i)=>i+21));
+ assert.match(f.core.state().note,/Catching up/);assert.equal(f.receipts.size,0);
+});
+
+test('Late older history cannot repaint after privacy clearance; failure retains the existing transcript',async()=>{
+ let release,hold=false;
+ const f=fixture({intercept:r=>r.includes('/messages?')?(r.includes('&before=')?(hold?new Promise(resolve=>release=resolve):Promise.reject(Error('offline'))):{messages:[{id:21,t:'Current'}],oldest_id:21,newest_id:21,has_more:true}):undefined});
+ await f.ready();await f.core.loadOlder();assert.equal(f.core.state().messages[0].t,'Current');assert.equal(f.core.state().hasOlder,true);
+ hold=true;const loading=f.core.loadOlder();await new Promise(resolve=>setImmediate(resolve));await f.core.setAvailable(false);
+ release({messages:[{id:20,t:'Late private'}],oldest_id:20,newest_id:20,has_more:false});await loading;
+ assert.deepEqual(f.core.state().messages,[]);assert.equal(f.core.state().hasOlder,false);assert.equal(f.core.state().loadingOlder,false);
 });

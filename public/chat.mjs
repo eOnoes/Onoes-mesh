@@ -127,11 +127,12 @@ export function createRelayChat({request}) {
   const select=document.getElementById('relay-chat-agent');
   const current=document.getElementById('relay-chat-current');
   const refreshButton=document.getElementById('relay-chat-refresh');
+  const olderButton=document.getElementById('relay-chat-older');
   const destination=document.getElementById('relay-chat-destination');
   const status=document.getElementById('relay-chat-status');
   const send=document.getElementById('relay-send');
   const attach=document.getElementById('relay-add-files');
-  let busy=false,lastPaint='',lastAgents='',lastDestination='',core;
+  let busy=false,lastPaint='',lastAgents='',lastDestination='',lastTarget='',lastFirst=null,core;
   function draw(state) {
     agentName=state.destination?.name || 'Relay';
     const signature=JSON.stringify(state.agents);
@@ -150,15 +151,20 @@ export function createRelayChat({request}) {
     select.disabled=busy||!state.available||state.initializing||state.sending;
     current.disabled=select.disabled||!state.destination;
     refreshButton.disabled=busy||!state.available||state.initializing||state.sending;
+    if(olderButton){olderButton.hidden=!state.hasOlder;olderButton.disabled=busy||!state.available||state.loadingOlder||state.sending;olderButton.textContent=state.loadingOlder?'Loading older messages…':'Load older messages';}
     attach.disabled=true;
     const legacyId=document.getElementById('relay-message-id');if(legacyId)legacyId.disabled=true;
     const painted=JSON.stringify([state.destination,state.messages]);
     if(painted!==lastPaint){
       const target=JSON.stringify(state.destination && [state.destination.agentId,state.destination.sessionId]);
       const follow=target!==lastDestination || chat.scrollHeight-chat.clientHeight-chat.scrollTop<=32;
-      const position=chat.scrollTop;
+      const position=chat.scrollTop,height=chat.scrollHeight;
+      const prepended=state.messages.length&&lastFirst&&state.messages[0].id!==lastFirst&&state.messages.some(m=>m.id===lastFirst);
       lastPaint=painted;lastDestination=target;paint(state.messages);
-      if(follow)toBottom();else chat.scrollTop=position;
+      lastFirst=state.messages[0]?.id;
+      if(prepended&&target===lastTarget)chat.scrollTop=position+chat.scrollHeight-height;
+      else if(follow)toBottom();else chat.scrollTop=position;
+      lastTarget=target;
     }
   }
   let storage;try{storage=sessionStorage;}catch{storage={getItem(){return null;},setItem(){throw Error('Browser retry storage unavailable. Nothing was sent.');},removeItem(){}};}
@@ -167,6 +173,7 @@ export function createRelayChat({request}) {
   select.addEventListener('change',()=>{if(!busy)core.select(select.value);});
   current.addEventListener('click',()=>{if(!busy&&core.state().destination)core.select(core.state().destination.agentId);});
   refreshButton.addEventListener('click',()=>{if(!busy)core.refresh();});
+  olderButton?.addEventListener('click',()=>{if(!busy)core.loadOlder();});
   form.addEventListener('submit',async event=>{event.preventDefault();if(busy)return;await core.send();});
   const panel=document.getElementById('panel-relay');
   const refresh=()=>{if(!panel?.hidden&&!document.hidden&&!busy){taskProgress.refresh();return core.refresh();}};

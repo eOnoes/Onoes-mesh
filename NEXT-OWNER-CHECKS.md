@@ -15,8 +15,9 @@ load/chat/unload ending STOPPED. Do not repeat these simply because work resumed
 
 Focused ordinary-app check: open
 [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay), refresh and open the agent
-selector. Echo should appear without an oversized-response error. No send is
-needed. This narrow check is pending; preserve all accepted phone results above.
+selector. Choose Echo: the recent conversation should open. Tap Load older
+messages: earlier messages should appear without moving the passage you were
+reading. No send is needed. This narrow check is pending; preserve all accepted phone results above.
 
 The next production phone check is a complete production team workflow after the
 legacy recovery and production enrollment have been qualified. That prerequisite

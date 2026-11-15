@@ -18,6 +18,22 @@ use their existing /relay/api/... proxy and pinned session paths described below
 The648-check local gate and actual authenticated live directory reads passed.
 This does not qualify long transcript pagination or enable workers/Rook/Mind.
 
+## Bounded conversation pages - November15,2026
+
+The phone starts with10recent messages using Relay's existing cursor API. Load
+older messages fetches the preceding10 and preserves the reader's position,
+selected session and draft. Polling retains loaded older messages and fills a
+large reconnect gap forward instead of skipping replies. Each request keeps the
+existing262144byte cap; a single oversized message is an explicit error rather
+than truncated content. The transcript stays in RAM and clears with admission.
+No server schema, native session or Send contract changed.
+
+The full651-case suite passed;2scroll cases separately pass, including the new
+prepend-position/privacy check added after that suite loaded its tests. The real
+controller read recent/older pages and refreshed via admitted Mesh routes;53KB
+and75KB pages fit the cap. No agent message was sent. Phone acceptance is pending.
+Private evidence: data/relay-history-pages-qualification-20261114.json.
+
 ## Ordinary conversation
 
 The Relay tab has one composer and one submit handler. It sends ordinary text to

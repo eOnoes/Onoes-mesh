@@ -25,3 +25,18 @@ test('Relay keeps both speakers and preserves reading position when a reply arri
  scrollChatCleanup();
  function scrollChatCleanup(){vm.runInContext('scrollChat.clear()',ui.context);}
 });
+
+
+test('Load older messages keeps the same passage under the reader and clears the control on lock',async()=>{
+ const ui=mockUI();await flush();
+ const page=(first,last)=>({messages:Array.from({length:last-first+1},(_,i)=>({id:first+i,k:'ag',t:'Message '+(first+i)})),oldest_id:first,newest_id:last,has_more:first>1});
+ ui.context.chatRequest=async route=>route==='/api/relay/native/api/agents'?[{id:'echo',name:'Echo',conversation_id:'session-1'}]:route.includes('&before=')?page(1,10):page(11,20);
+ vm.runInContext('var pagingChat=createRelayChat({request:chatRequest});pagingChat.setAvailable(true)',ui.context);await flush();
+ const transcript=ui.ids.get('relay-chat');transcript.clientHeight=300;
+ Object.defineProperty(transcript,'scrollHeight',{get(){return (this.children[0]?.children.length||0)*100;}});
+ ui.ids.get('relay-chat-agent').value='echo';await ui.ids.get('relay-chat-agent').events.change();await flush();
+ const older=ui.ids.get('relay-chat-older');assert.equal(older.hidden,false);transcript.scrollTop=200;
+ older.events.click();await flush();assert.equal(transcript.children[0].children.length,20);
+ assert.equal(transcript.scrollTop,1200,'prepending one thousand pixels preserves the same visible passage');assert.equal(older.hidden,true);
+ vm.runInContext('pagingChat.clear()',ui.context);assert.equal(older.hidden,true);assert.equal(transcript.children[0].children.length,0);assert.ok(!transcript.children[0].textContent.includes('Message '));
+});

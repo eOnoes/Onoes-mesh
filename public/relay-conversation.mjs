@@ -12,10 +12,15 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
   let available=false,blocked=false,initializing=false,sending=false,live=false,epoch=0,reads=0;
   let agents=[],destination=null,messages=[],observedAt=null,pending=null,note='Connect to choose a Relay agent.';
   let refreshFlight=null;
+  let hasOlder=false,loadingOlder=false,oldest=null,newest=null;
+  const cursor=n=>Number.isSafeInteger(Number(n))&&Number(n)>0?Number(n):null;
+  const normalizeMessage=m=>({id:String(m.id??''),k:m.k==='you'?'you':'ag',t:String(m.t??''),at:String(m.created_at??''),
+    files:(Array.isArray(m.attachments)?m.attachments:[]).filter(f=>typeof f.name==='string').map(f=>({name:f.name,size:Number(f.size)||0}))});
+  const historyPath=target=>`/relay/api/agents/${encodeURIComponent(target.agentId)}/sessions/${encodeURIComponent(target.sessionId)}/messages?limit=10`;
   const drafts=new Map();
   function state() {
     return {available,initializing,sending,live,agents:[...agents],destination:destination && {...destination},
-      messages:[...messages],observedAt,pending:pending && {...pending},note,
+      messages:[...messages],observedAt,pending:pending && {...pending},note,hasOlder,loadingOlder,
       draft:destination ? drafts.get(key(destination)) || '' : '',
       canSend:available&&!initializing&&!sending&&!blocked&&Boolean(destination)&&agents.some(peer=>peer.id===destination.agentId)&&(!pending||Boolean(same(pending,destination)))&&(live||Boolean(same(pending,destination)))};
   }
@@ -42,7 +47,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
     if(current(turn)&&pending){destination={agentId:pending.agentId,sessionId:pending.sessionId,name:pending.agentId};note='Uncertain send restored. Re-enter its exact original text to retry the same receipt; no automatic send.';}
   }
   function refresh() {
-    if(!available||initializing)return Promise.resolve();
+    if(!available||initializing||loadingOlder)return Promise.resolve();
     if(refreshFlight?.turn===epoch)return refreshFlight.promise;
     // Timer/manual reads share work only within this selected admission/conversation.
     // A new selection or privacy epoch must never wait for an obsolete request.
@@ -64,21 +69,56 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
       const peer=agents.find(a=>a.id===destination.agentId);
       if(!peer)throw Error('Selected agent is unavailable. No other agent was selected.');
       destination.name=peer.name;
-      const result=await request(`/relay/api/agents/${encodeURIComponent(destination.agentId)}/sessions/${encodeURIComponent(destination.sessionId)}/messages`);
+      let result=await request(historyPath(destination));
       if(!current(turn)||read!==reads)return;
       if(!Array.isArray(result?.messages))throw Error('Conversation history unavailable.');
-      messages=result.messages.map(m=>({id:String(m.id??''),k:m.k==='you'?'you':'ag',t:String(m.t??''),at:String(m.created_at??''),
-        files:(Array.isArray(m.attachments)?m.attachments:[]).filter(f=>typeof f.name==='string').map(f=>({name:f.name,size:Number(f.size)||0}))}));
+      // If many replies arrived while away, fill the gap forward instead of skipping it.
+      let catchingUp=false;
+      if(newest&&result.has_more===true&&cursor(result.oldest_id)>newest&&!result.messages.some(m=>cursor(m.id)===newest)){
+        result=await request(historyPath(destination)+`&after=${newest}`);
+        if(!current(turn)||read!==reads)return;
+        if(!Array.isArray(result?.messages))throw Error('Conversation history unavailable.');
+        catchingUp=true;
+      }
+      const page=result.messages.map(normalizeMessage);
+      if(cursor(result.oldest_id)&&page.length){
+        const first=cursor(result.oldest_id);
+        const retained=catchingUp?messages:messages.filter(m=>cursor(m.id)<first);
+        const merged=new Map([...retained,...page].map(m=>[m.id,m]));
+        messages=[...merged.values()];
+        if(!oldest){oldest=first;hasOlder=result.has_more===true;}
+        newest=cursor(result.newest_id)||newest;
+      }else if(!catchingUp){messages=page;hasOlder=false;oldest=null;newest=null;}
       live=peer.sessionId===destination.sessionId;observedAt=new Date().toISOString();
       note=live ? (pending?'Uncertain send: retry requires its exact original text and destination.':'Conversation checked. Sending requires an explicit Send.') : 'Native conversation changed. This is the selected historical session. Use current conversation explicitly; an uncertain retry stays bound to its original session.';
+      if(catchingUp&&result.has_more)note+=' Catching up on newer messages; Refresh continues from this page.';
       publish();
     }catch(error){if(current(turn)&&read===reads){live=false;note=`History unavailable; last displayed record is stale. ${error.message}`;publish();}}
+  }
+  async function loadOlder(){
+    if(!available||initializing||loadingOlder||!destination||!hasOlder||!oldest)return;
+    const requestedTurn=epoch;
+    if(refreshFlight?.turn===epoch)await refreshFlight.promise;
+    if(!current(requestedTurn)||loadingOlder||!destination||!hasOlder||!oldest)return;
+    const turn=epoch,target={...destination},before=oldest;
+    loadingOlder=true;publish();
+    try{
+      const result=await request(historyPath(target)+`&before=${before}`);
+      if(!current(turn))return;
+      if(!Array.isArray(result?.messages)||result.messages.some(m=>!cursor(m.id)||cursor(m.id)>=before))throw Error('Older history cursor is invalid.');
+      const page=result.messages.map(normalizeMessage);
+      if(result.has_more===true&&!page.length)throw Error('Older history made no progress.');
+      messages=[...page,...messages];oldest=page.length?cursor(page[0].id):oldest;hasOlder=result.has_more===true;
+      note='Older messages loaded. Your destination and draft are unchanged.';
+    }catch(error){if(current(turn))note=`Older messages unavailable. ${error.message}`;}
+    finally{if(current(turn)){loadingOlder=false;publish();}}
   }
   async function select(agentId) {
     if(!available||initializing||sending)return;
     const peer=agents.find(a=>a.id===agentId);
     if(!peer?.sessionId){note='Choose an available agent with a current conversation.';publish();return;}
     epoch++;reads++;destination={agentId:peer.id,sessionId:peer.sessionId,name:peer.name};messages=[];observedAt=null;live=false;
+    hasOlder=false;loadingOlder=false;oldest=null;newest=null;
     note='Reading the explicitly selected conversation…';publish();await refresh();
   }
   async function send() {
@@ -105,11 +145,12 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
     finally{if(current(turn)){sending=false;publish();}}
   }
   return {
-    state,refresh,select,send,
+    state,refresh,select,send,loadOlder,
     setDraft(text){if(available&&destination&&!sending){drafts.set(key(destination),String(text).slice(0,4000));publish();}},
     async setAvailable(value){
       value=Boolean(value);if(value===available)return;
       epoch++;reads++;available=value;live=false;
+      hasOlder=false;loadingOlder=false;oldest=null;newest=null;
       if(!value){agents=[];destination=null;messages=[];observedAt=null;drafts.clear();pending=null;blocked=false;initializing=false;sending=false;note='Private chat cleared. Reconnect to choose an agent.';publish();return;}
       initializing=true;const turn=epoch;publish();
       try{await restore(turn);}catch(error){if(current(turn)){blocked=true;note=error.message;}}

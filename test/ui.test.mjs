@@ -93,7 +93,7 @@ test('MOCK UI: actual ordinary chat sends once through admission, never creates 
    route.endsWith('bootstrap')?{csrfToken:'j'.repeat(43),expiresAt:Date.now()+60000}:
    route==='/api/relay/native/api/agents'?[{id:'echo',name:'Echo',conversation_id:'session-one'}]:
    route==='/relay/api/mesh-capabilities'?{taskSessionBinding:1}:
-   route.endsWith('/messages')?{messages:[{id:'msg-one',k:'ag',t:'Existing source history'}]}:
+   route.split('?')[0].endsWith('/messages')?{messages:[{id:'msg-one',k:'ag',t:'Existing source history'}]}:
    route==='/relay/api/agents/echo/message'?{ok:true}:bodyFor(route))});
  ui.ids.get('demo-start').events.click();await flush();
  const selector=ui.ids.get('relay-chat-agent');selector.value='echo';selector.events.change();await flush();
