@@ -363,3 +363,69 @@ suite is separate evidence. Proof:data/mind-operator-entry-proof-20261115.json.
 No live paths, private permissions, keys or services were changed; no full Mind
 or full Mesh result is claimed by these9 checks. Real authority/source selection,
 exclusive runtime ownership and owner-reviewed initialization remain outstanding.
+
+
+## Encrypted whole-backup candidate for exFAT E: (inactive)
+
+The canonical MIND-RECOVERY-GUIDE already records E: as exFAT. A fresh metadata
+check confirms C:/D: are NTFS and E: is exFAT; the live D:/App-Data/Onoes-Mind
+folder remains empty/private. The temporary NTFS operator tests did NOT qualify
+E: for plaintext backups or a private current journal. The earlier proposed
+E: private-journal placement must not be used. No drive was reformatted and no
+live folder, key, database, account, credential or service was changed.
+
+encrypted_backup_candidate.py adds a trusted local export/import API using the
+portable 7-Zip26.06 standalone x64 tool. The official extra archive and bootstrap
+were verified against GitHub release SHA256 digests before use; the derived
+7za.exe SHA256 is pinned in code. Nothing is installed globally or added to PATH.
+Source: https://www.7-zip.org/download.html and
+https://github.com/ip7z/7zip/releases/tag/26.06 . Format:
+https://www.7-zip.org/7z.html . This uses standard AES-256 7z content/header
+encryption, not a new crypto format or a claim of authenticated encryption.
+
+Export reads only the four explicitly selected snapshot/metadata/encrypted-key/
+history files from private NTFS storage, verifies their publication/context and
+history prefix, and builds a fixed manifest in separate empty private staging.
+The caller can select a snapshot basename; archive names normalize to snapshot.sqlite
+and snapshot.sqlite.meta. All five entries must be encrypted with the expected
+names/sizes. Every entry is read back in RAM and checked before the verified
+ciphertext alone is exclusively copied to the selected .7z destination. A private
+NTFS export receipt records its fingerprint. Existing outputs are preserved.
+
+Import requires an independently selected expected archive fingerprint and exact
+snapshot publication. It checks the complete fixed inventory and all manifest
+hashes in RAM before writing fixed-name files exclusively into a private empty
+NTFS destination. The external tool never extracts paths. An archive checksum or
+copied journal is NOT proof of current deletion history. Canonical restore still
+needs the separately bound current authority and reviewed source ownership.
+
+Passwords go only over the hidden owned child's stdin, never command arguments
+or environment. There is no password CLI, browser/MCP/Relay endpoint, download,
+scheduler, startup registration or live-setup binding in this module. The caller
+must supply a strong separately saved password through a reviewed local native
+operator path; that connection is still outstanding. Python/child memory erasure
+is not guaranteed. This trusted operator API assumes stable operator-controlled
+directories; it is not a hostile-filesystem or same-login/admin security boundary.
+Plaintext remains in private staging or RAM. Failure preserves attempted outputs
+and performs no retry/cleanup. Cross-account/machine recovery is not qualified.
+
+7 actual Windows tests PASS183.898s (runner elapsed184.056s), using real canonical
+synthetic Mind snapshots, encrypted canonical key packages, actual E: ciphertext,
+and private TEMP NTFS folders. Tests cover source loss and key recovery, a later
+purge still absent after canonical protected restore, password absent from child
+arguments, encrypted headers, wrong password, changed source/tool/archive,
+existing output and wrong-store refusals. The original runner's marker parser
+missed unittest's shared-line prefix after all7 tests passed. Preserved that
+reporting failure; supplementary readback verified the SAME completed run, source
+hashes and E: archive without a rerun. Proofs:
+data/mind-encrypted-backup-proof-20261115.json and
+data/mind-encrypted-backup-qualified-readback-20261115.json.
+
+Proposed next layout, NOT enrolled: keep live data on D:, a separate private
+current journal under %LOCALAPPDATA%/Onoes-Mind/Current-State on C: NTFS, private
+snapshot/archive staging outside the live folder on D:, and only encrypted
+milestone archives under E:/App-Backups/Onoes-Mind. The journal is current-state
+storage, not a scheduled backup. No new C:/D: private directories were created.
+This remains local-PC custody, not off-device/whole-PC rollback protection.
+Next: reviewed secure local password/operator integration and actual layout/
+permission/runtime binding approval. No live initialization is authorized.

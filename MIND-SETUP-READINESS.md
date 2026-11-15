@@ -1,5 +1,25 @@
 # Onoes-Mind setup readiness
 
+
+## Actual E: storage constraint and encrypted-backup slice
+
+The canonical recovery guide already warned that E: is exFAT. Fresh metadata
+confirms it; NTFS TEMP test passes never qualified E: for a private live journal
+or plaintext Mind backup. The earlier E: private-journal proposal is withdrawn.
+D: remains NTFS and the approved Mind folder remains empty/private. C: is NTFS.
+
+A new inactive standard7z whole-backup export/import candidate passed7 actual
+Windows/E: checks, including recovery of a canonical synthetic store/key package
+after original files were unavailable, with a later deletion still absent.
+All relevant sources/tool hashes stayed stable. A reporting-parser miss after
+the product tests passed is retained with supplementary same-run readback proof.
+This is a separate7-case qualification, not a full Mind or full Mesh run.
+
+Proposed layout for review: data on D:, private current journal on C:, private
+snapshot/archive staging on D:, encrypted milestone archives on E:. Nothing is
+enrolled. The secure local operator/password connection and actual folder/custody/
+runtime binding review remain before real initialization. See candidate README.
+
 ## Current status - November15,2026
 
 Mind remains OFF: no live store, keys, scope/credentials, runtime enrollment or
