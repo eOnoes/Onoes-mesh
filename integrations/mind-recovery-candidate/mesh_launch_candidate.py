@@ -41,11 +41,11 @@ def source_paths(*, project=False):
     for name in ('lib','public'):paths.update((ROOT/name).rglob('*.mjs'))
     if project:paths.update(Path(__file__).resolve().parent/name for name in (
         'project_mesh_input_candidate.py','project_service_process_candidate.py','project_operator_process_candidate.py'))
-    if project:paths.add(ROOT/'integrations/project-sync-source-setup-candidate.mjs')
+    if project:paths.update((ROOT/'integrations/project-sync-source-setup-candidate.mjs',ROOT/'integrations/mesh_native_recovery.py'))
     return paths
 
 
-def checked_launch(path,expected_sha,approval_path):
+def inspect_launch(path,expected_sha,approval_path):
     # Inspect the profile and pin our imports before loading the participant code.
     path=Path(path);raw=path.read_bytes();require(len(raw)<=65536 and digest(path)==expected_sha)
     def unique(pairs):
@@ -64,6 +64,7 @@ def checked_launch(path,expected_sha,approval_path):
     node=Path(p['nodeExecutable']);require(node.is_absolute() and node.resolve()==node and digest(node)==p['nodeSha256'])
     pins=p['sourceHashes'];require(type(pins) is dict and {Path(n) for n in pins}==source_paths(project=project))
     require(all(digest(n)==s for n,s in pins.items()))
+    if project:sys.path.insert(0,str(ROOT/'integrations'))
     reader_path=Path(p['readerProfile']);reader_raw=reader_path.read_bytes()
     require(len(reader_raw)<=65536 and hashlib.sha256(reader_raw).hexdigest()==p['readerProfileSha256'])
     reader_value=json.loads(reader_raw,object_pairs_hook=unique);reader_pins=reader_value['sourceHashes']
@@ -87,9 +88,26 @@ def checked_launch(path,expected_sha,approval_path):
     for name in ('stdoutPath','stderrPath'):
         target=Path(p[name]);require(target.is_absolute() and target.parent==root)
     require(len({p[n] for n in ('attemptPath','stdoutPath','stderrPath')})==3)
-    # This is a live reader check, not activation or a fallback to a different one.
+    return p,roles
+
+
+def checked_launch(path,expected_sha,approval_path):
+    p,roles=inspect_launch(path,expected_sha,approval_path)
+    # Ordinary launch still requires the live reader; inspection cannot launch.
     require(roles.reader_state(p['readerProfile'],p['readerProfileSha256'],approval_path)['ready'])
     return p,roles
+
+
+def native_peers(p,roles,approval_path,options):
+    from mesh_native_recovery import valid_memory_peers
+    reader=roles.reader_state(p['readerProfile'],p['readerProfileSha256'],approval_path)
+    require(reader['ready'] and reader['baseUrl']==options['mindRecallOptions']['baseUrl'])
+    peer=options['projectSyncOptions']['destination']['peer']
+    require(type(peer.get('creationTicks')) is str and peer['creationTicks'].isdecimal())
+    value=dict(reader=dict(pid=reader['pid'],creationTicks=reader['creationTicks'],profileSha256=p['readerProfileSha256']),
+        writer={**peer,'creationTicks':int(peer['creationTicks'])})
+    require(valid_memory_peers(value) and value['writer']['profileSha256']==p['projectSync']['serviceProfileSha256'])
+    return value
 
 
 def native_frame(p,roles,approval_path,profile_sha):
@@ -114,6 +132,9 @@ def launch_mesh(path,expected_sha,approval_path):
             for name in ('stdoutPath','stderrPath'):
                 with roles.new_role_file(p[name]).open('xb'):pass
             options=native_frame(p,roles,approval_path,expected_sha)
+            peers=None
+            if p.get('schema')=='onoes-mesh-native-launch/v2':
+                peers=native_peers(p,roles,approval_path,options)
             # Do not inherit a preload or ambient Mesh enrollment override.
             env={k:v for k,v in os.environ.items() if not k.upper().startswith('MESH_')
                  and k.upper() not in ('NODE_OPTIONS','NODE_PATH')}
@@ -127,6 +148,7 @@ def launch_mesh(path,expected_sha,approval_path):
                 record=dict(schema='onoes-mesh-native-child/v1',profileSha256=expected_sha,pid=child.pid,
                     creationTicks=None,executable=p['nodeExecutable'],entryPoint=str(ROOT/'serve.mjs'),
                     state='identity_pending',credentialsInRecord=False)
+                if peers is not None:record.update(schema='onoes-mesh-native-child/v2',peers=peers)
                 attempt.write(json.dumps(record).encode());attempt.flush();os.fsync(attempt.fileno())
                 stamp=roles.creation_ticks(child._handle)
                 record.update(creationTicks=stamp,state='input_pending');attempt.seek(0);attempt.truncate()

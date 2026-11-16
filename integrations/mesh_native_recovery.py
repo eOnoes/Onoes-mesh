@@ -5,11 +5,38 @@ The caller must retain the named launcher window through its eventual handoff.
 Uncertain launch records deliberately remain held for reconciliation.
 """
 import os
+import re
 from pathlib import Path
 
 
 class NativeRecoveryHold(RuntimeError):
     pass
+
+
+def valid_memory_peers(value):
+    """Only non-secret, exact process/profile identities belong in an attempt."""
+    if type(value) is not dict or set(value)!={'reader','writer'}:return False
+    for name in ('reader','writer'):
+        peer=value[name];keys={'pid','creationTicks','profileSha256'}|({'runId'} if name=='writer' else set())
+        if type(peer) is not dict or set(peer)!=keys:return False
+        if (type(peer['pid']) is not int or not 0<peer['pid']<=0xffffffff
+            or type(peer['creationTicks']) is not int or not 0<peer['creationTicks']<=0xffffffffffffffff
+            or type(peer['profileSha256']) is not str or not re.fullmatch('[a-f0-9]{64}',peer['profileSha256'])):return False
+        if name=='writer' and (type(peer['runId']) is not str or not re.fullmatch('[a-f0-9]{32}',peer['runId'])):return False
+    return True
+
+
+def identified_native_attempt(record):
+    if type(record) is not dict:return False
+    version=record.get('schema')
+    if version not in ('onoes-mesh-native-child/v1','onoes-mesh-native-child/v2'):return False
+    keys={'schema','profileSha256','pid','creationTicks','executable','entryPoint','state','credentialsInRecord'}
+    if version.endswith('/v2'):keys.add('peers')
+    return (set(record)==keys and record['state']=='input_sent' and record['credentialsInRecord'] is False
+        and all(type(record[name]) is str and bool(record[name]) for name in ('profileSha256','executable','entryPoint'))
+        and type(record['pid']) is int and 0<record['pid']<=0xffffffff
+        and type(record['creationTicks']) is int and 0<record['creationTicks']<=0xffffffffffffffff
+        and (version.endswith('/v1') or valid_memory_peers(record['peers'])))
 
 
 def archive_retired_mesh_attempt(window, *, launch_module, mesh_profile,
@@ -34,10 +61,7 @@ def archive_retired_mesh_attempt(window, *, launch_module, mesh_profile,
     for path in paths:
         qualify_private_storage(path, kind='file')
     record = roles.plain_json(attempt)
-    keys = {'schema', 'profileSha256', 'pid', 'creationTicks', 'executable',
-            'entryPoint', 'state', 'credentialsInRecord'}
-    if (type(record) is not dict or set(record) != keys
-            or record['schema'] != 'onoes-mesh-native-child/v1'
+    if (not identified_native_attempt(record)
             or record['profileSha256'] != mesh_sha256
             or record['state'] != 'input_sent'
             or record['credentialsInRecord'] is not False

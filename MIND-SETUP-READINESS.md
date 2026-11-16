@@ -48,6 +48,37 @@ Ensure may recover Mesh without its native Mind binding after that owner exits;
 it must not be represented as successful memory synchronization. Local release
 remains 18/21, and production team, skills/MCP and external-machine work remain.
 
+## Combined memory recovery candidate - qualified, not activated
+
+The isolated actual-process scenario passed in 1198.159 seconds, including
+owned-process cleanup. All eleven candidate working files matched the frozen
+test snapshot. Sixty-three focused checks also passed on the candidate runtime.
+The healthy tick retained all owners. After only the synthetic reader and writer
+were terminated, the full recovery decision restored both using unchanged
+credentials, original enrollment proofs and key package, then refreshed only
+the exactly identified Mesh gateway. Both old event IDs, hashes and receipts
+were preserved. A repeat tick made no extra restart or duplicate; one new card
+edit reached canonical recall, with excluded private prose absent. The synthetic
+ledger contained exactly three events afterward. No live configuration changed.
+
+Recovery requires the distinct pinned memory-recovery decision; older gateway
+approval does not grant it. Native attempt v2 records non-secret peer identities.
+Unknown ownership, failed/unpublished starts and denied observation remain held.
+PID reuse is checked by birth identity without stopping unrelated processes.
+
+The first combined attempt exceeded its test observer's 480-second limit and
+remains failed evidence. Its exact actors were confirmed retired before a fresh
+snapshot ran. The corrected test observes the same command until terminal and
+saves per-step results; no runtime safeguards were weakened. Successful healthy,
+recovery and repeat commands took 177.034, 395.753 and 182.964 seconds respectively.
+This latency needs attention before routine activation; correctness is not a
+claim of quick startup. No scheduler, startup task, live service, worker, Rook,
+Mind credential, historical hold or model setting was changed by these tests.
+
+Remaining release work includes disconnected edit capture/catch-up, clear stale
+status, recovery latency and separately reviewed runtime/startup activation.
+The wider local release stays 18/21; this is not whole-app completion.
+
 ## Same-grant gateway recovery candidate - not activated
 
 Seven focused checks passed, including an actual Windows-owned child: a living

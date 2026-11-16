@@ -145,7 +145,7 @@ class MeshLauncherWindow:
         require(self.kernel.QueryFullProcessImageNameW(child._handle, 0, image, ctypes.byref(size))
                 and Path(image.value) == executable, 'Native child executable mismatch.')
         attempt = json.loads(read(Path(profile['attemptPath'])))
-        require(attempt.get('schema') == 'onoes-mesh-native-child/v1'
+        require(attempt.get('schema') in ('onoes-mesh-native-child/v1','onoes-mesh-native-child/v2')
                 and attempt.get('profileSha256') == profile_sha256 and attempt.get('pid') == child.pid
                 and attempt.get('creationTicks') == ticks and attempt.get('state') == 'input_sent'
                 and attempt.get('executable') == str(executable)
@@ -169,7 +169,19 @@ class MeshLauncherWindow:
                     'Previous receipt has different ownership.')
             handle = self.kernel.OpenProcess(0x00100000 | 0x1000, False, old['Id'])
             if handle:
-                try: require(self.kernel.WaitForSingleObject(handle, 0) == 0, 'Previous owner is still live.')
+                try:
+                    stamp=old.get('StartTime')
+                    require(type(stamp) is str and re.fullmatch(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{7}Z',stamp),
+                            'Previous owner birth is unknown.')
+                    day=datetime.strptime(stamp[:19],'%Y-%m-%dT%H:%M:%S').replace(tzinfo=timezone.utc)
+                    delta=day-datetime(1601,1,1,tzinfo=timezone.utc)
+                    old_ticks=(delta.days*86400+delta.seconds)*10000000+int(stamp[20:27])
+                    times_old=[wintypes.FILETIME() for _ in range(4)]
+                    require(self.kernel.GetProcessTimes(handle,*(ctypes.byref(value) for value in times_old)),
+                            'Previous owner birth cannot be observed.')
+                    observed_ticks=(times_old[0].dwHighDateTime<<32)|times_old[0].dwLowDateTime
+                    require(observed_ticks!=old_ticks or self.kernel.WaitForSingleObject(handle,0)==0,
+                            'Previous owner is still live.')
                 finally: self.kernel.CloseHandle(handle)
             else:
                 require(ctypes.get_last_error() == 87, 'Previous owner retirement is unknown.')

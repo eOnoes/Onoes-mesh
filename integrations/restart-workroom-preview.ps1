@@ -20,7 +20,7 @@ if ($Action -eq 'Ensure' -and ($NativeMindProfile -or $NativeMindSha256 -or $Nat
   $recovery = Get-Content -LiteralPath $NativeRecoveryApproval -Raw | ConvertFrom-Json
   $recoveryHelper = Join-Path $PSScriptRoot 'mesh_recovery_candidate.py'
   $recoveryPython = 'C:\Python314\python.exe'
-  if ($recovery.schema -cne 'onoes-mesh-native-recovery-approval/v1' -or $recovery.decision -cne 'approve_exact_same_grant_gateway_recovery' -or
+  if ($recovery.schema -cne 'onoes-mesh-native-recovery-approval/v1' -or $recovery.decision -cnotin @('approve_exact_same_grant_gateway_recovery','approve_exact_same_grant_memory_recovery') -or
       $recovery.workspace -cne $workroomRoot -or $recovery.profilePath -cne $NativeMindProfile -or $recovery.profileSha256 -cne $NativeMindSha256 -or
       (Get-FileHash -LiteralPath $recoveryPython -Algorithm SHA256).Hash.ToLowerInvariant() -cne $recovery.pythonSha256 -or
       (Get-FileHash -LiteralPath $recoveryHelper -Algorithm SHA256).Hash.ToLowerInvariant() -cne $recovery.sourceHashes.PSObject.Properties[$recoveryHelper].Value) { throw 'Recovery participant changed; no legacy fallback.' }

@@ -164,9 +164,9 @@ class MeshNativePair:
         self._require(len(raw)<=65536,'Existing gateway attempt exceeds its bound.')
         try:record=json.loads(raw)
         except (ValueError,TypeError):self._require(False,'Existing gateway attempt is unreadable.')
-        self._require(type(record) is dict and set(record)=={'schema','profileSha256','pid','creationTicks',
-            'state','credentialsInRecord','executable','entryPoint'},'Existing gateway attempt is not an exact record.')
-        self._require(child.poll() is None and record.get('schema')=='onoes-mesh-native-child/v1'
+        from mesh_native_recovery import identified_native_attempt
+        self._require(identified_native_attempt(record),'Existing gateway attempt is not an exact record.')
+        self._require(child.poll() is None
             and record.get('profileSha256')==self.mesh_sha and record.get('pid')==child.pid
             and record.get('creationTicks')==ticks and record.get('state')=='input_sent'
             and record.get('credentialsInRecord') is False

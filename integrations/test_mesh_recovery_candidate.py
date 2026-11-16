@@ -36,6 +36,15 @@ class RecoveryApprovalTests(unittest.TestCase):
         self.assertEqual(recovery.checked_recovery_approval(self.path,sha,self.profile,'a'*64),self.value)
 
     @unittest.skipUnless(os.name=='nt','Windows exact source approval')
+    def test_memory_recovery_requires_an_explicit_separate_decision_and_reader_pin(self):
+        value=copy.deepcopy(self.value)
+        value.update(decision='approve_exact_same_grant_memory_recovery',readerServiceProfile=str(self.root/'reader-service.json'),readerServiceSha256='d'*64)
+        value['sourceHashes'][str(recovery.ROOT/'integrations/mind-recovery-candidate/reader_service_process_candidate.py')]=recovery.digest(recovery.ROOT/'integrations/mind-recovery-candidate/reader_service_process_candidate.py')
+        self.assertEqual(recovery.checked_recovery_approval(self.path,self.write(value),self.profile,'a'*64),value)
+        value['decision']='approve_exact_same_grant_gateway_recovery'
+        with self.assertRaises(recovery.RecoveryHold):recovery.checked_recovery_approval(self.path,self.write(value),self.profile,'a'*64)
+
+    @unittest.skipUnless(os.name=='nt','Windows exact source approval')
     def test_wrong_decision_profile_runtime_or_source_never_qualifies(self):
         variants=[]
         for key,value in (('decision','first_setup'),('profileSha256','b'*64),
@@ -132,6 +141,44 @@ class RecoveryBoundaryTests(unittest.TestCase):
     def test_denied_observation_is_not_original_process_retirement(self):
         def denied(*args):raise PermissionError('Synthetic inaccessible process')
         self.roles.same_process_alive=denied;self.check_held(PermissionError)
+
+
+class ServiceViewTests(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.root=Path(self.temp.name).resolve();self.attempt=self.root/'attempt';self.ready=self.root/'ready'
+        self.record=dict(schema='onoes-mind-project-service-attempt/v1',profileSha256='approved',state='started',
+                         pid=101,creationTicks=2020,runId='a'*32)
+        self.attempt.write_text(json.dumps(self.record))
+        self.value=dict(pid=101,creationTicks=2020,state='running',processLive=True,ready=True)
+        self.roles=SimpleNamespace(same_process_alive=lambda *args:True)
+        self.fetches=0
+    def fetch(self):self.fetches+=1;return self.value
+    def view(self):
+        return recovery.known_service_view(attempt_path=self.attempt,ready_path=self.ready,
+            profile_sha='approved',kind='project',fetch=self.fetch,roles=self.roles)
+    def test_known_live_start_waits_without_reinterpreting_absence_as_restart(self):
+        value=self.view();self.assertEqual(value['state'],'starting');self.assertTrue(value['processLive'])
+        self.assertFalse(value['ready']);self.assertEqual(self.fetches,0)
+    def test_dead_unpublished_start_is_held(self):
+        self.roles.same_process_alive=lambda *args:False
+        with self.assertRaises(recovery.RecoveryHold):self.view()
+        self.assertEqual(self.fetches,0)
+    def test_ready_owner_must_match_exact_attempt_before_runtime_readback(self):
+        self.ready.write_text(json.dumps(dict(pid=999,creationTicks=2020)))
+        with self.assertRaises(recovery.RecoveryHold):self.view()
+        self.assertEqual(self.fetches,0)
+    def test_previously_ready_retired_owner_is_known_but_failed_owner_is_held(self):
+        self.ready.write_text(json.dumps(dict(pid=101,creationTicks=2020)))
+        self.roles.same_process_alive=lambda *args:False
+        self.value.update(processLive=False,ready=False)
+        self.assertEqual(self.view()['state'],'running')
+        self.value['state']='failed'
+        with self.assertRaises(recovery.RecoveryHold):self.view()
+    def test_partial_identity_cannot_start_another_actor(self):
+        self.record['state']='identity_pending';self.attempt.write_text(json.dumps(self.record))
+        with self.assertRaises(recovery.RecoveryHold):self.view()
+        self.assertEqual(self.fetches,0)
 
 
 if __name__=='__main__':unittest.main()

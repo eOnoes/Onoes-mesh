@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import socket
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -182,6 +183,23 @@ class LauncherWindowTests(unittest.TestCase):
                     window.publish_native_owner(child, ticks, profile, sha, previous_sha256=None)
             self.assertFalse((self.workspace.parent/'workroom-ab-preview-process.json').exists())
             self.assertIsNone(child.poll())
+
+    def test_reused_pid_with_different_birth_does_not_block_or_stop_unrelated_process(self):
+        with MeshLauncherWindow(self.workspace,self.sha) as window:
+            first,ticks,profile,sha,_=self.native_child(window)
+            owner=window.publish_native_owner(first,ticks,profile,sha,previous_sha256=None)
+            first.terminate();first.wait(timeout=20)
+            unrelated=subprocess.Popen([sys.executable,'-I','-c','import time;time.sleep(30)'],
+                creationflags=subprocess.CREATE_NO_WINDOW)
+            self.addCleanup(lambda:(unrelated.terminate(),unrelated.wait(timeout=20)) if unrelated.poll() is None else None)
+            # Model OS PID reuse with a real different retained process birth.
+            owner['Id']=unrelated.pid
+            target=self.workspace.parent/'workroom-ab-preview-process.json'
+            target.write_text(json.dumps(owner));before=target.read_bytes()
+            second,ticks2,profile2,sha2,_=self.native_child(window,port=owner['Port'])
+            published=window.publish_native_owner(second,ticks2,profile2,sha2,
+                previous_sha256=hashlib.sha256(before).hexdigest(),beforeimage_path=self.workspace/'data/reused-pid-before.json')
+            self.assertEqual(published['Id'],second.pid);self.assertIsNone(unrelated.poll())
 
 
 if __name__ == '__main__': unittest.main()

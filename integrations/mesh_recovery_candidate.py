@@ -1,4 +1,4 @@
-"""Explicit opt-in Ensure route. No enrollment, writer startup, or fallback.
+"""Explicit opt-in Ensure route. No enrollment, credential issuance or fallback.
 
 Live activation requires a private exact recovery approval in addition to the
 existing native reader/project approvals. Unknown attempts stay held. A later
@@ -51,24 +51,30 @@ def bounded_json(path):
 def checked_recovery_approval(path,sha,profile,profile_sha):
     require(os.name=='nt' and re.fullmatch('[0-9a-f]{64}',sha or '') and digest(path)==sha)
     value=bounded_json(path)
+    memory=value.get('decision')=='approve_exact_same_grant_memory_recovery'
     require(set(value)=={'schema','decision','ownerSid','workspace','profilePath','profileSha256',
-                        'pythonSha256','sourceHashes'})
+                        'pythonSha256','sourceHashes'}|({'readerServiceProfile','readerServiceSha256'} if memory else set()))
     require(value['schema']=='onoes-mesh-native-recovery-approval/v1'
-        and value['decision']=='approve_exact_same_grant_gateway_recovery'
+        and value['decision'] in ('approve_exact_same_grant_gateway_recovery','approve_exact_same_grant_memory_recovery')
         and value['workspace']==str(ROOT) and value['profilePath']==str(Path(profile))
         and value['profileSha256']==profile_sha and digest(sys.executable)==value['pythonSha256'])
     expected={str(ROOT/'integrations'/name) for name in FILES}
+    if memory:
+        expected.add(str(ROOT/'integrations/mind-recovery-candidate/reader_service_process_candidate.py'))
+        require(type(value['readerServiceProfile']) is str and Path(value['readerServiceProfile']).is_absolute()
+            and re.fullmatch('[a-f0-9]{64}',value['readerServiceSha256'] or ''))
     pins=value['sourceHashes'];require(type(pins) is dict and set(pins)==expected)
     require(all(digest(path)==sha for path,sha in pins.items()))
     return value
 
 
 class ProcessObservation:
-    """A retained query-only native handle; never grants process termination."""
-    def __init__(self,window,roles,pid,ticks,args):
+    """Retained exact native identity; query-only unless reconnect is authorized."""
+    def __init__(self,window,roles,pid,ticks,args,*,allow_terminate=False):
         require(type(pid) is int and pid>0 and type(ticks) is int and ticks>0)
         self.window,self.roles,self.pid,self.args=window,roles,pid,args
-        self._handle=window.kernel.OpenProcess(0x100000|0x1000,False,pid)
+        self.ticks,self.allow_terminate=ticks,allow_terminate
+        self._handle=window.kernel.OpenProcess(0x100000|0x1000|(1 if allow_terminate else 0),False,pid)
         require(bool(self._handle))
         try:
             require(roles.creation_ticks(self._handle)==ticks and self.poll() is None)
@@ -87,30 +93,29 @@ class ProcessObservation:
         if self._handle:
             self.window.kernel.CloseHandle(self._handle);self._handle=None
 
+    def terminate(self):
+        self.window.assert_held()
+        require(self.allow_terminate and self.roles.creation_ticks(self._handle)==self.ticks)
+        if self.poll() is None:
+            fn=self.window.kernel.TerminateProcess
+            fn.argtypes=[wintypes.HANDLE,wintypes.UINT];fn.restype=wintypes.BOOL
+            require(bool(fn(self._handle,1)))
+
 
 def native_start(ticks):
     date=datetime(1601,1,1,tzinfo=timezone.utc)+timedelta(microseconds=ticks//10)
     return date.strftime('%Y-%m-%dT%H:%M:%S.')+f'{date.microsecond:06}{ticks%10}Z'
 
 
-def ensure_gateway(window,*,launch,service,roles,profile,sha,approval,timeout=45):
-    from mesh_native_pair import MeshNativePair
-    from mesh_native_recovery import archive_retired_mesh_attempt
+def gateway_binding(window,p,sha,roles):
+    from mesh_native_recovery import identified_native_attempt
     window.assert_held()
-    p,checked_roles=launch.checked_launch(profile,sha,approval);require(checked_roles is roles)
-    require(p['schema']=='onoes-mesh-native-launch/v2')
     from onoes_mind.enrollment_store import qualify_private_storage
     for name in ('attemptPath','stdoutPath','stderrPath'):
         qualify_private_storage(Path(p[name]),kind='file')
-    # Authentication/current source binding must pass even for a no-op tick.
-    frame=launch.native_frame(p,roles,approval,sha);frame=None
-    project=p['projectSync']
-    state=service.service_state(project['serviceProfile'],project['serviceProfileSha256'],project['approvalPath'])
-    require(state['ready'])  # Writer/reader restart is a separately qualified slice.
     attempt=bounded_json(p['attemptPath'])
-    require(set(attempt)=={'schema','profileSha256','pid','creationTicks','state',
-        'credentialsInRecord','executable','entryPoint'})
-    require(attempt.get('schema')=='onoes-mesh-native-child/v1' and attempt.get('profileSha256')==sha
+    require(identified_native_attempt(attempt))
+    require(attempt.get('profileSha256')==sha
         and attempt.get('state')=='input_sent' and attempt.get('credentialsInRecord') is False
         and type(attempt.get('pid')) is int and attempt['pid']>0
         and type(attempt.get('creationTicks')) is int and attempt['creationTicks']>0
@@ -129,6 +134,23 @@ def ensure_gateway(window,*,launch,service,roles,profile,sha,approval,timeout=45
     alive=roles.same_process_alive(attempt['pid'],attempt['creationTicks'])
     # A failed/unpublished new launch is not permission to start another one.
     require(alive or same_owner)
+    return dict(attempt=attempt,args=args,receiptPath=receipt_path,previousSha=previous_sha,sameOwner=same_owner,alive=alive)
+
+
+def ensure_gateway(window,*,launch,service,roles,profile,sha,approval,timeout=45):
+    from mesh_native_pair import MeshNativePair
+    from mesh_native_recovery import archive_retired_mesh_attempt
+    window.assert_held()
+    p,checked_roles=launch.checked_launch(profile,sha,approval);require(checked_roles is roles)
+    require(p['schema']=='onoes-mesh-native-launch/v2')
+    # Authentication/current source binding must pass even for a no-op tick.
+    frame=launch.native_frame(p,roles,approval,sha);frame=None
+    project=p['projectSync']
+    state=service.service_state(project['serviceProfile'],project['serviceProfileSha256'],project['approvalPath'])
+    require(state['ready'])
+    bound=gateway_binding(window,p,sha,roles)
+    attempt,args=bound['attempt'],bound['args'];receipt_path=bound['receiptPath']
+    previous_sha,same_owner,alive=bound['previousSha'],bound['sameOwner'],bound['alive']
     observed=[]
     try:
         writer=ProcessObservation(window,roles,state['pid'],state['creationTicks'],[sys.executable])
@@ -161,6 +183,90 @@ def ensure_gateway(window,*,launch,service,roles,profile,sha,approval,timeout=45
         for reference in observed:reference.close()
 
 
+def known_service_view(*,attempt_path,ready_path,profile_sha,kind,fetch,roles):
+    """Wait on a known starting PID; never turn an unpublished failure into retry."""
+    attempt=bounded_json(attempt_path)
+    require(attempt.get('schema')==f'onoes-mind-{kind}-service-attempt/v1'
+        and attempt.get('profileSha256')==profile_sha and attempt.get('state')=='started'
+        and type(attempt.get('pid')) is int and attempt['pid']>0
+        and type(attempt.get('creationTicks')) is int and attempt['creationTicks']>0
+        and type(attempt.get('runId')) is str and re.fullmatch('[a-f0-9]{32}',attempt['runId']))
+    live=roles.same_process_alive(attempt['pid'],attempt['creationTicks'])
+    try:raw=bounded_json(ready_path)
+    except (FileNotFoundError,json.JSONDecodeError):
+        require(live)
+        return dict(state='starting',pid=attempt['pid'],creationTicks=attempt['creationTicks'],processLive=True,ready=False)
+    require(raw.get('pid')==attempt['pid'] and raw.get('creationTicks')==attempt['creationTicks'])
+    value=fetch()
+    require(value['pid']==attempt['pid'] and value['creationTicks']==attempt['creationTicks'])
+    require(value['state'] in (('starting','running') if value['processLive'] else ('running','stopped')))
+    return value
+
+
+def ensure_memory(window,*,launch,service,reader_service,roles,profile,sha,approval,approved,timeout=90):
+    """Restore previously enrolled roles, then refresh only their exact gateway."""
+    window.assert_held()
+    require(approved['decision']=='approve_exact_same_grant_memory_recovery')
+    p,checked_roles=launch.inspect_launch(profile,sha,approval);require(checked_roles is roles)
+    require(p['schema']=='onoes-mesh-native-launch/v2')
+    gateway_binding(window,p,sha,roles)  # Unknown gateway ownership blocks all actor changes.
+    rp,rbase,rbinding=reader_service.checked_profile(approved['readerServiceProfile'],approved['readerServiceSha256'],approval)
+    require(rp['readerProfilePath']==p['readerProfile'] and rp['readerProfileSha256']==p['readerProfileSha256']
+            and Path(approved['readerServiceProfile']).parent==Path(profile).parent)
+    project=p['projectSync'];sp,sbase,sbinding=service.checked_profile(
+        project['serviceProfile'],project['serviceProfileSha256'],project['approvalPath'])
+    service.terminal_proof(sbase,sbinding,sp['operatorProfileSha256'])
+    require(all(getattr(rbinding,name)==getattr(sbinding,name) for name in
+                ('database_path','store_id','environment','file_device','file_inode')))
+    children=[]
+    def reader_view():
+        if os.path.lexists(rp['attemptPath']):
+            return known_service_view(attempt_path=rp['attemptPath'],ready_path=rbase['readyPath'],
+                profile_sha=approved['readerServiceSha256'],kind='reader',roles=roles,
+                fetch=lambda:reader_service.service_state(approved['readerServiceProfile'],approved['readerServiceSha256'],approval))
+        raw=bounded_json(rbase['readyPath'])
+        require('managedBy' not in raw and raw.get('profileSha256')==p['readerProfileSha256'])
+        value=roles.reader_state(p['readerProfile'],p['readerProfileSha256'],approval)
+        require(value['state'] in (('starting','running') if value['processLive'] else ('running','stopped')))
+        return value
+    def writer_view():
+        return known_service_view(attempt_path=sp['attemptPath'],ready_path=sp['readyPath'],
+            profile_sha=project['serviceProfileSha256'],kind='project',roles=roles,
+            fetch=lambda:service.service_state(project['serviceProfile'],project['serviceProfileSha256'],project['approvalPath']))
+    # Validate both roles before starting either. An existing failed/unknown actor
+    # is held; only a previously identified retired owner may be restarted here.
+    reader,writer=reader_view(),writer_view()
+    for state,start in (
+        (reader,lambda:reader_service.launch_service(approved['readerServiceProfile'],approved['readerServiceSha256'],approval)),
+        (writer,lambda:service.launch_service(project['serviceProfile'],project['serviceProfileSha256'],project['approvalPath']))):
+        if not state['processLive']:
+            child,ticks=start();children.append((child,ticks))
+    until=time.monotonic()+timeout
+    while True:
+        for child,ticks in children:require(child.poll() is None and roles.creation_ticks(child._handle)==ticks)
+        reader,writer=reader_view(),writer_view()
+        if reader['ready'] and writer['ready']:break
+        require(time.monotonic()<until);time.sleep(.2)
+    frame=launch.native_frame(p,roles,approval,sha)
+    peers=launch.native_peers(p,roles,approval,frame);frame=None
+    bound=gateway_binding(window,p,sha,roles);attempt=bound['attempt']
+    refreshed=False
+    if bound['alive'] and attempt.get('peers')!=peers:
+        # First reconcile a living unpublished attempt using its same identity.
+        # This publishes process ownership only, not a claim of memory freshness.
+        ensure_gateway(window,launch=launch,service=service,roles=roles,profile=profile,sha=sha,approval=approval)
+        gateway=ProcessObservation(window,roles,attempt['pid'],attempt['creationTicks'],bound['args'],allow_terminate=True)
+        try:
+            gateway.terminate();deadline=time.monotonic()+30
+            while gateway.poll() is None:require(time.monotonic()<deadline);time.sleep(.1)
+        finally:gateway.close()
+        refreshed=True
+    result=ensure_gateway(window,launch=launch,service=service,roles=roles,profile=profile,sha=sha,approval=approval)
+    final=bounded_json(p['attemptPath']);require(final.get('peers')==peers)
+    return {**result,'readerPid':reader['pid'],'writerPid':writer['pid'],'gatewayRefreshedForPeers':refreshed,
+            'memoryServicesRestarted':len(children)}
+
+
 def main():
     parser=argparse.ArgumentParser()
     for name in ('profile','sha256','approval','recovery-approval','recovery-sha256'):
@@ -173,7 +279,8 @@ def main():
         sys.path.insert(0,str(ROOT/'integrations/mind-recovery-candidate'))
         import mesh_launch_candidate as launch
         # Authenticate the pinned reader before importing canonical storage code.
-        p,roles=launch.checked_launch(args.profile,args.sha256,args.approval)
+        full=approved['decision']=='approve_exact_same_grant_memory_recovery'
+        p,roles=(launch.inspect_launch if full else launch.checked_launch)(args.profile,args.sha256,args.approval)
         from onoes_mind.enrollment_store import qualify_private_storage
         qualify_private_storage(Path(args.recovery_approval),kind='file')
         reader=bounded_json(p['readerProfile']);require(approved['ownerSid']==reader['ownerSid'])
@@ -182,8 +289,12 @@ def main():
         with MeshLauncherWindow(ROOT,approved['sourceHashes'][str(ROOT/'integrations/restart-workroom-preview.ps1')]) as window:
             if (ROOT/'data/workroom-preview/recovery-paused').exists():
                 result=dict(schema='onoes-mesh-native-recovery-state/v1',state='paused')
+            elif full:
+                import reader_service_process_candidate as reader_service
+                result=ensure_memory(window,launch=launch,service=service,reader_service=reader_service,roles=roles,
+                    profile=args.profile,sha=args.sha256,approval=args.approval,approved=approved)
             else:result=ensure_gateway(window,launch=launch,service=service,roles=roles,
-                profile=args.profile,sha=args.sha256,approval=args.approval)
+                    profile=args.profile,sha=args.sha256,approval=args.approval)
         print(json.dumps(result));return 0
     except Exception:
         print(json.dumps(dict(schema='onoes-mesh-native-recovery-state/v1',state='held',

@@ -100,7 +100,7 @@ def declared_attempt_stopped(p,observer,entry):
     require(path.is_file() and path.resolve()==path and path.stat().st_size<=8192)
     record=json.loads(path.read_bytes())
     mesh=entry['kind']=='mesh'
-    require(record.get('schema')==('onoes-mesh-native-child/v1' if mesh else 'onoes-mind-project-service-attempt/v1')
+    require(record.get('schema') in (('onoes-mesh-native-child/v1','onoes-mesh-native-child/v2') if mesh else ('onoes-mind-project-service-attempt/v1',))
         and record.get('profileSha256')==entry['profileSha256']
         and record.get('state')==('input_sent' if mesh else 'started')
         and type(record.get('pid')) is int and record['pid']>0
