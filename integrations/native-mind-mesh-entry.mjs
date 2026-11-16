@@ -4,13 +4,15 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {configureMindRecall} from '../lib/mind-recall.mjs';
 import {startApp} from '../server.mjs';
+import {validateNativeProjectSync} from './project-sync-native-candidate.mjs';
 
 export const frameSchema='onoes-mesh-native-recall-input/v1';
+export const meshFrameSchema='onoes-mesh-native-input/v2';
 const refusal=()=>new Error('Native Mesh input could not be verified.');
 const exact=(value,keys)=>value && typeof value==='object' && !Array.isArray(value)
   && Object.keys(value).length===keys.length && keys.every(key=>Object.hasOwn(value,key));
 
-export function readNativeRecallInput(input,{timeoutMs=10000}={}){
+function readNativeInput(input,{timeoutMs=10000,allowProjectSync=false}={}){
   // Require EOF, not merely a newline, so a second frame cannot be ignored.
   // Never put this input in arguments, environment, files, diagnostics or UI.
   return new Promise((resolve,reject)=>{
@@ -29,10 +31,13 @@ export function readNativeRecallInput(input,{timeoutMs=10000}={}){
       let bytes;
       try{
         bytes=Buffer.concat(chunks);const value=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
-        if(!exact(value,['schema','mindRecallOptions']) || value.schema!==frameSchema)throw refusal();
+        const legacy=exact(value,['schema','mindRecallOptions'])&&value.schema===frameSchema;
+        const combined=allowProjectSync&&exact(value,['schema','mindRecallOptions','projectSyncOptions'])&&value.schema===meshFrameSchema;
+        if(!legacy&&!combined)throw refusal();
         configureMindRecall({standalone:false,approvedOptions:value.mindRecallOptions});
-        // Return just the approved constructor input; no generic app settings.
-        finish(false,value.mindRecallOptions);
+        const approved={mindRecallOptions:value.mindRecallOptions};
+        if(combined)approved.projectSyncOptions=validateNativeProjectSync(value.projectSyncOptions);
+        finish(false,approved);
       }catch{finish(true);}finally{bytes?.fill(0);}
     };
     const errorEvent=()=>finish(true);
@@ -42,12 +47,19 @@ export function readNativeRecallInput(input,{timeoutMs=10000}={}){
   });
 }
 
+export async function readNativeRecallInput(input,options){
+  return (await readNativeInput(input,{...options,allowProjectSync:false})).mindRecallOptions;
+}
+export function readNativeMeshInput(input,options){
+  return readNativeInput(input,{...options,allowProjectSync:true});
+}
+
 export async function startNativeMesh({input=process.stdin,appOptions={},inputTimeoutMs}={}){
-  if(Object.hasOwn(appOptions,'mindRecallOptions') || Object.hasOwn(appOptions,'mindRecallTestOptions'))throw refusal();
-  const mindRecallOptions=await readNativeRecallInput(input,{timeoutMs:inputTimeoutMs});
+  if(['mindRecallOptions','mindRecallTestOptions','projectSyncOptions','projectSyncTestOptions'].some(key=>Object.hasOwn(appOptions,key)))throw refusal();
+  const approved=await readNativeMeshInput(input,{timeoutMs:inputTimeoutMs});
   // Existing startApp owns all Mesh components. The reader is an independent
   // dependency: its failure, exit or pipe closure must not close this app.
-  return startApp({...appOptions,mindRecallOptions});
+  return startApp({...appOptions,...approved});
 }
 
 export async function nativeMain(){

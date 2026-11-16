@@ -33,6 +33,10 @@ def source_paths():
            ROOT/'integrations/native-mind-mesh-entry.mjs',
            ROOT/'integrations/mind-recovery-candidate/recall_process_candidate.py',
            ROOT/'integrations/restart-workroom-preview.ps1'}
+    paths.update(ROOT/'integrations'/name for name in (
+        'project-sync-native-candidate.mjs','project-sync-http-client-candidate.mjs',
+        'project-sync-outbox-candidate.mjs','project-sync-runner-candidate.mjs',
+        'workroom-project-sync-candidate.mjs'))
     for name in ('lib','public'):paths.update((ROOT/name).rglob('*.mjs'))
     return paths
 

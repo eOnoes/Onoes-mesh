@@ -1050,3 +1050,30 @@ project list when database grants change. No live setup or source was installed.
 This advances gates 1/2 for normal same-store service custody and local ownership;
 credential archive recovery/rebinding and full native app/profile wiring remain
 unqualified. It does not release any historical Workroom worker hold.
+
+Native constructor/lifecycle wiring is now implemented in the staged app. A
+combined inherited-pipe frame preserves the independent read-only connection
+while supplying exact source file identity and approved card/field policy to
+the deterministic delivery runner. No source discovery, schema setup, project
+grant, token issuance or link expansion occurs at startup. Missing/substituted
+state refuses startup; later policy drift holds delivery and shared edits while
+unshared work remains usable. Application close waits for the current receipt
+operation before database closure. All participating integration dependencies
+are included in the exact native launch source set.
+
+The focused native journey passed against actual disposable protected writer
+and reader hosts: admitted app save -> durable outbox -> canonical receipt ->
+read-only card state and recall; unchanged ID on offline restart; no private
+description copy; new cards unshared; revoked access held. The full integrated
+suite and expanded source-pinned launch tests are recorded in the private
+checkpoint when complete. This advances constructor-level gates 3/4, not the
+separate service-process/profile and source deployment gates. No live memory
+writer or app startup profile is enrolled by these tests.
+
+Final verification for this native-app slice: 734 full app checks pass (604 Node
+and 130 Python), including 47 project-sync checks. The separate exact native
+launch suite passes all 12 cases in 326.321s against the expanded 94-source set.
+The existing live 88-source profile still matches byte-for-byte and its Mesh
+and read-only reader process identities are unchanged. The initial eight focused
+native/legacy-entry checks also passed; the complete run then added missing-schema
+and runtime policy-drift coverage. No new phone acceptance is claimed.

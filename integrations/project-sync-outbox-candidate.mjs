@@ -191,7 +191,8 @@ export class ProjectOutboxCandidate {
       return {state,eventId:row.eventId};
     } catch(error) {
       // Unknown delivery remains persisted for exact-ID lookup, with no raw error/data log.
-      if(row&&error?.projectSyncHeld===true)this.db.prepare("UPDATE mind_project_outbox SET state='held',reason='remote_refused' WHERE eventId=? AND state='uncertain'").run(row.eventId);
+      if(row&&(error?.projectSyncHeld===true||error?.projectSyncLocalBinding===true))this.db.prepare("UPDATE mind_project_outbox SET state='held',reason=? WHERE eventId=? AND state='uncertain'")
+        .run(error?.projectSyncLocalBinding===true?'local_binding_changed':'remote_refused',row.eventId);
       return row?this._observed(row):{state:'unavailable'};
     } finally {this.inFlight=false;}
   }

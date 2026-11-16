@@ -856,3 +856,41 @@ passes 731 checks. The event/HTTP regression invocation passes 36 executions
 (the discovery invocation includes imported core cases). Initial fixture errors
 were preserved; the corrected final native run exits zero and matches the saved
 working-source hashes. These results are not a live service activation.
+
+## Native Mesh project-sync constructor and lifecycle (staged)
+
+The new version-2 native pipe frame carries the existing read-only reader input
+plus an explicit project-sync descriptor. Legacy read-only frames remain valid;
+the legacy recall-only parser does not accept a combined frame. Both entry paths
+reject caller app-option overrides. Credentials stay in the inherited pipe and
+trusted constructors; no argument, environment or browser configuration enables
+project delivery.
+
+`project-sync-native-candidate.mjs` binds the exact existing Workroom SQLite
+path/device/inode, canonical destination and a bounded list of approved card,
+project, review and field choices. Owner preparation must already have created
+the local schema, links and baseline events. Startup never initializes, repairs
+or silently expands them. It verifies the policy before shared capture, status
+and transport. Source/policy drift holds delivery locally with a distinct reason,
+rolls back shared edits and still allows unshared new cards to be created.
+
+The application starts its serial delivery runner only after the HTTP listener
+starts successfully. Listen/start failures close the runner and store. Normal
+close waits for an in-flight receipt operation before closing SQLite, preserving
+exact IDs and uncertain outcomes. Reader/service failure does not stop ordinary
+card operations. The native launch source set now includes all five participating
+integration modules as well as its existing runtime/public pins.
+
+The disposable integration fixture owns actual protected writer and read-only
+hosts with separate purpose credentials. The native app test exercises admitted
+card HTTP, canonical readback with excluded prose absent, delayed receipt during
+app closure, offline save/reopen with the same event ID, unshared new-card default
+and revocation. Separate guards cover missing schema, substituted source/fields
+and policy drift after startup. This is not production process/profile enrollment
+or live writer approval. Credential archive recovery/rebinding remains open.
+
+Verification: the complete app suite passes 734 checks (604 Node/130 Python),
+including 47 project-sync cases. The separate expanded source/native launch
+suite passes 12 cases in 326.321s with all 94 required source pins. Existing
+legacy read-only pipe and real child/gateway regressions remain passing. Live
+Mesh retains its original 88-source binding; no new runtime profile is installed.

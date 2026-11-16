@@ -31,6 +31,7 @@ import { createNodeProbeReader } from './lib/node-probes.mjs';
 import { createLocalInference, createDisabledLocalAdapter } from './lib/local-inference.mjs';
 import {createRookRuntime} from './lib/workroom-rook.mjs';
 import {writerQuiescenceBlockers} from './lib/workroom-claim-policy.mjs';
+import {prepareNativeProjectSync} from './integrations/project-sync-native-candidate.mjs';
 
 export const ROOT = path.dirname(fileURLToPath(import.meta.url));
 export async function confinedPath(value) {
@@ -101,10 +102,11 @@ async function activity(registryPath) {
     return await readWorkerActivity({ registryPath, nowIso: new Date().toISOString(), staleAfterMs: 600000 });
   } catch { return snapshot('unavailable'); }
 }
-export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, mindRecallOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, projectSyncTestOptions, nativeWorkerOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
+export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, mindRecallOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, projectSyncTestOptions, projectSyncOptions, nativeWorkerOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
   // Process configuration only. Standalone wins over ambient Relay enablement
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
+  if(projectSyncOptions!==undefined&&projectSyncTestOptions!==undefined)throw Error('Conflicting project sync configuration.');
   if(projectSyncTestOptions!==undefined&&(!standalone||!/^test[\\/]app03-[A-Za-z0-9_-]+$/.test(dataDir)||
     projectSyncTestOptions?.source!=='disposable_fixture'||typeof projectSyncTestOptions?.factory!=='function'||
     Object.keys(projectSyncTestOptions).sort().join(',')!=='factory,source'))throw Error('Project sync seam is isolated fixture testing only.');
@@ -156,6 +158,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const directory = await confinedPath(dataDir);
   const release = releaseInfo(ROOT, dataDir);
   const filename = await confinedPath(path.join(directory, 'tasks.sqlite'));
+  const nativeProjectSync=prepareNativeProjectSync(projectSyncOptions,{filename,standalone});
   const configuredRegistry = registryPath ? await confinedPath(registryPath) : undefined;
   if (configuredRegistry && !configuredRegistry.startsWith(directory + path.sep)) throw new Error('Registry must be in the owned synthetic subtree.');
   const manager = createTrialSessionManager({ ttlMs: sessionTtlMs, maxSessions: 32, ...(sessionNow ? { now: sessionNow } : {}) });
@@ -164,7 +167,8 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const executions = new Set();
   const activeRuns = new Map();
   let executionPersistenceFailed = false;
-  try { store = openTaskStore(filename,projectSyncTestOptions?{projectSyncFactory:projectSyncTestOptions.factory}:{}); } catch { /* Preserve invalid data; serve a visible failure. */ }
+  try { store = openTaskStore(filename,nativeProjectSync?{projectSyncFactory:nativeProjectSync.factory}:projectSyncTestOptions?{projectSyncFactory:projectSyncTestOptions.factory}:{}); }
+  catch { await nativeProjectSync?.close();if(nativeProjectSync)throw Error('Native project-sync storage unavailable; preserve data.');/* Preserve invalid data; serve a visible failure. */ }
   // No production identity/transport is enrolled here. Activation is a separate owner gate.
   const rookRuntime = store ? createRookRuntime({store: store.workroom.rook, flow: store.workroom.flow,
     board: () => store.workroom.list(), ...rookRuntimeTestOptions,
@@ -510,8 +514,8 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\nCache-Control: no-store\r\nPragma: no-cache\r\nContent-Length: 0\r\nConnection: close\r\n\r\n');
     else socket.destroy();
   });
-  try { await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); }); }
-  catch (e) { await nativeWorker?.close().catch(()=>{});await teamRunner?.close();await rookRuntime?.close();await localInference.close?.();modelDatabase?.close();await relay.close(); store?.close(); throw e; }
+  try { await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });nativeProjectSync?.start(); }
+  catch (e) { if(server.listening){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}await nativeProjectSync?.close();await nativeWorker?.close().catch(()=>{});await teamRunner?.close();await rookRuntime?.close();await localInference.close?.();modelDatabase?.close();await relay.close(); store?.close(); throw e; }
   guard = createTrialHttpGuard({ manager, port: server.address().port });
   rookRuntime?.start();
   return { server, rookRuntime, dispatch: store?.workroom.dispatch, mode: standalone ? 'standalone' : 'mesh', url: `http://127.0.0.1:${server.address().port}`, close: async () => {
@@ -519,7 +523,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     server.closeAllConnections(); await closed;
     let nativeCloseFailed=false;
     try { await nativeWorker?.close(); } catch { nativeCloseFailed=true; }
-    await rookRuntime?.close();await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]);await localInference.close?.();modelDatabase?.close(); store?.close();
+    await rookRuntime?.close();await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]);await localInference.close?.();await nativeProjectSync?.close();modelDatabase?.close(); store?.close();
     if(nativeCloseFailed)throw new Error('Native worker transport cleanup could not be confirmed.');
   } };
 }
