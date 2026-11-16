@@ -1171,3 +1171,61 @@ The corrected run used a fresh disposable copy. This is installed-layout evidenc
 not production activation or recovery of a live credential. The encrypted-backup
 password window and exact conditional-revocation/read-only rollback handoff still
 precede the owner decision. No live source, store, keys or access were changed.
+
+
+## Prepared populated-store backup (candidate, not installed)
+
+`project_backup_candidate.py` consumes a separately approved, already-published
+snapshot. It reuses the pinned encrypted exporter, hidden archive-password reader,
+archive key package and protected offline restorer. It does not open the source
+ledger, create keys or credentials, initialize an empty store, start a service,
+change the live binding or apply recovered data. Snapshot publication remains a
+separate trusted-producer operation: it records the snapshot in the independent
+current authority and must be covered by the later owner window.
+
+The source, archive staging and rehearsal folders must be private and separate;
+staging/rehearsal must be empty. Existing archives and failed artifacts remain.
+The new finisher supports populated stores and checks an exact local digest of
+all recovered project receipt rows before recording success. It returns counts,
+hashes and archive location, not record text, receipt IDs, passwords or tokens.
+It explicitly reports `credentialRecoveryQualified:false`; same-account archive
+key readback does not prove a lost project credential can be recovered.
+
+Four focused checks pass in 85.471s, using synthetic private stores and uniquely
+named encrypted E: archives. They verify hidden password confirmation/echo refusal,
+pre-write refusal for invalid review or nonempty recovery folder, two populated
+project receipts plus a later purge remaining hidden through search/receipt APIs,
+and refusal to report success after recovered receipts differ. The first run's
+incorrect physical-row deletion assertion is retained; it was corrected to test
+purged visibility while keeping the expected provenance rows.
+
+### First-write conditional rollback sequence (reviewed, not yet composed)
+
+1. Recheck the exact card/source revisions, current process identities, source
+   pins and fresh output paths. Finish an approved pre-write encrypted snapshot
+   and recovery rehearsal before issuing new project access.
+2. Stop only the identified Mesh instance. Apply the exact finite code overlay;
+   keep the already-approved reader bytes and credential unchanged. Record the
+   project operator's exact setup outcome before preparing the source link and
+   launching the separately owned project service and native Mesh child.
+3. On qualification failure, stop further sends by retiring only the owned Mesh
+   child through its retained handle and confirm retirement. Request project
+   service stop through its exact profile/run identity, wait its retained handle
+   and check matching terminal ownership state. A timeout is not retirement.
+4. Only after that writer is retired, use the exact new project's reviewed
+   revocation profile. Require its matching operation/outcome and original-handle
+   terminal proof. An unknown setup/launch/stop/revocation outcome keeps the hold;
+   do not recreate credentials, relaunch, infer success or clean up the evidence.
+5. With both runtime owners retired, use the overlay's separate exact rollback
+   approval and original before-images. Keep project events, receipts, source
+   tables, outbox and canonical Mind facts. Do not restore an older database or
+   authority as part of code rollback, and do not revoke the existing reader.
+6. Launch the read-only fallback with a fresh, source-matching profile and new
+   attempt/log paths. Recheck read-only connection and disabled project delivery.
+   If any required identity/hash/terminal proof is missing, retain the hold and
+   report the exact step; no broad process stop or automatic retry is allowed.
+
+The secure owner window, trusted-producer snapshot composition, post-success
+backup/relaunch profiles and this combined failure/rollback path still need their
+concrete handoff and composed acceptance check. Existing six metadata profiles
+are drafts, not activation permission. No live action is authorized by this file.
