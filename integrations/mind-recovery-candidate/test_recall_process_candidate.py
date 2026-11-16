@@ -9,6 +9,12 @@ import subprocess
 import sys
 import time
 import unittest
+import queue
+import threading
+import urllib.request
+import urllib.error
+import uuid
+import hashlib
 from unittest.mock import patch
 
 from onoes_mind.ledger import Ledger
@@ -126,11 +132,50 @@ class NativeRoleProcessTests(unittest.TestCase):
             capture_output=True,text=True,timeout=15,creationflags=subprocess.CREATE_NO_WINDOW)
         self.assertEqual(result.returncode,0,result.stderr);response=json.loads(result.stdout)
         self.assertTrue(response['ok']);self.assertEqual(response['result']['records'],[])
+        # Launch the real application through the fixed inherited-input entry.
+        # No secret argument/environment/file; the writer keys remain parked.
+        env=dict(os.environ,MESH_PORT='0',MESH_DATA_DIR='data/native-process-'+uuid.uuid4().hex,
+                 MESH_RELAY='0',MESH_RELAY_MODE='child',MESH_MODEL_OBSERVATION='0',
+                 MESH_NEMOTRON_CONTROL='0',MESH_SIMPLE_FLOW='0',MESH_NIMS='0',
+                 MESH_PREVIEW_PORT='0',MESH_GATE_TOKEN='synthetic-gateway-token')
+        env.pop('MESH_STANDALONE',None)
+        for name in ('MESH_NATIVE_WORKER_RECORD','MESH_NATIVE_WORKER_RECORD_SHA256',
+                     'MESH_TAILSCALE_LOGIN','MESH_TAILSCALE_HOST'):env.pop(name,None)
+        app=subprocess.Popen([shutil.which('node'),'serve.mjs','--native-mind'],
+            cwd=Path(__file__).resolve().parents[2],env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,text=True,creationflags=subprocess.CREATE_NO_WINDOW)
+        self.children.append(app)
+        app.stdin.write(json.dumps(dict(schema='onoes-mesh-native-recall-input/v1',mindRecallOptions=options)))
+        app.stdin.close()
+        readiness=queue.Queue()
+        threading.Thread(target=lambda:readiness.put(app.stdout.readline()),daemon=True).start()
+        line=readiness.get(timeout=20)
+        self.assertNotIn(options['token'],line)
+        app_state=json.loads(line);self.assertEqual(app_state['event'],'mesh_listening')
+        self.assertEqual(app_state['pid'],app.pid)
+        url=app_state['previewUrl']
+        gate_cookie='mesh_session='+hashlib.sha256(b'mesh-cookie:synthetic-gateway-token').hexdigest()
+        bootstrap=urllib.request.Request(url+'/api/trial-session/bootstrap',data=b'{}',
+            headers={'Origin':url,'Content-Type':'application/json','Cookie':gate_cookie},method='POST')
+        with urllib.request.urlopen(bootstrap,timeout=10) as boot:
+            cookie=gate_cookie+'; '+boot.headers['Set-Cookie'].split(';')[0];csrf=json.load(boot)['csrfToken']
+        def request(path,body=None):
+            return urllib.request.urlopen(urllib.request.Request(url+path,
+                data=json.dumps(body).encode() if body is not None else None,
+                headers={'Origin':url,'Content-Type':'application/json','Cookie':cookie,'X-Trial-CSRF':csrf}),timeout=10)
+        with request('/api/mind/recall',dict(query='fixture',limit=8)) as response:
+            self.assertEqual(json.load(response)['records'],[])
         with self.assertRaises(roles.RoleError):roles.launch_reader(self.reader,self.reader_sha,self.approval)
         roles.request_stop(self.reader,self.reader_sha,self.approval)
         self.assertEqual(reader.wait(timeout=15),0)
         state=roles.reader_state(self.reader,self.reader_sha,self.approval)
         self.assertFalse(state['processLive']);self.assertEqual(state['state'],'stopped')
+        with self.assertRaises(urllib.error.HTTPError) as denied:request('/api/mind/recall',dict(query='fixture',limit=8))
+        self.assertEqual(denied.exception.code,503)
+        self.assertNotIn(options['token'],denied.exception.read().decode());denied.exception.close()
+        with request('/api/tasks') as tasks:self.assertIsInstance(json.load(tasks)['tasks'],list)
+        self.assertIsNone(app.poll(),'Reader shutdown must not stop Mesh')
+        app.terminate();app.wait(timeout=15);app.stdout.close()
         self.assertFalse(self.key_package.exists());self.assertTrue(parked.exists())
 
     def test_reader_refuses_fake_terminal_receipt_for_a_still_live_process(self):

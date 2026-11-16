@@ -1,5 +1,33 @@
 # Onoes-Mind setup readiness
 
+## Inactive native Mesh and phone-gateway bootstrap
+
+The full local suite passed 687 checks (557 Node and 130 Python), including six
+new inherited-input/bootstrap checks. All 2,342 participating source files were
+stable during the final run. A separate composed Windows test passed in 119.475
+seconds: the protected fixture operator exits, the fresh reader starts while the
+integrity-key package is unavailable, and the actual phone gateway reads the
+canonical synthetic ledger. Stopping that reader produces a clear recall 503
+while Mesh continues serving saved tasks.
+
+The thin entry accepts one bounded versioned UTF-8 frame through inherited stdin,
+requires EOF and refuses malformed, widened, duplicate-frame or unfinished input.
+No memory token travels through arguments, environment, readiness output or UI.
+The existing serve.mjs gateway has an explicit --native-mind opt-in and retains
+its browser-cookie/session behavior. Normal startup remains disconnected.
+
+Earlier gateway test failures came from an incorrect unauthenticated status
+expectation and use of a gate bearer header instead of the existing browser
+cookie protocol. Corrected tests pass; authentication guards were not loosened.
+
+This is not installed live. The existing named owner launcher still needs the
+approved reader/profile/source binding and inherited-input wiring. Real service
+provisioning and a Mesh-only reload require a concrete owner approval. No real
+store, key, grant, credential, startup setting or running service changed. No PC
+restart is planned. Shared cross-project facts remain the selected scope; private
+agent memory remains excluded.
+
+
 ## Inactive independent operator-to-reader handoff
 
 Six Windows TEMP tests passed in 203.221 seconds. The named one-shot operator
