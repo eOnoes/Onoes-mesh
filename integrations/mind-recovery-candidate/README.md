@@ -894,3 +894,45 @@ including 47 project-sync cases. The separate expanded source/native launch
 suite passes 12 cases in 326.321s with all 94 required source pins. Existing
 legacy read-only pipe and real child/gateway regressions remain passing. Live
 Mesh retains its original 88-source binding; no new runtime profile is installed.
+
+## One-shot project-service setup and reviewed replacement (inactive)
+
+`provision_project_sync_candidate.py` prepares a purpose service only when a
+privileged caller supplies exact owner approval, protected canonical ownership,
+project choices and new private credential/outcome paths. It reserves and syncs
+the outcome file before changing the database. First setup explicitly creates
+the candidate schema, project registrations and purpose credential; it does not
+start a service. A database administration registry binds operation IDs to the
+request hash and prevents repeated replacement under an existing operation ID.
+Current candidate initialization includes this registry. An older candidate
+without it is refused by replacement; there is no implicit migration.
+
+After an approved store restore, a separate `replace` operation requires freshly
+reviewed project choices and a new file binding. It increments the canonical
+service epoch and generates a new verifier/token while preserving existing
+project grants, memory records, provenance and event receipts. The reserved
+operation is consumed in the same transaction as replacement. Protected storage
+failure leaves it unknown and cannot silently replay the credential change.
+Old tokens and old binding envelopes are refused. The existing read-only
+principal, credential and scope grants are unchanged.
+
+Eight final Windows tests pass (335.239s): first setup, existing-marker/pending
+authority refusal, partial-setup preservation, replacement after revocation,
+duplicate-operation refusal, active-service lock refusal, consumed failed
+replacement and protected snapshot recovery retaining later deletion and the
+original receipt ID. Explicit revocation invalidates only the purpose service,
+preserving the reader, facts, receipts and encrypted credential file. Failure
+after the epoch change leaves a consumed unknown operation without reissue.
+The service remains inactive throughout preparation. All 734 app checks and
+36 event/HTTP regression executions also pass for the changed event boundary.
+
+This is neither owner consent nor a recovery launcher. The caller must retain
+independent current deletion/owner-operation evidence, reapprove the permitted
+projects and qualify prior runtime retirement before activation. A restored
+database is not evidence of today's grants or complete historical operations.
+The local registry and referenced outcome records prevent repeated local
+attempts; they do not reconstruct lost post-backup history. Existing/partial
+files are preserved. The separate `revoke_project_service` operation records one
+reviewed canonical epoch invalidation after service retirement. No automatic
+retry, cleanup, grant expansion, ordinary credential, integrity-key rotation,
+new memory fact or service activation is provided.

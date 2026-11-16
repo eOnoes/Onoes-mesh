@@ -1077,3 +1077,31 @@ The existing live 88-source profile still matches byte-for-byte and its Mesh
 and read-only reader process identities are unchanged. The initial eight focused
 native/legacy-entry checks also passed; the complete run then added missing-schema
 and runtime policy-drift coverage. No new phone acceptance is claimed.
+
+Owner preparation and service recovery now have a qualified inactive slice.
+The one-shot privileged function reserves a durable outcome before schema/grant
+changes and records each operation ID/request hash in the canonical candidate
+database. Initial setup creates only registered projects and purpose access.
+Reviewed replacement after restore supplies a fresh binding and project approval,
+rotates only the project-service epoch/verifier and seals a new token; receipts,
+retained deletion evidence and the separate read-only identity remain intact.
+Reserved replacement is consumed with the credential transaction, so a later
+protected-file failure remains unknown and cannot silently repeat that operation.
+An active owned service blocks preparation through its Windows lifetime lock.
+
+All six focused Windows preparation/recovery cases pass in 256.096s. This
+qualifies same-PC protected reissuance with independent current authority retained,
+not automatic recovery of archived credentials, lost owner/revocation history or
+an old runtime. No service is started and no live grant, key or database changed.
+Remaining before a live proposal: source-pinned service/operator process profiles,
+exact enrollment/retirement and conditional revocation, a complete deployment
+and backup/rollback handoff, and separate owner approval for actual writes.
+
+Final owner-lifecycle qualification on 2026-11-16 expands that run to eight
+passing Windows cases in 335.239s. Conditional revocation is now implemented:
+it changes only the canonical project-service epoch, retains existing files,
+facts and receipts, and preserves the read-only identity. The reserved operation
+is consumed with the revocation transaction; a later completion failure remains
+unknown without issuing another credential or enabling a runtime. The complete
+734-check app run and 36 event/HTTP executions pass. These operations still
+require a separately approved privileged process/profile before live use.

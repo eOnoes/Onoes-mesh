@@ -171,6 +171,7 @@ class ProjectEventsCandidate:
         statements = [
             "CREATE TABLE project_sync_format(singleton INTEGER PRIMARY KEY CHECK(singleton=1),version INTEGER NOT NULL CHECK(version=2))",
             "INSERT INTO project_sync_format VALUES(1,2)",
+            "CREATE TABLE project_sync_admin_operations(operation_id TEXT PRIMARY KEY,request_hash TEXT NOT NULL,mode TEXT NOT NULL,state TEXT NOT NULL CHECK(state IN ('reserved','complete','unknown')))",
             "CREATE TABLE project_sync_projects(project_id TEXT PRIMARY KEY,label TEXT NOT NULL,deleted INTEGER NOT NULL DEFAULT 0 CHECK(deleted IN (0,1)))",
             "CREATE TABLE project_sync_credentials(principal_id TEXT PRIMARY KEY REFERENCES principals(principal_id),salt TEXT NOT NULL,verifier TEXT NOT NULL,epoch INTEGER NOT NULL)",
             "CREATE TABLE project_sync_grants(principal_id TEXT NOT NULL REFERENCES principals(principal_id),project_id TEXT NOT NULL REFERENCES project_sync_projects(project_id),active INTEGER NOT NULL CHECK(active IN (0,1)),PRIMARY KEY(principal_id,project_id))",
@@ -209,6 +210,39 @@ class ProjectEventsCandidate:
             epoch = self.db.execute("SELECT credential_epoch FROM principals WHERE principal_id=?", (PRINCIPAL,)).fetchone()[0]
             self.db.execute("INSERT INTO project_sync_credentials VALUES(?,?,?,?)", (PRINCIPAL, salt, verifier, epoch))
             self.db.executemany("INSERT INTO project_sync_grants VALUES(?,?,1)", [(PRINCIPAL, p) for p in project_ids])
+        return token
+
+    def replace_credential(self, project_ids, operation_id):
+        """Privileged owner recovery only; never exposed by the event HTTP API."""
+        require(type(project_ids) is tuple and 1 <= len(project_ids) <= 8
+                and all(identifier(p) for p in project_ids)
+                and tuple(sorted(set(project_ids))) == project_ids and identifier(operation_id),
+                "Explicit reviewed replacement required.")
+        token = secrets.token_urlsafe(32)
+        salt, verifier = _hash_password(token)
+        with self.lock, self._history_guard(), self.ledger._transaction(immediate=True):
+            self._binding(); self._format()
+            row = self.db.execute("SELECT p.kind,p.credential_epoch,c.epoch FROM principals p JOIN project_sync_credentials c USING(principal_id) WHERE p.principal_id=?", (PRINCIPAL,)).fetchone()
+            require(row is not None and row[0] == 'service' and row[1] >= row[2],
+                    "Existing purpose service required.")
+            require(not self.db.execute("SELECT 1 FROM credentials WHERE principal_id=?", (PRINCIPAL,)).fetchone()
+                    and not self.db.execute("SELECT 1 FROM scope_grants WHERE principal_id=?", (PRINCIPAL,)).fetchone(),
+                    "Ordinary credential collision.")
+            if self.db.execute("SELECT 1 FROM sqlite_schema WHERE name='recall_service_credentials'").fetchone():
+                require(not self.db.execute("SELECT 1 FROM recall_service_credentials WHERE principal_id=?", (PRINCIPAL,)).fetchone(),
+                        "Ordinary credential collision.")
+            active = tuple(r[0] for r in self.db.execute("SELECT project_id FROM project_sync_grants WHERE principal_id=? AND active=1 ORDER BY project_id", (PRINCIPAL,)))
+            require(active == project_ids, "Explicit reviewed projects differ from existing grants.")
+            for project in project_ids:
+                require(self.db.execute("SELECT 1 FROM project_sync_projects WHERE project_id=? AND deleted=0", (project,)).fetchone(), "Project is deleted.")
+            operation = self.db.execute("SELECT mode,state FROM project_sync_admin_operations WHERE operation_id=?", (operation_id,)).fetchone()
+            require(operation is not None and tuple(operation) == ('replace', 'reserved'),
+                    "Reserved owner operation required.")
+            self.ledger.rotate_credentials(PRINCIPAL)
+            epoch = self.db.execute("SELECT credential_epoch FROM principals WHERE principal_id=?", (PRINCIPAL,)).fetchone()[0]
+            self.db.execute("UPDATE project_sync_credentials SET salt=?,verifier=?,epoch=? WHERE principal_id=?", (salt, verifier, epoch, PRINCIPAL))
+            self.db.execute("UPDATE project_sync_admin_operations SET state='unknown' WHERE operation_id=?", (operation_id,))
+            self.ledger._audit('project_service_credential_replaced', PRINCIPAL, operation_id)
         return token
 
     def _authorize(self, token, project):
