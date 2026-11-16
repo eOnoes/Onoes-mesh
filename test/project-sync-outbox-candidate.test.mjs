@@ -124,7 +124,7 @@ test('next committed card revision produces an ordered replacement snapshot',asy
   f.transaction(()=>{f.db.prepare('UPDATE tasks SET description=?,revision=revision+1 WHERE id=?').run('Revised guide goal',f.card.id);f.queue.capture(f.card.id,'progress');});
   assert.equal((await f.queue.drainOne(m.transport)).state,'saved');
   assert.deepEqual(f.queue.status(f.card.id).map(r=>r.sequence),[1,2]);
-  assert.deepEqual(await m.rpc({op:'stats'}),{records:2,receipts:2});
+  assert.deepEqual(await m.rpc({op:'stats'}),{records:1,receipts:2});
 });
 
 test('held first event prevents sending later revisions of that card',async t=>{

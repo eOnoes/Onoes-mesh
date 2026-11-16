@@ -110,7 +110,7 @@ class ProjectEventsServerCandidate:
                         return self.error(401, "unauthorized")
                     if message == "Project not permitted.":
                         return self.error(403, "project_not_permitted")
-                    if message.startswith("Store ") or message in {"Canonical receipt binding mismatch.", "Shared storage unavailable."}:
+                    if message.startswith("Store ") or message in {"Canonical receipt binding mismatch.", "Shared storage unavailable.", "Deletion authority unavailable.", "Project-event format unavailable."}:
                         return self.error(503, "unavailable")
                     if message in {"Event payload conflict.", "Card project conflict.", "Event sequence conflict.",
                                    "Stale source revisions.", "Project is deleted.", "Deleted card history blocks replay.",

@@ -35,8 +35,10 @@ def event(sequence=1, **overrides):
 class ProjectEventsTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.path = Path(self.temp.name) / "synthetic.sqlite"
-        self.ledger = Ledger(self.path)
+        self.addCleanup(self.temp.cleanup)
+        self.path = Path(self.temp.name).resolve() / "synthetic.sqlite"
+        self.ledger = Ledger(self.path, environment_id="synthetic")
+        self.addCleanup(lambda: self.ledger.close())
         store_id = prepare_store_identity(self.ledger, environment="synthetic",
                                           authority_ref="synthetic-owner")
         stat = self.path.stat()
@@ -62,7 +64,7 @@ class ProjectEventsTests(unittest.TestCase):
         self.assertEqual(self.count("provenance_refs"), 1)
         self.assertTrue(self.ledger.verify_audit_chain())
         self.ledger.close()
-        self.ledger = Ledger(self.path)
+        self.ledger = Ledger(self.path, environment_id="synthetic")
         self.writer = ProjectEventsCandidate(self.ledger, self.binding)
         self.assertEqual(receipt, self.writer.lookup(self.token, project_id="project-A", event_id="event-1"))
 
@@ -85,7 +87,9 @@ class ProjectEventsTests(unittest.TestCase):
         self.writer.submit(self.token, event())
         self.writer.submit(self.token, event(2))
         states = [r[0] for r in self.ledger.db.execute("SELECT state FROM memory_records ORDER BY rowid")]
-        self.assertEqual(states, ["superseded", "active"])
+        self.assertEqual(states, ["active"])
+        revisions = self.ledger.db.execute("SELECT is_current FROM memory_revisions ORDER BY revision_id").fetchall()
+        self.assertEqual([r[0] for r in revisions], [0, 1])
         self.assertEqual(self.count("memory_fts"), 1)
         self.assertEqual(self.writer.lookup(self.token, project_id="project-A", event_id="event-1")["recordState"], "superseded")
         self.assertEqual(self.count("receipts"), 2)
@@ -149,7 +153,7 @@ class ProjectEventsTests(unittest.TestCase):
         self.assertEqual(self.count("submission_events"), 0)
 
     def test_concurrent_connections_bind_same_event_once(self):
-        other = Ledger(self.path)
+        other = Ledger(self.path, environment_id="synthetic")
         second = ProjectEventsCandidate(other, self.binding)
         barrier = threading.Barrier(2)
         outcomes, failures = [], []
@@ -205,7 +209,8 @@ class ProjectEventsTests(unittest.TestCase):
             self.writer.submit(self.token, corrected)
             found = reader.search(token, "Synthetic")
             self.assertEqual(len(found), 1)
-            self.assertNotEqual(found[0]["record_id"], original[0]["record_id"])
+            self.assertEqual(found[0]["record_id"], original[0]["record_id"])
+            self.assertIn("Corrected synthetic goal", found[0]["claim"])
             self.assertEqual(found[0]["provenance"][0]["content_hash"], "sha256:corrected")
         finally:
             reader.close()

@@ -753,3 +753,43 @@ compatibility. Run with canonical Mind on PYTHONPATH:
 No real grants or credentials were created. The future one-shot operator process
 must exit before a fresh read-only service process; no integrity/write keys may
 be passed into that service. Process retirement/launch enrollment remain open.
+
+## Project-event recovery qualification (staged, 2026-11-15)
+
+The disconnected event writer now uses one stable canonical record per card,
+with canonical revisions and a receipt bound to each accepted revision. Its
+explicit storage format is version 2; existing candidate schemas are refused,
+not silently migrated. The stable `mesh-project-card/v2` identity namespace must
+remain unchanged across future format migrations so retained deletion evidence
+continues to match old cards.
+
+A regression reproduced resurrection after restoring a snapshot taken before
+card creation: randomly generated record IDs could evade a later tombstone on
+replay. The writer now checks authenticated retained deletion history against
+the stable card identity before accepting any new event. Protected hosts hold
+the current independent authority lease before the database transaction, using
+the same lock order as managed purge. Missing, rolled-back or pending deletion
+authority blocks operations. Receipts retain their original IDs and report
+superseded/purged state without claiming continued retention.
+
+Verification: 725 app checks, 22 separate event-core/HTTP checks and seven
+explicit recovery checks passed. The recovery suite covers snapshots both
+before and after card creation, receipt/provenance continuity, later deletion,
+unresolved purge, history rollback and refusal of an unmarked format. It also
+exports and restores an actual encrypted, clearly labeled synthetic archive on
+E: while its original fixture database, history and backup inputs are unavailable.
+Archived integrity keys restore the snapshot; the independently retained current
+authority still prevents deleted content from returning. Unrelated retained
+content survives and both original event receipts remain identifiable.
+
+Run the explicit recovery suite with canonical Mind source on PYTHONPATH:
+
+    python -m unittest discover -s integrations/mind-recovery-candidate -p test_project_sync_recovery_candidate.py -v
+
+This is synthetic recovery evidence, not live writer approval or full-machine
+loss recovery. The encrypted test retains a synthetic service token in memory;
+purpose-credential custody/recovery and runtime re-enrollment remain unqualified.
+No live database, grants, keys, services or launch profiles were changed. The
+first phone-accepted live reader remains read-only; project-event delivery stays
+off. A fresh complete source/runtime proposal must replace the superseded source
+refresh draft before any deployment or separately approved live writer setup.

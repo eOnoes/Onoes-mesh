@@ -28,12 +28,12 @@ with ExitStack() as stack:
         temp = str(root)
     else:
         temp = stack.enter_context(tempfile.TemporaryDirectory(prefix="mesh-project-sync-fixture-"))
-    path = Path(temp) / "synthetic.sqlite"
+    path = Path(temp).resolve() / "synthetic.sqlite"
     state_file = Path(temp) / "synthetic-access.json"
     state = json.loads(state_file.read_text()) if persistent and state_file.exists() else None
     if path.exists() != (state is not None):
         raise ValueError("Refuse unknown fixture state.")
-    ledger = Ledger(path)
+    ledger = Ledger(path, environment_id="synthetic")
     try:
         store = state["storeId"] if state else prepare_store_identity(ledger, environment="synthetic", authority_ref="synthetic-owner")
         stat = path.stat()
