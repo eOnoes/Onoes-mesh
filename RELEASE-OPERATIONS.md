@@ -5,24 +5,26 @@
 First local release: **18/21 complete**. The wider Onoes-Mesh goal is unfinished.
 The prepared Node app source passed **687 local checks (557 Node +130 Python)**.
 Later operator/launcher/revocation checks are separate focused qualifications,
-not proof of a live memory connection or a completed production team workflow.
+not proof of a completed production team workflow. Actual first read-only memory
+connection evidence is recorded separately below.
 
 Phone Workroom and Relay history acceptance are preserved. The named live Mesh
-owner was checked healthy without a restart. Current model-manager controls
+owner was reloaded once under the approved first Mind connection. Current model-manager controls
 remain unqualified. Eight historical writer holds still block production team
 enrollment; no recovery window or PC restart is authorized while Eddie's other
 projects are building.
 
-Mind's real empty canonical store, protected recovery keys and encrypted first
-backup/rehearsal are complete. The read-only connector, native launcher and
-revocation path are tested and published. The exact first live enrollment packet
-is awaiting Eddie's approval; admitted live Mind status remains not_configured.
-This build has not enrolled a live memory credential, private-agent access or worker.
+Mind's first canonical shared read-only connection is now locally qualified and
+accepted on Eddie's phone. One dedicated reader sees deliberately shared project
+facts, with no write permission or ordinary writer credential. The first query
+correctly returned no records. Only Mesh reloaded; all cards/old send-claim data
+and non-Mesh service owners were preserved. See MIND-SETUP-READINESS.md.
 
-The existing owner-visible progress card is refreshed in place through the normal
-admitted API. Only its result/evidence changed (progress revision85 ->86); its
-goal, checklist, review and lane, the other14cards and all21send rows are unchanged.
-The dispatch gate stays paused. This is a progress update, not task dispatch.
+The first no-write child import failure is preserved. A profile-based source
+bootstrap fix passed 12 clean-environment checks before the corrected continuation.
+The existing parent progress card records the accepted read-only milestone at
+revision 87. Wider memory writing, context sync, skills/MCP and external stages
+remain unfinished. The local release score stays 18/21.
 
 ### Running checklist
 
@@ -33,7 +35,7 @@ The dispatch gate stays paused. This is a progress update, not task dispatch.
   manager now observed on the PC. Its binary/source binding and controls remain
   unverified. Other model profiles and machines remain later work.
 - [x] Manual/milestone source and data backups on E:, including actual isolated
-  restore checks. The latest data snapshot contains 15 cards and progress revision86;
+  restore checks. The latest verified data snapshot contains 15 cards and progress revision 87;
   all eight checks passed, including the restored phone gateway. This is a second
   drive, not off-device protection.
 - [x] Standalone recovery and restore handoff built and locally qualified.
@@ -88,9 +90,9 @@ change occurred, and the memory approval packet still matches and is unapplied.
 Next evidence is the existing exact build/startup receipt and intended engine
 binding from the runtime maintainer. Read-only status qualification precedes
 model controls. Local source audit or successful compilation alone does not
-complete this gate. The local release score stays18/21.
+complete this gate. The local release score stays 18/21.
 
-### Latest checklist and backup correction
+### Earlier checklist and backup correction
 
 The progress card "Finish Onoes-Mesh - all assessed stages" now separates accepted
 phone behavior, completed empty-store/recovery setup, tested-but-inactive memory
@@ -202,11 +204,11 @@ keys and the encrypted E: first-setup archive/rehearsal are complete. The earlie
 "no database/keys created" planning state is superseded by that approved setup.
 MIND-SETUP-READINESS.md carries its current evidence and historical records.
 
-The first proposed Mesh service sees only deliberately shared facts across
-projects. Its dedicated read-only credential, independent loopback reader,
-source/profile-bound named launcher and separately approved revocation are locally
-qualified. Live enrollment is not approved or activated. The reader is not a
-second memory authority and does not ingest chats or Workroom events.
+The first Mesh service now reads only deliberately shared facts across projects.
+Its dedicated purpose credential, independent loopback reader and source-bound
+named Mesh launcher are locally qualified and phone accepted. The service has no
+write grant. Revocation remains a separately scoped protected operation. No chat
+or Workroom event ingestion, new writer identity or login scheduler is enabled.
 
 Shared context across Relay/optional Telegram, linked project history, shared
 skills/MCP tooling and external-app integrations remain unfinished. After local

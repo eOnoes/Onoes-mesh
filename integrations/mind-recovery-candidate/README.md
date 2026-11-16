@@ -1,5 +1,38 @@
 # Inactive Mind checkpoint-recovery candidate
 
+## First live shared read-only connection - phone accepted
+
+Eddie approved the first canonical shared-facts connection and conditional
+rollback. It is now locally qualified and accepted on his actual phone: Check
+memory connection and Read matching memories return the expected empty result.
+The service has one fixed read-only project/onoes-mind/shared grant, one purpose
+credential, zero ordinary writer credentials and zero memory records. Agent-private
+memory remains excluded. No project facts or conversation history were seeded.
+
+The protected operator exited before the independent reader started. Only Mesh
+was reloaded. All 15 cards and 21 send rows plus claim/dispatch data were unchanged;
+Echo/Relay, DSH and the model manager retain their exact original owners. The
+existing parent build card now records this milestone at progress revision 87.
+Unauthenticated reads reject 401; caller scope/config widening rejects 400.
+
+The first process stopped before provisioning because it lacked ambient
+PYTHONPATH. Read-only service metadata confirmed no access was created. Its
+attempt/profile/approval records remain intact. The corrected entry resolves
+only the profile-selected canonical package after all source hashes pass. Twelve
+clean-environment role/launcher checks passed, including absent/spoofed paths and
+the full synthetic enrollment, gateway and revocation cycle. The deliberately
+recorded corrected continuation kept the same approved scope and credential
+target. Rollback was not needed and no rollback approval file was created.
+
+This is read-only recall, not shared-context ingestion or MCP/tool activation.
+The reader is manually owned; no login task/automatic recovery was enrolled.
+The encrypted first-setup archive remains the empty-store baseline. Qualify the
+updated encrypted backup/restore before admitting durable memory writes.
+Eight old writer holds, production team enrollment and the wider goal remain
+unfinished. Next: the requested read-only audit of a small deterministic
+Workroom-to-Mind project/status link before proposing live write permissions.
+
+
 ## Inactive revocation and concrete enrollment packet
 
 Twelve focused checks passed: one composed Windows process/gateway scenario,
