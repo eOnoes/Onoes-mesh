@@ -71,6 +71,32 @@ No production app, permission, startup task or credential was changed. Wiring th
 existing Ensure route, handling writer/reader crashes, disconnected capture/catch-up
 and clear stale status remain required. The full local release stays 18/21.
 
+## Opt-in normal Ensure recovery - qualified, not deployed
+
+Thirty focused checks passed across lifecycle, retirement, approval boundaries and
+legacy launcher behavior. The actual PowerShell Ensure route then passed in a
+separately copied synthetic workspace in 948.056 seconds, including cleanup.
+Its five runtime fingerprints and full scenario source match the current candidate.
+The first copied fixture lacked its ignored data directory and stopped during
+setup before launching any test service; that failed run is retained separately.
+
+A healthy tick kept the exact gateway. After its test-owned crash, Ensure reused
+the same approved profile, writer identity and grant, preserving original source
+receipts. Simulated loss of owner publication reconciled the already-running
+replacement without another launch. Repeated Ensure kept that replacement. When
+the writer was deliberately stopped, Ensure reported held and refused a legacy
+fallback; the existing gateway and saved receipts were left intact.
+
+This uses the existing named launcher and mutex, not a new watcher or scheduler.
+It requires a separate exact private recovery approval in addition to the native
+reader/project approvals. Partial input, inaccessible processes, foreign owners
+and unpublished dead attempts stay held. No credentials are issued or rotated.
+
+The live app still uses its prior launch configuration. No live recovery approval,
+task argument change or app reload was applied. Reader/writer restart, offline
+capture/catch-up and clear stale status remain open; passing this gateway scenario
+does not qualify cold login or those missing cases. Local release stays 18/21.
+
 ## First live shared read-only connection - phone accepted
 
 Eddie approved the first canonical shared-facts connection and conditional

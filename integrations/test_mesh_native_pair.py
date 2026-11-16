@@ -115,5 +115,27 @@ class LifecycleTests(unittest.TestCase):
             self.pair.observe_mesh()
         self.assertEqual(self.pair.stage,'held');self.assertEqual(self.mesh.terminated,0)
 
+    def prepare_adoption(self):
+        self.running=True;self.pair.adopt_started_writer(self.writer,1010)
+        self.attempt=self.root/'attempt.json'
+        self.pair.mesh_settings.update(attemptPath=str(self.attempt),nodeExecutable='fixed-node.exe')
+        self.record=dict(schema='onoes-mesh-native-child/v1',profileSha256=self.pair.mesh_sha,
+            pid=202,creationTicks=2020,state='input_sent',credentialsInRecord=False,
+            executable='fixed-node.exe',entryPoint=str(self.root/'serve.mjs'))
+
+    def test_existing_exact_gateway_is_observed_without_another_launch(self):
+        self.prepare_adoption();self.attempt.write_text(json.dumps(self.record))
+        self.log.write_text(json.dumps(dict(event='mesh_listening',pid=202,
+            url='http://127.0.0.1:42002',previewUrl='http://127.0.0.1:42001')))
+        self.assertEqual(self.pair.adopt_started_mesh(self.mesh,2020)['stage'],'mesh_ready')
+        self.assertEqual((self.starts,self.launches),(0,0))
+        with self.assertRaises(NativePairHold):self.pair.adopt_started_mesh(self.mesh,2020)
+
+    def test_unresolved_existing_gateway_is_held_without_launch_or_stop(self):
+        self.prepare_adoption();self.record['state']='input_pending'
+        self.attempt.write_text(json.dumps(self.record))
+        with self.assertRaises(NativePairHold):self.pair.adopt_started_mesh(self.mesh,2020)
+        self.assertEqual((self.starts,self.launches,self.mesh.terminated),(0,0,0))
+
 
 if __name__=='__main__':unittest.main()

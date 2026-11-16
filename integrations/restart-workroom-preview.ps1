@@ -1,6 +1,7 @@
 param(
   [ValidateSet('Status','Start','Restart','Stop','Ensure')][string]$Action = 'Restart',
-  [string]$NativeMindProfile, [string]$NativeMindSha256, [string]$NativeMindApproval
+  [string]$NativeMindProfile, [string]$NativeMindSha256, [string]$NativeMindApproval,
+  [string]$NativeRecoveryApproval, [string]$NativeRecoverySha256
 )
 $ErrorActionPreference = 'Stop'
 $appName = "ONOe's Mesh - Workroom"
@@ -10,6 +11,23 @@ $receiptPath = Join-Path $workroomParent 'workroom-ab-preview-process.json'
 $databasePath = Join-Path $workroomRoot 'data/workroom-preview/tasks.sqlite'
 if ($Action -ne 'Status' -and $Action -ne 'Stop' -and !(Test-Path -LiteralPath $databasePath)) { throw 'Expected Workroom database absent; refusing accidental empty deployment.' }
 $pausePath = Join-Path $workroomRoot 'data/workroom-preview/recovery-paused'
+if (($NativeRecoveryApproval -or $NativeRecoverySha256) -and $Action -ne 'Ensure') { throw 'Native recovery approval is valid only for Ensure; nothing changed.' }
+# An explicitly enrolled Ensure delegates before taking the thread-owned mutex.
+# The Python participant holds that same mutex through native owner publication.
+if ($Action -eq 'Ensure' -and ($NativeMindProfile -or $NativeMindSha256 -or $NativeMindApproval -or $NativeRecoveryApproval -or $NativeRecoverySha256)) {
+  if (!$NativeMindProfile -or !$NativeMindApproval -or !$NativeRecoveryApproval -or $NativeMindSha256 -cnotmatch '^[a-f0-9]{64}$' -or $NativeRecoverySha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'Explicit native recovery inputs and approval are required; no legacy fallback.' }
+  if ((Get-Item -LiteralPath $NativeRecoveryApproval).Length -gt 65536 -or (Get-FileHash -LiteralPath $NativeRecoveryApproval -Algorithm SHA256).Hash.ToLowerInvariant() -cne $NativeRecoverySha256) { throw 'Recovery approval changed; no legacy fallback.' }
+  $recovery = Get-Content -LiteralPath $NativeRecoveryApproval -Raw | ConvertFrom-Json
+  $recoveryHelper = Join-Path $PSScriptRoot 'mesh_recovery_candidate.py'
+  $recoveryPython = 'C:\Python314\python.exe'
+  if ($recovery.schema -cne 'onoes-mesh-native-recovery-approval/v1' -or $recovery.decision -cne 'approve_exact_same_grant_gateway_recovery' -or
+      $recovery.workspace -cne $workroomRoot -or $recovery.profilePath -cne $NativeMindProfile -or $recovery.profileSha256 -cne $NativeMindSha256 -or
+      (Get-FileHash -LiteralPath $recoveryPython -Algorithm SHA256).Hash.ToLowerInvariant() -cne $recovery.pythonSha256 -or
+      (Get-FileHash -LiteralPath $recoveryHelper -Algorithm SHA256).Hash.ToLowerInvariant() -cne $recovery.sourceHashes.PSObject.Properties[$recoveryHelper].Value) { throw 'Recovery participant changed; no legacy fallback.' }
+  & $recoveryPython -I $recoveryHelper --profile $NativeMindProfile --sha256 $NativeMindSha256 --approval $NativeMindApproval --recovery-approval $NativeRecoveryApproval --recovery-sha256 $NativeRecoverySha256 --ensure
+  if ($LASTEXITCODE -ne 0) { throw 'Native recovery held; no legacy fallback was started.' }
+  return
+}
 $mutexName = 'Local\ONOesMeshWorkroom-' + ([System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($workroomRoot))).Replace('-','').Substring(0,16))
 $mutex = New-Object System.Threading.Mutex($false, $mutexName)
 $mutexHeld = $false

@@ -69,6 +69,21 @@ recovery and disconnected capture/status remain unfinished. No live app, service
 credential or startup definition was changed for this qualification. Local release
 stays 18/21; the already-live one-card connection remains phone-accepted.
 
+### Opt-in normal Ensure candidate - actual launcher qualification
+
+The existing PowerShell Ensure entry can explicitly select the new same-grant
+recovery participant with an exact private approval. Thirty focused checks and
+the actual isolated synthetic launcher scenario passed; the latter ran 948.056
+seconds including cleanup. All five runtime pins match the tested snapshot.
+Healthy and repeated ticks kept their owner. Gateway crash recovery preserved
+the grant, writer identity and original receipts. A living unpublished attempt
+was reconciled without duplicate launch; a missing writer was held without a
+legacy fallback. The initial missing-data-directory fixture failure is retained.
+
+This is qualified candidate code, not deployed startup recovery. No live task,
+permission, service or app was changed. Reader/writer recovery, offline catch-up
+and disconnected/stale status remain unfinished; local release remains 18/21.
+
 ### First project-write attempt: read-only rollback completed
 
 The owner-approved November 16 attempt completed its encrypted pre-write backup
