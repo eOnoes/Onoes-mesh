@@ -1301,6 +1301,21 @@ live-owner/busy-port/uncertain-service refusal, partial-install lookup, changed
 before-image refusal, and later edited/replaced-file protection. The real 109-file
 read-only preview passes without a live write, port reservation or journal.
 The previous 746-check app and eleven-check source/gateway proofs remain the
-runtime baseline; this separate utility is not imported by the app. Full installed-
-runtime rehearsal and the encrypted-backup/conditional-rollback owner window are
-still pending. No actual approval or first-write access is activated.
+runtime baseline; this separate utility is not imported by the app.
+
+The actual 109-file payload also passed an installed-runtime rehearsal in
+470.416s. A disposable copy began with the old Git baseline and exact currently
+approved code bytes. The overlay changed 48 files, including 14 new files; every
+installed hash matched. The owned reader/service/native-gateway journey ran from
+that installed copy, prepared a synthetic card source, edited it through the
+admitted API and confirmed two events in its synthetic canonical Mind ledger.
+Excluded private prose was absent. Its test exited zero before explicit rollback
+restored every original hash and removed only the 14 installer-created files;
+all 24 unrelated synthetic test/data sentinels remained unchanged.
+
+The first rehearsal stopped at test import because its environment lacked the
+Mind package path; rollback succeeded, and the failed evidence was retained.
+The corrected run used a fresh disposable copy. This is installed-layout evidence,
+not production activation or recovery of a live credential. The encrypted-backup
+password window and exact conditional-revocation/read-only rollback handoff still
+precede the owner decision. No live source, store, keys or access were changed.
