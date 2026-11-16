@@ -69,6 +69,27 @@ The dispatch gate stays paused. This is a progress update, not task dispatch.
 | C4 final release, ownership and acceptance | 687 prepared-app checks, separate inactive Mind proofs, verified backup/restore and exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
 | E2 bounded production team | Isolated file-and-terminal build and independent Nims review passed with retained evidence. | Recover the old holds through the reviewed boundary, enroll the deployed route and qualify the actual team cycle. |
 
+### Current model-manager binding audit
+
+Read-only file/process evidence now confirms the approved E: tree at2049dd2 has
+unbiased-strata, strata and strata-poly binaries; the written unbuilt note is
+stale. The current Rust manager still owns ports8098/18090/18091. Its inspected
+D: source/config candidate references different D: engine builds; all three
+candidate engine hashes differ from the E: copies.
+
+A dependency-free offline build with the recorded installed rustc1.97.1 and
+isolated output compiled the unchanged manager source, including its embedded
+UI. It did not reproduce the production executable. The first incomplete
+snapshot/compiler mismatch and the completed comparison are retained. The
+manager's binary/source/config binding is therefore still unverified. No model
+HTTP call, load/unload, source/config/engine replacement or shared-process
+change occurred, and the memory approval packet still matches and is unapplied.
+
+Next evidence is the existing exact build/startup receipt and intended engine
+binding from the runtime maintainer. Read-only status qualification precedes
+model controls. Local source audit or successful compilation alone does not
+complete this gate. The local release score stays18/21.
+
 ### Latest checklist and backup correction
 
 The progress card "Finish Onoes-Mesh - all assessed stages" now separates accepted
