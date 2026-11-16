@@ -10,9 +10,11 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import sqlite3
 
 from onoes_mind.enrollment_store import qualify_private_storage
 from onoes_mind.runtime_keys import _crypt
+from onoes_mind.ledger import _verify_password
 from checkpoint_candidate import read_plain
 from checkpointed_ledger_candidate import CheckpointedLedgerCandidate
 from project_events_candidate import ProjectEventsCandidate, EventBinding, PRINCIPAL, SCOPE, identifier
@@ -30,25 +32,32 @@ def require(ok):
         raise ProjectCredentialError('Protected project-sync credential unavailable or binding refused.')
 
 
-def context(events, project_ids, review_ref):
-    require(type(events) is ProjectEventsCandidate
-            and type(events.ledger) is CheckpointedLedgerCandidate)
+def credential_context(binding, project_ids, review_ref):
+    """Pure purpose entropy; keep the existing sealed-file representation stable."""
+    require(type(binding) is EventBinding)
     require(type(project_ids) is tuple and 1 <= len(project_ids) <= 8
             and all(identifier(p) for p in project_ids)
             and tuple(sorted(set(project_ids))) == project_ids)
     require(type(review_ref) is str and 1 <= len(review_ref) <= 300
             and review_ref.strip() == review_ref
             and not any(ord(c) < 32 or ord(c) == 127 for c in review_ref))
+    raw = json.dumps(dict(purpose=SCHEMA, principal=PRINCIPAL, scope=SCOPE,
+        binding=asdict(binding), projects=project_ids, reviewRef=review_ref),
+        sort_keys=True, separators=(',', ':')).encode('utf-8')
+    require(len(raw) <= 8192)
+    return raw
+
+
+def context(events, project_ids, review_ref):
+    require(type(events) is ProjectEventsCandidate
+            and type(events.ledger) is CheckpointedLedgerCandidate)
+    raw = credential_context(events.binding, project_ids, review_ref)
     b = events.binding
     require((events.ledger._checkpoint_store_id, events.ledger._checkpoint_environment)
             == (b.store_id, b.environment))
     database = qualify_private_storage(Path(b.database_path), kind='file')
     require(database.resolve(strict=True) == database)
     events._binding()
-    raw = json.dumps(dict(purpose=SCHEMA, principal=PRINCIPAL, scope=SCOPE,
-        binding=asdict(b), projects=project_ids, reviewRef=review_ref),
-        sort_keys=True, separators=(',', ':')).encode('utf-8')
-    require(len(raw) <= 8192)
     return raw
 
 
@@ -86,24 +95,81 @@ def unique(pairs):
     return result
 
 
+def _unseal(path, entropy):
+    target = qualify_private_storage(Path(path), kind='file')
+    envelope = json.loads(read_plain(target, 8192), object_pairs_hook=unique)
+    require(type(envelope) is dict and set(envelope) == {'schema','protection','bindingSha256','ciphertext'}
+            and envelope['schema'] == SCHEMA and envelope['protection'] == 'windows-current-user'
+            and envelope['bindingSha256'] == hashlib.sha256(entropy).hexdigest())
+    require(type(envelope['ciphertext']) is str and len(envelope['ciphertext']) <= 4096)
+    token = _crypt(base64.b64decode(envelope['ciphertext'], validate=True), entropy, protect=False).decode('ascii')
+    token_bytes(token)
+    return token
+
+
 def load_project_credential(path, *, events, project_ids, review_ref):
     """Secret-bearing return for trusted native constructor/pipe input only."""
     token = None
     try:
         entropy = context(events, project_ids, review_ref)
-        target = qualify_private_storage(Path(path), kind='file')
-        envelope = json.loads(read_plain(target, 8192), object_pairs_hook=unique)
-        require(type(envelope) is dict and set(envelope) == {'schema','protection','bindingSha256','ciphertext'}
-                and envelope['schema'] == SCHEMA and envelope['protection'] == 'windows-current-user'
-                and envelope['bindingSha256'] == hashlib.sha256(entropy).hexdigest())
-        require(type(envelope['ciphertext']) is str and len(envelope['ciphertext']) <= 4096)
-        token = _crypt(base64.b64decode(envelope['ciphertext'], validate=True), entropy, protect=False).decode('ascii')
+        token = _unseal(path, entropy)
         authorize(events, token, project_ids, review_ref)
         return token
     except Exception:
         raise ProjectCredentialError('Protected project-sync credential unavailable or binding refused.') from None
     finally:
         token = None  # Reference clearing only; not guaranteed memory erasure.
+
+
+def load_project_client_credential(path, *, binding, project_ids, review_ref):
+    """Reload client custody using read-only identity/grant metadata, never keys.
+
+    The caller must separately attest the service process/destination. This does
+    not qualify deletion authority or authorize a write; the receiver enforces
+    those on every request. No memory content is read by this function.
+    """
+    token = db = None
+    try:
+        entropy = credential_context(binding, project_ids, review_ref)
+        database = qualify_private_storage(Path(binding.database_path), kind='file')
+        require(database.resolve(strict=True) == database)
+        stat = database.stat()
+        require((stat.st_dev,stat.st_ino) == (binding.file_device,binding.file_inode))
+        token = _unseal(path, entropy)
+        db = sqlite3.connect(database.as_uri()+'?mode=ro', uri=True)
+        db.execute('PRAGMA query_only=ON')
+        require([Path(r[2]).resolve() for r in db.execute('PRAGMA database_list') if r[1]=='main'] == [database])
+        metadata = {'sqlite_master','sqlite_schema','recall_store_identity','project_sync_format',
+            'principals','project_sync_credentials','credentials','scope_grants','recall_service_credentials',
+            'project_sync_grants','project_sync_projects'}
+        def metadata_only(action, table, _column, _database, _trigger):
+            if action == sqlite3.SQLITE_READ:
+                return sqlite3.SQLITE_OK if table in metadata else sqlite3.SQLITE_DENY
+            return sqlite3.SQLITE_OK if action in (sqlite3.SQLITE_SELECT,sqlite3.SQLITE_TRANSACTION) else sqlite3.SQLITE_DENY
+        db.set_authorizer(metadata_only)
+        db.execute('BEGIN')
+        require(db.execute('SELECT store_id,environment,authority_ref FROM recall_store_identity').fetchall()
+                == [(binding.store_id,binding.environment,binding.authority_ref)])
+        require(db.execute('SELECT version FROM project_sync_format').fetchall() == [(2,)])
+        row = db.execute('SELECT c.salt,c.verifier,c.epoch,p.credential_epoch,p.kind FROM project_sync_credentials c JOIN principals p USING(principal_id) WHERE c.principal_id=?',(PRINCIPAL,)).fetchone()
+        require(row is not None and row[2] == row[3] and row[4] == 'service'
+                and _verify_password(token,row[0],row[1]))
+        require(not db.execute('SELECT 1 FROM credentials WHERE principal_id=?',(PRINCIPAL,)).fetchone()
+                and not db.execute('SELECT 1 FROM scope_grants WHERE principal_id=?',(PRINCIPAL,)).fetchone())
+        if db.execute("SELECT 1 FROM sqlite_schema WHERE name='recall_service_credentials'").fetchone():
+            require(not db.execute('SELECT 1 FROM recall_service_credentials WHERE principal_id=?',(PRINCIPAL,)).fetchone())
+        require(tuple(r[0] for r in db.execute('SELECT project_id FROM project_sync_grants WHERE principal_id=? AND active=1 ORDER BY project_id',(PRINCIPAL,))) == project_ids)
+        for project in project_ids:
+            require(db.execute('SELECT 1 FROM project_sync_projects WHERE project_id=? AND deleted=0',(project,)).fetchone())
+        db.execute('COMMIT'); require(db.total_changes == 0)
+        qualify_private_storage(database,kind='file'); stat = database.stat()
+        require((stat.st_dev,stat.st_ino) == (binding.file_device,binding.file_inode))
+        return token
+    except Exception:
+        raise ProjectCredentialError('Read-only project client custody unavailable or binding refused.') from None
+    finally:
+        if db is not None: db.close()
+        token = None
 
 
 def seal_project_credential(path, token, *, events, project_ids, review_ref):

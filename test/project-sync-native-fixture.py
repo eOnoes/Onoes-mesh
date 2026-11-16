@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import sys
 import threading
+import os
 
 sys.path.insert(0, sys.argv[1])
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'integrations/mind-recovery-candidate'))
@@ -11,6 +12,7 @@ from project_events_candidate import ProjectEventsCandidate, EventBinding
 from native_project_sync_candidate import NativeProjectSyncHost, seal_project_credential
 from native_recall_candidate import NativeRecallHost, seal_service_credential, SCOPE
 from onoes_mind.recall_binding import RecallBinding, prepare_mesh_principal, issue_mesh_recall_credential
+from recall_process_candidate import current_ticks
 
 fixture = fixtures.CheckpointedLedgerTests()
 project = reader = None
@@ -48,8 +50,10 @@ try:
     def output(value):
         print(json.dumps(value), flush=True)
 
+    def project_options():
+        return {**project.native_options(), 'peer':dict(pid=os.getpid(),creationTicks=str(current_ticks()),runId='0'*32,profileSha256='0'*64)}
     project = start_project()
-    output(dict(project=project.native_options(), recall=reader.native_options()))
+    output(dict(project=project_options(), recall=reader.native_options()))
     for line in sys.stdin:
         op = json.loads(line)['op']
         if op == 'stats':
@@ -59,7 +63,7 @@ try:
         elif op == 'stop':
             project.close(); output(dict(stopped=True))
         elif op == 'restart':
-            project = start_project(); output(dict(project=project.native_options(), recall=reader.native_options()))
+            project = start_project(); output(dict(project=project_options(), recall=reader.native_options()))
         elif op == 'revoke':
             with project.ledger._transaction(immediate=True): project.ledger.rotate_credentials('mesh-project-sync')
             output(dict(revoked=True))

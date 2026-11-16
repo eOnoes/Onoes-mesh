@@ -981,3 +981,49 @@ native gateway run passes nine checks, and the expanded native source/launch
 suite passes 12 cases in 337.426s. The operator's four final cases pass against
 unchanged pinned source. These are local synthetic qualification results; the
 live reader, source profile and existing writer holds remain unchanged.
+
+
+## Long-lived service and process-verified client (staged, 2026-11-16)
+
+`project_service_process_candidate.py` adds a separately approved, source-pinned
+long-lived writer process. Its profile includes the operator profile hash and
+requires the operator's original terminal proof before starting. The approval
+must explicitly include `run_service`; preview creates nothing. PID and Windows
+creation time are recorded before START, and uncertain starts preserve their
+original handle and attempt without retry. Stop requests contain a fresh run ID;
+old records are archived only after the exact previous process is no longer
+alive. The service closes its listener and writer before recording stopped.
+No startup task, production profile or live service is installed.
+
+Mesh reloads can use `load_project_client_credential` without receiving integrity
+keys or opening another protected writer. The existing DPAPI context is retained.
+Read-only SQLite authorization permits identity, credential and grant metadata,
+not memory/provenance reads or writes. Canonical store identity, credential epoch,
+purpose, exact project grants and private file identity must still match. These
+checks do not replace the service's independent current deletion-authority guard.
+The 13 custody cases passed in 303.194s. Three unique actual-service cases were
+qualified across two runs: two original cases passed; an overbroad test fault
+failed the third before the intended launch; its narrowed rerun passed. The
+initial failure and original test snapshot remain preserved. This is not a claim
+that the original three-case command exited successfully.
+
+Native project configuration is now `onoes-mesh-native-project-sync/v2` and requires
+the service PID, creation time, run ID and profile hash. The new Windows socket
+check verifies the established loopback connection's owning PID and its creation
+time before supplying that socket to HTTP. A foreign listener or a reused port
+receives zero credential, header or body bytes in the focused tests. Missing peer
+metadata is refused; it must never be stripped from the service's client export.
+Legacy recall-only frames remain supported. All 14 focused peer/HTTP/native cases
+passed, including the actual gateway and canonical readback journey.
+
+Still required: compose the approved service/client export into the normal native
+launcher, qualify startup/reload ownership and interruption behavior, freeze the
+complete fresh source profile, and prepare encrypted backup plus rollback and
+owner activation review. The live reader stays read-only; project writing,
+automatic workers, Rook and the historical writer holds are unchanged.
+
+Final regression evidence for this slice: `npm test` exited zero with 737
+checks (607 Node and 130 Python). The separate Windows native source/launch
+suite exited zero with 12 cases in 347.024s. The first restricted-environment
+runs failed local socket/private-folder checks and remain retained; the complete
+runs with the necessary local test access passed. No live activation is claimed.

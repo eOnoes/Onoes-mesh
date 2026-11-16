@@ -16,6 +16,7 @@ const readDescriptor=()=>({baseUrl:'http://127.0.0.1:12345/',token:'synthetic-un
   servicePrincipal:'mesh-recall',storeId:'00000000-0000-4000-8000-000000000001',environment:'synthetic',
   scopeId:'project/onoes-mind/shared',reviewRef:'fixture:read'}});
 const stream=value=>Readable.from([Buffer.from(JSON.stringify(value))]);
+const fixturePeer={pid:process.pid,creationTicks:'1',runId:'0'.repeat(32),profileSha256:'0'.repeat(64)};
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(fn){const deadline=Date.now()+15000;while(Date.now()<deadline){if(await fn())return;await delay(30);}assert.fail('Synthetic native condition did not settle.');}
 function environment(t){
@@ -145,13 +146,14 @@ test('native app saves, reads canonical memory, awaits delivery at close and rec
 
 test('native input and startup refuse substituted source/policy and never initialize missing schema',async t=>{
   environment(t);
-  const b=baseline({baseUrl:'http://127.0.0.1:12345/',token:'synthetic-project-token-for-validation',storeId:'synthetic-store'});
+  const b=baseline({baseUrl:'http://127.0.0.1:12345/',token:'synthetic-project-token-for-validation',storeId:'synthetic-store',peer:fixturePeer});
   t.after(b.cleanup);
   const frame=()=>({schema:meshFrameSchema,mindRecallOptions:readDescriptor(),projectSyncOptions:b.config});
   assert.deepEqual((await readNativeMeshInput(stream(frame()))).projectSyncOptions,b.config);
   await assert.rejects(readNativeRecallInput(stream(frame())));
   await assert.rejects(startNativeMesh({input:stream(frame()),appOptions:{projectSyncOptions:b.config}}));
   for(const change of [{destination:{...b.config.destination,baseUrl:'https://example.invalid/'}},
+    {destination:{...b.config.destination,peer:undefined}},
     {links:[{...b.config.links[0],fields:['title','private_chat','stage']}]}, {extra:true}]){
     assert.throws(()=>validateNativeProjectSync({...b.config,...change}));
   }
@@ -169,7 +171,7 @@ test('native input and startup refuse substituted source/policy and never initia
 });
 
 test('policy drift holds delivery locally and rolls back shared edits while unshared work stays usable',async t=>{
-  const b=baseline({baseUrl:'http://127.0.0.1:12345/',token:'synthetic-project-token-for-validation',storeId:'synthetic-store'});
+  const b=baseline({baseUrl:'http://127.0.0.1:12345/',token:'synthetic-project-token-for-validation',storeId:'synthetic-store',peer:fixturePeer});
   const runtime=prepareNativeProjectSync(b.config,{filename:b.filename,standalone:false});
   const store=openTaskStore(b.filename,{projectSyncFactory:runtime.factory});
   const db=new DatabaseSync(b.filename);

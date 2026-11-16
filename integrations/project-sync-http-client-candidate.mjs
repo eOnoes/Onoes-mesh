@@ -1,6 +1,7 @@
 // Server-only, explicitly constructed transport. No discovery, browser config or startup.
 import {validateProjectEvent} from './project-sync-outbox-candidate.mjs';
-import {request as httpRequest} from 'node:http';
+import {request as httpRequest,Agent} from 'node:http';
+import {validateProjectPeer,openProjectPeerSocket} from '../lib/project-sync-peer.mjs';
 
 const exact=(value,keys)=>value?.constructor===Object&&Object.keys(value).sort().join(',')===[...keys].sort().join(',');
 const id=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(value);
@@ -21,17 +22,22 @@ function flatJson(text){
   return body;
 }
 
-export function createProjectSyncHttpClient({baseUrl,token,storeId,timeoutMs=4000}){
+export function createProjectSyncHttpClient({baseUrl,token,storeId,peer,timeoutMs=4000}){
   const url=new URL(baseUrl);
   if(url.protocol!=='http:'||url.hostname!=='127.0.0.1'||!url.port||Number(url.port)<1||url.pathname!=='/'||
     url.search||url.hash||url.username||url.password||!id(storeId)||
     typeof token!=='string'||! /^[A-Za-z0-9_-]{20,256}$/.test(token)||
     !Number.isSafeInteger(timeoutMs)||timeoutMs<10||timeoutMs>10000)throw Error('Fixed loopback service, identity and bounded timeout required.');
+  if(peer!==undefined)peer=validateProjectPeer(peer);
   function request(path,payload){
     return new Promise((resolve,reject)=>{
       let settled=false;
       const bytes=Buffer.from(JSON.stringify(payload));
-      const req=httpRequest(new URL(path,url),{method:'POST',agent:false,
+      const controller=new AbortController(),agent=peer?new Agent({keepAlive:false,maxSockets:1}):false;
+      if(agent)agent.createConnection=(_options,callback)=>{
+        void openProjectPeerSocket(peer,Number(url.port),{signal:controller.signal}).then(socket=>callback(null,socket),error=>callback(error));
+      };
+      const req=httpRequest(new URL(path,url),{method:'POST',agent,
         headers:{'Content-Type':'application/json','Content-Length':bytes.length,Authorization:'Bearer '+token}},response=>{
         const values=name=>{const rows=[];for(let i=0;i<response.rawHeaders.length;i+=2)if(response.rawHeaders[i].toLowerCase()===name)rows.push(response.rawHeaders[i+1]);return rows;};
         const lengths=values('content-length');
@@ -55,8 +61,12 @@ export function createProjectSyncHttpClient({baseUrl,token,storeId,timeoutMs=400
         });
       });
       const timer=setTimeout(()=>finish(new ProjectSyncTransportError()),timeoutMs);
-      function finish(error,value){if(settled)return;settled=true;clearTimeout(timer);req.destroy();if(error)reject(error);else resolve(value);}
-      req.once('error',()=>finish(new ProjectSyncTransportError()));
+      function finish(error,value){if(settled)return;settled=true;clearTimeout(timer);controller.abort();req.destroy();if(agent)agent.destroy();if(error)reject(error);else resolve(value);}
+      req.once('error',error=>{
+        const refused=new ProjectSyncTransportError(error?.projectSyncHeld===true);
+        if(error?.projectSyncLocalBinding===true)refused.projectSyncLocalBinding=true;
+        finish(refused);
+      });
       req.end(bytes);
     });
   }

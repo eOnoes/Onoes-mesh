@@ -1,6 +1,7 @@
 """Real Windows DPAPI and protected canonical synthetic ledgers only."""
 from dataclasses import replace, asdict
 import http.client
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -223,3 +224,51 @@ lease.close()
             if child.poll() is None:
                 child.kill(); child.wait(timeout=10)
             child.stdin.close(); child.stdout.close(); child.stderr.close()
+
+
+@unittest.skipUnless(sys.platform == 'win32', 'Windows client custody')
+class ClientCredentialTests(unittest.TestCase):
+    setUp = ProjectCredentialTests.setUp
+    bind = ProjectCredentialTests.bind
+    seal = ProjectCredentialTests.seal
+
+    def client(self):
+        return native.load_project_client_credential(self.path,binding=self.events.binding,
+            project_ids=('project-A',),review_ref=self.options['review_ref'])
+
+    def test_same_envelope_reloads_with_readonly_metadata_without_writer_or_fact_reads(self):
+        self.seal(); original=self.path.read_bytes(); before=self.ledger.path.read_bytes()
+        expected=json.dumps(dict(purpose='onoes-mind-project-sync-credential/v1',principal='mesh-project-sync',
+            scope='project/onoes-mind/shared',binding=asdict(self.events.binding),projects=('project-A',),
+            reviewRef=self.options['review_ref']),sort_keys=True,separators=(',',':')).encode('utf-8')
+        self.assertEqual(json.loads(original)['bindingSha256'],hashlib.sha256(expected).hexdigest())
+        queries=[];connections=[];connect=native.sqlite3.connect
+        def readonly(*args,**kwargs):
+            self.assertTrue(kwargs['uri']);self.assertTrue(args[0].endswith('?mode=ro'))
+            db=connect(*args,**kwargs);db.set_trace_callback(queries.append);connections.append(db);return db
+        with patch.object(native.sqlite3,'connect',side_effect=readonly),\
+             patch.object(native,'CheckpointedLedgerCandidate',side_effect=AssertionError('No writer may open')):
+            self.assertEqual(self.client(),self.token)
+        self.assertEqual(len(connections),1)
+        self.assertFalse(any('memory_records' in q or 'memory_revisions' in q or 'provenance_refs' in q for q in queries))
+        self.assertFalse(any(q.startswith(('INSERT','UPDATE','DELETE','CREATE')) for q in queries))
+        self.assertEqual(self.path.read_bytes(),original);self.assertEqual(self.ledger.path.read_bytes(),before)
+
+    def test_revoked_and_broadened_grants_are_refused_without_changing_custody(self):
+        self.seal();original=self.path.read_bytes()
+        self.events.register_project('project-B','Another synthetic project')
+        self.ledger.db.execute("INSERT INTO project_sync_grants VALUES('mesh-project-sync','project-B',1)")
+        with self.assertRaises(native.ProjectCredentialError):self.client()
+        self.ledger.db.execute("UPDATE project_sync_grants SET active=0 WHERE project_id='project-B'")
+        with self.ledger._transaction(immediate=True):self.ledger.rotate_credentials('mesh-project-sync')
+        with self.assertRaises(native.ProjectCredentialError):self.client()
+        self.assertEqual(self.path.read_bytes(),original)
+
+    def test_client_export_is_not_deletion_authority_and_receiver_stays_blocked(self):
+        self.seal()
+        with self.fixture.authority.hold(self.fixture.store_id,self.fixture.environment) as lease:head=lease.current()
+        self.fixture.authority.begin_purge('fixture-pending','a'*64,head)
+        token=self.client()
+        from project_events_candidate import EventError
+        with self.assertRaises(EventError):self.events.submit(token,event())
+        self.assertEqual(self.ledger.db.execute('SELECT count(*) FROM project_sync_events').fetchone()[0],0)

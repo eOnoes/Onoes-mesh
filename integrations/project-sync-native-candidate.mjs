@@ -4,8 +4,9 @@ import path from 'node:path';
 import {createProjectSyncHttpClient} from './project-sync-http-client-candidate.mjs';
 import {createWorkroomProjectSyncCandidate} from './workroom-project-sync-candidate.mjs';
 import {createProjectSyncRunner} from './project-sync-runner-candidate.mjs';
+import {validateProjectPeer} from '../lib/project-sync-peer.mjs';
 
-export const nativeSyncSchema='onoes-mesh-native-project-sync/v1';
+export const nativeSyncSchema='onoes-mesh-native-project-sync/v2';
 const exact=(value,keys)=>value&&typeof value==='object'&&!Array.isArray(value)&&
   Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));
 const id=value=>typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value);
@@ -22,7 +23,8 @@ export function validateNativeProjectSync(value){
       typeof v.source.databasePath==='string'&&path.isAbsolute(v.source.databasePath)&&
       v.source.databasePath===path.resolve(v.source.databasePath)&&
       ['fileDevice','fileInode'].every(k=>typeof v.source[k]==='string'&&/^(0|[1-9][0-9]{0,19})$/.test(v.source[k])));
-    require(exact(v.destination,['baseUrl','token','storeId']));
+    require(exact(v.destination,['baseUrl','token','storeId','peer']));
+    validateProjectPeer(v.destination.peer);
     createProjectSyncHttpClient(v.destination); // Constructor only; no network.
     require(Array.isArray(v.links)&&v.links.length>=1&&v.links.length<=32);
     const cards=new Set();
