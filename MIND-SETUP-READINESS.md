@@ -708,3 +708,73 @@ built. The first indexed orientation returned unrelated sync symbols; that is
 not evidence of a Workroom-to-Mind implementation. No adapter implementation,
 write grant, service change or live memory write was made during this planning
 slice.
+
+
+## Workroom-to-Mind source audit - 2026-11-15 Chicago
+
+Verdict: reuse canonical Mind memory receipts/provenance and Mesh transaction
+boundaries, but do not connect an adapter to the ordinary memory writer. The
+working reader is purpose-specific and must remain read-only. No sync adapter,
+write credential, project facts, service or scheduler was activated by this audit.
+
+Audited Mind HEAD: 76c0273637ced688411960e067aabad6eaf4168e.
+Mesh baseline: dad7659 (including the prior accepted reader milestone a2f95b3).
+Indexed exact symbol bodies reported fresh. Mesh's wider index remained stale
+because unrelated files were dirty: its zero-match search is not proof of global
+absence. Findings below distinguish inspected methods from unverified coverage.
+The canonical frozen ledger was not edited; existing untracked work was preserved.
+
+| Area | Evidence and finding | Consequence |
+| --- | --- | --- |
+| Memory submission | Mind ledger.py Ledger.remember (770-837) commits submission_events, memory records, provenance, audit and receipts together; same principal/event with changed claim rejects divergence. | Reuse these durable primitives through Mind-owned code; avoid a second ledger. |
+| Narrow service writer | Ledger.create_principal (740-747) permits only four named identities. remember chooses shared storage only for operator and falls back to agent-private for other callers. MESH_RECALL_INTERFACE.md also records the ordinary writer's missing can_write enforcement. | An ordinary token/grant cannot safely become the Mesh shared writer. Do not borrow operator/Echo, issue a writer credential to mesh-recall, or patch frozen core silently. |
+| Idempotency coverage | _payload_hash binds claim/kind/project_id, not evidence/visibility/source time. A synthetic same-ID submission with changed provenance returned the original receipt. | The new event boundary must bind every semantic field and reject changed payloads; accepted replay must not imply changed evidence was saved. |
+| Work identity | create_work_item (176-189) stores a caller string as project and returns the existing row on requester/idempotency collision, without comparing changed inputs. Synthetic changed project/pipeline replay returned the original project. | This task scheduler is not a qualified canonical project registry or strict project-event endpoint. Do not mirror Mesh scheduling into it. |
+| Receipt prototype | phase10_hardening.ReceiptLedger stores events/receipts in Python dictionaries/lists. | Its failure-injection checks are useful models, not an enrolled persistent receipt API. |
+| Existing bridge | bridge.BridgeServer.dispatch exposes negotiate/start/claim/heartbeat/stop/complete under local-test-runtime; no project-memory write/receipt lookup operation. | Do not treat the synthetic task bridge as the production memory service. |
+| Canonical gap search | Fresh indexed scan of 26 onoes_mind modules found no project_registry, project_events, lookup_receipt or receipt_lookup identifiers. Ledger outline and bridge operations were inspected separately. | No matching implementation found under those names; no qualified project registry/event/receipt API was established by the audit. This is scoped evidence, not a whole-repository semantic proof of absence. |
+| Card identity and revisions | task-store.create uses UUID and immutable creation time; update uses optimistic task revision. Workroom.save guards brief revision, saveProgress guards task/brief/progress revisions together. | Keep those checks. A single revision field is insufficient to identify all card changes; add an adapter event sequence or capture the revision tuple. |
+| Event capture | Workroom.event stores taskId/kind/detail/time. save and saveProgress call it inside their existing transaction. task-store.update has its own mutation path. | Existing prose timeline entries are not a delivery queue or complete approved payload. Capture explicit events atomically at every selected mutation path; do not infer reliable sync by polling titles or timeline text. |
+| Deletion/correction | Canonical purge writes tombstone/deletion evidence. The recall interface explicitly says correction visibility tests do not qualify a production correction writer. | A sync writer needs correction/supersession and replay-after-deletion semantics before real use. An old accepted receipt is not proof that its record is still current. |
+
+Verification performed against disposable state only:
+
+- Existing canonical tests/test_phase1b.py: 5/5 PASS (1.389s), covering receipt
+  provenance, bounded recall, purge, deletion-aware restore and synthetic identity.
+- Five in-memory audit observations PASS: service-name refusal; changed provenance
+  reusing the receipt; changed claim divergence; nonoperator shared request falling
+  back to private; changed work-item payload returning its prior project. These
+  characterize current limitations; they are not sync-adapter acceptance tests.
+- No live database, password, recovery key or service token was opened for the
+  audit. No live HTTP/service contact, agent dispatch, paid model call or restart.
+
+Recommended first build, separate from activation:
+
+1. In Mind-owned candidate code, define an explicitly registered project identity
+   and one dedicated project-event identity with submit and exact-ID receipt
+   lookup. Keep canonical scope, source identity and permitted projects server-
+   derived. Reuse canonical records, provenance and transaction primitives; no
+   second database or general-purpose writer. Preserve frozen-core evidence.
+2. Use a versioned event containing card ID, linked Mind project ID, monotonic
+   per-card sequence, task/brief/progress revisions, approved event kind and
+   allowlisted project fields/evidence. Bind every semantic field in a canonical
+   digest. Same ID with any changed field is a conflict. Facts are source-labelled
+   observations: a board's Done label is not independent verification of a build.
+3. In an isolated Mesh store, capture the event and selected mutation together.
+   Maintain explicit pending/saved/held state. On timeout query the exact ID;
+   after confirmed absence retry the same ID/payload. Refusal, revocation, schema
+   mismatch or identity drift must not mark saved or silently discard the event.
+4. Qualify restart, concurrency, replay, payload divergence, ordering, corrections,
+   project-link conflicts and tombstone/restore behavior with synthetic data.
+   Do not replay deleted facts under fresh event IDs. Define how already queued
+   events are blocked when approval is withdrawn or their project is deleted.
+5. Before live writes, review the exact service identity/allowed projects/content,
+   updated encrypted backup/restore and failure rollback. The existing read-only
+   approval does not authorize writer enrollment. No phone retest is needed for
+   the already accepted reader.
+
+This audit completes the assessment stage. The next development milestone is
+a disconnected synthetic writer/outbox candidate under the ongoing Mesh build.
+Live identity enrollment and memory ingestion still need their own reviewed
+approval. Conversation continuity and shared skills/MCP remain later stages
+after reliable project updates.

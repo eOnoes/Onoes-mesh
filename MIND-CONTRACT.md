@@ -1,3 +1,16 @@
+## Current connection status - 2026-11-15 Chicago
+
+The first canonical shared read-only connection is live and accepted on Eddie's
+phone. Its fixed project/onoes-mind/shared scope excludes agent-private memory;
+no project facts or conversations have been ingested. The dedicated recall
+credential cannot use the ordinary writer. Workroom remains the task-stage
+and review authority. See MIND-SETUP-READINESS.md for the current evidence and
+completed project-sync source audit. Older dated setup/preparation statements
+below describe their historical state, not the current runtime.
+
+Project writes, conversation synchronization and shared tools/skills remain
+unfinished. No live writer enrollment is approved by read-only acceptance.
+
 # Mind: selected task context
 
 The first source is the existing Mesh Workroom store. In Mind, the admitted owner
