@@ -2,11 +2,51 @@
 
 ## Current state — 2026-11-16
 
-Live shared recall is phone-accepted and read-only. The deterministic card-to-Mind
-path, protected service and normal native launcher are now locally qualified on
-disposable data. They are not live. The next step is the concrete first-write
-preparation, encrypted backup and rollback handoff for owner review. Private-agent
-memory, automatic workers, Rook and the historical writer holds are unchanged.
+Live shared recall is phone-accepted. The first deterministic Workroom-to-Mind
+connection is now live and locally verified under Eddie's exact corrected-window
+approval. One deliberately linked Mesh card produced two authenticated canonical
+records: its preserved baseline and one approved result-only update. The reader
+remains read-only; a separate writer has permission limited to the Onoes-Mesh
+project. This is not general conversation ingestion or automatic card enrollment.
+Private-agent memory, automatic workers, Rook and all eight historical writer
+holds are unchanged. Phone acceptance of the newly written result is pending.
+
+## First live project sync - corrected window qualified
+
+The corrected cutover held the existing launcher mutex across installation,
+replacement access, both native launches and the after-write backup. Original
+process handles and exact creation identities were retained. The original pending
+event was reconciled using its existing ID before delivery; the result-only edit
+then advanced the linked card's progress revision to 90. Both events have verified
+durable receipts. Lane, goal, checklist and review decision were preserved.
+
+The before-write encrypted archive passed recovery with zero project receipts;
+the after-write archive passed recovery and receipt readback with two. Both are
+human-labeled milestone archives in the existing Onoes-Mind E: backup folder.
+The first owned writer/gateway pair stopped cleanly before the second backup.
+A fresh pair then used the same replacement grant: exact event IDs, payload
+hashes and receipt IDs were unchanged, with no duplicate baseline. Canonical
+permitted-scope recall returned the exact qualification result. The original
+reader's process identity and all 46 source pins were preserved.
+
+The final native owner was recorded before releasing the launcher mutex. The
+existing Ensure route recognized it without restarting; Status reported healthy.
+No PC, model, Echo/Relay or DSH restart, scheduler modification, paid call, worker
+activation or historical-hold release occurred during this corrected window.
+The failed earlier attempt and its completed read-only rollback remain recorded
+below as historical evidence, not the current runtime state.
+
+Search observation: the full hyphenated qualification marker returned no records,
+while the ordinary word `reconciled` retrieved the exact complete result. Do not
+interpret that first empty search as failed delivery or resend a saved event.
+Search-token usability needs follow-up.
+
+This is an initial live connection, not full release. Persistent same-grant
+binding recovery after an ordinary crash/login, disconnected edit capture and
+catch-up, and clear stale/disconnected status remain required. Current legacy
+Ensure may recover Mesh without its native Mind binding after that owner exits;
+it must not be represented as successful memory synchronization. Local release
+remains 18/21, and production team, skills/MCP and external-machine work remain.
 
 ## First live shared read-only connection - phone accepted
 

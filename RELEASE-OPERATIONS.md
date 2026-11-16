@@ -26,6 +26,34 @@ The existing parent progress card records the accepted read-only milestone at
 revision 87. Wider memory writing, context sync, skills/MCP and external stages
 remain unfinished. The local release score stays 18/21.
 
+### First live Workroom-to-Mind project sync - November 16
+
+The corrected, separately owner-approved connection is live and locally verified.
+One linked Mesh card's preserved baseline and one result-only update have exact
+durable canonical receipts. Normal permitted-scope recall returns the complete
+new result. The reader remains read-only; separate writer access is restricted
+to the Onoes-Mesh project. Other cards and conversations are not enrolled.
+
+The existing launcher mutex covered the full handoff, both Mesh launches and the
+after-change backup. The primary owned pair stopped cleanly; the final fresh pair
+used the same grant and read back identical event IDs and receipt IDs without
+duplication. Both E: encrypted milestone archives passed recovery; the after-write
+archive also read back both project receipts. The exact final native owner was
+published before lock release. Existing Ensure performed no restart, and Status
+reported that owner healthy. The original reader and all eight old holds remain
+unchanged. No PC/model/Echo/Relay/DSH restart or scheduler change was performed.
+
+Phone acceptance of the newly written result is pending. Search for `reconciled`
+in Mind: the full hyphenated marker returned no records despite verified delivery,
+so search-token behavior remains a usability follow-up. Never resend a saved
+event because a search is empty. Persistent binding recovery after later crash
+or login and offline capture/catch-up remain release requirements; ordinary Ensure
+can still recover disconnected Mesh. No automatic worker, Rook, private memory,
+general chat sync or skills/MCP activation is implied. Local release stays 18/21.
+
+The following first-attempt rollback and controller-qualification sections are
+historical records; their inactive/pending descriptions refer to those attempts.
+
 ### First project-write attempt: read-only rollback completed
 
 The owner-approved November 16 attempt completed its encrypted pre-write backup
