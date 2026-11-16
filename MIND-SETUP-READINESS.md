@@ -1,5 +1,30 @@
 # Onoes-Mind setup readiness
 
+## Inactive independent operator-to-reader handoff
+
+Six Windows TEMP tests passed in 203.221 seconds. The named one-shot operator
+must exit before a fresh read-only process starts. An unrelated successful
+process and a still-live operator cannot provide retirement evidence. The
+reader works through the actual Mesh client while the fixture integrity-key
+package is unavailable at its configured path. Changed source/profile hashes,
+reader write-key inputs and duplicate starts are refused; uncertain launch keeps
+the original owned handle and does not retry. Shutdown targets only its reader.
+
+Eddie selected deliberately shared facts across projects for the first planned
+reader, using project/onoes-mind/shared; agent-private memory stays excluded.
+This is a planning choice, not permission to enroll or activate live access.
+
+No real store, key, grant, credential, service or startup setting changed. The
+681-check app runtime source remains unchanged. Tests use same-account temporary
+fixtures, not isolation from a hostile same-login user or administrator. The
+initial run exposed an error-type mismatch in a correctly refusing duplicate
+start; its failed log is retained and the corrected six-test run passed.
+
+Next: qualify the thin native Mesh bootstrap and inherited-input credential
+handoff. Keep Mesh alive if its memory reader fails. Then prepare a concrete
+live enrollment proposal for separate owner approval; no PC restart is needed
+for this development slice.
+
 ## Inactive protected read-service provisioning
 
 7actual Windows TEMP checks pass160.761s for provision_recall_candidate.py. The
