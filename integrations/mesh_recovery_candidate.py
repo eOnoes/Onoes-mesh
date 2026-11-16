@@ -223,13 +223,16 @@ def known_service_view(*,attempt_path,ready_path,profile_sha,kind,fetch,roles):
     return value
 
 
-def ensure_memory(window,*,launch,service,reader_service,roles,profile,sha,approval,approved,timeout=90):
-    """Restore previously enrolled roles, then refresh only their exact gateway."""
-    window.assert_held()
-    require(approved['decision']=='approve_exact_same_grant_memory_recovery')
-    p,checked_roles=launch.inspect_launch(profile,sha,approval);require(checked_roles is roles)
-    require(p['schema']=='onoes-mesh-native-launch/v2')
-    gateway_binding(window,p,sha,roles)  # Unknown gateway ownership blocks all actor changes.
+class MemoryRolesUnknown(RecoveryHold):
+    """Retain all original starts if a later role/start observation is uncertain."""
+    def __init__(self,children,cause):
+        self.children,self.original_error=children,cause
+        super().__init__('Memory role recovery is unresolved; preserve its original attempts.')
+
+
+def restore_memory_roles(window,*,service,reader_service,roles,p,profile,approval,approved,timeout=90):
+    """Caller must first prove its exact gateway ownership under this window."""
+    window.assert_held();require(approved['decision']=='approve_exact_same_grant_memory_recovery')
     rp,rbase,rbinding=reader_service.checked_profile(approved['readerServiceProfile'],approved['readerServiceSha256'],approval)
     require(rp['readerProfilePath']==p['readerProfile'] and rp['readerProfileSha256']==p['readerProfileSha256']
             and Path(approved['readerServiceProfile']).parent==Path(profile).parent)
@@ -256,17 +259,31 @@ def ensure_memory(window,*,launch,service,reader_service,roles,profile,sha,appro
     # Validate both roles before starting either. An existing failed/unknown actor
     # is held; only a previously identified retired owner may be restarted here.
     reader,writer=reader_view(),writer_view()
-    for state,start in (
-        (reader,lambda:reader_service.launch_service(approved['readerServiceProfile'],approved['readerServiceSha256'],approval)),
-        (writer,lambda:service.launch_service(project['serviceProfile'],project['serviceProfileSha256'],project['approvalPath']))):
-        if not state['processLive']:
-            child,ticks=start();children.append((child,ticks))
-    until=time.monotonic()+timeout
-    while True:
-        for child,ticks in children:require(child.poll() is None and roles.creation_ticks(child._handle)==ticks)
-        reader,writer=reader_view(),writer_view()
-        if reader['ready'] and writer['ready']:break
-        require(time.monotonic()<until);time.sleep(.2)
+    try:
+        for state,start in (
+            (reader,lambda:reader_service.launch_service(approved['readerServiceProfile'],approved['readerServiceSha256'],approval)),
+            (writer,lambda:service.launch_service(project['serviceProfile'],project['serviceProfileSha256'],project['approvalPath']))):
+            if not state['processLive']:
+                child,ticks=start();children.append((child,ticks))
+        until=time.monotonic()+timeout
+        while True:
+            for child,ticks in children:require(child.poll() is None and roles.creation_ticks(child._handle)==ticks)
+            reader,writer=reader_view(),writer_view()
+            if reader['ready'] and writer['ready']:break
+            require(time.monotonic()<until);time.sleep(.2)
+    except Exception as error:raise MemoryRolesUnknown(children,error) from None
+    return reader,writer,children
+
+
+def ensure_memory(window,*,launch,service,reader_service,roles,profile,sha,approval,approved,timeout=90):
+    """Restore previously enrolled roles, then refresh only their exact gateway."""
+    window.assert_held()
+    require(approved['decision']=='approve_exact_same_grant_memory_recovery')
+    p,checked_roles=launch.inspect_launch(profile,sha,approval);require(checked_roles is roles)
+    require(p['schema']=='onoes-mesh-native-launch/v2')
+    gateway_binding(window,p,sha,roles)  # Unknown gateway ownership blocks all actor changes.
+    reader,writer,children=restore_memory_roles(window,service=service,reader_service=reader_service,roles=roles,
+        p=p,profile=profile,approval=approval,approved=approved,timeout=timeout)
     frame=launch.native_frame(p,roles,approval,sha)
     peers=launch.native_peers(p,roles,approval,frame);frame=None
     bound=gateway_binding(window,p,sha,roles);attempt=bound['attempt']

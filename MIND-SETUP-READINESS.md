@@ -48,6 +48,42 @@ Ensure may recover Mesh without its native Mind binding after that owner exits;
 it must not be represented as successful memory synchronization. Local release
 remains 18/21, and production team, skills/MCP and external-machine work remain.
 
+## Capture-first startup - qualified, not activated
+
+The explicit startup candidate opens the previously approved local board before
+attempting memory recovery. It reuses the existing launcher mutex, owner receipt,
+exact attempts and retired archives; it adds no scheduler or process registry.
+Unknown/dead unpublished attempts and partial archives stay held. Source, runtime,
+private custody, owner, scope and current-grant checks still precede memory use.
+A healthy connected tick observes the exact recorded process identities only;
+it reports memoryAuthorization:not_revalidated rather than claiming a fresh grant
+check or successful delivery.
+
+Fifty-eight focused checks pass. The real isolated Windows journey passed in
+846.916 seconds: a known never-launched synthetic recovery fault stayed untouched,
+the local board opened and saved an edit, and same-grant memory restoration then
+caught up that same event. Earlier event IDs, payload hashes and receipts stayed
+unchanged. Private description prose was excluded, and credential, terminal and
+key-package hashes were preserved. All 118 frozen working source files and 255
+declared source-pin comparisons matched; every isolated actor was retired.
+
+The local-board/held-memory command took 42.183 seconds in this run; the subsequent
+restore/handoff took 340.888 seconds. The healthy observation-only command took
+0.162 seconds and made zero private-storage checks or process changes. These are
+measured results from this fixture, not startup or latency guarantees.
+
+Two earlier full attempts are preserved as failures. Password-free exception-type
+and code-location reporting identified a one-second loopback probe timeout. A real
+closed-port probe took 2.018 seconds to return explicit refusal on this Windows
+host. The probe now allows five seconds, still holds on timeout, and refuses an
+occupied port; it never treats a timeout as proof that the port is free.
+
+No live app, startup task, credential or service changed. The candidate remains
+inactive. Next prepare and qualify the exact existing-startup-task/source/profile
+cutover and rollback before requesting its concrete activation decision. Workers,
+Rook and eight historical holds remain unchanged; local release remains 18/21.
+Local proof: data/native-capture-first-qualified-verification-20261116.json.
+
 ## Guarded reconciliation latency reduction - qualified, not activated
 
 The already-authenticated handoff now shares an internal completion helper with
