@@ -1105,3 +1105,27 @@ is consumed with the revocation transaction; a later completion failure remains
 unknown without issuing another credential or enabling a runtime. The complete
 734-check app run and 36 event/HTTP executions pass. These operations still
 require a separately approved privileged process/profile before live use.
+
+The source-pinned project operator process now passes four actual Windows-child
+checks (119.311s). Its separate approval must explicitly cover the exact action,
+store, scope, projects, review and profile hashes. A child gets START only after
+the parent persists its exact PID/creation identity. A terminal receipt requires
+the original child handle's successful exit and matching outcome, not a status
+file or PID alone. Unknown launches preserve their handle/attempt without retry.
+Preview, old read-only approvals, altered source and missing dependencies refuse
+without provisioning. Keys remain within the one-shot privileged child.
+
+A gateway integration gap was found and corrected before live enrollment:
+`serve.mjs` now reads the combined native frame instead of discarding/refusing
+its project-sync part. The real owned gateway test keeps its access gate enabled,
+edits an approved card through admitted HTTP and verifies canonical receipt and
+read-only recall with private prose excluded. All 734 app checks pass. This is
+local gateway/constructor evidence, not another actual-phone acceptance or a
+production service enrollment. The long-lived service profile, secure credential
+transfer on reload and the complete reviewed activation handoff remain next.
+
+Final source-launch requalification for this slice passed all 12 cases in
+337.426s, alongside 734 full app checks, nine focused gateway/native checks and
+four final project-operator process cases. The actual gateway test includes the
+new combined frame; the first constructor-only proof did not cover that adapter.
+The missing adapter wiring was corrected before any production writer enrollment.

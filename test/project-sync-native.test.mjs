@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
 import {Readable} from 'node:stream';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {mkdirSync,rmSync,statSync,realpathSync} from 'node:fs';
 import {resolve,join} from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
@@ -46,20 +46,49 @@ async function mind(){
   return {get options(){return options;},rpc,async restart(){options=await rpc('restart');},
     async close(){if(child.exitCode===null){await rpc('close');child.stdin.end();}assert.equal(await terminal,0,stderr);lines.close();}};
 }
-async function admitted(app){
-  const boot=await fetch(app.url+'/api/trial-session/bootstrap',{method:'POST',headers:{Origin:app.url,'Content-Type':'application/json'},body:'{}'});
+async function admitted(app,gateCookie=''){
+  const boot=await fetch(app.url+'/api/trial-session/bootstrap',{method:'POST',headers:{Origin:app.url,'Content-Type':'application/json',...(gateCookie?{Cookie:gateCookie}:{})},body:'{}'});
   assert.equal(boot.status,201);const session=await boot.json();
-  const headers={Origin:app.url,'Content-Type':'application/json',Cookie:boot.headers.get('set-cookie').split(';')[0],'X-Trial-CSRF':session.csrfToken};
+  const headers={Origin:app.url,'Content-Type':'application/json',Cookie:[gateCookie,boot.headers.get('set-cookie').split(';')[0]].filter(Boolean).join('; '),'X-Trial-CSRF':session.csrfToken};
   return async(path,{method='GET',body}={})=>{
     const response=await fetch(app.url+path,{method,headers,...(body?{body:JSON.stringify(body)}:{})});
     return {status:response.status,value:await response.json()};
   };
 }
+async function gateway(dataDir,frame){
+  const env={...process.env,MESH_PORT:'0',MESH_PREVIEW_PORT:'0',MESH_DATA_DIR:dataDir,MESH_RELAY:'0',
+    MESH_RELAY_MODE:'child',MESH_MODEL_OBSERVATION:'0',MESH_NEMOTRON_CONTROL:'0',MESH_SIMPLE_FLOW:'0',MESH_NIMS:'0',
+    MESH_GATE_TOKEN:'synthetic-native-sync-gateway'};
+  for(const key of ['MESH_STANDALONE','MESH_NATIVE_WORKER_RECORD','MESH_NATIVE_WORKER_RECORD_SHA256','MESH_TAILSCALE_LOGIN','MESH_TAILSCALE_HOST'])delete env[key];
+  const child=spawn(process.execPath,['serve.mjs','--native-mind'],{env,stdio:['pipe','pipe','pipe'],windowsHide:true});
+  const terminal=new Promise(r=>child.once('exit',code=>r(code)));let output='',stderr='';
+  child.stderr.on('data',b=>stderr+=b);
+  const close=async()=>{if(child.exitCode===null&&child.signalCode===null)child.kill();await terminal;};
+  try{
+    const ready=new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>reject(Error('Owned gateway readiness timed out.')),15000);
+      child.once('error',e=>{clearTimeout(timer);reject(e);});
+      child.once('exit',()=>{clearTimeout(timer);reject(Error('Owned gateway exited before readiness.'));});
+      child.stdout.on('data',b=>{
+        output+=b;
+        for(const line of output.split('\n')){
+          try{const value=JSON.parse(line);if(value.event==='mesh_listening'){clearTimeout(timer);resolve(value);}}catch{}
+        }
+      });
+    });
+    child.stdin.end(JSON.stringify(frame));const status=await ready;assert.equal(status.pid,child.pid);
+    assert.ok(!output.includes(frame.projectSyncOptions.destination.token)&&!stderr.includes(frame.projectSyncOptions.destination.token));
+    assert.ok(!output.includes(frame.mindRecallOptions.token)&&!stderr.includes(frame.mindRecallOptions.token));
+    const cookie='mesh_session='+createHash('sha256').update('mesh-cookie:synthetic-native-sync-gateway').digest('hex');
+    assert.equal((await fetch(status.previewUrl+'/api/mind/status')).status,401);
+    return {request:await admitted({url:status.previewUrl},cookie),close};
+  }catch(error){await close();throw error;}
+}
 function rows(filename){const db=new DatabaseSync(filename,{readOnly:true});try{return db.prepare('SELECT eventId,state,receipt FROM mind_project_outbox ORDER BY sequence').all();}finally{db.close();}}
 
 test('native app saves, reads canonical memory, awaits delivery at close and reconciles offline restart', {timeout:180000},async t=>{
-  environment(t);let app,m,b;
-  t.after(async()=>{try{await app?.close();}finally{try{await m?.close();}finally{b?.cleanup();}}});
+  environment(t);let app,m,b,phoneGateway;
+  t.after(async()=>{try{await phoneGateway?.close();await app?.close();}finally{try{await m?.close();}finally{b?.cleanup();}}});
   m=await mind();b=baseline(m.options.project);
   const start=async()=>{
     b.config.destination=m.options.project;
@@ -96,12 +125,22 @@ test('native app saves, reads canonical memory, awaits delivery at close and rec
   const recovered=rows(b.filename).at(-1);assert.equal(recovered.eventId,pendingId);
   assert.equal(JSON.parse(recovered.receipt).eventId,pendingId);
   assert.deepEqual(await m.rpc('stats'),{records:1,receipts:3});
+  await app.close();app=null;
+  phoneGateway=await gateway(b.dataDir,{schema:meshFrameSchema,mindRecallOptions:m.options.recall,projectSyncOptions:b.config});
+  request=phoneGateway.request;
+  await edit('Synthetic native pipeline gateway');
+  await until(async()=>(await request(cardPath)).value.memorySync.state==='saved');
+  const phoneRecall=await request('/api/mind/recall',{method:'POST',body:{query:'Synthetic native pipeline gateway',limit:8}});
+  assert.equal(phoneRecall.status,200);assert.equal(phoneRecall.value.records.length,1);
+  assert.doesNotMatch(JSON.stringify(phoneRecall.value),/PRIVATE-UNSHARED-GOAL/);
+  assert.deepEqual(await m.rpc('stats'),{records:1,receipts:4});
+  await phoneGateway.close();phoneGateway=null;request=await start();
   const unshared=await request('/api/tasks',{method:'POST',body:{title:'Unshared native card',owner:'echo'}});
   assert.equal(unshared.status,201);
   assert.equal((await request('/api/workroom/'+unshared.value.task.id)).value.memorySync.state,'not_shared');
   await m.rpc('revoke');await edit('Synthetic native pipeline revoked');
   await until(async()=>(await request(cardPath)).value.memorySync.state==='held');
-  assert.deepEqual(await m.rpc('stats'),{records:1,receipts:3});
+  assert.deepEqual(await m.rpc('stats'),{records:1,receipts:4});
 });
 
 test('native input and startup refuse substituted source/policy and never initialize missing schema',async t=>{

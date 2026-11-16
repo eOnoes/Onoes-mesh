@@ -936,3 +936,48 @@ files are preserved. The separate `revoke_project_service` operation records one
 reviewed canonical epoch invalidation after service retirement. No automatic
 retry, cleanup, grant expansion, ordinary credential, integrity-key rotation,
 new memory fact or service activation is provided.
+
+## Source-pinned project operator and actual phone gateway (staged)
+
+`project_operator_process_candidate.py` supplies the separate one-shot privileged
+process boundary. Its new profile/approval schema cannot reuse a read-only
+enrollment approval. The reviewed decision includes exact profile hashes,
+actions, store, shared scope, project choices, Windows owner and review reference.
+Preview creates nothing. All required candidate/canonical source files and the
+Python/PowerShell binaries are hashed before participant imports; the child
+uses isolated Python startup with ambient Python overrides removed.
+
+The parent reserves a private attempt before creating the child, persists its
+PID before querying creation time, then records the exact handle's creation
+stamp before sending START. Missing handshake refuses before opening protected
+keys/writer. Unknown identity keeps the same child handle and durable attempt;
+no retry, kill or replacement is hidden in the API. The setup child owns its
+integrity keys and closes its writer before exit. The parent records terminal
+evidence only after that actual child exits zero, its creation stamp matches,
+and the exact outcome/credential metadata pass. No service is activated.
+
+Four final owned-process tests pass (119.311s): isolated preview/missing approval
+and handshake; real terminal proof and repeat refusal; changed/missing source or
+old read-only approval refusal; and uncertain identity retaining the original
+PID without sending START. Initial test-mock failures are retained separately;
+the corrected tests distinguish required read-only ACL checks from privileged
+operator children.
+
+Inspection also found the production `serve.mjs --native-mind` gateway still
+used the legacy recall-only parser. It now accepts the verified combined native
+frame and passes both constructor inputs to the app. The real owned gateway is
+now part of the existing protected writer/read fixture journey: authentication
+stays enforced, an approved card edit reaches a canonical receipt, recall reads
+the current fact and excluded private prose remains absent. Mesh owners remain
+serialized as that fixture switches between direct app and gateway processes.
+Legacy read-only frames still work. No new actual-phone acceptance is claimed.
+
+This qualifies the operator boundary and gateway path. The long-lived service
+process/profile and its reload credential-transfer path still need qualification
+before the full live activation/backup/deployment proposal can be approved.
+
+Final regression evidence: all 734 app checks pass, the focused combined/legacy
+native gateway run passes nine checks, and the expanded native source/launch
+suite passes 12 cases in 337.426s. The operator's four final cases pass against
+unchanged pinned source. These are local synthetic qualification results; the
+live reader, source profile and existing writer holds remain unchanged.

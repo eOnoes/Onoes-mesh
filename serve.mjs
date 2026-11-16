@@ -28,7 +28,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { startApp, ROOT } from './server.mjs';
-import {readNativeRecallInput} from './integrations/native-mind-mesh-entry.mjs';
+import {readNativeMeshInput} from './integrations/native-mind-mesh-entry.mjs';
 import {createSupervisorObservation} from './lib/supervisor-observation.mjs';
 import {SUPERVISOR_MODEL_PORTS} from './lib/supervisor-port-owner.mjs';
 import {supervisorControlView} from './public/control-models.mjs';
@@ -394,11 +394,11 @@ function readBody(req, limit = 1_000_000) {
 // --- Server --------------------------------------------------------------------------
 // Opt-in native owner launch only. The existing default stays disconnected.
 // Connection secrets arrive through an inherited pipe, never CLI/env/browser.
-let mindRecallOptions;
+let nativeMindOptions;
 if(process.argv.length>2){
   try{
     if(process.argv.length!==3 || process.argv[2]!=='--native-mind')throw Error();
-    mindRecallOptions=await readNativeRecallInput(process.stdin);
+    nativeMindOptions=await readNativeMeshInput(process.stdin);
   }catch{console.error(JSON.stringify({event:'mesh_native_refused'}));process.exit(1);}
 }
 const token = gateToken();
@@ -409,7 +409,7 @@ const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 const nativeConnection=mainboardNativeConnection({root:ROOT});
 if(nativeConnection.state!=='disabled')console.log(JSON.stringify({event:'native_worker_enrollment',state:nativeConnection.state,reason:nativeConnection.reason}));
 const app = await startApp({ dataDir: DATA_DIR, sessionTtlMs: SESSION_TTL_MS,
-  ...(mindRecallOptions?{mindRecallOptions}:{}),
+  ...(nativeMindOptions??{}),
   ...(nativeConnection.options?{nativeWorkerOptions:nativeConnection.options}:{}) });
 const backend = new URL(app.url);
 
