@@ -30,6 +30,29 @@ the segmented rings on phone/desktop in both themes. No implementation or remote
 connection was performed for this note. Eddie's supplied screenshot is a layout
 reference; its "Model loaded: Unknown" and percentages are not live measurements.
 
+## Capture-first installation boundary - qualified, still inactive
+
+The existing finite overlay now also accepts exactly five named top-level Python
+helpers: mesh_startup_candidate.py, mesh_recovery_candidate.py,
+mesh_native_recovery.py, mesh_native_pair.py and mesh_launcher_window.py, all under
+integrations/. Other top-level Python filenames and traversal remain refused.
+Thirteen disposable Windows overlay checks pass, including install of the exact
+five, byte-for-byte restoration of an existing helper, removal of installer-owned
+new helpers, preservation of unrelated work and rejection of unknown helper names.
+Exact plan approval, source hashes, retired process identities, stopped writer
+proof and exclusive gateway reservation remain required before any installation.
+
+This changes the installer only, not the qualified startup runtime. The earlier
+118-file source-snapshot proof belongs to commit d713f2e; its actual startup,
+capture and connected runtime pins do not include this installer helper. The new
+installer and its test are separately qualified by the 13 checks above. The live
+task was exported read-only: one enabled recovery task still uses its original
+wscript hidden launcher with login and time triggers. No task or service changed.
+
+The hidden-launcher delegation and composed source/profile/task cutover/rollback
+are not qualified yet. Prepare those together before asking to activate startup
+recovery. Do not represent this installation boundary test as deployed recovery.
+
 ## Capture-first startup - qualified, not activated
 
 The explicit startup candidate opens the previously approved local board before

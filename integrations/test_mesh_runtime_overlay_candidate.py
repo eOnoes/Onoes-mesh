@@ -61,6 +61,29 @@ class MeshOverlayTests(unittest.TestCase):
             self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,approval)
         self.assertFalse((self.root/'journal').exists());self.assertEqual((self.live/'lib/a.mjs').read_bytes(),b'// exact original\r\n')
 
+    def test_exact_startup_helpers_install_and_rollback_without_allowing_other_python(self):
+        expected={f'integrations/{name}.py' for name in (
+            'mesh_startup_candidate','mesh_recovery_candidate','mesh_native_recovery',
+            'mesh_native_pair','mesh_launcher_window')}
+        self.assertEqual(overlay.STARTUP_HELPERS,expected)
+        for rel in sorted(expected):
+            for base in (self.live,self.payload):(base/rel).parent.mkdir(exist_ok=True)
+            (self.payload/rel).write_bytes(b'# exact approved startup helper\n')
+            before=None
+            if rel.endswith('/mesh_native_pair.py'):
+                (self.live/rel).write_bytes(b'# previous helper\r\n');before=overlay.digest(self.live/rel)
+            self.plan['files'].append(dict(relativePath=rel,beforeSha256=before,afterSha256=overlay.digest(self.payload/rel)))
+        self.assertTrue(overlay.inspect_overlay(self.plan)['createsNothing'])
+        self.assertEqual(overlay.apply_overlay(self.plan,self.approve())['state'],'installed')
+        for rel in expected:self.assertEqual((self.live/rel).read_bytes(),(self.payload/rel).read_bytes())
+        self.assertEqual(overlay.rollback_overlay(self.plan,self.approve(True))['state'],'original')
+        for rel in expected:
+            if rel.endswith('/mesh_native_pair.py'):self.assertEqual((self.live/rel).read_bytes(),b'# previous helper\r\n')
+            else:self.assertFalse((self.live/rel).exists())
+        for rel in ('integrations/other.py','integrations/mesh_startup_candidate.py.extra','integrations/../mesh_startup_candidate.py'):
+            p=copy.deepcopy(self.plan);p['files'][-1]['relativePath']=rel
+            self.assertRaises(RuntimeError,overlay.inspect_overlay,p)
+
     def test_changed_payload_original_or_tool_hash_refuses_before_any_write(self):
         p=copy.deepcopy(self.plan);p['toolSha256']='0'*64;self.assertRaises(RuntimeError,overlay.inspect_overlay,p)
         p=copy.deepcopy(self.plan);p['observerSha256']='0'*64;self.assertRaises(RuntimeError,overlay.inspect_overlay,p)

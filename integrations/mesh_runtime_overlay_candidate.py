@@ -9,6 +9,15 @@ import socket
 import tempfile
 
 
+STARTUP_HELPERS=frozenset({
+    'integrations/mesh_startup_candidate.py',
+    'integrations/mesh_recovery_candidate.py',
+    'integrations/mesh_native_recovery.py',
+    'integrations/mesh_native_pair.py',
+    'integrations/mesh_launcher_window.py',
+})
+
+
 def require(ok):
     if not ok: raise RuntimeError('Mesh code overlay refused; preserve existing state.')
 
@@ -58,7 +67,7 @@ def checked(value):
         require(type(f) is dict and set(f)=={'relativePath','beforeSha256','afterSha256'})
         rel=f['relativePath'];require(type(rel) is str and '\\' not in rel)
         parts=PurePosixPath(rel).parts
-        allowed=(rel in ('package.json','server.mjs','serve.mjs') or
+        allowed=(rel in ('package.json','server.mjs','serve.mjs') or rel in STARTUP_HELPERS or
             len(parts)==2 and parts[0] in ('lib','public') and parts[1].endswith('.mjs') or
             len(parts)==2 and parts[0]=='integrations' and Path(parts[1]).suffix in ('.mjs','.ps1') or
             len(parts)==3 and parts[:2]==('integrations','mind-recovery-candidate') and parts[2].endswith('.py'))
