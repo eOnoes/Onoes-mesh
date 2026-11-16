@@ -55,6 +55,28 @@ the host run passed 3/3. This is coordination qualification, not a successful
 live write connection. A fresh reviewed activation must account for the revoked
 purpose, preserved source link/outbox, fresh attempt identities and this lock.
 
+### Native-owner handoff follow-up
+
+The coordinated disposable cutover now passed in 689.297 seconds (686.468-second
+test): actual gateway delivery, three recovery ticks blocked while the shared
+window was held, native-owner publication before release, graceful writer stop,
+exact revocation, original-code rollback and canonical read-only recall. Recovery
+recognized both the native owner and its restored fallback without replacement.
+Two canonical receipts and two source events were retained. Seven focused Windows
+checks additionally cover exact PID/birth/executable/loopback-port ownership,
+stale-attempt and live-prior-owner refusal, and receipt beforeimage retention.
+No live app, Task Scheduler entry, model service or memory was changed by this
+qualification. The first fixture refusal (missing legacy database location) is
+preserved; its corrected synthetic baseline did not relax the real launcher.
+
+This qualifies coordinated handoff, not automatic Mind recovery after a later
+process crash or login. The current Ensure entry can start legacy Mesh after a
+native owner disappears; preserving an approved Mind binding across that event
+remains an explicit release item. New live enrollment must use the reviewed
+replacement operation after revocation, fresh attempt/output identities and the
+already-prepared source link/outbox. Do not rerun first-time setup or silently
+replay the preserved baseline under a guessed destination.
+
 ### Running checklist
 
 - [x] Phone cards: create, edit, touch-drag, saved state, themes, background return,

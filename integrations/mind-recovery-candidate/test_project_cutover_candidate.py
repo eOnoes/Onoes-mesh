@@ -27,6 +27,13 @@ class InstalledCutoverTests(unittest.TestCase):
         spec=importlib.util.spec_from_file_location('cutover_overlay',config['tool'])
         overlay=importlib.util.module_from_spec(spec);spec.loader.exec_module(overlay)
         self.assertEqual(overlay.digest(config['tool']),config['toolSha256'])
+        window_tool=Path(config['launcherWindowTool'])
+        self.assertEqual(overlay.digest(window_tool),config['launcherWindowToolSha256'])
+        spec=importlib.util.spec_from_file_location('cutover_launcher_window',window_tool)
+        coordination=importlib.util.module_from_spec(spec);spec.loader.exec_module(coordination)
+        window=coordination.MeshLauncherWindow(workspace,overlay.digest(workspace/'integrations/restart-workroom-preview.ps1'))
+        window.__enter__()
+        self.addCleanup(lambda:window.__exit__(None,None,None) if window.handle is not None else None)
         case=fixtures.ProjectMeshLauncherTests();case.setUp();self.addCleanup(case.doCleanups)
         # Adapt this private fixture before any service launches, preserving the
         # actual attempt/receipt identity instead of relaxing the plan contract.
@@ -34,6 +41,20 @@ class InstalledCutoverTests(unittest.TestCase):
         case.fixture.write()
         state={};actual_launch=launch.launch_mesh
         reader_credential=Path(case.reader.reader_data['credentialPath'])
+
+        def recovery_tick(blocked):
+            result=subprocess.run([case.fixture.base.value['runtime']['pwsh'],'-NoProfile','-NonInteractive',
+                '-File',str(workspace/'integrations/restart-workroom-preview.ps1'),'-Action','Ensure'],
+                capture_output=True,text=True,timeout=30,creationflags=subprocess.CREATE_NO_WINDOW)
+            if blocked:
+                self.assertNotEqual(result.returncode,0)
+                self.assertIn('Another named Mesh launcher operation is in progress',result.stderr)
+            else:
+                self.assertEqual(result.returncode,0,result.stderr)
+                self.assertIn('is running; no restart performed',result.stdout)
+            if not blocked:
+                self.assertIsNotNone(case.mesh)
+                self.assertIsNone(case.mesh.poll())
 
         def stopped_service(child):
             service.request_stop(case.fixture.profile,case.fixture.sha,case.fixture.base.approval)
@@ -45,6 +66,18 @@ class InstalledCutoverTests(unittest.TestCase):
 
         def install_before_mesh(profile,sha,approval):
             self.assertFalse(state)
+            window.assert_held()
+            # The copied legacy recovery entry requires its normal database
+            # location before reaching the shared mutex. Give it a synthetic
+            # baseline copied from this fixture; the running gateway still uses
+            # its independently pinned fixture data directory.
+            import sqlite3
+            legacy_data=workspace/'data/workroom-preview';legacy_data.mkdir(parents=True)
+            original=sqlite3.connect((case.data/'tasks.sqlite').as_uri()+'?mode=ro',uri=True)
+            copied=sqlite3.connect(legacy_data/'tasks.sqlite')
+            try:original.backup(copied)
+            finally:copied.close();original.close()
+            recovery_tick(True)
             service_child,_=case.fixture.children[-1]
             stopped_service(service_child)
             # Fixture preparation loaded candidate helpers without a Mesh child.
@@ -58,6 +91,14 @@ class InstalledCutoverTests(unittest.TestCase):
             stamp=roles.creation_ticks(child._handle);self.assertEqual(child.wait(timeout=10),0)
             with socket.socket() as port:port.bind(('127.0.0.1',0));number=port.getsockname()[1]
             native=json.loads(Path(profile).read_text())
+            # Set an explicit fixture gateway before its first launch so owner
+            # publication can prove the real process/listener rather than port0.
+            with socket.socket() as gateway:gateway.bind(('127.0.0.1',0));gateway_port=gateway.getsockname()[1]
+            native['settings']['MESH_PREVIEW_PORT']=str(gateway_port)
+            Path(profile).write_text(json.dumps(native),encoding='utf-8');sha=launch.digest(profile)
+            for approval_path in (case.reader.approval,case.fixture.base.approval):
+                accepted=json.loads(approval_path.read_text());accepted['profiles'].append(sha)
+                approval_path.write_text(json.dumps(accepted),encoding='utf-8')
             plan=dict(schema='onoes-mesh-runtime-overlay/v2',workspace=str(workspace),payloadRoot=config['payloadRoot'],
                 journalRoot=str(run/'journal'),toolSha256=config['toolSha256'],observerSha256=overlay.digest(overlay.observer_path()),
                 runtime=dict(meshPid=child.pid,meshCreationTicks=stamp,gatewayPort=number,
@@ -73,6 +114,14 @@ class InstalledCutoverTests(unittest.TestCase):
 
         with patch.object(launch,'launch_mesh',side_effect=install_before_mesh):
             case.test_exact_profiles_preflight_then_owned_gateway_delivers_only_approved_fields()
+        owner=window.publish_native_owner(case.mesh,roles.creation_ticks(case.mesh._handle),
+            state['meshProfile'],state['meshSha'],previous_sha256=None)
+        self.assertEqual(owner['Id'],case.mesh.pid)
+        recovery_tick(True)
+        window.__exit__(None,None,None)
+        recovery_tick(False)
+        window.__enter__()
+        previous_receipt=overlay.digest(workspace.parent/'workroom-ab-preview-process.json')
         credential_before=roles.digest(reader_credential)
         # Simulate a failed qualification decision after proven delivery. This
         # exercises conditional rollback without manufacturing an ambiguous send.
@@ -82,6 +131,8 @@ class InstalledCutoverTests(unittest.TestCase):
         case.mesh.terminate();case.mesh.wait(timeout=30)
         self.assertEqual(roles.creation_ticks(case.mesh._handle),mesh_stamp)
         stopped=stopped_service(state['serviceChild'])
+        # A real recovery tick cannot replace the retired gateway during rollback.
+        recovery_tick(True)
         base=case.fixture.base;revoke=copy.deepcopy(base.value)
         revoke.update(mode='revoke',operationId='fixture-cutover-revoke',credentialPath=None,
             attemptPath=str(case.root/'revoke-attempt.json'),outcomePath=str(case.root/'revoke-outcome.json'),terminalPath=str(case.root/'revoke-terminal.json'))
@@ -142,12 +193,19 @@ class InstalledCutoverTests(unittest.TestCase):
         try:self.assertEqual(source.execute('SELECT count(*) FROM mind_project_outbox').fetchone()[0],2)
         finally:source.close()
         request('/api/trial-session/logout',{},csrf)
+        window.publish_native_owner(case.mesh,roles.creation_ticks(case.mesh._handle),fallback_profile,fallback_sha,
+            previous_sha256=previous_receipt,beforeimage_path=workspace/'data/cutover-owner-before.json')
+        window.__exit__(None,None,None)
+        recovery_tick(False)
         for key in ('stdoutPath','stderrPath'):(run/Path(fallback[key]).name).write_bytes(Path(fallback[key]).read_bytes())
         proof=dict(schema='onoes-mesh-disposable-cutover/v1',syntheticOnly=True,installedDeliveryPassed=True,
             ownedMeshRetired=True,ownedWriterStopped=stopped['state']=='stopped',revocationTerminalVerified=True,
             revokedCredentialRejected=True,canonicalProjectReceiptsPreserved=2,sourceOutboxPreserved=2,
             readCredentialUnchanged=True,allOriginalCodeRestored=True,readOnlyFallbackListening=True,
-            readOnlyCanonicalRecallPassed=True,planSha256=overlay.plan_hash(state['plan']),newFileCount=sum(f['beforeSha256'] is None for f in config['files']),liveChanged=False)
+            readOnlyCanonicalRecallPassed=True,recoveryTicksBlockedDuringCutover=True,
+            exactNativeOwnerPublishedBeforeRelease=True,recoveryKeptNativeOwner=True,
+            recoveryKeptReadOnlyFallback=True,ownerReceiptBeforeimageRetained=True,
+            planSha256=overlay.plan_hash(state['plan']),newFileCount=sum(f['beforeSha256'] is None for f in config['files']),liveChanged=False)
         (run/'CUTOVER-PROOF.json').write_text(json.dumps(proof,indent=2)+'\n',encoding='utf-8')
 
 
