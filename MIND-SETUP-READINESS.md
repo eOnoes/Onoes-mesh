@@ -778,3 +778,64 @@ a disconnected synthetic writer/outbox candidate under the ongoing Mesh build.
 Live identity enrollment and memory ingestion still need their own reviewed
 approval. Conversation continuity and shared skills/MCP remain later stages
 after reliable project updates.
+
+
+## Disconnected project-sync components - 2026-11-15 Chicago
+
+Implemented in the existing candidate area, with no runtime imports, CLI,
+listener, startup job or production schema migration:
+
+- project_events_candidate.py owns explicit project registration, a separately
+  named purpose-specific service credential, per-project grants, exact canonical
+  store/file binding, ordered full-payload event hashes and canonical memory,
+  provenance/audit/receipt publication in one transaction. The frozen Mind core
+  is unchanged. Its candidate tables would live in the canonical ledger, not a
+  Mesh side ledger, if separately reviewed and activated later.
+- project-sync-outbox-candidate.mjs provides explicit card/project links and
+  sharing withdrawal. Queue capture requires the same SQLite transaction as the
+  card change and a server-owned snapshot reader; revision tuples and sequences
+  must advance. No browser may directly supply an event. Delivery first looks
+  up the exact ID; only a correctly bound absence permits submit. It persists
+  uncertainty before transport, validates complete receipts and shows held for
+  conflicts, corrupt local payloads or removed records. Held predecessors block
+  later events for that card. This does not dispatch workers or move cards.
+
+Local verification: 14 Python candidate checks PASS (3.214s) and 14 Node checks
+PASS (5.397s). The Node tests use a real Mesh card schema and a captured synthetic
+Python child with canonical SQLite records; the pipe peer is a test fixture,
+not a production service. Checks include transaction rollback, reopen/readback,
+concurrent canonical connections, Unicode payload agreement, ordered replacement,
+current provenance through the existing bound reader, wrong project/store,
+credential revocation, ordinary-token refusal, changed evidence conflict,
+canonical receipt corruption, deletion and replay, offline delivery, lost reply
+then exact receipt recovery, withdrawn sharing during lookup/after commit,
+held predecessors and stale source revisions. Syntax checks passed for all five
+new files. Existing full-app checks were not rerun or represented as these 28.
+
+Discovery: Windows Python pipes defaulted to cp1252. The Unicode composed test
+failed safely with a mismatching receipt before the synthetic peer explicitly
+selected strict UTF-8. Failed evidence is retained. Any real transport must
+specify UTF-8 and enforce request/response bounds, typed errors and timeouts.
+
+Limits / next acceptance:
+
+1. The actual Workroom create/edit/assignment/progress/Done mutation paths do
+   not yet call this queue; the atomic capture test exercises a disposable card
+   transaction, not the production API. Add/qualify that application seam without
+   enabling writes by default, and expose compact pending/saved/held observations.
+2. Receipt survival is qualified across connection/queue reopen, not owned OS
+   process crashes. Qualify actual precommit/postcommit crash boundaries, competing
+   dispatchers, and real transport framing/auth/bounds before deployment.
+3. The candidate has no operator UI, project deletion/grant-management workflow,
+   retention policy or automatic saved-receipt reconciliation. Saved currently
+   means a validated historical delivery receipt, not a promise of perpetual
+   retention. Withdrawal cannot undo a fact already committed remotely; deliberate
+   correction/deletion remains a separate owner operation.
+4. Qualify canonical checkpoint/recovery composition and updated encrypted
+   backup/restore with event receipts and deletion history. No live schema,
+   project registry entry, service principal, write credential, fact or scheduler
+   was created. The approved live reader and its existing credential are unchanged.
+
+The local-release score remains 18/21 and the broader goal is active. Next is
+application transaction wiring and owned-process recovery qualification using
+isolated data. Live writer enrollment still requires its exact reviewed approval.
