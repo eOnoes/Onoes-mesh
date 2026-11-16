@@ -1373,7 +1373,57 @@ purged visibility while keeping the expected provenance rows.
    If any required identity/hash/terminal proof is missing, retain the hold and
    report the exact step; no broad process stop or automatic retry is allowed.
 
-The secure owner window, trusted-producer snapshot composition, post-success
-backup/relaunch profiles and this combined failure/rollback path still need their
-concrete handoff and composed acceptance check. Existing six metadata profiles
-are drafts, not activation permission. No live action is authorized by this file.
+The secure owner backup window and trusted-producer snapshot composition are
+now implemented and qualified on synthetic data, as recorded below. Before/after
+backup and post-backup relaunch profiles are drafted privately. The combined
+failure/rollback path and final owner handoff still need their composed check;
+none of these drafts authorizes a live action.
+
+
+## Existing-store owner backup window (candidate, not activated)
+
+`project_backup_entry.py` defaults to read-only preview. Its explicit run requires
+one exact profile approval tied to Eddie's Windows identity, store, environment
+and review. It checks the entire required source set before participant imports,
+canonical database file identity, private separate empty backup folders, pinned
+archive binary and fresh attempt/result paths. The declared project writer must
+be not-yet-created or have a matching stopped run receipt and retired PID/creation
+time. Unknown/active/failed writer state blocks the window.
+
+Only after approval does the native console request the saved archive password
+and confirmation through the existing non-echoing reader. It reuses the store's
+wrapped keys, publishes a protected snapshot to the independent current authority,
+closes its source handle, exports the archive and performs the populated-store
+rehearsal. It issues no keys or credentials and starts no service. The integrated
+window truthfully records that it opened the source ledger for backup; preview
+and the archive-only finisher do not. Passwords are never command arguments.
+
+`Start-Existing-Mind-Backup.ps1` verifies its profile, interpreter, entry point and
+own source pins, launches Python in isolated mode, and keeps the final status
+visible until CLOSE. Failed attempts retain a password-free phase and their
+artifacts; there is no retry, cleanup, older-store restore or false success.
+
+All six final checks pass together in 198.426s. The backup success case uses a
+populated synthetic store, real wrapped fixture keys and a labeled encrypted E:
+archive; recovered receipts match, existing wrapped keys are byte-identical and
+replay is blocked before asking for a password. The launcher remains alive after
+WAIT and exits after CLOSE. Its isolated check also passes with resource warnings
+treated as errors. Earlier evidence is retained: the prototype's five checks
+passed; an intermediate six-check command had five passes and a faulty assertion
+that redirected stdout contains Read-Host prompt text. The corrected check tests
+actual process lifetime and input behavior instead.
+
+Two backup profiles and two fresh post-backup runtime profiles are metadata drafts
+only. Their nine proposed private folders have not been created, no approval file
+has been materialized, and no live store or credential was opened by this work.
+The combined source-update/service-stop/revocation/code-rollback/read-only fallback
+qualification and final exact owner packet remain next. Existing agent workers,
+Rook, the model service and eight historical job holds remain unchanged.
+
+A cutover gap was found during source review: the file-overlay guard checks the
+original Mesh PID and one project-service attempt. It does not yet declare the
+fresh Mesh or post-backup service attempts. A free gateway alone cannot attest
+that a new child is not still starting. Extend the exact overlay plan to check
+all declared fresh attempt identities and refuse live/uncertain ones before the
+combined rollback trial. The old draft remains unapproved and must be refreshed;
+none of the existing installed-layout evidence is live activation permission.
