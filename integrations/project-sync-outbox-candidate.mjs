@@ -46,9 +46,10 @@ export function validateProjectEvent(event) {
   return {payload, hash:createHash('sha256').update(payload).digest('hex')};
 }
 
-export function initializeProjectOutbox(db) {
-  require(!db.isTransaction, 'Initialize outside card transactions.');
-  db.exec('BEGIN IMMEDIATE');
+export function initializeProjectOutbox(db,{joinTransaction=false}={}) {
+  require(typeof joinTransaction==='boolean'&&(!db.isTransaction||joinTransaction), 'Initialize outside card transactions unless explicitly owned.');
+  const own=!db.isTransaction;
+  if(own)db.exec('BEGIN IMMEDIATE');
   try {
     db.exec(`CREATE TABLE mind_project_links(
       cardId TEXT PRIMARY KEY REFERENCES tasks(id), projectId TEXT NOT NULL,
@@ -60,8 +61,8 @@ export function initializeProjectOutbox(db) {
       state TEXT NOT NULL CHECK(state IN ('pending','uncertain','saved','held')),
       reason TEXT NOT NULL DEFAULT '', receipt TEXT,
       UNIQUE(cardId,sequence));`);
-    db.exec('COMMIT');
-  } catch (error) { db.exec('ROLLBACK'); throw error; }
+    if(own)db.exec('COMMIT');
+  } catch (error) { if(own)db.exec('ROLLBACK'); throw error; }
 }
 
 export class ProjectOutboxCandidate {

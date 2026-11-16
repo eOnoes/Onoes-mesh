@@ -1089,9 +1089,41 @@ credential recovery. Restored file identity must not silently reuse an old
 runtime profile or credential binding; reviewed re-enrollment/replacement remains
 separate from data restoration.
 
-Still required: complete the concrete Workroom link/baseline preparation, fresh
-source deployment, updated encrypted backup/recovery and rollback handoff, then
+The exact Workroom link/baseline preparation is qualified below. Still required:
+fresh source deployment, updated encrypted backup/recovery and rollback handoff, then
 obtain owner approval for exact first live writes. No live writer, sharing link,
 new grant, profile, service, startup entry or deployment was activated here.
 The current approved reader stays unchanged; workers, Rook and historical holds
 remain off/held, and the wider app goal remains unfinished.
+
+
+## Exact Workroom source setup (staged, 2026-11-16)
+
+The dedicated source-setup module previews the selected cards with a read-only
+connection. It checks the canonical task-file identity, exact task/brief/progress
+revisions and approved-field projection hash. It does not open the normal task
+store or initialize Workroom, because those entry points can retire interrupted
+job records. A shared read-only card-state/projection reader keeps setup and
+normal UI interpretations consistent without loading chat/report history.
+
+Apply requires a distinct exact-plan approval. Its own immediate transaction
+creates the three project tables, field policies, links and initial events as
+one unit. Ordinary outbox initialization still refuses an implicit existing
+card transaction; only explicit owner setup may join its outer transaction.
+Commit uncertainty is preserved and resolved through read-only baseline-ID
+lookup, never a blind repeat. The operation starts no delivery, service or agent
+and accesses no Mind store or credential. There is no public route or startup.
+
+All nine focused setup checks pass, including unchanged preview bytes, existing
+row/eight synthetic-send preservation, approval/revision/hash refusals, partial
+setup refusal, rollback before commit and lookup after a lost commit reply.
+The first test run had a fixture placeholder-count error; its log is preserved.
+All 746 app checks pass (616 Node, 130 Python). The actual first-card preview
+also passes without creating a table or changing its saved source revisions.
+The combined owned reader/service/gateway run passed all eleven checks in
+408.605s. It uses this exact source-setup operation in place of an ad hoc
+fixture link, verifies baseline-ID readback before launch, then confirms the
+admitted card edit reaches canonical memory with excluded prose absent.
+
+No live apply or approval file was created. Fresh deployment profiles, encrypted
+backup/recovery and rollback preparation still precede owner activation review.

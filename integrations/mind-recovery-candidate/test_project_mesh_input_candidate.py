@@ -188,12 +188,20 @@ class ProjectMeshLauncherTests(unittest.TestCase):
         database=self.data/'tasks.sqlite'
         source = """import {openTaskStore} from './lib/task-store.mjs';
 import {statSync,realpathSync} from 'node:fs';
-import {createWorkroomProjectSyncCandidate} from './integrations/workroom-project-sync-candidate.mjs';
-let controller;const store=openTaskStore(process.argv[1],{projectSyncFactory:c=>controller=createWorkroomProjectSyncCandidate(c,{storeId:process.argv[2],initialize:true})});
+import path from 'node:path';import {createHash} from 'node:crypto';
+import {projectSnapshot} from './integrations/workroom-project-sync-candidate.mjs';
+import {canonicalProjectEvent} from './integrations/project-sync-outbox-candidate.mjs';
+import {inspectProjectSource,prepareProjectSource} from './integrations/project-sync-source-setup-candidate.mjs';
+const store=openTaskStore(process.argv[1]);
 const card=store.create({title:'Synthetic composed launcher',description:'EXCLUDED-PRIVATE-PROSE',owner:'nims'});
 const link={cardId:card.id,projectId:'project-A',approvalRef:'fixture:launch-sharing',fields:['title','stage']};
-controller.link(link);store.close();const s=statSync(process.argv[1],{bigint:true});
-console.log(JSON.stringify({link,source:{databasePath:realpathSync(process.argv[1]),fileDevice:String(s.dev),fileInode:String(s.ino)}}));"""
+const snapshot=projectSnapshot(store.workroom.get(card.id),link.fields);store.close();
+const s=statSync(process.argv[1],{bigint:true}),source={databasePath:realpathSync(process.argv[1]),fileDevice:String(s.dev),fileInode:String(s.ino)};
+const projectionSha256=createHash('sha256').update(canonicalProjectEvent({revisions:snapshot.revisions,snapshot:snapshot.snapshot})).digest('hex');
+const plan={schema:'onoes-mesh-project-source-setup/v1',workspace:realpathSync(process.cwd()),dataDir:path.relative(process.cwd(),path.dirname(process.argv[1])).split(path.sep).join('/'),source,storeId:process.argv[2],links:[{...link,revisions:snapshot.revisions,projectionSha256}]};
+const preview=inspectProjectSource(plan);const receipt=prepareProjectSource(plan,{decision:'approve_exact_mesh_project_source_setup',planSha256:preview.planSha256});
+if(receipt.baselines.length!==1||inspectProjectSource(plan).baselines[0].eventId!==receipt.baselines[0].eventId)throw Error('Source preparation readback failed');
+console.log(JSON.stringify({link,source}));"""
         initialized=subprocess.run([shutil.which('node'),'--input-type=module','-e',source,str(database),self.reader.reader_data['binding']['store_id']],
             cwd=launch.ROOT,capture_output=True,text=True,timeout=30,creationflags=subprocess.CREATE_NO_WINDOW)
         self.assertEqual(initialized.returncode,0,initialized.stderr)

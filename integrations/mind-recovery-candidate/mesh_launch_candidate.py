@@ -41,6 +41,7 @@ def source_paths(*, project=False):
     for name in ('lib','public'):paths.update((ROOT/name).rglob('*.mjs'))
     if project:paths.update(Path(__file__).resolve().parent/name for name in (
         'project_mesh_input_candidate.py','project_service_process_candidate.py','project_operator_process_candidate.py'))
+    if project:paths.add(ROOT/'integrations/project-sync-source-setup-candidate.mjs')
     return paths
 
 

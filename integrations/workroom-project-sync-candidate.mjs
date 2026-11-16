@@ -4,29 +4,30 @@ import {ProjectOutboxCandidate,initializeProjectOutbox,canonicalProjectEvent,val
 
 const allowed = ['title','goal','owner','stage','result','blocker'];
 
+export function projectSnapshot(task,fields){
+  if(!Array.isArray(fields)||!fields.includes('title')||!fields.includes('stage')||
+    fields.some(f=>!allowed.includes(f))||new Set(fields).size!==fields.length)throw Error('Invalid sharing policy.');
+  const blocked=task.progress.checklist.filter(step=>step.status==='blocked').length;
+  const values={title:task.title,goal:task.progress.goal,owner:task.workroom.owner,
+    stage:task.workroom.stage,result:task.progress.result,
+    blocker:blocked?`${blocked} checklist step(s) blocked.`:task.progress.decision==='changes_requested'?'Review changes requested.':''};
+  const snapshot=Object.fromEntries(allowed.map(f=>[f,fields.includes(f)?values[f]:'']));
+  const revisions={task:task.revision,brief:task.workroom.revision,progress:task.progress.revision};
+  const digest=createHash('sha256').update(canonicalProjectEvent({revisions,snapshot})).digest('hex');
+  return {revisions,snapshot,evidence:[{type:'workroom',
+    ref:`card:${task.id}@${revisions.task}/${revisions.brief}/${revisions.progress}`,content_hash:`sha256:${digest}`}]};
+}
+
 export function createWorkroomProjectSyncCandidate({db,store},
-  {storeId,initialize=false,approveCreation=null}={}) {
+  {storeId,initialize=false,approveCreation=null,joinTransaction=false}={}) {
   if(initialize){
-    initializeProjectOutbox(db);
+    initializeProjectOutbox(db,{joinTransaction});
     db.exec('CREATE TABLE mind_project_capture_policy(cardId TEXT PRIMARY KEY REFERENCES mind_project_links(cardId), fields TEXT NOT NULL)');
   }
   function readSnapshot(cardId) {
     const policy=db.prepare('SELECT fields FROM mind_project_capture_policy WHERE cardId=?').get(cardId);
     if(!policy)throw Error('Explicit shared-field policy required.');
-    const fields=JSON.parse(policy.fields);
-    if(!Array.isArray(fields)||!fields.includes('title')||!fields.includes('stage')||
-      fields.some(f=>!allowed.includes(f))||new Set(fields).size!==fields.length)throw Error('Invalid sharing policy.');
-    const task=store.workroom.get(cardId);
-    const blocked=task.progress.checklist.filter(step=>step.status==='blocked').length;
-    const values={title:task.title,goal:task.progress.goal,owner:task.workroom.owner,
-      stage:task.workroom.stage,result:task.progress.result,
-      blocker:blocked?`${blocked} checklist step(s) blocked.`:task.progress.decision==='changes_requested'?'Review changes requested.':''};
-    const snapshot=Object.fromEntries(allowed.map(f=>[f,fields.includes(f)?values[f]:'']));
-    const revisions={task:task.revision,brief:task.workroom.revision,progress:task.progress.revision};
-    const digest=createHash('sha256').update(canonicalProjectEvent({revisions,snapshot})).digest('hex');
-    // A source pointer/hash, never raw chat, free-form evidence or a fetched file.
-    return {revisions,snapshot,evidence:[{type:'workroom',
-      ref:`card:${cardId}@${revisions.task}/${revisions.brief}/${revisions.progress}`,content_hash:`sha256:${digest}`}]};
+    return projectSnapshot(store.workroom.get(cardId),JSON.parse(policy.fields));
   }
   const outbox=new ProjectOutboxCandidate(db,{storeId,readSnapshot});
   function atomic(fn){
