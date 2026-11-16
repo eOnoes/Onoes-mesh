@@ -97,6 +97,37 @@ task argument change or app reload was applied. Reader/writer restart, offline
 capture/catch-up and clear stale status remain open; passing this gateway scenario
 does not qualify cold login or those missing cases. Local release stays 18/21.
 
+## Managed reader restart - qualified, not activated
+
+The new reader-service wrapper reuses the unchanged read-only enrollment,
+credential and operator terminal proof. It adds durable launch attempts before
+starting its own child, exact PID/birth readback, a kernel lifetime lease,
+generation-specific stop requests and preserved retirement evidence. It does
+not edit the original enrollment validator, provision access or rotate a key.
+The existing reader frame remains compatible through the same base ready record.
+
+Seven focused boundary checks passed. The actual synthetic enrollment/migration,
+crash/restart and Mesh read-client scenario then passed with all seven checks in
+231.734 seconds (eight tests total, including cleanup). A legacy reader's exact
+retired records were preserved. Two managed generations used the same credential;
+original operator proof and canonical synthetic ledger bytes stayed identical.
+The writer-key package was unavailable throughout reader operation. A stale
+managed-generation stop was ignored, duplicate startup was refused and the
+actual Mesh read client returned its expected scoped empty snapshot. The final
+owned reader stopped cleanly.
+
+The first actual run stopped at a test observer that intercepted permission-check
+subprocesses as well as reader launches. Its log remains preserved; the corrected
+observer matches only the exact reader script/run flag. Runtime code was unchanged
+between those actual runs. Focused tests stub their enrollment boundary explicitly;
+actual-process qualification uses the original canonical source validation.
+
+This wrapper is not connected to the live reader or the full Ensure route yet.
+Reader/writer coordination must refresh Mesh's immutable native service endpoints
+after a restart and reconcile interrupted delivery without replacing event IDs.
+Offline capture/catch-up, stale status and live activation remain open. Local
+release stays 18/21; no service, credential, startup setting or live memory changed.
+
 ## First live shared read-only connection - phone accepted
 
 Eddie approved the first canonical shared-facts connection and conditional

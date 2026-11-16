@@ -84,6 +84,22 @@ This is qualified candidate code, not deployed startup recovery. No live task,
 permission, service or app was changed. Reader/writer recovery, offline catch-up
 and disconnected/stale status remain unfinished; local release remains 18/21.
 
+### Inactive managed-reader restart qualification
+
+The managed reader wrapper preserves the original enrollment, credential and
+operator terminal proof. Seven boundary checks plus the actual synthetic
+migration/crash/restart/Mesh-client scenario passed in 231.734 seconds (eight
+tests total). Original synthetic ledger bytes and credential/proof hashes stayed
+identical with writer keys unavailable. Exact legacy evidence was archived;
+stale generation stop and duplicate launch were refused; owned shutdown passed.
+The first actual test's overly broad subprocess observer was corrected without
+changing runtime code, and its failed log is retained.
+
+This is an inactive reader primitive, not full memory-service recovery. Refreshing
+Mesh's immutable peer endpoints, coordinating reader/writer startup, offline
+capture/status and reviewed live activation remain. No existing enrollment source,
+live service or startup definition changed. Local release remains 18/21.
+
 ### First project-write attempt: read-only rollback completed
 
 The owner-approved November 16 attempt completed its encrypted pre-write backup
