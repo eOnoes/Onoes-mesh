@@ -1320,5 +1320,44 @@ overlay journal. It already stopped its writer and completed fixture cleanup. Th
 corrected run uses a fresh disposable copy and adapts that fixture's attempt path
 before any service launch; the plan contract was not relaxed. Failure and success
 logs remain separate. The post-success encrypted backup/fresh-profile relaunch
-coupling and final exact owner activation packet remain outstanding. Nothing is
-installed, no live access is expanded and the local release checklist stays 18/21.
+coupling now passes as recorded below. The final exact owner activation decision
+is still outstanding: nothing is installed or expanded by this evidence and the
+local release checklist stays 18/21.
+
+
+## Successful backup and fresh-profile relaunch qualification
+
+`test_project_backup_relaunch_candidate.py` passes its complete owned-process
+journey in 355.929s. It provisions one synthetic project grant, starts its service,
+saves an authenticated event and observes the original handle stop with matching
+terminal ownership. The tested existing-store backup window then publishes a
+snapshot, exports/rehearses a labeled encrypted E: archive and preserves the
+original wrapped keys, credential file and grant terminal hashes.
+
+A second explicitly approved service profile uses fresh attempt/ready/stop paths
+and a new PID/creation identity, while reusing the original grant. Omitting that
+new profile's approval refuses launch before creating an attempt. After approved
+launch, native options identify the exact new peer and the same credential.
+Resubmitting the original event returns the same receipt ID; the canonical store
+still contains exactly one event. The fresh service is gracefully stopped and
+observed before fixture cleanup. No identity/key rotation or re-enrollment is
+performed. The first run's observer checked an unpublished private ready file too
+early; its log is retained. The corrected observer waits on the same owned child
+with a deadline, preserving all actual ACL/identity checks and requiring positive
+ready state rather than treating a polling error as success.
+
+`integrations/prepare_project_backup_storage.ps1` is separate from the original
+empty-store folder preparer, which remains unchanged. It defaults to preview and
+creates only absent, exact-plan folders beneath an existing private operations
+anchor. Initialized data may be nonempty; neither its bytes nor its existing ACL
+is changed. Private targets use the existing operator/SYSTEM/Administrators-only
+NTFS rules. Existing targets, wrong owners/hash, duplicate/outside paths and
+non-ordinary ancestry refuse action; failures retain new folders for review.
+
+Three folder checks pass in 16.948s, including all nine new protected folders,
+nonempty data/anchor ACL preservation, no-write preview/WhatIf and invalid-plan
+refusals. Both previews against the actual proposed locations also pass without
+creating a folder. Ten deployment profiles match 516 projected/current code pins;
+the original reader's 46 pins still match. The selected real card's pure read-only
+source preview remains unprepared/ready with no writes and the same exact plan.
+These proofs prepare the first-write owner review; they do not activate it.
