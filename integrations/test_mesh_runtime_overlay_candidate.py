@@ -1,0 +1,116 @@
+"""Disposable Windows code overlay and rollback; no real apps are stopped."""
+import copy
+import hashlib
+import json
+import os
+from pathlib import Path
+import socket
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+import mesh_runtime_overlay_candidate as overlay
+
+
+@unittest.skipUnless(os.name=='nt','Windows exact-owner/port/file semantics')
+class MeshOverlayTests(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory(prefix='mesh-overlay-test-');self.root=Path(self.temp.name).resolve()
+        self.addCleanup(self.cleanup)
+        self.live=self.root/'live';self.payload=self.root/'payload';self.ops=self.root/'ops'
+        for folder in (self.live,self.payload,self.ops):folder.mkdir()
+        for folder in (self.live,self.payload):(folder/'lib').mkdir()
+        (self.live/'lib/a.mjs').write_bytes(b'// exact original\r\n')
+        (self.payload/'lib/a.mjs').write_bytes(b'// qualified replacement\n')
+        (self.payload/'lib/new.mjs').write_bytes(b'// new installer-owned file\n')
+        (self.live/'package.json').write_bytes(b'{}\r\n');(self.payload/'package.json').write_bytes(b'{}\r\n')
+        (self.live/'UNRELATED.txt').write_text('Preserve user work',encoding='utf-8')
+        observer=overlay.roles()
+        child=subprocess.Popen([sys.executable,'-c','pass'],creationflags=subprocess.CREATE_NO_WINDOW)
+        stamp=observer.creation_ticks(child._handle);self.assertEqual(child.wait(timeout=10),0)
+        with socket.socket() as port:port.bind(('127.0.0.1',0));number=port.getsockname()[1]
+        self.plan=dict(schema='onoes-mesh-runtime-overlay/v1',workspace=str(self.live),payloadRoot=str(self.payload),journalRoot=str(self.root/'journal'),
+            toolSha256=overlay.digest(overlay.__file__),observerSha256=overlay.digest(overlay.observer_path()),runtime=dict(meshPid=child.pid,meshCreationTicks=stamp,gatewayPort=number,
+                serviceAttemptPath=str(self.ops/'fixture-service-attempt.json'),serviceProfileSha256='a'*64),files=[
+                dict(relativePath='lib/a.mjs',beforeSha256=overlay.digest(self.live/'lib/a.mjs'),afterSha256=overlay.digest(self.payload/'lib/a.mjs')),
+                dict(relativePath='lib/new.mjs',beforeSha256=None,afterSha256=overlay.digest(self.payload/'lib/new.mjs')),
+                dict(relativePath='package.json',beforeSha256=overlay.digest(self.live/'package.json'),afterSha256=overlay.digest(self.payload/'package.json'))])
+
+    def cleanup(self):
+        self.assertEqual(self.root.parent,Path(tempfile.gettempdir()).resolve())
+        self.assertTrue(self.root.name.startswith('mesh-overlay-test-'));self.temp.cleanup()
+
+    def approve(self,rollback=False):
+        return dict(decision='approve_exact_mesh_runtime_rollback' if rollback else 'approve_exact_mesh_runtime_overlay',planSha256=overlay.plan_hash(self.plan))
+
+    def test_preview_and_exact_apply_rollback_preserve_all_original_bytes(self):
+        self.assertTrue(overlay.inspect_overlay(self.plan)['createsNothing']);self.assertFalse((self.root/'journal').exists())
+        self.assertEqual(overlay.apply_overlay(self.plan,self.approve())['state'],'installed')
+        self.assertEqual((self.live/'lib/new.mjs').read_bytes(),(self.payload/'lib/new.mjs').read_bytes())
+        self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        self.assertEqual(overlay.rollback_overlay(self.plan,self.approve(True))['state'],'original')
+        self.assertEqual((self.live/'lib/a.mjs').read_bytes(),b'// exact original\r\n');self.assertFalse((self.live/'lib/new.mjs').exists())
+        self.assertEqual((self.live/'UNRELATED.txt').read_text(),'Preserve user work')
+        self.assertEqual((self.root/'journal/before/lib/a.mjs').read_bytes(),b'// exact original\r\n')
+
+    def test_missing_wrong_or_extra_approval_never_creates_a_journal(self):
+        for approval in ({},dict(decision='wrong',planSha256=overlay.plan_hash(self.plan)),{**self.approve(),'notApproved':True}):
+            self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,approval)
+        self.assertFalse((self.root/'journal').exists());self.assertEqual((self.live/'lib/a.mjs').read_bytes(),b'// exact original\r\n')
+
+    def test_changed_payload_original_or_tool_hash_refuses_before_any_write(self):
+        p=copy.deepcopy(self.plan);p['toolSha256']='0'*64;self.assertRaises(RuntimeError,overlay.inspect_overlay,p)
+        p=copy.deepcopy(self.plan);p['observerSha256']='0'*64;self.assertRaises(RuntimeError,overlay.inspect_overlay,p)
+        (self.payload/'lib/a.mjs').write_text('Unreviewed payload');self.assertRaises(RuntimeError,overlay.inspect_overlay,self.plan)
+        (self.payload/'lib/a.mjs').write_bytes(b'// qualified replacement\n')
+        (self.live/'lib/a.mjs').write_text('User edit');self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        self.assertEqual((self.live/'lib/a.mjs').read_text(),'User edit');self.assertFalse((self.root/'journal').exists())
+
+    def test_noncode_traversal_and_overlapping_roots_refuse(self):
+        for rel in ('../outside.mjs','data/tasks.sqlite','integrations/private.json','lib/../a.mjs','lib\\a.mjs'):
+            p=copy.deepcopy(self.plan);p['files'][0]['relativePath']=rel;self.assertRaises((RuntimeError,ValueError),overlay.inspect_overlay,p)
+        p=copy.deepcopy(self.plan);p['journalRoot']=str(self.live/'journal');self.assertRaises(RuntimeError,overlay.inspect_overlay,p)
+        self.assertFalse((self.root/'journal').exists())
+
+    def test_live_mesh_or_occupied_gateway_or_uncertain_service_blocks_apply(self):
+        original=copy.deepcopy(self.plan['runtime']);observer=overlay.roles()
+        self.plan['runtime'].update(meshPid=os.getpid(),meshCreationTicks=observer.current_ticks())
+        self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve());self.plan['runtime']=original
+        with socket.socket() as listener:
+            listener.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1);listener.bind(('127.0.0.1',original['gatewayPort']))
+            self.assertRaises(OSError,overlay.apply_overlay,self.plan,self.approve())
+        Path(original['serviceAttemptPath']).write_text(json.dumps(dict(schema='onoes-mind-project-service-attempt/v1',profileSha256='a'*64,state='identity_pending',pid=123,creationTicks=None)))
+        self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve());self.assertFalse((self.root/'journal').exists())
+
+    def test_lost_write_reply_uses_same_journal_and_rolls_back_a_known_partial_install(self):
+        actual=overlay.write_atomic
+        def lose_reply(path,body):
+            actual(path,body)
+            if path==self.live/'lib/a.mjs':raise OSError('Synthetic lost replacement reply')
+        with patch.object(overlay,'write_atomic',side_effect=lose_reply):
+            self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        self.assertEqual(overlay.inspect_overlay(self.plan)['state'],'partial')
+        self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        self.assertEqual(overlay.rollback_overlay(self.plan,self.approve(True))['state'],'original')
+
+    def test_live_known_service_and_changed_before_image_refuse(self):
+        observer=overlay.roles();attempt=Path(self.plan['runtime']['serviceAttemptPath'])
+        attempt.write_text(json.dumps(dict(schema='onoes-mind-project-service-attempt/v1',profileSha256='a'*64,
+            state='started',pid=os.getpid(),creationTicks=observer.current_ticks())))
+        self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve());self.assertFalse((self.root/'journal').exists())
+        attempt.unlink();overlay.apply_overlay(self.plan,self.approve())
+        (self.root/'journal/before/lib/a.mjs').write_text('Changed recovery evidence')
+        self.assertRaises(RuntimeError,overlay.rollback_overlay,self.plan,self.approve(True))
+        self.assertEqual((self.live/'lib/a.mjs').read_bytes(),b'// qualified replacement\n')
+
+    def test_later_user_edit_or_replaced_new_file_is_never_deleted_by_rollback(self):
+        overlay.apply_overlay(self.plan,self.approve());(self.live/'lib/new.mjs').write_text('Later user work')
+        self.assertRaises(RuntimeError,overlay.rollback_overlay,self.plan,self.approve(True))
+        self.assertEqual((self.live/'lib/new.mjs').read_text(),'Later user work')
+        (self.live/'lib/new.mjs').write_bytes((self.payload/'lib/new.mjs').read_bytes())
+        replacement=self.root/'user-replacement';replacement.write_bytes((self.payload/'lib/new.mjs').read_bytes());os.replace(replacement,self.live/'lib/new.mjs')
+        self.assertRaises(RuntimeError,overlay.rollback_overlay,self.plan,self.approve(True));self.assertTrue((self.live/'lib/new.mjs').exists())
+
+
+if __name__=='__main__':unittest.main()

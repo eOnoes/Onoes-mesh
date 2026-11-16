@@ -1127,3 +1127,32 @@ admitted card edit reaches canonical memory with excluded prose absent.
 
 No live apply or approval file was created. Fresh deployment profiles, encrypted
 backup/recovery and rollback preparation still precede owner activation review.
+
+
+## Finite runtime file overlay (candidate, not installed)
+
+`integrations/mesh_runtime_overlay_candidate.py` is an explicit owner-only file
+operation. It has no startup, public route, process-stop or key/database access.
+It pins its own code and process observer, bounds code-only relative paths to
+canonical disjoint roots, validates every candidate and original hash, retains
+fsynced exact before-images and records intent before replacing a file. New files
+use Windows no-overwrite rename and have their file identity recorded first.
+Rollback removes only installer-created files with unchanged bytes and identity;
+later user edits or replacements are preserved. Partial or lost replies retain
+the same journal for inspection rather than blindly repeating installation.
+
+Apply and rollback require distinct exact-plan approvals and a stopped Mesh
+instance, a free loopback gateway, and no live/uncertain declared project-service
+attempt. Only the Mesh gateway is reserved during the file action. No process
+is stopped or started by this helper; it does not touch model, Echo or DSH ports.
+Read-only preview verifies files only and explicitly reports `runtimeChecked:false`.
+
+Eight disposable Windows cases pass in 0.740s, covering exact byte rollback,
+unrelated-file preservation, approval/dependency/hash refusal, path boundaries,
+live-owner/busy-port/uncertain-service refusal, partial-install lookup, changed
+before-image refusal, and later edited/replaced-file protection. The real 109-file
+read-only preview passes without a live write, port reservation or journal.
+The previous 746-check app and eleven-check source/gateway proofs remain the
+runtime baseline; this separate utility is not imported by the app. Full installed-
+runtime rehearsal and the encrypted-backup/conditional-rollback owner window are
+still pending. No actual approval or first-write access is activated.
