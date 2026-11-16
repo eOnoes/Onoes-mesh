@@ -30,6 +30,37 @@ the segmented rings on phone/desktop in both themes. No implementation or remote
 connection was performed for this note. Eddie's supplied screenshot is a layout
 reference; its "Model loaded: Unknown" and percentages are not live measurements.
 
+## Guarded reconciliation latency reduction - qualified, not activated
+
+The already-authenticated handoff now shares an internal completion helper with
+ordinary Ensure instead of repeating full connected authorization through Ensure.
+Public entry points still check private custody, source, scope and current grants.
+No permission or grant trust is cached across operations, and no immutable live
+Mind validator changed. Existing-attempt handoff is strictly reconciliation-only:
+a dead process, changed memory peers or retiring observed reader holds publication
+and cannot trigger a replacement launch. Exact reader/writer/gateway handles stay
+observed through the guarded owner publication. Ordinary Ensure retains its full
+authorization and separately approved recovery capability.
+
+Forty-one focused command/approval/process checks passed, including dead published
+attempt, stale peer and reader-retirement refusal. The full actual-process scenario
+passed in 817.777 seconds with exact source verification and cleanup. The profiled
+operator reconciled the original child after the explicit publication fault;
+ordinary healthy Ensure then retained that same PID. Canonical catch-up preserved
+all event IDs/hashes, old receipts and credential/key-package hashes. All 115
+working files and all other source pins matched; isolated actors were retired.
+
+Measured operator time fell from 127.602 to 78.726 seconds, about 38.3 percent in
+these two runs. Private-storage permission calls fell from 125 to 73; their measured
+time was 75.090 seconds in the new run. This is a measured comparison, not a
+latency guarantee or claim that background validation is instantaneous. The normal
+command result and raw local timing proof are retained separately.
+
+No live app or startup setting changed. Next compose capture-first owner recovery
+so local cards open before memory recovery, qualify the actual startup path, then
+prepare the concrete live source/profile/task activation review. Workers, Rook,
+model services and eight historical holds remain unchanged; local release is 18/21.
+
 ## Explicit operator handoff command - qualified, not activated
 
 The recovery executable now exposes --handoff-capture-to-connected with an exact

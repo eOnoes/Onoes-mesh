@@ -150,16 +150,29 @@ class CaptureHandoffTests(unittest.TestCase):
         command=[sys.executable,'-I','-m','cProfile','-o',str(profile_output),
             str(workspace/'integrations/mesh_recovery_candidate.py'),'--handoff-capture-to-connected',
             '--handoff-approval',str(handoff),'--handoff-sha256',handoff_sha]
-        started=time.monotonic()
-        operator=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,
-            creationflags=subprocess.CREATE_NO_WINDOW)
-        while True:
-            try:stdout,stderr=operator.communicate(timeout=30);break
-            except subprocess.TimeoutExpired:phase('operator_observing_same_command_'+str(int(time.monotonic()-started))+'s')
-        (workspace.parent/'OPERATOR-RESULT.json').write_text(json.dumps(dict(returncode=operator.returncode,
-            seconds=time.monotonic()-started,stdout=stdout,stderr=stderr),indent=2),encoding='utf-8')
-        self.assertEqual(operator.returncode,0,stdout+stderr)
-        state=json.loads(stdout);self.assertEqual(state['pid'],connected.pid)
+        def observe_command(command,label):
+            started=time.monotonic()
+            operator=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW)
+            while True:
+                try:stdout,stderr=operator.communicate(timeout=30);break
+                except subprocess.TimeoutExpired:phase(label+'_observing_same_command_'+str(int(time.monotonic()-started))+'s')
+            (workspace.parent/(label+'-RESULT.json')).write_text(json.dumps(dict(returncode=operator.returncode,
+                seconds=time.monotonic()-started,stdout=stdout,stderr=stderr),indent=2),encoding='utf-8')
+            self.assertEqual(operator.returncode,0,stdout+stderr)
+            return json.loads(stdout)
+        state=observe_command(command,'OPERATOR');self.assertEqual(state['pid'],connected.pid)
+        # The refactored completion path is shared with ordinary Ensure. Verify
+        # its real healthy invocation retains this same owner and event queue.
+        ensure_approval=root/'normal-gateway-recovery.json'
+        roles.private_new_json(ensure_approval,dict(schema='onoes-mesh-native-recovery-approval/v1',
+            decision='approve_exact_same_grant_gateway_recovery',ownerSid=cp['ownerSid'],workspace=str(workspace),
+            profilePath=str(connected_profile),profileSha256=connected_sha,pythonSha256=launch.digest(sys.executable),
+            sourceHashes={str(workspace/'integrations'/name):launch.digest(workspace/'integrations'/name) for name in recovery.FILES}))
+        ordinary=observe_command([sys.executable,'-I',str(workspace/'integrations/mesh_recovery_candidate.py'),
+            '--profile',str(connected_profile),'--sha256',connected_sha,'--approval',str(case.reader.approval),
+            '--recovery-approval',str(ensure_approval),'--recovery-sha256',launch.digest(ensure_approval),'--ensure'],'NORMAL-ENSURE')
+        self.assertEqual(ordinary['pid'],connected.pid);self.assertEqual(ordinary['state'],'running')
         self.assertEqual(json.loads(receipt.read_text())['Id'],connected.pid)
         request=fixtures.admitted_http(address(np,connected));token=request('/api/trial-session/bootstrap',{})['csrfToken']
         try:
@@ -175,7 +188,7 @@ class CaptureHandoffTests(unittest.TestCase):
         proof=dict(schema='onoes-mesh-synthetic-capture-handoff-proof/v1',syntheticOnly=True,liveChanged=False,
             offlineCardSaved=True,sameEventAndOriginalReceiptsPreserved=True,canonicalCatchUpPassed=True,
             interruptedPublicationReconciledSameChild=True,noReplacementLaunch=True,privateFieldExcluded=True,
-            publicationFaultReached=True,operatorCommandReconciledSameChild=True,
+            publicationFaultReached=True,operatorCommandReconciledSameChild=True,normalEnsureKeptSameOwner=True,
             credentialTerminalAndKeyPackageHashesUnchanged=True,canonicalEventCount=3,
             handoffSourceHashes=approved['sourceHashes'],captureSourceHashes=cp['sourceHashes'],connectedSourceHashes=np['sourceHashes'])
         (workspace.parent/'HANDOFF-PROOF.json').write_text(json.dumps(proof,indent=2),encoding='utf-8')

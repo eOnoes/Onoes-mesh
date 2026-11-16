@@ -138,8 +138,6 @@ def gateway_binding(window,p,sha,roles):
 
 
 def ensure_gateway(window,*,launch,service,roles,profile,sha,approval,timeout=45):
-    from mesh_native_pair import MeshNativePair
-    from mesh_native_recovery import archive_retired_mesh_attempt
     window.assert_held()
     p,checked_roles=launch.checked_launch(profile,sha,approval);require(checked_roles is roles)
     require(p['schema']=='onoes-mesh-native-launch/v2')
@@ -148,11 +146,31 @@ def ensure_gateway(window,*,launch,service,roles,profile,sha,approval,timeout=45
     project=p['projectSync']
     state=service.service_state(project['serviceProfile'],project['serviceProfileSha256'],project['approvalPath'])
     require(state['ready'])
+    return _finish_gateway_preflight(window,launch=launch,service=service,roles=roles,p=p,
+        profile=profile,sha=sha,approval=approval,state=state,timeout=timeout)
+
+
+def _finish_gateway_preflight(window,*,launch,service,roles,p,profile,sha,approval,state,
+                              timeout,reconcile_only=False,expected_peers=None):
+    """Internal completion of the caller's full authorization under this window.
+
+    No caller-supplied permission cache survives the operation. The handoff has
+    already checked the same private profiles, scope and authenticated frame.
+    """
+    from mesh_native_pair import MeshNativePair
+    from mesh_native_recovery import archive_retired_mesh_attempt,valid_memory_peers
+    window.assert_held();require(state['ready'])
+    project=p['projectSync']
     bound=gateway_binding(window,p,sha,roles)
     attempt,args=bound['attempt'],bound['args'];receipt_path=bound['receiptPath']
     previous_sha,same_owner,alive=bound['previousSha'],bound['sameOwner'],bound['alive']
+    if reconcile_only:
+        require(alive and valid_memory_peers(expected_peers) and attempt.get('peers')==expected_peers)
     observed=[]
     try:
+        if reconcile_only:
+            peer=expected_peers['reader']
+            observed.append(ProcessObservation(window,roles,peer['pid'],peer['creationTicks'],[sys.executable]))
         writer=ProcessObservation(window,roles,state['pid'],state['creationTicks'],[sys.executable])
         observed.append(writer)
         pair=MeshNativePair(window,service_module=service,launch_module=launch,roles_module=roles,
@@ -164,6 +182,7 @@ def ensure_gateway(window,*,launch,service,roles,profile,sha,approval,timeout=45
             observed.append(gateway)
             pair.adopt_started_mesh(gateway,attempt['creationTicks'])
         else:
+            require(not reconcile_only)
             archive_retired_mesh_attempt(window,launch_module=launch,mesh_profile=profile,
                 mesh_sha256=sha,reader_approval=approval)
             pair.launch_mesh()
@@ -171,6 +190,7 @@ def ensure_gateway(window,*,launch,service,roles,profile,sha,approval,timeout=45
         while pair.observe_mesh()['stage']!='mesh_ready':
             require(time.monotonic()<until);time.sleep(.2)
         with urlopen(pair.address,timeout=5) as response:require(response.status==200)
+        require(all(reference.poll() is None for reference in observed))
         if not (alive and same_owner):
             before=window.workspace/'data'/f'native-recovery-owner-before-{pair.mesh.pid}-{pair.mesh_ticks}-{uuid.uuid4().hex}.json'
             pair.publish_owner(previous_sha256=previous_sha,beforeimage_path=before)
@@ -320,6 +340,7 @@ def handoff_capture_to_connected(window,*,launch,service,roles,approval_path,app
     connected=frame['projectSyncOptions']
     require(local==dict(schema='onoes-mesh-native-project-capture/v1',source=connected['source'],
         storeId=connected['destination']['storeId'],links=connected['links']))
+    peers=launch.native_peers(np,roles,n['approvalPath'],frame)
     frame=None;connected=None
     paths=[cp[name] for name in ('attemptPath','stdoutPath','stderrPath')]+[np[name] for name in ('attemptPath','stdoutPath','stderrPath')]
     require(len(set(paths))==6 and all(path not in paths for path in
@@ -332,8 +353,11 @@ def handoff_capture_to_connected(window,*,launch,service,roles,approval_path,app
     if os.path.lexists(np['attemptPath']):
         # A new child already exists or is unresolved. Never replace it here.
         require(not roles.same_process_alive(capture['pid'],capture['creationTicks']))
-        result=ensure_gateway(window,launch=launch,service=service,roles=roles,
-            profile=n['profilePath'],sha=n['profileSha256'],approval=n['approvalPath'],timeout=timeout)
+        peer=peers['writer']
+        result=_finish_gateway_preflight(window,launch=launch,service=service,roles=roles,p=np,
+            profile=n['profilePath'],sha=n['profileSha256'],approval=n['approvalPath'],
+            state=dict(ready=True,pid=peer['pid'],creationTicks=peer['creationTicks']),timeout=timeout,
+            reconcile_only=True,expected_peers=peers)
         return {**result,'transition':'reconciled_capture_handoff'},None
     require(not any(os.path.lexists(np[name]) for name in ('stdoutPath','stderrPath')))
     bound=gateway_binding(window,cp,c['profileSha256'],roles);require(bound['sameOwner'])
