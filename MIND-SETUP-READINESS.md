@@ -1,5 +1,38 @@
 # Onoes-Mind setup readiness
 
+## Inactive revocation and concrete enrollment packet
+
+Twelve focused checks passed: one composed Windows process/gateway scenario,
+two protected revocation cases and nine operator/launcher regressions. Seven
+unchanged-provisioning regressions also passed earlier, before the revocation-only
+transaction/marker corrections. The failed logs are retained. App runtime sources
+from the prior 687-check full run remain unchanged; that full run was not repeated.
+
+Revocation uses the canonical credential epoch rotation through the exact protected
+writer and current-history lease. A distinct revoker profile/approval is required;
+enrollment approval cannot revoke even when it names the same profile hash. A
+private durable marker records possible mutation before rotation. Missing/widened
+service access, wrong source/review, existing outcomes and repeated rotation refuse.
+Uncertain operation results remain held without automatic retry or cleanup.
+
+The actual running reader rejects its next request after revocation, while both
+reader and Mesh remain running and task reads work. The encrypted credential file
+is unchanged; no replacement token or memory write is created. The same reviewed
+one-shot operator path handles privileged process retirement.
+
+Four password-free, unapplied real-store profile drafts and a plain-language owner
+plan are ready privately. Their source/runtime/file-identity hashes match current
+state. Initializer key-package compatibility was checked from canonical producer
+code, without reading the live key file. No approval file, real grant, credential,
+service, startup change or app reload was created.
+
+Next: Eddie reviews the exact first read-only shared-facts connection and bounded
+rollback. Only explicit approval permits real enrollment and a Mesh-only reload.
+Phone acceptance and later writable memory/backup integration remain unfinished.
+No PC restart is planned; private-agent memory, workers, Rook and old job holds
+remain unchanged.
+
+
 ## Inactive approved-profile owner-launcher wiring
 
 The named Mesh PowerShell launcher now has an explicit native Mind Start/Restart

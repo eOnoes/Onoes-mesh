@@ -102,3 +102,59 @@ def provision_reader(writer,*,binding,credential_path,outcome_path,operation_id,
     finally:
         token=None  # Reference clearing, not full Python memory erasure.
         if outcome is not None:outcome.close()
+
+
+def revoke_reader(writer,*,binding,outcome_path,operation_id,approval_ref):
+    """One explicitly approved service-epoch invalidation; never reissue or clean up."""
+    outcome=None;result=None;changed=False
+    try:
+        require(type(writer) is CheckpointedLedgerCandidate)
+        context(binding)
+        require(type(operation_id) is str and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._:-]{0,127}',operation_id)
+                and approval_ref==binding.review_ref)
+        require((writer._checkpoint_store_id,writer._checkpoint_environment)==(binding.store_id,binding.environment))
+        database=qualify_private_storage(Path(binding.database_path),kind='file')
+        stat=database.stat();require((stat.st_dev,stat.st_ino)==(binding.file_device,binding.file_inode))
+        require([Path(row[2]).resolve(strict=True) for row in writer.db.execute('PRAGMA database_list') if row[1]=='main']==[database])
+        require([tuple(row) for row in writer.db.execute('SELECT store_id,environment,authority_ref FROM recall_store_identity')]
+            ==[(binding.store_id,binding.environment,binding.authority_ref)])
+        target=new_private_file(outcome_path)
+        with writer._checkpoint_lock:
+            require(writer._checkpoint_thread is None)
+            with writer._checkpoint_authority.hold(binding.store_id,binding.environment) as lease:
+                head,_=history_view(writer,writer.deletion_ledger_path,binding.store_id,binding.environment)
+                lease.assert_current(head);require(writer.integrity_report()['status']=='PASS')
+                principal=writer.db.execute("SELECT kind,credential_epoch FROM principals WHERE principal_id='mesh-recall'").fetchone()
+                service=writer.db.execute("SELECT epoch FROM recall_service_credentials WHERE principal_id='mesh-recall'").fetchone()
+                require(principal is not None and principal[0]=='service' and type(principal[1]) is int
+                    and service is not None and service[0]==principal[1])
+                require([tuple(row) for row in writer.db.execute("SELECT scope_id,can_read,can_write FROM scope_grants WHERE principal_id='mesh-recall'")]
+                    ==[(binding.scope_id,1,0)])
+                require(writer.db.execute("SELECT 1 FROM credentials WHERE principal_id='mesh-recall'").fetchone() is None)
+                result=dict(schema='onoes-mind-recall-revoke-outcome/v1',operationId=operation_id,
+                    reviewRef=approval_ref,storeId=binding.store_id,environment=binding.environment,
+                    principal='mesh-recall',scopeId=binding.scope_id,status='attempt_reserved',
+                    mayHaveChanged=False,epochBefore=principal[1])
+                outcome=target.open('x',encoding='utf-8');json.dump(result,outcome);outcome.flush();os.fsync(outcome.fileno())
+                qualify_private_storage(target,kind='file');changed=True
+                result.update(status='revocation_pending',mayHaveChanged=True)
+                outcome.seek(0);json.dump(result,outcome);outcome.truncate();outcome.flush();os.fsync(outcome.fileno())
+                # Canonical credential rotation only. No memory SQL writes,
+                # grant deletion, credential replacement or encrypted-file removal.
+                with writer._transaction(immediate=True):writer.rotate_credentials('mesh-recall')
+                after=writer.db.execute("SELECT credential_epoch FROM principals WHERE principal_id='mesh-recall'").fetchone()[0]
+                require(after==principal[1]+1)
+                head,_=history_view(writer,writer.deletion_ledger_path,binding.store_id,binding.environment)
+                lease.assert_current(head);require(writer.integrity_report()['status']=='PASS')
+                result.update(status='revoked',mayHaveChanged=True,epochAfter=after,reissued=False)
+                outcome.seek(0);json.dump(result,outcome,indent=2);outcome.truncate();outcome.flush();os.fsync(outcome.fileno())
+        return result
+    except Exception:
+        if outcome is not None:
+            result.update(status='outcome_unknown' if changed else 'refused',mayHaveChanged=changed)
+            try:
+                outcome.seek(0);json.dump(result,outcome,indent=2);outcome.truncate();outcome.flush();os.fsync(outcome.fileno())
+            except OSError:pass
+        raise RecallProvisionError('Recall revocation did not complete; preserve source and outcome. No automatic retry or cleanup.') from None
+    finally:
+        if outcome is not None:outcome.close()

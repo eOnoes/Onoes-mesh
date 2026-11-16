@@ -20,6 +20,7 @@ import time
 
 SCHEMA='onoes-mind-native-role/v1'
 DECISION='approve_exact_shared_readonly_mind_enrollment_and_reader'
+REVOKE_DECISION='approve_exact_mesh_recall_credential_revocation'
 HERE=Path(__file__).resolve().parent
 
 
@@ -99,6 +100,7 @@ def checked_profile(path,expected_sha,approval_path=None):
     common={'schema','role','ownerSid','runtime','sourceHashes','binding','credentialPath','outcomePath',
             'terminalPath','operationId','reviewRef'}
     extra={'operator':{'keyEnrollmentPath','authorityBindingPath','historyPath','attemptPath'},
+           'revoker':{'keyEnrollmentPath','authorityBindingPath','historyPath','attemptPath'},
            'reader':{'operatorProfileSha256','readyPath','stopPath'}}
     require(type(value) is dict and value.get('schema')==SCHEMA and value.get('role') in extra)
     require(set(value)==common|extra[value['role']])
@@ -121,7 +123,7 @@ def checked_profile(path,expected_sha,approval_path=None):
     require(not root.is_relative_to(data_root) and not data_root.is_relative_to(root))
     for name in ('credentialPath','outcomePath','terminalPath')+tuple(extra[value['role']]-{'operatorProfileSha256','keyEnrollmentPath','authorityBindingPath','historyPath'}):
         target=Path(value[name]);require(target.is_absolute() and target.parent==root and '..' not in target.parts)
-    if value['role']=='operator':
+    if value['role'] in ('operator','revoker'):
         require(Path(value['keyEnrollmentPath'])==data_root/'key-enrollment.json'
                 and Path(value['authorityBindingPath'])==data_root/'checkpoint-authority-binding.json'
                 and Path(value['historyPath'])==Path(str(database)+'.deletions.jsonl'))
@@ -132,7 +134,7 @@ def checked_profile(path,expected_sha,approval_path=None):
     if approval_path is not None:
         qualify_private_storage(Path(approval_path),kind='file');approval=plain_json(approval_path)
         require(set(approval)=={'decision','ownerSid','profiles','scopeId','reviewRef'}
-            and approval['decision']==DECISION and approval['ownerSid']==value['ownerSid']
+            and approval['decision']==(REVOKE_DECISION if value['role']=='revoker' else DECISION) and approval['ownerSid']==value['ownerSid']
             and type(approval['profiles']) is list and expected_sha in approval['profiles']
             and approval['scopeId']==binding.scope_id and approval['reviewRef']==binding.review_ref)
     return value,binding
@@ -167,7 +169,7 @@ def operator_role(profile,binding,profile_sha):
     from onoes_mind.runtime_keys import unprotect_runtime_keys
     from checkpointed_ledger_candidate import CheckpointedLedgerCandidate
     from persistent_authority import AuthorityBinding,PersistentAuthorityCandidate
-    from provision_recall_candidate import provision_reader
+    from provision_recall_candidate import provision_reader,revoke_reader
     writer=keys=None
     try:
         for name in ('keyEnrollmentPath','authorityBindingPath','historyPath'):
@@ -180,8 +182,12 @@ def operator_role(profile,binding,profile_sha):
         authority=PersistentAuthorityCandidate(AuthorityBinding(**plain_json(profile['authorityBindingPath'])))
         writer=CheckpointedLedgerCandidate(Path(binding.database_path),Path(profile['historyPath']),authority,
             store_id=binding.store_id,environment=binding.environment,**keys)
-        provision_reader(writer,binding=binding,credential_path=profile['credentialPath'],
-            outcome_path=profile['outcomePath'],operation_id=profile['operationId'],approval_ref=profile['reviewRef'])
+        if profile['role']=='revoker':
+            revoke_reader(writer,binding=binding,outcome_path=profile['outcomePath'],
+                operation_id=profile['operationId'],approval_ref=profile['reviewRef'])
+        else:
+            provision_reader(writer,binding=binding,credential_path=profile['credentialPath'],
+                outcome_path=profile['outcomePath'],operation_id=profile['operationId'],approval_ref=profile['reviewRef'])
     finally:
         if writer is not None:writer.close()
         keys=None
@@ -232,8 +238,9 @@ def reader_role(profile,binding,profile_sha):
 
 
 def launch_operator(profile_path,profile_sha,approval_path):
-    profile,binding=approved_profile(profile_path,profile_sha,approval_path);require(profile['role']=='operator')
-    for name in ('attemptPath','credentialPath','outcomePath','terminalPath'):new_role_file(profile[name])
+    profile,binding=approved_profile(profile_path,profile_sha,approval_path);require(profile['role'] in ('operator','revoker'))
+    names=('attemptPath','outcomePath','terminalPath') if profile['role']=='revoker' else ('attemptPath','credentialPath','outcomePath','terminalPath')
+    for name in names:new_role_file(profile[name])
     # Reserve before creating a privileged process; never silently clear a prior attempt.
     private_new_json(profile['attemptPath'],dict(profileSha256=profile_sha,state='reserved'))
     child=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--profile',str(profile_path),
@@ -259,7 +266,7 @@ def finish_operator(child,stamp,profile_path,profile_sha,approval_path):
     # Observation timeout must be handled by the caller retaining this same handle.
     # No wait timeout, kill, retry or replacement attempt is hidden here.
     require(child.poll()==0 and creation_ticks(child._handle)==stamp)
-    profile,binding=approved_profile(profile_path,profile_sha,approval_path);require(profile['role']=='operator')
+    profile,binding=approved_profile(profile_path,profile_sha,approval_path);require(profile['role'] in ('operator','revoker'))
     from onoes_mind.enrollment_store import qualify_private_storage
     qualify_private_storage(Path(profile['outcomePath']),kind='file')
     qualify_private_storage(Path(profile['attemptPath']),kind='file')
@@ -267,7 +274,8 @@ def finish_operator(child,stamp,profile_path,profile_sha,approval_path):
     require(attempt.get('profileSha256')==profile_sha and attempt.get('pid')==child.pid
             and attempt.get('creationTicks')==stamp)
     outcome=plain_json(profile['outcomePath'])
-    require(outcome.get('status')=='provisioned_inactive' and outcome.get('operationId')==profile['operationId']
+    expected='revoked' if profile['role']=='revoker' else 'provisioned_inactive'
+    require(outcome.get('status')==expected and outcome.get('operationId')==profile['operationId']
             and outcome.get('storeId')==binding.store_id)
     receipt=dict(operatorProfileSha256=profile_sha,pid=child.pid,creationTicks=stamp,exitCode=0,
         operationId=profile['operationId'],storeId=binding.store_id,outcomeSha256=digest(profile['outcomePath']))
@@ -321,7 +329,7 @@ def main():
         profile,binding=checked_profile(args.profile,args.sha256,args.approval if args.run else None)
         if not args.run:
             print(json.dumps(dict(status='preview',role=profile['role'],createsNothing=True,needsOwnerApproval=True)));return 0
-        if profile['role']=='operator':operator_role(profile,binding,args.sha256)
+        if profile['role'] in ('operator','revoker'):operator_role(profile,binding,args.sha256)
         else:reader_role(profile,binding,args.sha256)
         return 0
     except Exception:

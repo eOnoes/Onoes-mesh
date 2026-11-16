@@ -181,6 +181,33 @@ class NativeRoleProcessTests(unittest.TestCase):
                 headers={'Origin':url,'Content-Type':'application/json','Cookie':cookie,'X-Trial-CSRF':csrf}),timeout=10)
         with request('/api/mind/recall',dict(query='fixture',limit=8)) as response:
             self.assertEqual(json.load(response)['records'],[])
+        # Revocation is a different approval and a new one-shot protected
+        # operator. It must invalidate the running reader's next request.
+        revoke=root/'revoke.json';revoke_approval=root/'revoke-approval.json'
+        revoke_data=dict(self.operator_data,role='revoker',operationId='fixture:revoke-operation',
+            outcomePath=str(root/'revoke-outcome.json'),terminalPath=str(root/'revoke-terminal.json'),
+            attemptPath=str(root/'revoke-attempt.json'))
+        revoke.write_text(json.dumps(revoke_data));revoke_sha=roles.digest(revoke)
+        self.approval_data['profiles'].append(revoke_sha);self.approval.write_text(json.dumps(self.approval_data))
+        with self.assertRaises(roles.RoleError):roles.launch_operator(revoke,revoke_sha,self.approval)
+        self.assertFalse(Path(revoke_data['attemptPath']).exists())
+        revoke_approval.write_text(json.dumps(dict(self.approval_data,decision=roles.REVOKE_DECISION,profiles=[revoke_sha])))
+        credential_sha=roles.digest(self.reader_data['credentialPath'])
+        parked.rename(self.key_package)
+        revoker,revoke_stamp=roles.launch_operator(revoke,revoke_sha,revoke_approval);self.children.append(revoker)
+        self.assertEqual(revoker.wait(timeout=60),0)
+        roles.finish_operator(revoker,revoke_stamp,revoke,revoke_sha,revoke_approval)
+        self.key_package.rename(parked)
+        revoked=json.loads(Path(revoke_data['outcomePath']).read_text())
+        self.assertEqual(revoked['status'],'revoked');self.assertEqual(revoked['epochAfter'],revoked['epochBefore']+1)
+        self.assertFalse(revoked['reissued']);self.assertEqual(roles.digest(self.reader_data['credentialPath']),credential_sha)
+        self.assertIsNone(reader.poll(),'Credential revocation must not kill the reader process')
+        with self.assertRaises(urllib.error.HTTPError) as denied:request('/api/mind/recall',dict(query='fixture',limit=8))
+        self.assertEqual(denied.exception.code,503);denied.exception.close()
+        with request('/api/tasks') as tasks:self.assertIsInstance(json.load(tasks)['tasks'],list)
+        with self.assertRaises(Exception) as refused:roles.native_options(self.reader,self.reader_sha,self.approval)
+        self.assertNotIn(options['token'],str(refused.exception))
+        with self.assertRaises(roles.RoleError):roles.launch_operator(revoke,revoke_sha,revoke_approval)
         with self.assertRaises(roles.RoleError):roles.launch_reader(self.reader,self.reader_sha,self.approval)
         roles.request_stop(self.reader,self.reader_sha,self.approval)
         self.assertEqual(reader.wait(timeout=15),0)
