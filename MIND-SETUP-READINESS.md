@@ -662,3 +662,49 @@ This advances the bounded recovery handoff, not real factory enrollment or
 exclusive writer retirement. Canonical Mind, operator bootstrap, read-only recall
 and services remain unchanged. No live setup/access, keys, credentials, PC restart,
 model operation or paid agent task. Full Mind/Mesh suites were not repeated.
+
+
+## Next slice: linked project updates (planning only)
+
+Outcome: when an approved Workroom card changes, its deliberately shared project
+record in Mind reflects the change, or Mesh clearly says the update is pending.
+Echo can eventually answer project-status questions from that durable record.
+This is separate from the working read-only reader. Do not widen its credential.
+
+Minimum contract to qualify before implementation:
+
+| Concern | Proposed responsibility / acceptance |
+| --- | --- |
+| Project identity | Mind owns the durable project identity. A Mesh card keeps its own immutable ID and a persisted link to that project. Several task cards may belong to one project; do not equate a card with a project. |
+| Card stages | Workroom owns To do / In progress / Done. The adapter records those transitions in Mind; it cannot move cards, dispatch agents or approve completion. |
+| Shared content | Only deliberately approved project fields and evidence references. No automatic raw-chat ingestion, agent-private memories, credentials or arbitrary file contents. |
+| Event identity | Persist each event with its card ID, revision, kind, project link and payload digest in the same transaction as the corresponding card change. Retrying preserves the event ID and content. |
+| Delivery receipt | The Mind-owned write boundary must return a durable, queryable receipt for that exact event. An accepted send, timeout or empty read result is not confirmation. |
+| Offline / uncertain result | Keep the event pending and query the same ID after uncertainty. A crash between Mind commit and Mesh receipt must not duplicate history. |
+| Ordering / conflict | Apply revisions in order per card. Same event ID with changed content is rejected. Conflicting project links or stale changes stay visible for reconciliation; never silently overwrite. |
+| Corrections / deletion | Mind remains authoritative for corrections and deletion. Replay after deletion must not recreate deleted facts. Workroom deletion/archival policy and Mind tombstone behavior require explicit agreement. |
+| Permission | A separate narrowly scoped adapter identity, limited to the designated shared-project event operation. No direct SQLite access, general-purpose memory writer, private-scope access or reuse of the reader credential. |
+| Recovery | Qualify an updated encrypted Mind backup and restore with event receipts and deletion evidence before durable writes are activated. The first empty-store archive is not that proof. |
+
+Smallest implementation slice after the read-only audit: one explicitly linked,
+approved project/card pair; creation plus a stage change; a durable local outbox;
+a Mind-owned idempotent event operation and receipt lookup; and a compact
+pending/saved/error observation in Mesh. Keep automatic dispatch, conversation
+sync, tool access and new schedulers outside this slice. A deterministic adapter
+is sufficient; no extra LLM agent is needed.
+
+Required disposable acceptance: successful linked update; duplicate delivery;
+crash after Mind commit before acknowledgement; restart with pending events;
+offline recovery; out-of-order revisions; conflicting payload for the same ID;
+private/out-of-scope rejection; credential revocation; correction/deletion followed
+by replay; and backup/restore without loss of receipts or resurrection of deleted
+facts. No real private content or live writer is needed for these checks.
+
+Evidence boundary: the live read-only reader and owner phone acceptance are
+verified. This section is a proposed contract, not evidence that an outbox,
+project registry, write API or receipt lookup already exists. The source audit
+must identify the actual Mind entry points and missing pieces before code is
+built. The first indexed orientation returned unrelated sync symbols; that is
+not evidence of a Workroom-to-Mind implementation. No adapter implementation,
+write grant, service change or live memory write was made during this planning
+slice.
