@@ -839,3 +839,59 @@ Limits / next acceptance:
 The local-release score remains 18/21 and the broader goal is active. Next is
 application transaction wiring and owned-process recovery qualification using
 isolated data. Live writer enrollment still requires its exact reviewed approval.
+
+
+## Actual save hooks and process recovery - staged 2026-11-15 Chicago
+
+The next build is in the isolated checkout mesh-project-sync-hooks on local
+branch workroom/project-sync-hooks-20261115. The running checkout remains at
+its approved source bytes. All 88 pinned live-source hashes were independently
+checked after restoring those bytes. This is deliberate staging, not a deployed
+writer or a weakened source check. No application or model service was restarted.
+
+Implemented:
+
+- openTaskStore has an optional server-only synchronous project-sync factory.
+  Without it, no project-sync tables or capture controller are created. There is
+  no environment/browser switch or runtime enrollment. Workroom create, Relay
+  card creation, task editing, brief/stage/owner changes, progress/review changes
+  and claim-lead assignment notify within their actual transaction. Nested task
+  updates under Workroom capture the final combined state once.
+- The candidate controller links only explicitly selected cards/projects/fields.
+  Its default does not share new cards. An explicit server-owned creation policy
+  can seed an approved new card atomically. Capture failure rolls back the actual
+  card edit as well as its queued update. Unlinked and withdrawn cards keep their
+  normal local behavior. The adapter excludes raw descriptions, free-form evidence
+  and Relay chat text; it emits a source pointer/hash for the approved projection.
+- Real Done saves still require the existing scope and review checks. A rejected
+  Done attempt queues nothing; the accepted transition queues exactly one final
+  completed snapshot. Requesting changes reopens the card and queues one blocked
+  snapshot, without duplicate events from the nested status update.
+- Owned Node processes exited before commit and after commit. Reopening proved
+  the card and queue rolled back or survived together, respectively. An owned
+  canonical Python fixture exited after durable receipt commit before replying;
+  restarting that receiver and reopening the Mesh queue recovered the same ID
+  and receipt with zero resubmissions and one canonical record.
+
+Verification: the updated npm test passed 711 checks (581 Node + 130 Python),
+including the new 24-check project-sync group. The new npm run test:project-sync
+command is included in future complete test runs. Candidate source hashes match
+between that tested tree and the isolated checkout. The complete run also passed all 711 checks from the
+isolated checkout. Earlier 14 Python event-boundary
+checks remain a separate unchanged-source qualification, not additional checks
+inside npm test. Failed fixture-identity and restricted-loopback test runs are
+preserved; the authorized full run used disposable local servers only.
+
+Remaining: no server API/phone status UI is wired to this controller; no worker
+or project registry/grant was enrolled in the live store. Plan/worker/location
+metadata beyond the currently approved snapshot fields needs its own bounded
+projection. A production transport still needs framing/authentication/bounds/
+timeouts and owner-managed provisioning/revocation. Checkpoint/deletion recovery
+and updated encrypted backup composition remain gates before live writes.
+
+Deployment must refresh the exact Mesh source approval/profile together with
+these tested changes; otherwise the pinned startup guard correctly refuses the
+changed files. Keep the live checkout at the approved version until that exact
+handoff is prepared and reviewed. The release score stays 18/21; the broad goal
+is unfinished. Next: prepare that source-profile handoff while qualifying the
+bounded transport and read-only sync-state surface with isolated data.

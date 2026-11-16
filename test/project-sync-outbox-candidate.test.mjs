@@ -32,17 +32,19 @@ function fixture(t,storeId='synthetic-store') {
     reopen:()=>{db.close();db=new DatabaseSync(filename);queue=new ProjectOutboxCandidate(db,{storeId,readSnapshot:reader});}};
 }
 
-async function mind(t) {
+async function mind(t,persistentRoot=null) {
   const child=spawn('python',['-B',resolve('test/project-sync-mind-fixture.py'),
-    process.env.MIND_CANDIDATE_SOURCE || 'D:/Dev/Onoes-Mind'],{windowsHide:true,stdio:['pipe','pipe','pipe']});
+    process.env.MIND_CANDIDATE_SOURCE || 'D:/Dev/Onoes-Mind',...(persistentRoot?[persistentRoot]:[])],{windowsHide:true,stdio:['pipe','pipe','pipe']});
+  const terminal=new Promise(resolve=>child.once('exit',(code,signal)=>resolve({code,signal})));
   let stderr='';child.stderr.on('data',data=>{stderr+=data;});
   const lines=createInterface({input:child.stdout});
   const iterator=lines[Symbol.asyncIterator]();
   async function read(){const row=await iterator.next();assert.equal(row.done,false,stderr);return JSON.parse(row.value);}
   const {storeId}=await read();
   const rpc=async command=>{child.stdin.write(JSON.stringify(command)+'\n');return read();};
-  t.after(async()=>{if(child.exitCode===null){await rpc({op:'close'});child.stdin.end();await new Promise(r=>child.once('exit',r));}lines.close();});
-  return {storeId,rpc,transport:{lookup:q=>rpc({op:'lookup',...q}),submit:event=>rpc({op:'submit',event})}};
+  const close=async()=>{if(child.exitCode===null&&child.signalCode===null){await rpc({op:'close'});child.stdin.end();}await terminal;lines.close();};
+  t.after(close);
+  return {storeId,rpc,terminal,close,transport:{lookup:q=>rpc({op:'lookup',...q}),submit:event=>rpc({op:'submit',event})}};
 }
 
 function absence(storeId,event) {return {schema:'onoes-mind-project-absence/v1',storeId,
@@ -152,4 +154,21 @@ test('a repeated source revision cannot silently create another delivery',t=>{
   const f=fixture(t);f.capture();
   assert.throws(()=>f.transaction(()=>f.queue.capture(f.card.id,'progress')),/revision did not advance/);
   assert.equal(f.queue.status(f.card.id).length,1);
+});
+
+test('owned Mind process dies after commit; reopened receiver and queue reconcile without resubmit',async t=>{
+  const root=mkdtempSync(join(tmpdir(),'mesh-project-sync-process-'));let first,second;
+  try {
+    first=await mind(t,root);const f=fixture(t,first.storeId);const eventId=f.capture();
+    const transport={...first.transport,submit:event=>first.rpc({op:'submit_then_exit',event})};
+    assert.equal((await f.queue.drainOne(transport)).state,'uncertain');
+    assert.equal((await first.terminal).code,73);
+    f.reopen();second=await mind(t,root);assert.equal(second.storeId,first.storeId);let sends=0;
+    const recovered={...second.transport,submit:async event=>{sends++;return second.transport.submit(event);}};
+    assert.equal((await f.queue.drainOne(recovered)).state,'saved');
+    assert.equal(sends,0);assert.equal(f.queue.status(f.card.id)[0].eventId,eventId);
+    assert.deepEqual(await second.rpc({op:'stats'}),{records:1,receipts:1});
+  } finally {
+    if(first)await first.close();if(second)await second.close();rmSync(root,{recursive:true,force:true});
+  }
 });
