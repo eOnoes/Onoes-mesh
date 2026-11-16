@@ -1,6 +1,7 @@
 const schema='onoes-workroom-memory-state/v1';
 const labels={
   off:null,not_shared:null,
+  offline:['Mind disconnected','This card is saved on this PC. Shared updates wait for a verified Mind connection.'],
   pending:['Pending','Waiting to record this update in Mind.'],
   uncertain:['Awaiting receipt','Delivery is uncertain. No saved result has been confirmed.'],
   held:['Needs attention','Sharing is held for review. Later updates will wait.'],

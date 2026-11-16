@@ -7,10 +7,13 @@ import {randomUUID,createHash} from 'node:crypto';
 import {mkdirSync,rmSync,statSync,realpathSync} from 'node:fs';
 import {resolve,join} from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
+import {startApp} from '../server.mjs';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {createWorkroomProjectSyncCandidate} from '../integrations/workroom-project-sync-candidate.mjs';
-import {validateNativeProjectSync,prepareNativeProjectSync,nativeSyncSchema} from '../integrations/project-sync-native-candidate.mjs';
-import {startNativeMesh,readNativeRecallInput,readNativeMeshInput,meshFrameSchema} from '../integrations/native-mind-mesh-entry.mjs';
+import {validateNativeProjectSync,prepareNativeProjectSync,nativeSyncSchema,captureSyncSchema,validateNativeProjectCapture} from '../integrations/project-sync-native-candidate.mjs';
+import {startNativeMesh,readNativeRecallInput,readNativeMeshInput,meshFrameSchema,captureFrameSchema} from '../integrations/native-mind-mesh-entry.mjs';
+
+import {memoryStatePresentation} from '../public/workroom-memory-state.mjs';
 
 const readDescriptor=()=>({baseUrl:'http://127.0.0.1:12345/',token:'synthetic-unused-read-token',binding:{
   servicePrincipal:'mesh-recall',storeId:'00000000-0000-4000-8000-000000000001',environment:'synthetic',
@@ -185,4 +188,72 @@ test('policy drift holds delivery locally and rolls back shared edits while unsh
   runtime.start();
   await until(async()=>db.prepare('SELECT state FROM mind_project_outbox').get().state==='held');
   assert.equal(db.prepare('SELECT reason FROM mind_project_outbox').get().reason,'local_binding_changed');
+});
+
+
+test('explicit credential-free capture starts offline, survives reopen and catches up identical events', {timeout:180000},async t=>{
+  environment(t);let app,m,b;
+  t.after(async()=>{try{await app?.close();}finally{try{await m?.close();}finally{b?.cleanup();}}});
+  m=await mind();b=baseline(m.options.project);await m.rpc('stop');
+  const capture={schema:captureSyncSchema,source:b.config.source,storeId:b.config.destination.storeId,links:b.config.links};
+  const frame={schema:captureFrameSchema,projectCaptureOptions:capture};
+  assert.deepEqual(await readNativeMeshInput(stream(frame)),{projectCaptureOptions:capture});
+  await assert.rejects(readNativeRecallInput(stream(frame)));
+  await assert.rejects(readNativeMeshInput(stream({...frame,mindRecallOptions:readDescriptor()})));
+  for(const extra of [{token:'forbidden'},{destination:b.config.destination}])
+    assert.throws(()=>validateNativeProjectCapture({...capture,...extra}));
+  await assert.rejects(startNativeMesh({input:stream(frame),appOptions:{projectCaptureOptions:capture}}));
+  const start=async()=>{app=await startNativeMesh({input:stream(frame),appOptions:{dataDir:b.dataDir,relayEnabled:false}});return admitted(app);};
+  let request=await start();const cardPath='/api/workroom/'+b.cardId;
+  assert.equal((await request(cardPath)).value.memorySync.state,'offline');
+  const presentation=memoryStatePresentation((await request(cardPath)).value.memorySync);
+  assert.equal(presentation.label,'Mind disconnected');assert.match(presentation.description,/saved on this PC/);
+  for(const title of ['Offline captured first','Offline captured final']){
+    const card=(await request('/api/tasks/'+b.cardId)).value.task;
+    assert.equal((await request('/api/tasks/'+b.cardId,{method:'PATCH',body:{title,description:card.description,
+      label:card.label,status:card.status,owner:card.owner,revision:card.revision}})).status,200);
+  }
+  const pending=rows(b.filename);assert.equal(pending.length,3);assert.ok(pending.every(row=>row.state==='pending'));
+  const unshared=await request('/api/tasks',{method:'POST',body:{title:'Offline unrelated card',owner:'echo'}});
+  assert.equal(unshared.status,201);
+  assert.equal((await request('/api/workroom/'+unshared.value.task.id)).value.memorySync.state,'not_shared');
+  assert.equal((await request('/api/mind/recall',{method:'POST',body:{query:'offline',limit:8}})).status,503);
+  await app.close();app=null;request=await start();
+  assert.equal((await request('/api/tasks/'+b.cardId)).value.task.title,'Offline captured final');
+  assert.deepEqual(rows(b.filename),pending);
+  // A service returning alone cannot turn capture-only mode into a sender.
+  await m.restart();await delay(250);assert.deepEqual(await m.rpc('stats'),{records:0,receipts:0});
+  await app.close();app=null;b.config.destination=m.options.project;
+  app=await startNativeMesh({input:stream({schema:meshFrameSchema,mindRecallOptions:m.options.recall,projectSyncOptions:b.config}),
+    appOptions:{dataDir:b.dataDir,relayEnabled:false}});request=await admitted(app);
+  await until(async()=>(await request(cardPath)).value.memorySync.state==='saved');
+  const saved=rows(b.filename);assert.deepEqual(saved.map(row=>row.eventId),pending.map(row=>row.eventId));
+  assert.ok(saved.every(row=>row.state==='saved'&&JSON.parse(row.receipt).eventId===row.eventId));
+  assert.deepEqual(await m.rpc('stats'),{records:1,receipts:3});
+  const recall=await request('/api/mind/recall',{method:'POST',body:{query:'Offline captured final',limit:8}});
+  assert.equal(recall.status,200);assert.equal(recall.value.records.length,1);
+  assert.doesNotMatch(JSON.stringify(recall.value),/PRIVATE-UNSHARED-GOAL|Offline unrelated card/);
+});
+
+
+test('capture-only startup rejects mismatched authority and never repairs or widens sharing',async t=>{
+  environment(t);
+  const b=baseline({baseUrl:'http://127.0.0.1:12345/',token:'synthetic-unused-token',storeId:'synthetic-store',peer:fixturePeer});
+  t.after(b.cleanup);
+  const capture={schema:captureSyncSchema,source:b.config.source,storeId:'synthetic-store',links:b.config.links};
+  const attempt=options=>startNativeMesh({input:stream({schema:captureFrameSchema,projectCaptureOptions:options}),
+    appOptions:{dataDir:b.dataDir,relayEnabled:false}});
+  const before=rows(b.filename);
+  await assert.rejects(startApp({dataDir:b.dataDir,relayEnabled:false,projectCaptureOptions:capture,
+    mindRecallOptions:readDescriptor()}),/cannot enroll memory access/);
+  for(const change of [{storeId:'another-store'},
+    {source:{...capture.source,fileInode:(BigInt(capture.source.fileInode)+1n).toString()}},
+    {links:[{...capture.links[0],fields:['title','goal','stage']}]}]){
+    await assert.rejects(attempt({...capture,...change}));assert.deepEqual(rows(b.filename),before);
+  }
+  const db=new DatabaseSync(b.filename);db.exec('DROP TABLE mind_project_capture_policy');db.close();
+  await assert.rejects(attempt(capture),/storage unavailable/);
+  const checked=new DatabaseSync(b.filename,{readOnly:true});
+  assert.equal(checked.prepare("SELECT 1 FROM sqlite_schema WHERE name='mind_project_capture_policy'").get(),undefined);
+  checked.close();assert.deepEqual(rows(b.filename),before);
 });

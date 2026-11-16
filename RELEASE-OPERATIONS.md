@@ -30,6 +30,32 @@ the segmented rings on phone/desktop in both themes. No implementation or remote
 connection was performed for this note. Eddie's supplied screenshot is a layout
 reference; its "Model loaded: Unknown" and percentages are not live measurements.
 
+## Credential-free offline app capture - qualified, not deployed
+
+An explicit native capture-only input now starts Mesh without a live Mind reader
+or writer and without memory credentials, a destination, or a delivery runner.
+It reuses the exact approved source database, existing card links and field
+policy. It never enrolls cards, repairs schema, widens sharing or writes to Mind.
+Affected cards show Mind disconnected; held and withdrawn states remain distinct.
+The existing atomic card/outbox transaction keeps approved edits saved locally.
+
+Twelve focused checks and the full local npm test suite passed: 618 Node checks
+plus 130 Python checks, 748 total. Actual disposable HTTP startup with Mind stopped
+captured two edits, survived app close/reopen and retained all three pending event
+IDs. Returning the synthetic service alone caused no delivery. A later verified
+connected startup recorded those same three IDs and canonical receipts; recall
+returned the final title and excluded private goal text and the unshared card.
+Mismatched source/store, broader policy, missing schema, mixed memory credentials
+and additional frame fields were refused. No live source or service was changed.
+
+This qualifies the app input/capture/catch-up slice, not host cold recovery.
+The Windows owner launcher still needs a reviewed capture-only profile, explicit
+mode transitions, process ownership and actual cold-start/recovery qualification.
+No automatic downgrade from an invalid or unverified binding is permitted.
+The prior same-grant host proof remains evidence for its tested commit only.
+Recovery latency and separately approved runtime activation also remain; the
+local release stays 18/21 and workers, Rook and eight historical holds stay off.
+
 ## Combined memory recovery candidate - qualified, not activated
 
 The isolated actual-process scenario passed in 1198.159 seconds, including
