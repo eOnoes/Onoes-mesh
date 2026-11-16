@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import socket
 import sqlite3
+import subprocess
 import sys
 import time
 import unittest
@@ -143,25 +144,38 @@ class CaptureHandoffTests(unittest.TestCase):
             connected=held.exception.pair.mesh;self.assertIsNotNone(connected);new_children.append(connected)
             self.assertEqual(interrupted,[connected.pid])
             self.assertIsNone(connected.poll());self.assertIsNotNone(capture.poll());phase('original_connected_child_retained_after_publication_interruption')
-            state,extra=recovery.handoff_capture_to_connected(window,launch=launch,service=writer_service,roles=roles,
-                approval_path=handoff,approval_sha=handoff_sha)
-            self.assertIsNone(extra);self.assertEqual(state['pid'],connected.pid)
-            self.assertEqual(json.loads(receipt.read_text())['Id'],connected.pid)
-            request=fixtures.admitted_http(address(np,connected));token=request('/api/trial-session/bootstrap',{})['csrfToken']
-            try:
-                after=case.wait_for(lambda:events() if len(events())==3 and all(row[2]=='saved' for row in events()) else None,connected)
-                self.assertEqual(after[:2],before);self.assertEqual(after[-1][:2],pending[-1][:2])
-                recalled=request('/api/mind/recall',dict(query='Handoff offline edit',limit=8),token)
-                self.assertIn('Handoff offline edit retained',json.dumps(recalled));self.assertNotIn('EXCLUDED-PRIVATE-PROSE',json.dumps(recalled))
-            finally:request('/api/trial-session/logout',{},token)
-            self.assertEqual({str(path):launch.digest(path) for path in protected},protected_hashes)
-            with closing(sqlite3.connect(case.reader.database.as_uri()+'?mode=ro',uri=True)) as db:
-                self.assertEqual(db.execute('SELECT count(*) FROM project_sync_events').fetchone()[0],3)
-            phase('same_event_canonical_catch_up_and_exact_owner_reconciled')
+        # The previous owner window is released before the real command obtains
+        # the same named mutex. The original connected Popen remains retained.
+        profile_output=workspace.parent/'OPERATOR-CLI.pstats'
+        command=[sys.executable,'-I','-m','cProfile','-o',str(profile_output),
+            str(workspace/'integrations/mesh_recovery_candidate.py'),'--handoff-capture-to-connected',
+            '--handoff-approval',str(handoff),'--handoff-sha256',handoff_sha]
+        started=time.monotonic()
+        operator=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,
+            creationflags=subprocess.CREATE_NO_WINDOW)
+        while True:
+            try:stdout,stderr=operator.communicate(timeout=30);break
+            except subprocess.TimeoutExpired:phase('operator_observing_same_command_'+str(int(time.monotonic()-started))+'s')
+        (workspace.parent/'OPERATOR-RESULT.json').write_text(json.dumps(dict(returncode=operator.returncode,
+            seconds=time.monotonic()-started,stdout=stdout,stderr=stderr),indent=2),encoding='utf-8')
+        self.assertEqual(operator.returncode,0,stdout+stderr)
+        state=json.loads(stdout);self.assertEqual(state['pid'],connected.pid)
+        self.assertEqual(json.loads(receipt.read_text())['Id'],connected.pid)
+        request=fixtures.admitted_http(address(np,connected));token=request('/api/trial-session/bootstrap',{})['csrfToken']
+        try:
+            after=case.wait_for(lambda:events() if len(events())==3 and all(row[2]=='saved' for row in events()) else None,connected)
+            self.assertEqual(after[:2],before);self.assertEqual(after[-1][:2],pending[-1][:2])
+            recalled=request('/api/mind/recall',dict(query='Handoff offline edit',limit=8),token)
+            self.assertIn('Handoff offline edit retained',json.dumps(recalled));self.assertNotIn('EXCLUDED-PRIVATE-PROSE',json.dumps(recalled))
+        finally:request('/api/trial-session/logout',{},token)
+        self.assertEqual({str(path):launch.digest(path) for path in protected},protected_hashes)
+        with closing(sqlite3.connect(case.reader.database.as_uri()+'?mode=ro',uri=True)) as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM project_sync_events').fetchone()[0],3)
+        phase('same_event_canonical_catch_up_and_exact_owner_reconciled')
         proof=dict(schema='onoes-mesh-synthetic-capture-handoff-proof/v1',syntheticOnly=True,liveChanged=False,
             offlineCardSaved=True,sameEventAndOriginalReceiptsPreserved=True,canonicalCatchUpPassed=True,
             interruptedPublicationReconciledSameChild=True,noReplacementLaunch=True,privateFieldExcluded=True,
-            publicationFaultReached=True,
+            publicationFaultReached=True,operatorCommandReconciledSameChild=True,
             credentialTerminalAndKeyPackageHashesUnchanged=True,canonicalEventCount=3,
             handoffSourceHashes=approved['sourceHashes'],captureSourceHashes=cp['sourceHashes'],connectedSourceHashes=np['sourceHashes'])
         (workspace.parent/'HANDOFF-PROOF.json').write_text(json.dumps(proof,indent=2),encoding='utf-8')

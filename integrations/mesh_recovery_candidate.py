@@ -369,7 +369,48 @@ def handoff_capture_to_connected(window,*,launch,service,roles,approval_path,app
     finally:writer.close()
 
 
+def handoff_main(argv):
+    parser=argparse.ArgumentParser(description='Explicit approved offline capture to connected owner handoff.')
+    parser.add_argument('--handoff-capture-to-connected',action='store_true',required=True)
+    parser.add_argument('--handoff-approval',required=True)
+    parser.add_argument('--handoff-sha256',required=True)
+    args=parser.parse_args(argv)
+    pending=None
+    try:
+        require(len(argv)==5 and all(argv.count(flag)==1 for flag in
+            ('--handoff-capture-to-connected','--handoff-approval','--handoff-sha256')))
+        approved=checked_handoff_approval(args.handoff_approval,args.handoff_sha256)
+        sys.path.insert(0,str(ROOT/'integrations'))
+        sys.path.insert(0,str(ROOT/'integrations/mind-recovery-candidate'))
+        import mesh_launch_candidate as launch
+        selected=approved['capture']
+        _,roles=launch.checked_launch(selected['profilePath'],selected['profileSha256'],selected['approvalPath'])
+        import project_service_process_candidate as service
+        from mesh_launcher_window import MeshLauncherWindow
+        with MeshLauncherWindow(ROOT,approved['sourceHashes'][str(ROOT/'integrations/restart-workroom-preview.ps1')]) as window:
+            if (ROOT/'data/workroom-preview/recovery-paused').exists():
+                result=dict(schema='onoes-mesh-capture-handoff-state/v1',state='paused')
+            else:
+                result,child=handoff_capture_to_connected(window,launch=launch,service=service,roles=roles,
+                    approval_path=args.handoff_approval,approval_sha=args.handoff_sha256)
+                # Retain the original launch handle through publication and the
+                # launcher-window handoff. A normal process exit does not stop it.
+                pending=child
+        print(json.dumps(result));return 0
+    except CaptureHandoffUnknown as error:
+        pending=error.pair  # Preserve original child references until command exit.
+        print(json.dumps(dict(schema='onoes-mesh-capture-handoff-state/v1',state='held',
+            message='Preserve the original attempt. Reconcile its identity; do not relaunch.')))
+        return 1
+    except Exception:
+        print(json.dumps(dict(schema='onoes-mesh-capture-handoff-state/v1',state='held',
+            message='The handoff could not verify its approved binding. No fallback is authorized.')))
+        return 1
+
+
 def main():
+    if '--handoff-capture-to-connected' in sys.argv[1:]:
+        return handoff_main(sys.argv[1:])
     parser=argparse.ArgumentParser()
     for name in ('profile','sha256','approval','recovery-approval','recovery-sha256'):
         parser.add_argument('--'+name,required=True)

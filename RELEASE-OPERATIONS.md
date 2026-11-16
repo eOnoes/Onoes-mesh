@@ -30,6 +30,37 @@ the segmented rings on phone/desktop in both themes. No implementation or remote
 connection was performed for this note. Eddie's supplied screenshot is a layout
 reference; its "Model loaded: Unknown" and percentages are not live measurements.
 
+## Explicit operator handoff command - qualified, not activated
+
+The recovery executable now exposes --handoff-capture-to-connected with an exact
+private handoff approval and hash. Existing Ensure arguments remain unchanged.
+It uses the existing launcher mutex and pause sentinel, refuses invalid approval
+before loading participants, and reports uncertainty as held without a fallback
+or second launch. Original native child references remain retained through the
+owner-window handoff. No service or scheduled-task entry has been installed.
+
+Twenty-nine focused command/approval/recovery checks passed. The full isolated
+actual-process scenario passed in 795.018 seconds including baseline and cleanup.
+It explicitly reached the publication fault, released the previous owner window,
+and invoked the real command in a separate isolated Python process. That command
+reconciled the same connected PID, and the offline event reached canonical Mind
+with its original ID/hash, earlier receipts and credential/key-package hashes
+preserved. All 115 working files and all declared source pins matched; synthetic
+actors were confirmed retired. No live app, credentials, workers or services changed.
+
+The measured command took 127.602 seconds. Local function profiling attributes
+122.449 seconds to 125 private-storage permission checks; source hashing is under
+a second. This is an observed baseline, not an optimization result. Timings and
+function paths stay local. Next consolidate duplicated validation within a held
+owner operation without weakening custody, source identity or current grant
+checks. Do not edit immutable live enrollment validators or cache trust across
+runs merely to reduce time. A reconciliation-only path must never launch a new
+child or mark a gateway whose memory peers are stale as connected.
+
+Remaining work is the measured latency fix, capture-first recovery/startup
+orchestration and one concrete reviewed live source/profile/startup activation.
+Local release stays 18/21; automatic workers, Rook and historical holds stay off.
+
 ## Explicit offline-to-connected handoff - qualified, not activated
 
 The native owner API now supports a separately approved transition from capture
