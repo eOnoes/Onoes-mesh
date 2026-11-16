@@ -4,7 +4,7 @@ import json
 import sqlite3
 import threading
 
-from project_events_candidate import ProjectEventsCandidate, EventError, PRINCIPAL, SCOPE
+from project_events_candidate import ProjectEventsCandidate, EventError, PRINCIPAL, SCOPE, identifier
 
 ERROR_SCHEMA = "onoes-mind-project-error/v1"
 
@@ -19,10 +19,15 @@ def unique_object(pairs):
 
 
 class ProjectEventsServerCandidate:
-    def __init__(self, writer, *, port=0):
+    def __init__(self, writer, *, port=0, project_ids=None):
         if type(writer) is not ProjectEventsCandidate or type(port) is not int or not 0 <= port <= 65535:
             raise ValueError("Explicit candidate writer and loopback port required.")
         self.writer, self.port = writer, port
+        if project_ids is not None and (type(project_ids) is not tuple or not project_ids
+                or len(project_ids) > 8 or any(not identifier(p) for p in project_ids)
+                or tuple(sorted(set(project_ids))) != project_ids):
+            raise ValueError("Explicit fixed project binding required.")
+        self.project_ids = project_ids
         self.server = self.thread = None
 
     @property
@@ -93,6 +98,9 @@ class ProjectEventsServerCandidate:
                                       parse_constant=lambda _v: (_ for _ in ()).throw(ValueError("Invalid constant")))
                 except (ValueError, UnicodeError, RecursionError, TimeoutError):
                     return self.error(400, "invalid_json")
+                if owner.project_ids is not None and (type(body) is not dict
+                        or body.get("projectId") not in owner.project_ids):
+                    return self.error(403, "project_not_permitted")
                 try:
                     if self.path.endswith("/submit"):
                         result = owner.writer.submit(auth[0][7:], body)

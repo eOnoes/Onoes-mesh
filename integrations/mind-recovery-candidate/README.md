@@ -818,3 +818,41 @@ sixth actual HTTP composition test commits an event in canonical synthetic Mind,
 drops its acknowledgement, closes/reopens the real task database and reconciles
 the original receipt with exactly one submit, one record and one receipt.
 No production startup imports or starts this runner yet.
+
+## Protected project-service custody and host (inactive)
+
+`native_project_sync_candidate.py` seals an already issued, purpose-only
+project-sync token with Windows current-user DPAPI. Its entropy binds the exact
+canonical file/store/environment/authority, a fixed sorted project list and a
+review reference. Loading rechecks the current service epoch, exact active
+project grants, absence of generic/read grants and authenticated deletion
+authority. It refuses ordinary operator or recall tokens, substituted contexts,
+weak storage, tampering and duplicate envelope keys. Existing or partial files
+are preserved; no operation issues, rotates, recovers or repairs a credential.
+
+The explicit native host owns its protected Ledger and loopback listener. It
+first acquires an exclusive Windows byte lock at the fixed canonical-store
+`.project-sync-service.lock` path, then qualifies custody before starting HTTP.
+The lock lasts until listener and writer closure. A second owner is refused;
+the kernel releases ownership on process exit. The retained file is never
+deleted to clear a perceived stale lock, and its age/existence is not evidence
+of ownership. The HTTP listener also freezes the permitted project list, so a
+later database grant cannot expand an already running service's route.
+
+This is opt-in library code only. Native options contain a secret and are for
+trusted constructor/pipe transfer, never a browser, argument, environment or
+log. Windows current-user protection does not isolate other same-login/admin
+processes. Tests of this service lock do not resolve historical Workroom writer
+holds. A closed/rejected host cannot restart; a fresh reviewed owner is needed.
+Credential archive recovery/rebinding, process/profile enrollment and real Mesh
+startup wiring remain separate work. No live token, key, store or service is
+opened by import, construction or these synthetic tests.
+
+Qualification: all ten explicit Windows custody/host cases pass (248.463s),
+including real DPAPI, protected same-file reopen, actual receipt HTTP, refusal
+of a second host, fixed projects after grant broadening and an owned child exit
+releasing the kernel lock without deleting/replacing its file. The full app run
+passes 731 checks. The event/HTTP regression invocation passes 36 executions
+(the discovery invocation includes imported core cases). Initial fixture errors
+were preserved; the corrected final native run exits zero and matches the saved
+working-source hashes. These results are not a live service activation.

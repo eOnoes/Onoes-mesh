@@ -1038,3 +1038,15 @@ Before one live project-sync activation proposal, finish these specific gates:
 The old three-pin refresh proposal stays superseded. Live Mesh and its approved
 reader remain unchanged. The local release score remains 18/21; the canonical
 private checkpoint retains proofs and the remaining full-goal work.
+
+Protected custody/host qualification now passes ten Windows cases, alongside
+731 full app checks and the event/HTTP regression run. A purpose-only DPAPI file
+survives protected same-file reopen; revoked or broadened access, ordinary/read
+tokens and mismatched context refuse. The explicit host owns its protected
+writer/listener under a fixed canonical-store Windows lifetime lock. Actual
+HTTP receipt continuity across host close/reopen and kernel lock release after
+an owned process exit pass. The running host cannot expand beyond its original
+project list when database grants change. No live setup or source was installed.
+This advances gates 1/2 for normal same-store service custody and local ownership;
+credential archive recovery/rebinding and full native app/profile wiring remain
+unqualified. It does not release any historical Workroom worker hold.
