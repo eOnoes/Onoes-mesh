@@ -1272,10 +1272,53 @@ The combined source-update/service-stop/revocation/code-rollback/read-only fallb
 qualification and final exact owner packet remain next. Existing agent workers,
 Rook, the model service and eight historical job holds remain unchanged.
 
-A cutover gap was found during source review: the file-overlay guard checks the
-original Mesh PID and one project-service attempt. It does not yet declare the
-fresh Mesh or post-backup service attempts. A free gateway alone cannot attest
-that a new child is not still starting. Extend the exact overlay plan to check
-all declared fresh attempt identities and refuse live/uncertain ones before the
-combined rollback trial. The old draft remains unapproved and must be refreshed;
-none of the existing installed-layout evidence is live activation permission.
+The fresh-launch cutover gap is closed in the v2 overlay candidate. Its exact
+runtime plan must declare fresh launch attempts, including at least one Mesh
+attempt. Each declared receipt is checked against its role, profile hash, native
+state and PID/creation identity. Mesh entry point and no-credentials marker are
+checked too. Missing birth data, pending/mismatched receipts, live pre-listener
+children and malformed declarations refuse mutation. Original Mesh and first
+service checks remain, and all owners are checked again between file mutations.
+A newly observed owner halts a partial operation and retains the same journal.
+No process is stopped by this helper and no automatic retry is introduced.
+
+All twelve focused Windows checks pass in 1.227s. They include original eight
+cases plus old-schema/declaration refusals, live pre-listener Mesh/second-service
+apply and rollback holds, uncertain/mismatched receipt refusals, and an owner
+appearing mid-update. Test children are retired through their own handles before
+rollback can succeed. The v1 plan is no longer accepted. The refreshed real
+109-file read-only preview declares all four proposed fresh Mesh/service attempts;
+it creates no journal and still reports runtimeChecked:false. The combined
+installed cutover/revocation/old-code read-only fallback proof now passes as
+recorded below; the v2 draft is not live activation permission.
+
+
+## Combined installed cutover and conditional rollback qualification
+
+The opt-in `test_project_cutover_candidate.py` passed its owned-process journey in
+628.672s (631.307s including disposable setup). It runs only in an explicitly named
+disposable workspace and never uses the live app/data. Candidate helpers prepare
+the fixture, then exact original bytes are restored before the real v2 overlay.
+The declared service is stopped and observed before that overlay; a fresh owned
+service and native Mesh child then deliver a baseline and admitted card edit to
+the synthetic canonical ledger, with private description prose excluded.
+
+A deliberate failed-qualification decision exercises recovery after known delivery.
+The exact Mesh handle is retired; the project service stops through its matching
+run request, exits zero and reports stopped with the same creation identity. A
+separate exact revoke profile exits zero and produces a verified operator terminal
+receipt. The purpose credential is rejected afterward; the independent reader
+credential hash is unchanged and its process remains ready. Code rollback restores
+all 109 original file/absence hashes, removing only the 14 installer-created files.
+A fresh launcher is imported from the actual restored old code and starts a new
+v1 read-only native Mesh instance. Its admitted HTTP status and recall APIs read
+the updated project fact successfully. Two canonical project receipts and two
+source outbox rows remain present; no source/canonical data rollback is performed.
+
+The first combined attempt refused a reused fixture's basename before creating an
+overlay journal. It already stopped its writer and completed fixture cleanup. The
+corrected run uses a fresh disposable copy and adapts that fixture's attempt path
+before any service launch; the plan contract was not relaxed. Failure and success
+logs remain separate. The post-success encrypted backup/fresh-profile relaunch
+coupling and final exact owner activation packet remain outstanding. Nothing is
+installed, no live access is expanded and the local release checklist stays 18/21.

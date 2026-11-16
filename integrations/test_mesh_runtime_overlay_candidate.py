@@ -30,9 +30,11 @@ class MeshOverlayTests(unittest.TestCase):
         child=subprocess.Popen([sys.executable,'-c','pass'],creationflags=subprocess.CREATE_NO_WINDOW)
         stamp=observer.creation_ticks(child._handle);self.assertEqual(child.wait(timeout=10),0)
         with socket.socket() as port:port.bind(('127.0.0.1',0));number=port.getsockname()[1]
-        self.plan=dict(schema='onoes-mesh-runtime-overlay/v1',workspace=str(self.live),payloadRoot=str(self.payload),journalRoot=str(self.root/'journal'),
+        self.plan=dict(schema='onoes-mesh-runtime-overlay/v2',workspace=str(self.live),payloadRoot=str(self.payload),journalRoot=str(self.root/'journal'),
             toolSha256=overlay.digest(overlay.__file__),observerSha256=overlay.digest(overlay.observer_path()),runtime=dict(meshPid=child.pid,meshCreationTicks=stamp,gatewayPort=number,
-                serviceAttemptPath=str(self.ops/'fixture-service-attempt.json'),serviceProfileSha256='a'*64),files=[
+                serviceAttemptPath=str(self.ops/'fixture-service-attempt.json'),serviceProfileSha256='a'*64,
+                freshLaunchAttempts=[dict(kind='mesh',path=str(self.ops/'fresh-mesh-attempt.json'),profileSha256='c'*64),
+                    dict(kind='service',path=str(self.ops/'fresh-service-attempt.json'),profileSha256='d'*64)]),files=[
                 dict(relativePath='lib/a.mjs',beforeSha256=overlay.digest(self.live/'lib/a.mjs'),afterSha256=overlay.digest(self.payload/'lib/a.mjs')),
                 dict(relativePath='lib/new.mjs',beforeSha256=None,afterSha256=overlay.digest(self.payload/'lib/new.mjs')),
                 dict(relativePath='package.json',beforeSha256=overlay.digest(self.live/'package.json'),afterSha256=overlay.digest(self.payload/'package.json'))])
@@ -97,7 +99,7 @@ class MeshOverlayTests(unittest.TestCase):
     def test_live_known_service_and_changed_before_image_refuse(self):
         observer=overlay.roles();attempt=Path(self.plan['runtime']['serviceAttemptPath'])
         attempt.write_text(json.dumps(dict(schema='onoes-mind-project-service-attempt/v1',profileSha256='a'*64,
-            state='started',pid=os.getpid(),creationTicks=observer.current_ticks())))
+            state='started',runId='fixture-run',pid=os.getpid(),creationTicks=observer.current_ticks())))
         self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve());self.assertFalse((self.root/'journal').exists())
         attempt.unlink();overlay.apply_overlay(self.plan,self.approve())
         (self.root/'journal/before/lib/a.mjs').write_text('Changed recovery evidence')
@@ -111,6 +113,82 @@ class MeshOverlayTests(unittest.TestCase):
         (self.live/'lib/new.mjs').write_bytes((self.payload/'lib/new.mjs').read_bytes())
         replacement=self.root/'user-replacement';replacement.write_bytes((self.payload/'lib/new.mjs').read_bytes());os.replace(replacement,self.live/'lib/new.mjs')
         self.assertRaises(RuntimeError,overlay.rollback_overlay,self.plan,self.approve(True));self.assertTrue((self.live/'lib/new.mjs').exists())
+
+
+    def fresh_record(self,entry,pid,ticks,state=None):
+        mesh=entry['kind']=='mesh'
+        record=dict(schema='onoes-mesh-native-child/v1' if mesh else 'onoes-mind-project-service-attempt/v1',
+            profileSha256=entry['profileSha256'],state=state or ('input_sent' if mesh else 'started'),pid=pid,creationTicks=ticks)
+        if mesh:record.update(entryPoint=str(self.live/'serve.mjs'),credentialsInRecord=False)
+        else:record['runId']='fixture-fresh-run'
+        Path(entry['path']).write_text(json.dumps(record),encoding='utf-8')
+
+    def owned_waiting_child(self):
+        child=subprocess.Popen([sys.executable,'-c','import sys;sys.stdin.buffer.read(1)'],stdin=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW)
+        ticks=overlay.roles().creation_ticks(child._handle)
+        def close():
+            if not child.stdin.closed:child.stdin.close()
+            child.wait(timeout=10)
+        self.addCleanup(close)
+        return child,ticks
+
+    def test_v1_or_omitted_duplicate_or_aliased_fresh_attempts_refuse(self):
+        for kind in ('old','missing','empty','duplicate','inside','no-mesh'):
+            p=copy.deepcopy(self.plan)
+            if kind=='old':p['schema']='onoes-mesh-runtime-overlay/v1'
+            elif kind=='missing':del p['runtime']['freshLaunchAttempts']
+            elif kind=='empty':p['runtime']['freshLaunchAttempts']=[]
+            elif kind=='duplicate':p['runtime']['freshLaunchAttempts'].append(p['runtime']['freshLaunchAttempts'][0])
+            elif kind=='inside':p['runtime']['freshLaunchAttempts'][0]['path']=str(self.live/'attempt.json')
+            else:p['runtime']['freshLaunchAttempts']=[p['runtime']['freshLaunchAttempts'][1]]
+            with self.subTest(kind=kind):self.assertRaises(RuntimeError,overlay.inspect_overlay,p)
+        self.assertFalse((self.root/'journal').exists())
+
+    def test_live_prelistener_mesh_and_second_service_refuse_apply_and_rollback(self):
+        child,ticks=self.owned_waiting_child();entries=self.plan['runtime']['freshLaunchAttempts']
+        for entry in entries:
+            self.fresh_record(entry,child.pid,ticks)
+            with self.subTest(kind=entry['kind']):self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+            self.assertIsNone(child.poll());self.assertFalse((self.root/'journal').exists());Path(entry['path']).unlink()
+        overlay.apply_overlay(self.plan,self.approve())
+        for entry in entries:
+            self.fresh_record(entry,child.pid,ticks)
+            self.assertRaises(RuntimeError,overlay.rollback_overlay,self.plan,self.approve(True))
+            self.assertEqual((self.live/'lib/a.mjs').read_bytes(),b'// qualified replacement\n')
+            Path(entry['path']).unlink()
+        child.stdin.close();self.assertEqual(child.wait(timeout=10),0)
+        for entry in entries:self.fresh_record(entry,child.pid,ticks)
+        self.assertEqual(overlay.rollback_overlay(self.plan,self.approve(True))['state'],'original')
+
+    def test_pending_mismatched_or_malformed_fresh_receipt_refuses(self):
+        entry=self.plan['runtime']['freshLaunchAttempts'][0];retired=self.plan['runtime']
+        for change in ('pending','wrong-profile','no-birth','wrong-entry','credentials','malformed'):
+            self.fresh_record(entry,retired['meshPid'],retired['meshCreationTicks'])
+            path=Path(entry['path']);record=json.loads(path.read_text())
+            if change=='pending':record['state']='input_pending'
+            elif change=='wrong-profile':record['profileSha256']='0'*64
+            elif change=='no-birth':record['creationTicks']=None
+            elif change=='wrong-entry':record['entryPoint']=str(self.root/'some-other.mjs')
+            elif change=='credentials':record['credentialsInRecord']=True
+            if change=='malformed':path.write_text('{')
+            else:path.write_text(json.dumps(record))
+            with self.subTest(change=change):self.assertRaises((RuntimeError,ValueError),overlay.apply_overlay,self.plan,self.approve())
+        self.assertFalse((self.root/'journal').exists())
+
+    def test_fresh_owner_appearing_mid_apply_preserves_partial_and_requires_retirement(self):
+        child,ticks=self.owned_waiting_child();entry=self.plan['runtime']['freshLaunchAttempts'][0]
+        actual=overlay.write_atomic
+        def start_during_write(path,body):
+            actual(path,body)
+            if path==self.live/'lib/a.mjs':self.fresh_record(entry,child.pid,ticks)
+        with patch.object(overlay,'write_atomic',side_effect=start_during_write):
+            self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        self.assertEqual(overlay.inspect_overlay(self.plan)['state'],'partial')
+        self.assertFalse((self.live/'lib/new.mjs').exists());self.assertIsNone(child.poll())
+        self.assertRaises(RuntimeError,overlay.rollback_overlay,self.plan,self.approve(True))
+        child.stdin.close();self.assertEqual(child.wait(timeout=10),0)
+        self.assertEqual(overlay.rollback_overlay(self.plan,self.approve(True))['state'],'original')
 
 
 if __name__=='__main__':unittest.main()

@@ -28,7 +28,7 @@ def plan_hash(value):
 def checked(value):
     require(os.name=='nt' and type(value) is dict and set(value)=={
         'schema','workspace','payloadRoot','journalRoot','toolSha256','observerSha256','runtime','files'})
-    p=json.loads(encoded(value));require(p['schema']=='onoes-mesh-runtime-overlay/v1'
+    p=json.loads(encoded(value));require(p['schema']=='onoes-mesh-runtime-overlay/v2'
         and p['toolSha256']==digest(__file__) and p['observerSha256']==digest(observer_path()))
     roots=[Path(p[n]) for n in ('workspace','payloadRoot','journalRoot')]
     for root in roots:require(root.is_absolute() and root.resolve()==root)
@@ -36,13 +36,23 @@ def checked(value):
     require(workspace.is_dir() and payload.is_dir() and journal.parent.is_dir()
         and not any(a.is_relative_to(b) or b.is_relative_to(a) for i,a in enumerate(roots) for b in roots[i+1:]))
     r=p['runtime'];require(type(r) is dict and set(r)=={
-        'meshPid','meshCreationTicks','gatewayPort','serviceAttemptPath','serviceProfileSha256'}
+        'meshPid','meshCreationTicks','gatewayPort','serviceAttemptPath','serviceProfileSha256','freshLaunchAttempts'}
         and all(type(r[n]) is int and r[n]>0 for n in ('meshPid','meshCreationTicks','gatewayPort'))
         and 1024<=r['gatewayPort']<=65535 and type(r['serviceProfileSha256']) is str
         and re.fullmatch('[a-f0-9]{64}',r['serviceProfileSha256']))
     attempt=Path(r['serviceAttemptPath']);require(attempt.is_absolute() and attempt.resolve()==attempt
         and attempt.parent.is_dir() and attempt.name.endswith('-service-attempt.json')
         and not any(attempt.is_relative_to(root) for root in roots))
+    fresh=r['freshLaunchAttempts'];require(type(fresh) is list and 1<=len(fresh)<=8)
+    declared={attempt};mesh=False
+    for entry in fresh:
+        require(type(entry) is dict and set(entry)=={'kind','path','profileSha256'}
+            and entry['kind'] in ('mesh','service') and type(entry['profileSha256']) is str
+            and re.fullmatch('[a-f0-9]{64}',entry['profileSha256']))
+        path=Path(entry['path']);require(path.is_absolute() and path.resolve()==path and path.parent.is_dir()
+            and path.suffix=='.json' and path not in declared and not any(path.is_relative_to(root) for root in roots))
+        declared.add(path);mesh=mesh or entry['kind']=='mesh'
+    require(mesh)
     require(type(p['files']) is list and 1<=len(p['files'])<=256);seen=set()
     for f in p['files']:
         require(type(f) is dict and set(f)=={'relativePath','beforeSha256','afterSha256'})
@@ -84,25 +94,38 @@ def roles(expected_sha=None):
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
 
+def declared_attempt_stopped(p,observer,entry):
+    path=Path(entry['path'])
+    if not os.path.lexists(path):return
+    require(path.is_file() and path.resolve()==path and path.stat().st_size<=8192)
+    record=json.loads(path.read_bytes())
+    mesh=entry['kind']=='mesh'
+    require(record.get('schema')==('onoes-mesh-native-child/v1' if mesh else 'onoes-mind-project-service-attempt/v1')
+        and record.get('profileSha256')==entry['profileSha256']
+        and record.get('state')==('input_sent' if mesh else 'started')
+        and type(record.get('pid')) is int and record['pid']>0
+        and type(record.get('creationTicks')) is int and record['creationTicks']>0)
+    if mesh:
+        require(record.get('entryPoint')==str(Path(p['workspace'])/'serve.mjs') and record.get('credentialsInRecord') is False)
+    else:require(type(record.get('runId')) is str and re.fullmatch('[A-Za-z0-9:_-]{1,100}',record['runId']))
+    require(not observer.same_process_alive(record['pid'],record['creationTicks']))
+
+
 class stopped_window:
-    def __init__(self,p):self.p=p;self.reservation=None
-    def __enter__(self):
-        r=self.p['runtime'];observer=roles(self.p['observerSha256'])
+    def __init__(self,p):self.p=p;self.reservation=None;self.observer=None
+    def assert_stopped(self):
+        r=self.p['runtime'];observer=self.observer
+        require(digest(observer_path())==self.p['observerSha256'])
         require(not observer.same_process_alive(r['meshPid'],r['meshCreationTicks']))
-        attempt=Path(r['serviceAttemptPath'])
-        if os.path.lexists(attempt):
-            require(attempt.is_file() and attempt.resolve()==attempt and attempt.stat().st_size<=8192)
-            record=json.loads(attempt.read_bytes())
-            require(record.get('schema')=='onoes-mind-project-service-attempt/v1'
-                and record.get('profileSha256')==r['serviceProfileSha256'] and record.get('state')=='started'
-                and type(record.get('pid')) is int and record['pid']>0
-                and type(record.get('creationTicks')) is int and record['creationTicks']>0)
-            require(not observer.same_process_alive(record['pid'],record['creationTicks']))
-        reservation=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        entries=[dict(kind='service',path=r['serviceAttemptPath'],profileSha256=r['serviceProfileSha256']),*r['freshLaunchAttempts']]
+        for entry in entries:declared_attempt_stopped(self.p,observer,entry)
+    def __enter__(self):
+        self.observer=roles(self.p['observerSha256']);self.assert_stopped()
+        r=self.p['runtime'];reservation=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
             reservation.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
             reservation.bind(('127.0.0.1',r['gatewayPort']))
-            self.reservation=reservation;return self
+            self.reservation=reservation;self.assert_stopped();return self
         except Exception:reservation.close();raise
     def __exit__(self,*_):self.reservation.close()
 
@@ -144,7 +167,7 @@ def inspect_overlay(value):
 def apply_overlay(value,approval):
     p=checked(value);require(approval==dict(decision='approve_exact_mesh_runtime_overlay',planSha256=plan_hash(p)))
     root=Path(p['journalRoot']);require(not os.path.lexists(root) and originals(p))
-    with stopped_window(p):
+    with stopped_window(p) as window:
         require(originals(p));root.mkdir();(root/'before').mkdir()
         j=dict(schema='onoes-mesh-runtime-overlay-journal/v1',planSha256=plan_hash(p),state='prepared',written=[],createdIdentities={})
         for f in p['files']:
@@ -157,6 +180,7 @@ def apply_overlay(value,approval):
         try:
             for f in p['files']:
                 if f['beforeSha256']==f['afterSha256']:continue
+                window.assert_stopped()
                 path=target_path(p,f);require(digest(path)==f['beforeSha256'])
                 body=(Path(p['payloadRoot'])/f['relativePath']).read_bytes();require(hashlib.sha256(body).hexdigest()==f['afterSha256'])
                 j.update(state='installing',intent=f['relativePath']);write_atomic(root/'journal.json',encoded(j))
@@ -172,6 +196,7 @@ def apply_overlay(value,approval):
                 else:
                     target_path(p,f);require(digest(path)==f['beforeSha256']);write_atomic(path,body)
                 require(digest(path)==f['afterSha256']);j['written'].append(f['relativePath']);write_atomic(root/'journal.json',encoded(j))
+            window.assert_stopped()
             j.update(state='installed',intent=None);write_atomic(root/'journal.json',encoded(j))
         except Exception:
             raise RuntimeError('Mesh code overlay outcome uncertain; inspect the same journal and do not retry.') from None
@@ -186,8 +211,9 @@ def rollback_overlay(value,approval):
         path=target_path(p,f)
         if f['beforeSha256'] is None and path.exists():
             stat=path.stat();require(j['createdIdentities'].get(f['relativePath'])==[stat.st_dev,stat.st_ino])
-    with stopped_window(p):
+    with stopped_window(p) as window:
         for f in reversed(p['files']):
+            window.assert_stopped()
             path=target_path(p,f);current=digest(path)
             require(current in (f['beforeSha256'],f['afterSha256']))
             if current==f['beforeSha256']:continue
@@ -198,5 +224,6 @@ def rollback_overlay(value,approval):
             else:
                 before=Path(p['journalRoot'])/'before'/f['relativePath'];require(before.resolve()==before)
                 body=before.read_bytes();require(hashlib.sha256(body).hexdigest()==f['beforeSha256']);write_atomic(path,body)
+        window.assert_stopped()
         require(originals(p));j.update(state='restored',intent=None);write_atomic(Path(p['journalRoot'])/'journal.json',encoded(j))
     return dict(state='original',planSha256=plan_hash(p),processesStarted=False)
