@@ -30,6 +30,38 @@ the segmented rings on phone/desktop in both themes. No implementation or remote
 connection was performed for this note. Eddie's supplied screenshot is a layout
 reference; its "Model loaded: Unknown" and percentages are not live measurements.
 
+## Explicit offline-to-connected handoff - qualified, not activated
+
+The native owner API now supports a separately approved transition from capture
+mode back to a connected profile. Its exact approval pins both launch profiles,
+the capture approval, reader/project approvals and recovery source. Workspace,
+settings, Node identity and approved source/store/card/field scope must match.
+Connected authentication/readiness passes before only the exact owned capture
+gateway can stop. No credential is issued and no memory/model actor is restarted
+by this API. Failed preflight leaves capture intact. An existing connected attempt
+is reconciled by its original identity; unresolved evidence cannot trigger a new
+launch. Unknown launch/publication retains the original pair and child handle.
+
+Thirty-nine focused approval/recovery checks passed. The final actual-process
+synthetic scenario passed in 803.761 seconds including baseline preparation and
+cleanup. Every one of the 114 copied working files and all declared code pins
+matched. It saved an offline third event, restored the existing synthetic memory
+roles with unchanged grants, and explicitly proved the injected final-publication
+fault was reached for the new connected PID. Reconciliation adopted that same
+child without a replacement launch. The original two receipts stayed unchanged;
+the pending event kept its ID/hash, received a canonical receipt, and was returned
+by scoped recall with private prose excluded. Credential, terminal and key-package
+hashes stayed unchanged. Exact isolated actors were confirmed retired afterward.
+The earlier 764.494-second pilot is preserved; final signoff used the stronger
+explicit fault-hit assertion rather than assuming every unknown outcome came
+from the intended injected fault.
+
+This qualifies the owner API, not live scheduling or an installed operator flow.
+A reviewed entry point, recovery orchestration while capture stays usable, measured
+latency work and actual live profile/source/startup activation still remain.
+No live Mesh, Mind, credential, model service, worker, Rook or historical hold was
+changed. Local release remains 18/21 and the wider product goal is unfinished.
+
 ## Native offline capture launcher - qualified, not activated
 
 The Windows launcher accepts a separate source-pinned capture profile and explicit

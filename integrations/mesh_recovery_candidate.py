@@ -267,6 +267,108 @@ def ensure_memory(window,*,launch,service,reader_service,roles,profile,sha,appro
             'memoryServicesRestarted':len(children)}
 
 
+class CaptureHandoffUnknown(RecoveryHold):
+    """Keep any original new-child handle while durable delivery is reconciled."""
+    def __init__(self,pair):
+        self.pair=pair
+        super().__init__('Connected handoff is unresolved; retain the original pair and do not retry launch.')
+
+
+def checked_handoff_approval(path,sha):
+    require(os.name=='nt' and re.fullmatch('[a-f0-9]{64}',sha or '') and digest(path)==sha)
+    value=bounded_json(path)
+    require(set(value)=={'schema','decision','workspace','ownerSid','pythonSha256','sourceHashes','capture','connected'}
+        and value['schema']=='onoes-mesh-capture-handoff-approval/v1'
+        and value['decision']=='approve_exact_capture_to_connected_handoff'
+        and value['workspace']==str(ROOT) and digest(sys.executable)==value['pythonSha256'])
+    pins=value['sourceHashes'];require(type(pins) is dict and set(pins)=={str(ROOT/'integrations'/name) for name in FILES}
+        and all(digest(filename)==expected for filename,expected in pins.items()))
+    for role in ('capture','connected'):
+        selected=value[role];keys={'profilePath','profileSha256','approvalPath','approvalSha256'}
+        if role=='connected':keys|={'projectApprovalPath','projectApprovalSha256'}
+        require(type(selected) is dict and set(selected)==keys)
+        for prefix in ('profile','approval')+(('projectApproval',) if role=='connected' else ()):
+            filename,expected=selected[prefix+'Path'],selected[prefix+'Sha256']
+            require(type(filename) is str and Path(filename).is_absolute() and Path(filename).resolve(strict=True)==Path(filename)
+                and type(expected) is str and re.fullmatch('[a-f0-9]{64}',expected) and digest(filename)==expected)
+    return value
+
+
+def handoff_capture_to_connected(window,*,launch,service,roles,approval_path,approval_sha,timeout=60):
+    """Explicit owner transition; return state and the original new gateway child.
+
+    A failed preflight leaves capture untouched. Once launch is attempted, only
+    its durable IDs may be reconciled. No grant is provisioned or role restarted.
+    The caller retains a CaptureHandoffUnknown exception and its pair on failure.
+    """
+    from mesh_native_pair import MeshNativePair
+    from mesh_native_recovery import identified_native_attempt
+    window.assert_held();require(window.workspace==ROOT)
+    approved=checked_handoff_approval(approval_path,approval_sha)
+    c,n=approved['capture'],approved['connected']
+    cp,cr=launch.checked_launch(c['profilePath'],c['profileSha256'],c['approvalPath'])
+    np,nr=launch.checked_launch(n['profilePath'],n['profileSha256'],n['approvalPath'])
+    require(cr is roles and nr is roles and cp['schema']==launch.CAPTURE_SCHEMA
+        and np['schema']=='onoes-mesh-native-launch/v2' and cp['ownerSid']==approved['ownerSid']
+        and cp['settings']==np['settings'] and cp['nodeExecutable']==np['nodeExecutable']
+        and cp['nodeSha256']==np['nodeSha256'] and cp['workspace']==np['workspace']==str(ROOT))
+    from onoes_mind.enrollment_store import qualify_private_storage
+    qualify_private_storage(Path(approval_path),kind='file')
+    project=np['projectSync'];require(project['approvalPath']==n['projectApprovalPath'])
+    local=launch.native_frame(cp,roles,c['approvalPath'],c['profileSha256'])['projectCaptureOptions']
+    frame=launch.native_frame(np,roles,n['approvalPath'],n['profileSha256'])
+    connected=frame['projectSyncOptions']
+    require(local==dict(schema='onoes-mesh-native-project-capture/v1',source=connected['source'],
+        storeId=connected['destination']['storeId'],links=connected['links']))
+    frame=None;connected=None
+    paths=[cp[name] for name in ('attemptPath','stdoutPath','stderrPath')]+[np[name] for name in ('attemptPath','stdoutPath','stderrPath')]
+    require(len(set(paths))==6 and all(path not in paths for path in
+        (str(approval_path),c['profilePath'],c['approvalPath'],n['profilePath'],n['approvalPath'],n['projectApprovalPath'])))
+    qualify_private_storage(Path(cp['attemptPath']),kind='file')
+    capture=bounded_json(cp['attemptPath'])
+    require(identified_native_attempt(capture) and capture['schema']=='onoes-mesh-native-child/v3'
+        and capture['mode']=='capture_only' and capture['profileSha256']==c['profileSha256']
+        and capture['executable']==cp['nodeExecutable'] and capture['entryPoint']==str(ROOT/'serve.mjs'))
+    if os.path.lexists(np['attemptPath']):
+        # A new child already exists or is unresolved. Never replace it here.
+        require(not roles.same_process_alive(capture['pid'],capture['creationTicks']))
+        result=ensure_gateway(window,launch=launch,service=service,roles=roles,
+            profile=n['profilePath'],sha=n['profileSha256'],approval=n['approvalPath'],timeout=timeout)
+        return {**result,'transition':'reconciled_capture_handoff'},None
+    require(not any(os.path.lexists(np[name]) for name in ('stdoutPath','stderrPath')))
+    bound=gateway_binding(window,cp,c['profileSha256'],roles);require(bound['sameOwner'])
+    state=service.service_state(project['serviceProfile'],project['serviceProfileSha256'],project['approvalPath'])
+    require(state['ready'])
+    writer=ProcessObservation(window,roles,state['pid'],state['creationTicks'],[sys.executable])
+    pair=None
+    try:
+        pair=MeshNativePair(window,service_module=service,launch_module=launch,roles_module=roles,
+            service_profile=project['serviceProfile'],service_sha256=project['serviceProfileSha256'],
+            project_approval=project['approvalPath'],mesh_profile=n['profilePath'],mesh_sha256=n['profileSha256'],reader_approval=n['approvalPath'])
+        pair.adopt_started_writer(writer,state['creationTicks'])
+        require(digest(bound['receiptPath'])==bound['previousSha'])
+        if bound['alive']:
+            window._owns_gateway(capture['pid'],int(cp['settings']['MESH_PREVIEW_PORT']))
+            original=ProcessObservation(window,roles,capture['pid'],capture['creationTicks'],bound['args'],allow_terminate=True)
+            try:
+                original.terminate();until=time.monotonic()+30
+                while original.poll() is None:require(time.monotonic()<until);time.sleep(.1)
+            finally:original.close()
+        require(not roles.same_process_alive(capture['pid'],capture['creationTicks']))
+        require(digest(bound['receiptPath'])==bound['previousSha'])
+        try:
+            pair.launch_mesh();until=time.monotonic()+timeout
+            while pair.observe_mesh()['stage']!='mesh_ready':require(time.monotonic()<until);time.sleep(.2)
+            with urlopen(pair.address,timeout=5) as response:require(response.status==200)
+            before=ROOT/'data'/f'capture-handoff-owner-before-{pair.mesh.pid}-{pair.mesh_ticks}-{uuid.uuid4().hex}.json'
+            pair.publish_owner(previous_sha256=bound['previousSha'],beforeimage_path=before)
+        except Exception:raise CaptureHandoffUnknown(pair) from None
+        return dict(schema='onoes-mesh-capture-handoff-state/v1',state='connected',pid=pair.mesh.pid,
+            creationTicks=pair.mesh_ticks,previousCapturePid=capture['pid'],writerPid=writer.pid,
+            sameGrant=True,newCredentialCreated=False),pair.mesh
+    finally:writer.close()
+
+
 def main():
     parser=argparse.ArgumentParser()
     for name in ('profile','sha256','approval','recovery-approval','recovery-sha256'):
