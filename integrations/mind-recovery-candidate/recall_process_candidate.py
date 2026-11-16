@@ -52,8 +52,10 @@ def plain_json(path,limit=65536):
 
 
 def source_paths(runtime):
-    package=Path(importlib.util.find_spec('onoes_mind').origin).resolve().parent
-    require(package==Path(runtime['mindSource']).resolve()/'onoes_mind')
+    # Discover files from the reviewed profile, without depending on an ambient
+    # import path or importing participant code before its hashes are checked.
+    base=Path(runtime['mindSource']);require(base.is_absolute() and base.resolve()==base)
+    package=base/'onoes_mind';require((package/'__init__.py').is_file())
     required={Path(__file__).resolve(),Path(runtime['python']).resolve(),Path(runtime['pwsh']).resolve()}
     required.update(HERE/name for name in ('native_recall_candidate.py','provision_recall_candidate.py',
         'checkpointed_ledger_candidate.py','checkpoint_candidate.py','persistent_authority.py'))
@@ -110,6 +112,9 @@ def checked_profile(path,expected_sha,approval_path=None):
     require({Path(p).resolve() for p in pins}==source_paths(runtime))
     for filename,sha in pins.items():require(type(sha) is str and digest(filename)==sha)
     # Import participant code only after the exact required source hashes pass.
+    sys.path.insert(0,str(Path(runtime['mindSource'])))
+    spec=importlib.util.find_spec('onoes_mind')
+    require(spec is not None and Path(spec.origin).resolve()==Path(runtime['mindSource'])/'onoes_mind/__init__.py')
     from onoes_mind.enrollment_store import qualify_private_storage
     from onoes_mind.recall_binding import RecallBinding
     from native_recall_candidate import context

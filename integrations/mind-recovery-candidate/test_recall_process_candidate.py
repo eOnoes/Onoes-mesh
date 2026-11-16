@@ -95,7 +95,36 @@ class NativeRoleProcessTests(unittest.TestCase):
         self.assertFalse(Path(self.operator_data['outcomePath']).exists())
         self.assertFalse(Path(self.operator_data['credentialPath']).exists())
 
+    def test_fresh_child_preview_uses_pinned_source_without_ambient_pythonpath(self):
+        env={k:v for k,v in os.environ.items() if k.upper() not in ('PYTHONPATH','PYTHONHOME')}
+        for path,sha in ((self.operator,self.operator_sha),(self.reader,self.reader_sha)):
+            result=subprocess.run([sys.executable,str(Path(roles.__file__)),'--profile',str(path),'--sha256',sha],
+                env=env,cwd=self.fixture.root,capture_output=True,text=True,timeout=30,
+                creationflags=subprocess.CREATE_NO_WINDOW)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertTrue(json.loads(result.stdout)['createsNothing'])
+        self.assertFalse(Path(self.operator_data['attemptPath']).exists())
+        self.assertFalse(Path(self.operator_data['credentialPath']).exists())
+
+    def test_fresh_child_ignores_an_unreviewed_ambient_mind_package(self):
+        spoof=self.fixture.root/'unreviewed';package=spoof/'onoes_mind';package.mkdir(parents=True)
+        marker=self.fixture.root/'unreviewed-import-ran'
+        (package/'__init__.py').write_text('from pathlib import Path\nPath('+repr(str(marker))+').write_text("unexpected")\n')
+        env=dict(os.environ,PYTHONPATH=str(spoof));env.pop('PYTHONHOME',None)
+        result=subprocess.run([sys.executable,str(Path(roles.__file__)),'--profile',str(self.reader),'--sha256',self.reader_sha],
+            env=env,cwd=self.fixture.root,capture_output=True,text=True,timeout=30,
+            creationflags=subprocess.CREATE_NO_WINDOW)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr);self.assertFalse(marker.exists())
+        self.assertTrue(json.loads(result.stdout)['createsNothing'])
+
     def test_terminal_operator_then_fresh_reader_without_key_package_feeds_actual_mesh_client(self):
+        original={key:os.environ.get(key) for key in ('PYTHONPATH','PYTHONHOME')}
+        def restore_environment():
+            for key,value in original.items():
+                if value is None:os.environ.pop(key,None)
+                else:os.environ[key]=value
+        self.addCleanup(restore_environment)
+        for key in original:os.environ.pop(key,None)
         operator,stamp=roles.launch_operator(self.operator,self.operator_sha,self.approval);self.children.append(operator)
         self.assertEqual(operator.wait(timeout=60),0)
         unrelated=subprocess.Popen([sys.executable,'-c','pass'],creationflags=subprocess.CREATE_NO_WINDOW)
