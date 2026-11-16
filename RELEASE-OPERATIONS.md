@@ -77,6 +77,32 @@ replacement operation after revocation, fresh attempt/output identities and the
 already-prepared source link/outbox. Do not rerun first-time setup or silently
 replay the preserved baseline under a guessed destination.
 
+### Native pair lifecycle and replacement qualification
+
+The reusable MeshNativePair controller passed seven focused lifecycle fault
+checks and the actual installed cutover in 654.156 seconds (651.487-second test).
+The same original handles survive starting/running observation, gateway launch,
+exact owner publication, graceful stop and terminal readback. Partial or merely
+starting owner records do not imply readiness; uncertain start/stop delivery
+holds the attempt instead of retrying. Both the browser previewUrl and internal
+backend url must identify loopback listeners owned by that exact native child.
+The first readiness-field mismatch is preserved, followed by its regression fix.
+
+A separate synthetic revoke-then-replace run passed in 362.973 seconds. It
+confirmed exact old-writer retirement, revocation and replacement terminal proof,
+old-token rejection, a rotated token, the original event receipt and one
+canonical event after retry. Both writers were retired. The expected HTTP401
+response initially produced a test-cleanup ResourceWarning; the test now closes
+that response explicitly. That cleanup-only correction does not change the
+qualified runtime implementation or authorization behavior.
+
+The real board link remains prepared with its original pending event ID and no
+local receipt. This is not proof of destination absence: lookup must precede any
+submission under a reviewed replacement grant. The new nine-profile draft passed
+516 projected pins, reuses that link, and remains unapproved/uninstalled. No live grant, app, scheduler, model service or memory was changed in these
+qualifications. The complete replacement-window orchestration and its operating
+contract still precede a fresh live approval. Wider release gates remain open.
+
 ### Running checklist
 
 - [x] Phone cards: create, edit, touch-drag, saved state, themes, background return,

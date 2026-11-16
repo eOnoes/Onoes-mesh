@@ -7,6 +7,7 @@ from pathlib import Path
 import socket
 import subprocess
 import sys
+import time
 import unittest
 from unittest.mock import patch
 
@@ -31,6 +32,10 @@ class InstalledCutoverTests(unittest.TestCase):
         self.assertEqual(overlay.digest(window_tool),config['launcherWindowToolSha256'])
         spec=importlib.util.spec_from_file_location('cutover_launcher_window',window_tool)
         coordination=importlib.util.module_from_spec(spec);spec.loader.exec_module(coordination)
+        pair_tool=Path(config['nativePairTool'])
+        self.assertEqual(overlay.digest(pair_tool),config['nativePairToolSha256'])
+        spec=importlib.util.spec_from_file_location('cutover_native_pair',pair_tool)
+        pair_module=importlib.util.module_from_spec(spec);spec.loader.exec_module(pair_module)
         window=coordination.MeshLauncherWindow(workspace,overlay.digest(workspace/'integrations/restart-workroom-preview.ps1'))
         window.__enter__()
         self.addCleanup(lambda:window.__exit__(None,None,None) if window.handle is not None else None)
@@ -107,15 +112,24 @@ class InstalledCutoverTests(unittest.TestCase):
             self.assertTrue(overlay.inspect_overlay(plan)['createsNothing'])
             self.assertEqual(overlay.apply_overlay(plan,dict(decision='approve_exact_mesh_runtime_overlay',planSha256=overlay.plan_hash(plan)))['state'],'installed')
             state.update(plan=plan,meshProfile=str(profile),meshSha=sha)
-            restarted,ticks=service.launch_service(case.fixture.profile,case.fixture.sha,case.fixture.base.approval)
-            case.fixture.children.append((restarted,ticks));case.fixture.ready(restarted)
-            state['serviceChild']=restarted
-            return actual_launch(profile,sha,approval)
+            pair=pair_module.MeshNativePair(window,service_module=service,launch_module=launch,roles_module=roles,
+                service_profile=case.fixture.profile,service_sha256=case.fixture.sha,
+                project_approval=case.fixture.base.approval,mesh_profile=profile,mesh_sha256=sha,
+                reader_approval=approval)
+            self.assertEqual(pair.start_writer()['stage'],'writer_starting')
+            case.fixture.children.append((pair.writer,pair.writer_ticks))
+            case.wait_for(lambda:pair.observe_writer()['stage']=='writer_ready',pair.writer)
+            state.update(serviceChild=pair.writer,pair=pair)
+            # The outer fixture patches the first launch to install the overlay;
+            # the controller must now invoke the actual installed launcher once.
+            with patch.object(launch,'launch_mesh',actual_launch):pair.launch_mesh()
+            return pair.mesh,pair.mesh_ticks,json.loads(Path(native['attemptPath']).read_text())
 
         with patch.object(launch,'launch_mesh',side_effect=install_before_mesh):
             case.test_exact_profiles_preflight_then_owned_gateway_delivers_only_approved_fields()
-        owner=window.publish_native_owner(case.mesh,roles.creation_ticks(case.mesh._handle),
-            state['meshProfile'],state['meshSha'],previous_sha256=None)
+        pair=state['pair']
+        self.assertEqual(pair.observe_mesh()['stage'],'mesh_ready')
+        owner=pair.publish_owner(previous_sha256=None)
         self.assertEqual(owner['Id'],case.mesh.pid)
         recovery_tick(True)
         window.__exit__(None,None,None)
@@ -128,9 +142,13 @@ class InstalledCutoverTests(unittest.TestCase):
         frame=launch.native_frame(*launch.checked_launch(state['meshProfile'],state['meshSha'],case.reader.approval),case.reader.approval,state['meshSha'])
         project_token=frame['projectSyncOptions']['destination']['token'];frame=None
         self.assertIsNone(case.mesh.poll());mesh_stamp=roles.creation_ticks(case.mesh._handle)
-        case.mesh.terminate();case.mesh.wait(timeout=30)
+        pair.request_stop()
+        while pair.observe_stop()['stage']!='stopped':time.sleep(.1)
         self.assertEqual(roles.creation_ticks(case.mesh._handle),mesh_stamp)
-        stopped=stopped_service(state['serviceChild'])
+        stopped=service.service_state(case.fixture.profile,case.fixture.sha,case.fixture.base.approval)
+        self.assertEqual(stopped['state'],'stopped');self.assertFalse(stopped['processLive'])
+        self.assertIsNotNone(case.mesh.poll());self.assertEqual(pair.writer.returncode,0)
+        self.assertEqual(roles.creation_ticks(pair.writer._handle),pair.writer_ticks)
         # A real recovery tick cannot replace the retired gateway during rollback.
         recovery_tick(True)
         base=case.fixture.base;revoke=copy.deepcopy(base.value)
@@ -205,6 +223,8 @@ class InstalledCutoverTests(unittest.TestCase):
             readOnlyCanonicalRecallPassed=True,recoveryTicksBlockedDuringCutover=True,
             exactNativeOwnerPublishedBeforeRelease=True,recoveryKeptNativeOwner=True,
             recoveryKeptReadOnlyFallback=True,ownerReceiptBeforeimageRetained=True,
+            nativePairControllerStartedAndObserved=True,nativePairControllerOwnedStopVerified=True,
+            originalPairHandlesRetainedAfterStop=True,
             planSha256=overlay.plan_hash(state['plan']),newFileCount=sum(f['beforeSha256'] is None for f in config['files']),liveChanged=False)
         (run/'CUTOVER-PROOF.json').write_text(json.dumps(proof,indent=2)+'\n',encoding='utf-8')
 
