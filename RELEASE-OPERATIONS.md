@@ -43,7 +43,7 @@ published before lock release. Existing Ensure performed no restart, and Status
 reported that owner healthy. The original reader and all eight old holds remain
 unchanged. No PC/model/Echo/Relay/DSH restart or scheduler change was performed.
 
-Phone acceptance of the newly written result is pending. Search for `reconciled`
+Eddie confirmed the newly written result appears in Mind on his phone. Search for `reconciled`
 in Mind: the full hyphenated marker returned no records despite verified delivery,
 so search-token behavior remains a usability follow-up. Never resend a saved
 event because a search is empty. Persistent binding recovery after later crash
@@ -53,6 +53,21 @@ general chat sync or skills/MCP activation is implied. Local release stays 18/21
 
 The following first-attempt rollback and controller-qualification sections are
 historical records; their inactive/pending descriptions refer to those attempts.
+
+### Inactive same-grant gateway recovery candidate
+
+Seven focused recovery checks and an actual Windows synthetic gateway recovery
+passed (517.062 seconds for the composed test). The original living owner is
+refused; exact retirement is required before archiving attempt/log evidence.
+The same pinned profile and grant then recover the gateway while the writer
+identity, credential and original receipts remain unchanged. A new card edit
+also reaches canonical recall. All test-owned cleanup completed. The first
+import-only test failure is retained separately; no fixture ran in that attempt.
+
+This helper is inactive and not wired into normal Ensure. Writer/reader crash
+recovery and disconnected capture/status remain unfinished. No live app, service,
+credential or startup definition was changed for this qualification. Local release
+stays 18/21; the already-live one-card connection remains phone-accepted.
 
 ### First project-write attempt: read-only rollback completed
 

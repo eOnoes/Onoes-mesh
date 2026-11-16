@@ -9,7 +9,7 @@ records: its preserved baseline and one approved result-only update. The reader
 remains read-only; a separate writer has permission limited to the Onoes-Mesh
 project. This is not general conversation ingestion or automatic card enrollment.
 Private-agent memory, automatic workers, Rook and all eight historical writer
-holds are unchanged. Phone acceptance of the newly written result is pending.
+holds are unchanged. Eddie confirmed the newly written result appears in Mind on his phone.
 
 ## First live project sync - corrected window qualified
 
@@ -47,6 +47,29 @@ catch-up, and clear stale/disconnected status remain required. Current legacy
 Ensure may recover Mesh without its native Mind binding after that owner exits;
 it must not be represented as successful memory synchronization. Local release
 remains 18/21, and production team, skills/MCP and external-machine work remain.
+
+## Same-grant gateway recovery candidate - not activated
+
+Seven focused checks passed, including an actual Windows-owned child: a living
+owner, denied observation, unresolved input, wrong identity, occupied destination
+and interrupted archival all preserve blocking evidence. The new helper requires
+the held existing launcher window and the existing authenticated source/profile
+preflight. It only archives a proven-retired gateway's attempt and logs; it does
+not create a credential, launch a process, delete evidence or enable a scheduler.
+
+An opt-in actual-process synthetic test then passed in 517.062 seconds. It refused
+the original living gateway, retained its original handle through retirement,
+archived every evidence byte and relaunched the exact same profile. The writer
+PID/birth and credential hash stayed unchanged. Both original source receipts
+remained identical; a third approved-field card edit was saved and read back
+through canonical recall. Owned-process cleanup completed and the test exited 0.
+The initial test import failure happened before any fixture started; its log is
+preserved separately from the corrected explicit-source-path test run.
+
+This verifies the gateway recovery primitive, not installed automatic recovery.
+No production app, permission, startup task or credential was changed. Wiring the
+existing Ensure route, handling writer/reader crashes, disconnected capture/catch-up
+and clear stale status remain required. The full local release stays 18/21.
 
 ## First live shared read-only connection - phone accepted
 
