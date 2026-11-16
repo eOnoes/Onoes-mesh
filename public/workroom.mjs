@@ -5,6 +5,7 @@ import {createBoardLoader,createCardOpener} from './workroom-load.mjs';
 import {handoffStatus,taskTimeline,cardNextAction,nativeWorkerStatus} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
 import {createPlanEditor,scopedTeamStatus,teamRequestNotice} from './workroom-plan.mjs';
+import {paintMemoryState} from './workroom-memory-state.mjs';
 const root=document.getElementById('workroom-board');
 const request=(...args)=>window.meshWorkroom.request(...args);
 const stages=[['backlog','Backlog'],['ready','Ready'],['working','Working'],['needs_you','Needs you'],['done','Done']];
@@ -192,6 +193,8 @@ if(root){
     const close=el('button','Close card');close.type='button';close.addEventListener('click',()=>{if(!busy)closeDetails();});toolbar.append(stageBadge,close);details.append(toolbar);
     details.append(content,actionBar);
     const dialogStatus=el('p');dialogStatus.setAttribute('role','status');content.append(dialogStatus);
+    const memoryState=el('p');memoryState.className='workroom-memory-state';memoryState.setAttribute('role','status');
+    paintMemoryState(memoryState,opened.memorySync);content.append(memoryState);
     if(teamRequestNotice(teamPolicy))content.append(el('p',teamRequestNotice(teamPolicy)));
     const writeup=el('p',selected.description);writeup.className='workroom-writeup';
     content.append(el('h2',selected.title),writeup);
@@ -504,6 +507,7 @@ if(root){
       try{agents=await request('/api/relay/native/api/agents');}catch{agents=[];}
       if(epoch!==viewEpoch || !details.open)return;
       paintRecovery();
+      paintMemoryState(memoryState,result.memorySync);
       paintSavedMessages(result.task);paintReplies(result.task);paintReports(result.task);paintTimeline(result.task);paintAuto(result.task);if(followLabel.parentElement!==reports)reports.append(followLabel,liveStatus);
       const index=tasks.findIndex(task=>task.id===id);if(index>=0){tasks[index]=result.task;draw();}
       liveStatus.textContent='Replies checked '+new Date().toLocaleTimeString()+'. New reports require explicit application and review.';

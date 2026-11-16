@@ -1,6 +1,6 @@
 // Explicit factory for isolated application qualification. Never enabled by env/UI.
 import {createHash} from 'node:crypto';
-import {ProjectOutboxCandidate,initializeProjectOutbox,canonicalProjectEvent} from './project-sync-outbox-candidate.mjs';
+import {ProjectOutboxCandidate,initializeProjectOutbox,canonicalProjectEvent,validateProjectEvent} from './project-sync-outbox-candidate.mjs';
 
 const allowed = ['title','goal','owner','stage','result','blocker'];
 
@@ -60,5 +60,29 @@ export function createWorkroomProjectSyncCandidate({db,store},
     }
     return outbox.capture(cardId,current.snapshot.stage==='done'?'completed':kind);
   }
-  return {capture,link,outbox,withdraw:cardId=>atomic(()=>outbox.withdraw(cardId))};
+  function status(cardId){
+    const link=db.prepare('SELECT * FROM mind_project_links WHERE cardId=?').get(cardId);
+    if(!link)return {state:'not_shared'};
+    if(!link.active)return {state:'withdrawn'};
+    if(link.storeId!==storeId)return {state:'held'};
+    const rows=db.prepare('SELECT * FROM mind_project_outbox WHERE cardId=? ORDER BY sequence').all(cardId);
+    if(!rows.length)return {state:'held'};
+    for(const row of rows){
+      try{
+        const event=JSON.parse(row.payload);
+        if(validateProjectEvent(event).hash!==row.payloadHash||event.cardId!==cardId||event.projectId!==link.projectId||
+          event.eventId!==row.eventId||event.sequence!==row.sequence)return {state:'held'};
+        if(row.state==='saved'){
+          const receipt=JSON.parse(row.receipt);
+          if(!outbox._receipt(receipt,event,row.payloadHash)||!['active','superseded'].includes(receipt.recordState))return {state:'held'};
+        }
+      }catch{return {state:'held'};}
+    }
+    const latest=JSON.parse(rows.at(-1).payload),current=readSnapshot(cardId);
+    if(canonicalProjectEvent(latest.revisions)!==canonicalProjectEvent(current.revisions)||
+      canonicalProjectEvent(latest.snapshot)!==canonicalProjectEvent(current.snapshot))return {state:'held'};
+    for(const state of ['held','uncertain','pending'])if(rows.some(row=>row.state===state))return {state};
+    return {state:'saved'};
+  }
+  return {capture,link,outbox,status,withdraw:cardId=>atomic(()=>outbox.withdraw(cardId))};
 }

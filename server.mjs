@@ -57,6 +57,7 @@ staticFiles.set('/relay-task-progress.mjs', ['public/relay-task-progress.mjs', '
 staticFiles.set('/lead-policy.mjs', ['public/lead-policy.mjs', 'text/javascript']);
 staticFiles.set('/workroom-plan.mjs', ['public/workroom-plan.mjs', 'text/javascript']);
 staticFiles.set('/workroom-status.mjs', ['public/workroom-status.mjs', 'text/javascript']);
+staticFiles.set('/workroom-memory-state.mjs', ['public/workroom-memory-state.mjs', 'text/javascript']);
 staticFiles.set('/workroom-drag.mjs', ['public/workroom-drag.mjs', 'text/javascript']);
 staticFiles.set('/workroom-view.mjs', ['public/workroom-view.mjs', 'text/javascript']);
 staticFiles.set('/workroom-edit.mjs', ['public/workroom-edit.mjs', 'text/javascript']);
@@ -100,10 +101,13 @@ async function activity(registryPath) {
     return await readWorkerActivity({ registryPath, nowIso: new Date().toISOString(), staleAfterMs: 600000 });
   } catch { return snapshot('unavailable'); }
 }
-export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, mindRecallOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, nativeWorkerOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
+export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, mindRecallOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, projectSyncTestOptions, nativeWorkerOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
   // Process configuration only. Standalone wins over ambient Relay enablement
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
+  if(projectSyncTestOptions!==undefined&&(!standalone||!/^test[\\/]app03-[A-Za-z0-9_-]+$/.test(dataDir)||
+    projectSyncTestOptions?.source!=='disposable_fixture'||typeof projectSyncTestOptions?.factory!=='function'||
+    Object.keys(projectSyncTestOptions).sort().join(',')!=='factory,source'))throw Error('Project sync seam is isolated fixture testing only.');
   if (rookRuntimeTestOptions !== undefined && (!standalone || rookRuntimeTestOptions?.source !== 'disposable_fixture'
       || Object.keys(rookRuntimeTestOptions).some(key => !['source','identity','verifyIdentity','enabled','now','schedule','cancel','previousOwnerGone','ownerPid','transport'].includes(key))))
     throw Error('Rook runtime seam is synthetic standalone testing only.');
@@ -160,7 +164,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const executions = new Set();
   const activeRuns = new Map();
   let executionPersistenceFailed = false;
-  try { store = openTaskStore(filename); } catch { /* Preserve invalid data; serve a visible failure. */ }
+  try { store = openTaskStore(filename,projectSyncTestOptions?{projectSyncFactory:projectSyncTestOptions.factory}:{}); } catch { /* Preserve invalid data; serve a visible failure. */ }
   // No production identity/transport is enrolled here. Activation is a separate owner gate.
   const rookRuntime = store ? createRookRuntime({store: store.workroom.rook, flow: store.workroom.flow,
     board: () => store.workroom.list(), ...rookRuntimeTestOptions,
@@ -349,7 +353,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         const id=workroomRoute[1];
         if(req.method==='GET' && !workroomRoute[2]) {
           const teamPolicy={...automationPolicy(ROOT),dispatch:{state:store.workroom.dispatch.status().state},...(process.env.MESH_SIMPLE_FLOW==='1'?{simpleFlow:true}:{})};
-          return send(200,id?{task:store.workroom.get(id),teamPolicy}:{tasks:store.workroom.list(),teamPolicy});
+          return send(200,id?{task:store.workroom.get(id),teamPolicy,memorySync:store.projectSyncState(id)}:{tasks:store.workroom.list(),teamPolicy});
         }
         if(!id) throw new TaskError(405,'Method not allowed.');
         if(workroomRoute[2]==='claim'&&req.method==='GET')return send(200,{flow:store.workroom.get(id).flow??null});
@@ -414,7 +418,9 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if(req.method==='POST' && workroomRoute[2]==='sync'){
           if(!context.body || Object.keys(context.body).length)throw new TaskError(400,'Reply refresh accepts no configuration.');
           if(typeof relay.nativeRead!=='function')throw new TaskError(503,'Live Relay is unavailable.');
-          return send(200,await syncTaskReplies({workroom:store.workroom,taskId:id,relay,admitted:current}));
+          const result=await syncTaskReplies({workroom:store.workroom,taskId:id,relay,admitted:current});
+          if(!current())throw new TaskError(403,'Session expired.');
+          return send(200,{...result,memorySync:store.projectSyncState(id)});
         }
         if(req.method==='POST' && workroomRoute[2]==='message') {
           if(typeof relay.taskMessage!=='function') throw new TaskError(503,'Task messaging requires live Relay.');

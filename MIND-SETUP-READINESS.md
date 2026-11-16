@@ -950,3 +950,48 @@ reader stop, model operation or app restart occurred in this milestone. Remainin
 actual app HTTP/phone sync-state presentation, reviewed source-profile deployment,
 checkpoint/deletion/backup composition and separately approved writer enrollment.
 The full goal stays active and local-release status remains 18/21.
+
+
+## Compact read-only memory status - staged 2026-11-15 Chicago
+
+The admitted selected-card GET now includes only a versioned memorySync.state;
+no backend URL, credential, approval reference, project identity, event payload
+or receipt ID is exposed. Opening the card only reads local status: it does not
+look up Mind, submit an event, assign work, approve a review or move the card.
+The existing admitted reply refresh also carries the same local observation;
+no extra timer or background memory action was added.
+
+Card details display a single plain-text line when relevant: Pending, Awaiting
+receipt, Needs attention, Last update recorded, Sharing paused or Unavailable.
+Disabled and unshared cards add no visible line or controls. The saved wording
+refers to historical delivery, not completed/approved work or perpetual retention.
+It requires a stored receipt matching the exact event/project/card/sequence/
+payload hash, service identity and scope. A changed source, missing/corrupt receipt,
+held predecessor or invalid status cannot falsely claim saved. Retention changes
+in Mind after a receipt are not continuously reconciled by this local observation.
+
+The fixture-only server factory is refused outside standalone mode or outside
+a disposable test/app03 directory. It is not a production configuration option,
+and browser requests cannot enable it. The real application still creates no
+sync schema/controller by default. A future approved runtime binding is required.
+
+Verification: complete npm test passed 725 checks (595 Node + 130 Python),
+including 38 project-sync checks. Seven new checks cover normal admission/CSRF,
+no-store/private responses, every local sharing status, byte-for-byte unchanged
+queue rows across status reads, receipt-backed saved state, unseen source drift,
+malformed policy/controller projection, no state-setting API, production seam
+refusal, hidden/compact rendering and plain-text clearing of old labels. Existing
+card mutation/Done/review and transport/crash regressions remain in that full run.
+No new phone acceptance or full rendered-browser verification is claimed here;
+the API journey is real HTTP and the small renderer has direct DOM-contract tests.
+
+The previous three-pin source-refresh draft was explicitly marked superseded
+before these additional server/UI changes. Never use it for deployment. A fresh
+profile must enumerate the new public module and all changed pins. The live
+checkout remains byte-for-byte at its approved 88-source binding; no source or
+profile was installed, credential/grant changed, worker enabled or app restarted.
+
+Next: qualify project-event receipts with canonical checkpoint/deletion/encrypted
+backup recovery, then prepare one complete source/runtime handoff. Keep the local
+release score at 18/21 and the broader goal active until its remaining acceptance
+requirements are actually met.
