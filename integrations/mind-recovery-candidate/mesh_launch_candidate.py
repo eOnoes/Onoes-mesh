@@ -5,6 +5,7 @@ The approval must come from Eddie; a file/reference alone is not consent.
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -28,7 +29,7 @@ def require(ok):
 def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def source_paths():
+def source_paths(*, project=False):
     paths={Path(__file__).resolve(),ROOT/'package.json',ROOT/'server.mjs',ROOT/'serve.mjs',
            ROOT/'integrations/native-mind-mesh-entry.mjs',
            ROOT/'integrations/mind-recovery-candidate/recall_process_candidate.py',
@@ -38,6 +39,8 @@ def source_paths():
         'project-sync-outbox-candidate.mjs','project-sync-runner-candidate.mjs',
         'workroom-project-sync-candidate.mjs'))
     for name in ('lib','public'):paths.update((ROOT/name).rglob('*.mjs'))
+    if project:paths.update(Path(__file__).resolve().parent/name for name in (
+        'project_mesh_input_candidate.py','project_service_process_candidate.py','project_operator_process_candidate.py'))
     return paths
 
 
@@ -49,14 +52,16 @@ def checked_launch(path,expected_sha,approval_path):
         for k,v in pairs:require(k not in result);result[k]=v
         return result
     p=json.loads(raw,object_pairs_hook=unique)
-    require(type(p) is dict and set(p)=={'schema','workspace','pythonExecutable','nodeExecutable',
+    require(type(p) is dict)
+    project=p.get('schema')=='onoes-mesh-native-launch/v2'
+    require(set(p)=={'schema','workspace','pythonExecutable','nodeExecutable',
         'pythonSha256','nodeSha256','sourceHashes','readerProfile','readerProfileSha256',
-        'settings','attemptPath','stdoutPath','stderrPath'})
-    require(p['schema']=='onoes-mesh-native-launch/v1' and Path(p['workspace']).resolve()==ROOT)
+        'settings','attemptPath','stdoutPath','stderrPath'} | ({'projectSync'} if project else set()))
+    require(p['schema'] in ('onoes-mesh-native-launch/v1','onoes-mesh-native-launch/v2') and Path(p['workspace']).resolve()==ROOT)
     require(Path(p['pythonExecutable']).resolve()==Path(sys.executable).resolve()
         and digest(sys.executable)==p['pythonSha256'])
     node=Path(p['nodeExecutable']);require(node.is_absolute() and node.resolve()==node and digest(node)==p['nodeSha256'])
-    pins=p['sourceHashes'];require(type(pins) is dict and {Path(n) for n in pins}==source_paths())
+    pins=p['sourceHashes'];require(type(pins) is dict and {Path(n) for n in pins}==source_paths(project=project))
     require(all(digest(n)==s for n,s in pins.items()))
     reader_path=Path(p['readerProfile']);reader_raw=reader_path.read_bytes()
     require(len(reader_raw)<=65536 and hashlib.sha256(reader_raw).hexdigest()==p['readerProfileSha256'])
@@ -86,6 +91,19 @@ def checked_launch(path,expected_sha,approval_path):
     return p,roles
 
 
+def native_frame(p,roles,approval_path,profile_sha):
+    options=roles.native_options(p['readerProfile'],p['readerProfileSha256'],approval_path)
+    if p.get('schema')!='onoes-mesh-native-launch/v2':
+        return dict(schema='onoes-mesh-native-recall-input/v1',mindRecallOptions=options)
+    spec=importlib.util.find_spec('project_mesh_input_candidate')
+    require(spec is not None and spec.origin is not None and Path(spec.origin).resolve()==
+        Path(__file__).resolve().parent/'project_mesh_input_candidate.py')
+    from project_mesh_input_candidate import project_native_options
+    project=project_native_options(p,profile_sha)
+    require(options['binding']['storeId']==project['destination']['storeId'])
+    return dict(schema='onoes-mesh-native-input/v2',mindRecallOptions=options,projectSyncOptions=project)
+
+
 def launch_mesh(path,expected_sha,approval_path):
     p,roles=checked_launch(path,expected_sha,approval_path)
     # Reserve all owned records before a child exists; leftovers block a retry.
@@ -94,7 +112,7 @@ def launch_mesh(path,expected_sha,approval_path):
         with attempt_path.open('xb') as attempt:
             for name in ('stdoutPath','stderrPath'):
                 with roles.new_role_file(p[name]).open('xb'):pass
-            options=roles.native_options(p['readerProfile'],p['readerProfileSha256'],approval_path)
+            options=native_frame(p,roles,approval_path,expected_sha)
             # Do not inherit a preload or ambient Mesh enrollment override.
             env={k:v for k,v in os.environ.items() if not k.upper().startswith('MESH_')
                  and k.upper() not in ('NODE_OPTIONS','NODE_PATH')}
@@ -112,7 +130,7 @@ def launch_mesh(path,expected_sha,approval_path):
                 stamp=roles.creation_ticks(child._handle)
                 record.update(creationTicks=stamp,state='input_pending');attempt.seek(0);attempt.truncate()
                 attempt.write(json.dumps(record).encode());attempt.flush();os.fsync(attempt.fileno())
-                child.stdin.write(json.dumps(dict(schema='onoes-mesh-native-recall-input/v1',mindRecallOptions=options)).encode())
+                child.stdin.write(json.dumps(options).encode())
                 child.stdin.close();options=None
                 record['state']='input_sent';attempt.seek(0);attempt.truncate()
                 attempt.write(json.dumps(record).encode());attempt.flush();os.fsync(attempt.fileno())
@@ -139,7 +157,7 @@ def main():
                     and not Path(p['stderrPath']).exists())
             # Check current token/grant revocation before the owner launcher can
             # stop Mesh. The secret result stays in this short-lived process.
-            roles.native_options(p['readerProfile'],p['readerProfileSha256'],args.approval)
+            native_frame(p,roles,args.approval,args.sha256)
             print(json.dumps(dict(ready=True,createsNothing=True,settings=p['settings'],nodeExecutable=p['nodeExecutable'])))
     except Exception:
         print(json.dumps(dict(ready=False,error='Native Mesh launch refused; preserve the private attempt and do not retry.')))

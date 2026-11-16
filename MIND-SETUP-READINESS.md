@@ -1,5 +1,13 @@
 # Onoes-Mind setup readiness
 
+## Current state — 2026-11-16
+
+Live shared recall is phone-accepted and read-only. The deterministic card-to-Mind
+path, protected service and normal native launcher are now locally qualified on
+disposable data. They are not live. The next step is the concrete first-write
+preparation, encrypted backup and rollback handoff for owner review. Private-agent
+memory, automatic workers, Rook and the historical writer holds are unchanged.
+
 ## First live shared read-only connection - phone accepted
 
 Eddie approved the first canonical shared-facts connection and conditional
@@ -12,7 +20,7 @@ memory remains excluded. No project facts or conversation history were seeded.
 The protected operator exited before the independent reader started. Only Mesh
 was reloaded. All 15 cards and 21 send rows plus claim/dispatch data were unchanged;
 Echo/Relay, DSH and the model manager retain their exact original owners. The
-existing parent build card now records this milestone at progress revision 87.
+parent build card recorded that first-read milestone at progress revision 87.
 Unauthenticated reads reject 401; caller scope/config widening rejects 400.
 
 The first process stopped before provisioning because it lacked ambient
@@ -29,8 +37,8 @@ The reader is manually owned; no login task/automatic recovery was enrolled.
 The encrypted first-setup archive remains the empty-store baseline. Qualify the
 updated encrypted backup/restore before admitting durable memory writes.
 Eight old writer holds, production team enrollment and the wider goal remain
-unfinished. Next: the requested read-only audit of a small deterministic
-Workroom-to-Mind project/status link before proposing live write permissions.
+unfinished. The read-only project/status audit and subsequent disconnected
+implementation are recorded below; live project-write approval remains separate.
 
 
 ## Inactive revocation and concrete enrollment packet
@@ -1164,10 +1172,9 @@ metadata is refused; it must never be stripped from the service's client export.
 Legacy recall-only frames remain supported. All 14 focused peer/HTTP/native cases
 passed, including the actual gateway and canonical readback journey.
 
-Still required: compose the approved service/client export into the normal native
-launcher, qualify startup/reload ownership and interruption behavior, freeze the
-complete fresh source profile, and prepare encrypted backup plus rollback and
-owner activation review. The live reader stays read-only; project writing,
+The combined launcher is qualified in the next section. A fresh source profile
+and complete encrypted-backup, recovery and rollback handoff still precede owner
+activation review. The live reader stays read-only; project writing,
 automatic workers, Rook and the historical writer holds are unchanged.
 
 Final regression evidence for this slice: `npm test` exited zero with 737
@@ -1175,3 +1182,64 @@ checks (607 Node and 130 Python). The separate Windows native source/launch
 suite exited zero with 12 cases in 347.024s. The first restricted-environment
 runs failed local socket/private-folder checks and remain retained; the complete
 runs with the necessary local test access passed. No live activation is claimed.
+
+
+## Explicit combined launcher profile — locally qualified, not activated
+
+The opt-in `onoes-mesh-native-launch/v2` profile adds a fixed project service
+profile/hash, separate project approval, Workroom database identity and exact
+card/project/field links. The composition and service/operator modules are
+pinned before import, and helper origins must match the reviewed local files.
+Existing `onoes-mesh-native-launch/v1` profiles emit only recall input; an extra
+field or environment variable cannot add a writer.
+
+Project approval must name the exact launch-profile hash and explicitly include
+`run_mesh_sync`, alongside the separately approved service action. Read-only
+enrollment approval is insufficient. Preflight checks the canonical task path,
+current file identity, exact existing sharing policy and permitted projects.
+It creates no schema, link, project, credential or service. The composed frame
+retains mandatory Windows peer identity and refuses a reader/writer store
+mismatch. Secrets travel through inherited input, not arguments, environment,
+attempt records or logs. The Node client checks every established socket before
+sending credential, headers or body.
+
+The real owned-launch journey passed in 401.940s. It started separate read-only
+and protected project services, validated the exact launcher profile, refused
+changed file identity, widened fields, an ungranted project, altered service
+profile, missing action/hash and actual stored-policy drift, then launched the
+real Mesh gateway. An admitted HTTP card edit produced exactly two canonical
+events (baseline plus edit), current memory readback contained the saved title,
+and excluded private prose stayed absent. The test also verified the service
+credential was absent from attempt and child logs. This is disposable Windows
+integration evidence; it is not actual-phone or live-writer acceptance.
+
+Ten fast checks passed in 1.975s, including the real Python admission/read/edit/
+readback/logout contract and legacy-launcher, runtime-pin, ambient-preload,
+helper-origin and store-mismatch checks. All 737 app checks passed (607 Node,
+130 Python); production source remained unchanged during later test-only
+corrections. Four operator-process cases passed in 117.629s against the unchanged
+operator source. Failed attempts and synthetic child diagnostics are retained.
+
+The first startup failure exposed different Windows volume-ID representations
+in Python 3.14 and Node. The corrected preflight asks the pinned Node binary for
+its own identity, strips `NODE_OPTIONS`/`NODE_PATH`, and compares that approved
+representation without truncating either ID. Python independently checks its
+own before/after identity. The fixture records Node's representation. Subsequent
+test failures exposed an HTTP-opener name shadow, an absent optional task owner,
+and the empty 204 logout response; a fast real-API check now covers that request
+leg before the expensive owned-process journey. Parse candidates before costly
+tests and preserve startup diagnostics before fixture cleanup.
+
+Existing encrypted project-recovery coverage restores receipts and retains
+later deletion after loss of the source/history files and integrity keys.
+That evidence explicitly retains a synthetic service token; it does not qualify
+credential recovery. Restored file identity must not silently reuse an old
+runtime profile or credential binding; reviewed re-enrollment/replacement remains
+separate from data restoration.
+
+Still required: complete the concrete Workroom link/baseline preparation, fresh
+source deployment, updated encrypted backup/recovery and rollback handoff, then
+obtain owner approval for exact first live writes. No live writer, sharing link,
+new grant, profile, service, startup entry or deployment was activated here.
+The current approved reader stays unchanged; workers, Rook and historical holds
+remain off/held, and the wider app goal remains unfinished.

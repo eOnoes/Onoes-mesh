@@ -117,7 +117,7 @@ def checked_profile(path, expected_sha, approval_path=None):
             and a['storeId'] == binding.store_id and a['scopeId'] == SCOPE
             and a['projects'] == ids and a['reviewRef'] == p['reviewRef']
             and type(a['actions']) is list and len(a['actions']) == len(set(a['actions']))
-            and all(x in ('first_setup','replace','revoke','run_service') for x in a['actions']) and p['mode'] in a['actions'])
+            and all(x in ('first_setup','replace','revoke','run_service','run_mesh_sync') for x in a['actions']) and p['mode'] in a['actions'])
     return p, binding
 
 
