@@ -1,6 +1,6 @@
 # Mesh private release candidate
 
-## Current release status - 2026-11-15 Chicago
+## Current release status - 2026-11-16 Chicago
 
 First local release: **18/21 complete**. The wider Onoes-Mesh goal is unfinished.
 The prepared Node app source passed **687 local checks (557 Node +130 Python)**.
@@ -25,6 +25,35 @@ bootstrap fix passed 12 clean-environment checks before the corrected continuati
 The existing parent progress card records the accepted read-only milestone at
 revision 87. Wider memory writing, context sync, skills/MCP and external stages
 remain unfinished. The local release score stays 18/21.
+
+### First project-write attempt: read-only rollback completed
+
+The owner-approved November 16 attempt completed its encrypted pre-write backup
+and archive recovery readback. One project permission and one source-card link
+were provisioned. The native Mesh launch then failed with port 4320 occupied:
+the existing one-minute Workroom recovery task had launched a second Mesh owner
+during the cutover. Automatic project-memory updates are **not enabled**.
+
+The exact new writer was gracefully stopped and its new permission revoked with
+verified terminal evidence. All 109 original runtime files were restored,
+including removal of 14 installer-only files; all 46 existing reader pins still
+match. The read-only fallback passed normal admission, canonical recall and the
+15-card read. Its native ownership receipt was reconciled under the existing
+launcher mutex. Named Ensure now recognizes that owner without restarting it.
+The separately approved temporary recovery-task pause was restored; its exported
+definition exactly matches the original. The single link and pending outbox
+event remain preserved for deliberate reconciliation, never blind replay.
+
+The cutover must share the existing named launcher's mutex before stopping Mesh,
+hold it through installation and owned rollback, and publish the new native
+owner receipt before release. The standalone MeshLauncherWindow helper passed
+three Windows checks, including a real copied recovery Ensure that refuses while
+the lock is held, exception release, source drift and cross-thread refusal.
+It has no task/process/enrollment side effects and is not activated in Mesh.
+The restricted first run could not perform read-only CIM status observation;
+the host run passed 3/3. This is coordination qualification, not a successful
+live write connection. A fresh reviewed activation must account for the revoked
+purpose, preserved source link/outbox, fresh attempt identities and this lock.
 
 ### Running checklist
 
