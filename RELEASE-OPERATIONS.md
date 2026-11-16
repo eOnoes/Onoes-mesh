@@ -1,5 +1,35 @@
 # Mesh private release candidate
 
+## Parked Inference request - Onoes-Tripp and temperature rings
+
+Eddie reports that the other machine now has connectivity and SSH access. Its
+name is Onoes-Tripp; display it as Tripp's PC. Treat this as the existing Tripp
+machine lane until its actual SSH/Tailscale identity is verified. This is an
+owner-reported readiness update, not a completed Mesh enrollment or remote probe.
+Resume it during the multi-machine Inference phase after current recovery work.
+
+Reuse the current Echo's PC presentation for Tripp's PC: machine name, actual
+loaded model using a short readable name (or an explicit no-model/unknown state),
+RAM usage, GPU utilization and CPU utilization percentages. SSH access alone does
+not prove model readiness or authorize model loads, remote installs or restarts.
+Keep connectivity private through the existing Tailscale/SSH arrangement.
+
+Add an 8-bit/digital segmented temperature ring around CPU and GPU icons, using
+6-8 segments (eight is a suitable starting point). Other icons receive a ring
+only when a real temperature sensor is available. Keep temperature distinct from
+the existing utilization bars: show measured degrees C and make ring segments
+represent the component's thermal range, with thresholds chosen for verified
+hardware. Missing or stale readings show unavailable/stale, never an invented
+zero or a temperature inferred from utilization. Preserve dark lime and light
+burnt-orange themes, contrast, readable phone sizing and the terminal aesthetic.
+
+Acceptance when this phase resumes: verify the actual Onoes-Tripp identity and
+read-only telemetry source; report loaded model and resource metrics per machine;
+check CPU/GPU temperature provenance, freshness and unavailable states; inspect
+the segmented rings on phone/desktop in both themes. No implementation or remote
+connection was performed for this note. Eddie's supplied screenshot is a layout
+reference; its "Model loaded: Unknown" and percentages are not live measurements.
+
 ## Current release status - 2026-11-16 Chicago
 
 First local release: **18/21 complete**. The wider Onoes-Mesh goal is unfinished.
