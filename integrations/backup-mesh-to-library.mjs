@@ -2,7 +2,7 @@ import {existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync,renameSync,c
 import {resolve,join,dirname,relative,isAbsolute} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash,randomUUID} from 'node:crypto';
-import {execFileSync} from 'node:child_process';
+import {execFileSync,spawn} from 'node:child_process';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const library=resolve(process.argv[2]||'E:/App-Backups');
 const app=join(library,'ONOes-Mesh');mkdirSync(app,{recursive:true});
@@ -39,6 +39,13 @@ for(const name of ['integrations/mesh-maintenance-handoff.ps1','integrations/rea
 entries.sort();
 // Keep the operational contracts with the UI/code they describe.
 for(const name of ['MIND-CONTRACT.md','RELAY-INTEGRATION.md','MESH-QUICK-START.md'])if(existsSync(join(root,name)))entries.push(name);
+// serve.mjs imports the native entry even during an ordinary disconnected start.
+// Keep its reviewed operator/reader source with the matching named launcher.
+for(const name of ['integrations/native-mind-mesh-entry.mjs','MIND-SETUP-READINESS.md'])if(existsSync(join(root,name)))entries.push(name);
+const mindCandidate='integrations/mind-recovery-candidate';
+if(existsSync(join(root,mindCandidate)))for(const item of readdirSync(join(root,mindCandidate),{withFileTypes:true})){
+  if(item.isFile() && /\.(py|mjs|md)$/.test(item.name))entries.push(mindCandidate+'/'+item.name);
+}
 entries.sort();
 const hash=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const files=entries.map(path=>({path,sha256:hash(join(root,path))}));
@@ -64,16 +71,44 @@ try{
   }
   await fetch(origin+'/api/trial-session/logout',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}'});
 }finally{await restoredApp.close();}
-const restore=`RESTORE ONOes-Mesh / Workroom\n\nData snapshot: Workroom-data/tasks.sqlite\nApp source: Mesh-app-source.zip\nVerification: manifest.json and Workroom-data/receipt.json\n\nTo restore data on this PC:\n1. Verify the tasks.sqlite SHA256 against the receipt/manifest (PowerShell: Get-FileHash -Algorithm SHA256).\n2. In the Mesh source folder, run: powershell -NoProfile -File integrations/restart-workroom-preview.ps1 -Action Stop\n   This intentionally pauses Mesh automatic recovery. Do not stop other apps.\n3. Preserve the CURRENT tasks.sqlite and any tasks.sqlite-wal / tasks.sqlite-shm together in a separate dated safety folder. Keep recovery-paused in data/workroom-preview in place. Do not mix old WAL/SHM files with the replacement database.\n4. Copy this backup's Workroom-data/tasks.sqlite to:\n   ${source}\n5. Run the named launcher with -Action Start, then open the private Workroom link and check cards, reports and reviews. Start resumes automatic recovery.\n\nTo recover app source:\nExtract Mesh-app-source.zip into a NEW folder, not over an existing working copy. It contains the matching app source, operational scripts and root-level test sources. Keep the existing working copy as a safety copy. Use a compatible Node24 runtime. For a moved checkout, review paths in the launcher and reinstall its named recovery task deliberately. The current backup targets the active mesh-workroom-ab checkout.\n\nExternal runtime dependencies such as the existing Relay service/configuration and AI model files need their own app-specific backup. They are not part of this Mesh source/data snapshot.\n\nThe live database has NOT been replaced by creating or verifying this backup. restore-rehearsal.sqlite is a verification copy, not the primary restore snapshot.\n`;
+// Syntax checks and a backend-only start miss gateway import/dependency gaps.
+// Run only a test-owned child against the restored COPY; never attach live
+// Relay, inference, native workers, memory credentials or the owner's gate key.
+const probeEnv=Object.fromEntries(Object.entries(process.env).filter(([key])=>!key.toUpperCase().startsWith('MESH_')&&!['NODE_OPTIONS','NODE_PATH'].includes(key.toUpperCase())));
+Object.assign(probeEnv,{MESH_STANDALONE:'1',MESH_PREVIEW_PORT:'0',MESH_DATA_DIR:'data/backup-http-rehearsal',MESH_RELAY:'0',MESH_RELAY_MODE:'child',MESH_MODEL_OBSERVATION:'0',MESH_NEMOTRON_CONTROL:'0',MESH_SIMPLE_FLOW:'0',MESH_NIMS:'0',MESH_GATE_TOKEN:'disposable-backup-gate'});
+const gateChild=spawn(process.execPath,[join(extraction,'serve.mjs')],{cwd:extraction,env:probeEnv,stdio:['ignore','pipe','pipe'],windowsHide:true});
+const gateExit=new Promise(resolve=>gateChild.once('exit',resolve));
+try{
+  const ready=await new Promise((resolve,reject)=>{
+    let output='';const timer=setTimeout(()=>reject(Error('Restored gateway readiness timed out; test-owned child retained for cleanup.')),10000);
+    gateChild.once('error',()=>{clearTimeout(timer);reject(Error('Restored gateway could not start.'));});
+    gateChild.once('exit',()=>{clearTimeout(timer);reject(Error('Restored gateway exited before readiness.'));});
+    gateChild.stderr.resume();gateChild.stdout.on('data',chunk=>{
+      output+=chunk;if(output.length>16384){clearTimeout(timer);reject(Error('Unexpected restored gateway output.'));return;}
+      if(output.includes('\n')){clearTimeout(timer);try{const value=JSON.parse(output.trim());if(value.event!=='mesh_listening')throw Error();resolve(value);}catch{reject(Error('Restored gateway readiness was not verified.'));}}
+    });
+  });
+  const url=ready.previewUrl;
+  if((await fetch(url+'/api/workroom')).status!==401)throw Error('Restored gateway did not enforce backend admission.');
+  const boot=await fetch(url+'/api/trial-session/bootstrap',{method:'POST',headers:{Origin:url,'Content-Type':'application/json'},body:'{}'});
+  if(boot.status!==201)throw Error('Restored gateway admission failed.');
+  const session=await boot.json(),headers={Origin:url,Cookie:boot.headers.get('set-cookie').split(';')[0],'X-Trial-CSRF':session.csrfToken};
+  const tasks=await fetch(url+'/api/workroom',{headers});if(tasks.status!==200||(await tasks.json()).tasks.length!==receipt.taskCount)throw Error('Restored gateway task read failed.');
+  const mind=await fetch(url+'/api/mind/status',{headers});if(mind.status!==200||(await mind.json()).configured!==false)throw Error('Restored gateway unexpectedly enrolled memory.');
+}finally{
+  // Captured disposable child only; no service/PID-name or port-wide stopping.
+  if(gateChild.pid && gateChild.exitCode===null && gateChild.signalCode===null){gateChild.kill();await gateExit;}
+}
+const restore=`RESTORE Onoes-Mesh / Workroom\n\nData snapshot: Workroom-data/tasks.sqlite\nApp source: Mesh-app-source.zip\nVerification: manifest.json and Workroom-data/receipt.json\n\nTo restore data on this PC:\n1. Verify the tasks.sqlite SHA256 against the receipt/manifest (PowerShell: Get-FileHash -Algorithm SHA256).\n2. In the Mesh source folder, run: powershell -NoProfile -File integrations/restart-workroom-preview.ps1 -Action Stop\n   This intentionally pauses Mesh automatic recovery. Do not stop other apps.\n3. Preserve the CURRENT tasks.sqlite and any tasks.sqlite-wal / tasks.sqlite-shm together in a separate dated safety folder. Keep recovery-paused in data/workroom-preview in place. Do not mix old WAL/SHM files with the replacement database.\n4. Copy this backup's Workroom-data/tasks.sqlite to:\n   ${source}\n5. Run the named launcher with -Action Start, then open the private Workroom link and check cards, reports and reviews. Start resumes automatic recovery.\n\nTo recover app source:\nExtract Mesh-app-source.zip into a NEW folder, not over an existing working copy. It contains the matching app source, operational scripts and root-level test sources. Keep the existing working copy as a safety copy. Use a compatible Node24 runtime. For a moved checkout, review paths in the launcher and reinstall its named recovery task deliberately. The current backup targets the active mesh-workroom-ab checkout.\n\nExternal runtime dependencies such as the existing Relay service/configuration and AI model files need their own app-specific backup. They are not part of this Mesh source/data snapshot.\n\nThe live database has NOT been replaced by creating or verifying this backup. restore-rehearsal.sqlite is a verification copy, not the primary restore snapshot.\n`;
 writeFileSync(join(directory,'RESTORE.txt'),restore);
 writeFileSync(join(directory,'BACKUP-INFO.txt'),`ONOes-Mesh — APP SOURCE + WORKROOM DATA\n\nCreated (Chicago): ${at.toLocaleString('en-US',{timeZone:'America/Chicago'})}\nCreated (UTC): ${at.toISOString()}\nSaved tasks: ${receipt.taskCount}\nSource files: ${files.length}\n\nWorkroom-data/tasks.sqlite: saved tasks, goals/checklists, reviews, task messages and recorded native outcomes.\nMesh-app-source.zip: matching app source and operational scripts.\nRESTORE.txt: human restore instructions.\nmanifest.json: exact paths, file hashes and verification results.\n\nSQLite integrity, foreign keys and isolated application-migration restore: PASS.\nSource archive extracted, every included file hash compared and startup-script syntax checked: PASS.\nRestored source started with a COPY of the backed-up database; admission guard and all saved tasks verified through HTTP: PASS.\n\nBackup root: ${library}\nThis is a second-drive backup on this PC; it does not yet provide off-device protection.\n`);
-const manifest={schema:'onoes-mesh-backup/v1',app:'ONOes-Mesh',createdAt:at.toISOString(),sourceRoot:root,directory,scope:['Mesh app source','Workroom SQLite data'],taskCount:receipt.taskCount,sourceFiles:files,archives:{source:{file:'Mesh-app-source.zip',sha256:hash(archive)},data:{file:'Workroom-data/tasks.sqlite',sha256:hash(receipt.snapshot)}},verification:{sqliteIntegrity:receipt.integrity,foreignKeys:receipt.foreignKeys,isolatedDataRestore:receipt.restore,sourceExtraction:'PASS',sourceHashes:'PASS',sourceSyntax:'PASS',restoredSourceHTTP:'PASS'},offDevice:false};
+const manifest={schema:'onoes-mesh-backup/v1',app:'ONOes-Mesh',createdAt:at.toISOString(),sourceRoot:root,directory,scope:['Mesh app source','Workroom SQLite data'],taskCount:receipt.taskCount,sourceFiles:files,archives:{source:{file:'Mesh-app-source.zip',sha256:hash(archive)},data:{file:'Workroom-data/tasks.sqlite',sha256:hash(receipt.snapshot)}},verification:{sqliteIntegrity:receipt.integrity,foreignKeys:receipt.foreignKeys,isolatedDataRestore:receipt.restore,sourceExtraction:'PASS',sourceHashes:'PASS',sourceSyntax:'PASS',restoredSourceHTTP:'PASS',restoredGatewayHTTP:'PASS'},offDevice:false};
 writeFileSync(join(directory,'manifest.json'),JSON.stringify(manifest,null,2));
 const latestPath=join(app,'LATEST.json');
 if(existsSync(latestPath)&&JSON.parse(readFileSync(latestPath,'utf8')).schema!=='onoes-mesh-latest/v1')throw Error('Unknown latest pointer; backup retained without replacing it.');
 const latest={schema:'onoes-mesh-latest/v1',directory,createdAt:manifest.createdAt,manifest:join(directory,'manifest.json'),restoreGuide:join(directory,'RESTORE.txt'),taskCount:receipt.taskCount,verified:true};
 const temporary=latestPath+'.'+id+'.tmp';writeFileSync(temporary,JSON.stringify(latest,null,2),{flag:'wx'});renameSync(temporary,latestPath);
-writeFileSync(join(app,'LATEST.txt'),`LATEST VERIFIED ONOes-Mesh BACKUP\n\n${directory}\n\nCreated (Chicago): ${at.toLocaleString('en-US',{timeZone:'America/Chicago'})}\nSaved tasks: ${receipt.taskCount}\nContents: Workroom data and matching Mesh app source.\n\nOpen BACKUP-INFO.txt and RESTORE.txt in that folder.\nVerification passed; previous dated backups are retained.\n`);
+writeFileSync(join(app,'LATEST.txt'),`LATEST VERIFIED Onoes-Mesh BACKUP\n\n${directory}\n\nCreated (Chicago): ${at.toLocaleString('en-US',{timeZone:'America/Chicago'})}\nSaved tasks: ${receipt.taskCount}\nContents: Workroom data and matching Mesh app source.\n\nOpen BACKUP-INFO.txt and RESTORE.txt in that folder.\nVerification passed; previous dated backups are retained.\n`);
 writeFileSync(join(root,'..','workroom-backup-latest.json'),JSON.stringify(receipt,null,2));
 writeFileSync(join(root,'..','mesh-library-backup-latest.json'),JSON.stringify(latest,null,2));
 console.log(JSON.stringify({...latest,sourceFiles:files.length,verification:manifest.verification},null,2));

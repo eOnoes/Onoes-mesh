@@ -2,18 +2,27 @@
 
 ## Current release status - 2026-11-15 Chicago
 
-First local release: **18/21 complete**. This remains a private release candidate;
-the wider Onoes-Mesh goal is unfinished. Recovery confirmation milestone: ccce8cb.
-The integrated a0b36b8 app code passed **676 checks (546 Node +130 Python)**.
-The separate inactive Mind protected-handoff17 and setup-entry9 checks also passed;
-they are not a combined full Mind suite or live-memory qualification.
-The approved Mesh-only reload loaded the observation guard. Relay and Echo are
-running through their unchanged existing launchers; authenticated read-only
-directory checks passed. The compact pixel dashboard was checked live at phone
-width in both themes. Current model-manager controls remain unqualified.
-Two scroll checks also passed, including the later prepend-position regression.
-Thirty separate PowerShell safeguard checks passed. These are local qualification,
-not acceptance of a completed production recovery or worker deployment.
+First local release: **18/21 complete**. The wider Onoes-Mesh goal is unfinished.
+The prepared Node app source passed **687 local checks (557 Node +130 Python)**.
+Later operator/launcher/revocation checks are separate focused qualifications,
+not proof of a live memory connection or a completed production team workflow.
+
+Phone Workroom and Relay history acceptance are preserved. The named live Mesh
+owner was checked healthy without a restart. Current model-manager controls
+remain unqualified. Eight historical writer holds still block production team
+enrollment; no recovery window or PC restart is authorized while Eddie's other
+projects are building.
+
+Mind's real empty canonical store, protected recovery keys and encrypted first
+backup/rehearsal are complete. The read-only connector, native launcher and
+revocation path are tested and published. The exact first live enrollment packet
+is awaiting Eddie's approval; admitted live Mind status remains not_configured.
+This build has not enrolled a live memory credential, private-agent access or worker.
+
+The existing owner-visible progress card is refreshed in place through the normal
+admitted API. Only its result/evidence changed (progress revision85 ->86); its
+goal, checklist, review and lane, the other14cards and all21send rows are unchanged.
+The dispatch gate stays paused. This is a progress update, not task dispatch.
 
 ### Running checklist
 
@@ -24,8 +33,9 @@ not acceptance of a completed production recovery or worker deployment.
   manager now observed on the PC. Its binary/source binding and controls remain
   unverified. Other model profiles and machines remain later work.
 - [x] Manual/milestone source and data backups on E:, including actual isolated
-  restore checks. The latest verified snapshot contains 15 cards; all seven
-  restoration checks passed. This is a second drive, not off-device protection.
+  restore checks. The latest data snapshot contains 15 cards and progress revision86;
+  all eight checks passed, including the restored phone gateway. This is a second
+  drive, not off-device protection.
 - [x] Standalone recovery and restore handoff built and locally qualified.
 - [x] Original Windows startup restored after the latest approved manual window;
   all five task definitions/flags and three login links independently verified.
@@ -56,8 +66,25 @@ not acceptance of a completed production recovery or worker deployment.
 | Remaining local gate | Evidence already preserved | What still proves completion |
 | --- | --- | --- |
 | C1 useful phone workflow without rescue | Accepted card/phone checks and phone scoped-team start. | A useful production team request finishes without operator rescue after enrollment. |
-| C4 final release, ownership and acceptance | 676 integrated app checks, separate Mind candidate proofs, verified backup/restore and exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
+| C4 final release, ownership and acceptance | 687 prepared-app checks, separate inactive Mind proofs, verified backup/restore and exact-source recovery safeguards. | Successful actual maintenance, verified running app/service ownership and Eddie's release acceptance. |
 | E2 bounded production team | Isolated file-and-terminal build and independent Nims review passed with retained evidence. | Recover the old holds through the reviewed boundary, enroll the deployed route and qualify the actual team cycle. |
+
+### Latest checklist and backup correction
+
+The progress card "Finish Onoes-Mesh - all assessed stages" now separates accepted
+phone behavior, completed empty-store/recovery setup, tested-but-inactive memory
+access and the remaining wider stages. The local release score remains18/21;
+shared memory, shared skills/MCP, external apps and laptop/AI-box inference are
+still in scope. The same accepted phone checks do not need repeating.
+
+The source backup allowlist had omitted serve.mjs's newly imported native entry.
+A backend-only restore check could miss that gateway dependency. The manual
+backup now includes the entry and candidate source (no live profiles/keys), then
+starts the actual restored gateway with a copied database, fake gate key and
+standalone disabled-service settings. Its admission, task read and disconnected
+Mind status must pass before the latest verified pointer can advance. Backup
+creation does not replace the live database or reload Mesh. Current run/proof
+is recorded in the private progress checkpoint.
 
 ### Latest ordinary-app milestone - compact Relay directory
 
@@ -148,20 +175,24 @@ long-history retrieval. Evidence: data/relay-directory-candidate-20261114/qualif
 
 ### Broader stages remain in scope
 
-Canonical Onoes-Mind memory, shared context across Relay/optional Telegram, shared
-skills/MCP tooling and external-app integrations remain unfinished. The existing
-Mind selected-task reader is not a live canonical-memory connection. The memory
-store's identity, permissions and live binding still need their own reviewed work.
-After local operation is solid, extend inference and health monitoring from the
-main PC to the laptop and AI box; their live enrollment is not claimed here.
+The completed canonical empty Mind store lives outside its code repo, on D:.
+Eddie owns it; Echo and Nims operate under reviewed permissions. Protected recovery
+keys and the encrypted E: first-setup archive/rehearsal are complete. The earlier
+"no database/keys created" planning state is superseded by that approved setup.
+MIND-SETUP-READINESS.md carries its current evidence and historical records.
 
-Prepared locally: protected recovery-to-writer handoff and a preview-first Mind
-setup entry. The entry checks private empty folders before the separately approved
-interactive native key/setup/first-backup/rehearsal path. No live paths, keys,
-database, runtime writer, memory access or MCP permissions were enrolled. Actual
-source/authority placement, private-folder custody, exclusive runtime ownership
-and owner-reviewed initialization remain. See MIND-SETUP-READINESS.md for current
-status and distinguish its historical build records from activation.
+The first proposed Mesh service sees only deliberately shared facts across
+projects. Its dedicated read-only credential, independent loopback reader,
+source/profile-bound named launcher and separately approved revocation are locally
+qualified. Live enrollment is not approved or activated. The reader is not a
+second memory authority and does not ingest chats or Workroom events.
+
+Shared context across Relay/optional Telegram, linked project history, shared
+skills/MCP tooling and external-app integrations remain unfinished. After local
+operation is solid, extend inference and health monitoring from the main PC to
+Tripp's laptop and the AI box; their live enrollment is not claimed here.
+Before admitting durable project/conversation writes, qualify the updated memory
+backup/restore and approved deterministic synchronization boundary.
 
 The a0b36b8 milestone is published and remote-verified. The complete integrated
 source archive (2329 files) and separate qualification proofs are hash-verified in
