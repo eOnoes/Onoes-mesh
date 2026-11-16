@@ -1,5 +1,37 @@
 # Onoes-Mind setup readiness
 
+## Inactive approved-profile owner-launcher wiring
+
+The named Mesh PowerShell launcher now has an explicit native Mind Start/Restart
+option. It verifies the exact approved launch/reader profiles, executable/source
+hashes, matching existing app settings and current service authentication before
+its existing stop operation. Ordinary startup stays disconnected. The helper
+uses private exclusive attempt/log files, captures the actual Node PID and OS
+creation time, sends only the fixed secret frame by inherited stdin, and removes
+ambient Mesh enrollment and Node preload overrides. No new supervisor, queue,
+scheduler or database is introduced.
+
+The composed Windows fixture scenario passed through operator exit, fresh reader
+without integrity keys, approved-profile helper and the real phone gateway.
+After reader shutdown, recall returns 503 while task reads remain available.
+The first implementation exposed a path-versus-file-handle error; corrected.
+A later aggregate run passed the composed scenario but failed its final unit
+fixture because readerProfile was missing. That fixture was corrected; all four
+refusal/ownership units passed separately. The failed logs are retained.
+All 362 existing Workroom regressions passed. App runtime files from the prior
+687-check full suite are unchanged; that full suite was not repeated here.
+
+Actual PowerShell parsing checks preflight-before-stop and returned process
+creation identity. The management branch has not been run against shared live
+Mesh. No live profile, approval, grant, credential, service or startup was
+created. Existing running apps, old job holds, workers and Rook are unchanged.
+
+Next: prepare the concrete real-store enrollment packet and revocation procedure,
+then seek scoped owner approval before provisioning and a Mesh-only reload.
+No PC restart is planned. Shared facts across projects remain the selected scope;
+private agent memory remains excluded.
+
+
 ## Inactive native Mesh and phone-gateway bootstrap
 
 The full local suite passed 687 checks (557 Node and 130 Python), including six

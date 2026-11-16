@@ -9,12 +9,11 @@ import subprocess
 import sys
 import time
 import unittest
-import queue
-import threading
 import urllib.request
 import urllib.error
 import uuid
 import hashlib
+import mesh_launch_candidate as mesh_launch
 from unittest.mock import patch
 
 from onoes_mind.ledger import Ledger
@@ -134,22 +133,39 @@ class NativeRoleProcessTests(unittest.TestCase):
         self.assertTrue(response['ok']);self.assertEqual(response['result']['records'],[])
         # Launch the real application through the fixed inherited-input entry.
         # No secret argument/environment/file; the writer keys remain parked.
-        env=dict(os.environ,MESH_PORT='0',MESH_DATA_DIR='data/native-process-'+uuid.uuid4().hex,
-                 MESH_RELAY='0',MESH_RELAY_MODE='child',MESH_MODEL_OBSERVATION='0',
-                 MESH_NEMOTRON_CONTROL='0',MESH_SIMPLE_FLOW='0',MESH_NIMS='0',
-                 MESH_PREVIEW_PORT='0',MESH_GATE_TOKEN='synthetic-gateway-token')
-        env.pop('MESH_STANDALONE',None)
-        for name in ('MESH_NATIVE_WORKER_RECORD','MESH_NATIVE_WORKER_RECORD_SHA256',
-                     'MESH_TAILSCALE_LOGIN','MESH_TAILSCALE_HOST'):env.pop(name,None)
-        app=subprocess.Popen([shutil.which('node'),'serve.mjs','--native-mind'],
-            cwd=Path(__file__).resolve().parents[2],env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,text=True,creationflags=subprocess.CREATE_NO_WINDOW)
+        root=self.fixture.backup;gate_key=root/'gate.key';gate_key.write_text('synthetic-gateway-token')
+        settings=dict(MESH_DATA_DIR='data/native-process-'+uuid.uuid4().hex,MESH_RELAY='0',
+            MESH_RELAY_MODE='child',MESH_MODEL_OBSERVATION='0',MESH_NEMOTRON_CONTROL='0',
+            MESH_SIMPLE_FLOW='0',MESH_NIMS='0',MESH_PREVIEW_PORT='0',
+            MESH_TAILSCALE_LOGIN='',MESH_TAILSCALE_HOST='',MESH_GATE_KEY_FILE=str(gate_key))
+        launch=root/'mesh-launch.json'
+        launch_data=dict(schema='onoes-mesh-native-launch/v1',workspace=str(mesh_launch.ROOT),
+            pythonExecutable=sys.executable,nodeExecutable=str(Path(shutil.which('node')).resolve()),
+            pythonSha256=roles.digest(sys.executable),nodeSha256=roles.digest(shutil.which('node')),
+            sourceHashes={str(p):roles.digest(p) for p in mesh_launch.source_paths()},
+            readerProfile=str(self.reader),readerProfileSha256=self.reader_sha,settings=settings,
+            attemptPath=str(root/'mesh-attempt.json'),stdoutPath=str(root/'mesh.out'),stderrPath=str(root/'mesh.err'))
+        launch.write_text(json.dumps(launch_data));launch_sha=roles.digest(launch)
+        # A previously approved reader alone does not authorize launching Mesh.
+        with self.assertRaises(mesh_launch.LaunchError):mesh_launch.checked_launch(launch,launch_sha,self.approval)
+        self.approval_data['profiles'].append(launch_sha);self.approval.write_text(json.dumps(self.approval_data))
+        preview=subprocess.run([sys.executable,str(Path(mesh_launch.__file__)),'--profile',str(launch),
+            '--sha256',launch_sha,'--approval',str(self.approval)],capture_output=True,text=True,
+            timeout=45,creationflags=subprocess.CREATE_NO_WINDOW)
+        self.assertEqual(preview.returncode,0,preview.stdout);self.assertTrue(json.loads(preview.stdout)['createsNothing'])
+        self.assertFalse(Path(launch_data['attemptPath']).exists())
+        with patch.dict(os.environ,{'NODE_OPTIONS':'--require=not-a-real-preload','MESH_NATIVE_WORKER_RECORD':'not-a-real-worker'}):
+            app,app_stamp,app_receipt=mesh_launch.launch_mesh(launch,launch_sha,self.approval)
         self.children.append(app)
-        app.stdin.write(json.dumps(dict(schema='onoes-mesh-native-recall-input/v1',mindRecallOptions=options)))
-        app.stdin.close()
-        readiness=queue.Queue()
-        threading.Thread(target=lambda:readiness.put(app.stdout.readline()),daemon=True).start()
-        line=readiness.get(timeout=20)
+        self.assertEqual(app_receipt['creationTicks'],app_stamp);self.assertEqual(app_receipt['pid'],app.pid)
+        with self.assertRaises(roles.RoleError):mesh_launch.launch_mesh(launch,launch_sha,self.approval)
+        deadline=time.monotonic()+20;line=''
+        while time.monotonic()<deadline:
+            self.assertIsNone(app.poll(),'Native Mesh exited before ready')
+            lines=Path(launch_data['stdoutPath']).read_text().splitlines()
+            if lines:line=lines[0];break
+            time.sleep(0.1)
+        self.assertNotIn(options['token'],Path(launch_data['attemptPath']).read_text())
         self.assertNotIn(options['token'],line)
         app_state=json.loads(line);self.assertEqual(app_state['event'],'mesh_listening')
         self.assertEqual(app_state['pid'],app.pid)
@@ -175,7 +191,7 @@ class NativeRoleProcessTests(unittest.TestCase):
         self.assertNotIn(options['token'],denied.exception.read().decode());denied.exception.close()
         with request('/api/tasks') as tasks:self.assertIsInstance(json.load(tasks)['tasks'],list)
         self.assertIsNone(app.poll(),'Reader shutdown must not stop Mesh')
-        app.terminate();app.wait(timeout=15);app.stdout.close()
+        app.terminate();app.wait(timeout=15)
         self.assertFalse(self.key_package.exists());self.assertTrue(parked.exists())
 
     def test_reader_refuses_fake_terminal_receipt_for_a_still_live_process(self):
