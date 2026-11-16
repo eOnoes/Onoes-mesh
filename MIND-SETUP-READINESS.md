@@ -895,3 +895,58 @@ changed files. Keep the live checkout at the approved version until that exact
 handoff is prepared and reviewed. The release score stays 18/21; the broad goal
 is unfinished. Next: prepare that source-profile handoff while qualifying the
 bounded transport and read-only sync-state surface with isolated data.
+
+
+## Bounded project-event transport - staged 2026-11-15 Chicago
+
+The staged candidate now has an explicit loopback HTTP service and server-only
+Node client. Neither is imported into the live app or automatically started. The
+service accepts only bounded authenticated submit/exact-receipt-lookup POSTs;
+there is no enrollment, arbitrary command, project-administration or browser API.
+It binds IPv4 loopback, checks the exact Host, denies Origin/Referer/browser fetch
+metadata, rejects ambiguous framing/duplicate keys/invalid UTF-8/NaN and caps
+requests at 16 KiB. Replies contain receipts/absence or fixed errors, not facts,
+tokens or raw exceptions; replies are capped at 4 KiB and never cached/logged.
+
+The Node client accepts a fixed loopback address and server-held credential only.
+It uses native HTTP (no browser fetch metadata), follows no redirects, validates
+strict UTF-8/flat duplicate-free response JSON and exact store/scope/principal/
+event/project/hash bindings, caps the whole response and bounds connection/body
+waiting. Authoritative refusal or an unverified receipt holds the queue item.
+Network timeout or verified temporary unavailability remains uncertain, so the
+next deliberate pass queries the same ID. A held predecessor still blocks later
+updates from that card. No new claim, worker send or replacement event is created.
+
+Evidence:
+
+- Complete npm test: 718 PASS (588 Node + 130 Python), including 31 project-sync
+  checks. Seven new Node HTTP checks cover the actual store transaction -> HTTP
+  service -> canonical receipt journey, revoked access holding the next event,
+  wrong destination/scope, malformed/oversized responses, no redirect forwarding,
+  stalled-body timeout and stable unavailable/refused behavior.
+- Separate Python HTTP/core qualification: 22 PASS (eight request-boundary checks
+  plus the unchanged fourteen core event checks). Browser/caller-scope denial,
+  duplicate length/Transfer-Encoding, duplicate keys, invalid UTF-8/NaN, bounds,
+  payload conflict and source drift were exercised with disposable ledgers.
+- Separate native-launch qualification: five PASS in 260.981s, including actual
+  synthetic operator retirement, independent reader, native Mesh gateway/client
+  and revocation. This qualifies staged startup code with synthetic profiles;
+  it is not approval or a successful preflight of the proposed production profile.
+
+A source-only update/rollback draft is saved privately with exact new/original
+working-byte payloads for package.json, lib/task-store.mjs and lib/workroom.mjs.
+It retains all other live pins and the existing reader/credential/settings. The
+rollback has its own fresh attempt/log paths; an old consumed attempt is never
+reused. No owner-approval file was created or rewritten and no runtime profile
+was installed. A first draft correctly stopped because a whole-checkout byte
+comparison included newline-only differences. All 27 such unchanged files were
+proved equivalent after newline normalization and are excluded from deployment;
+their approved live bytes remain intact. Exact new profile and payload hashes
+are in the private proposal, not in this public document.
+
+The running checkout is still af272dd with its 88 approved source pins; staged
+changes are published separately from deployment. No memory facts, writer grant,
+reader stop, model operation or app restart occurred in this milestone. Remaining:
+actual app HTTP/phone sync-state presentation, reviewed source-profile deployment,
+checkpoint/deletion/backup composition and separately approved writer enrollment.
+The full goal stays active and local-release status remains 18/21.

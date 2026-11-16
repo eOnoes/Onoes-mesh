@@ -189,9 +189,10 @@ export class ProjectOutboxCandidate {
       this.db.prepare('UPDATE mind_project_outbox SET state=?,reason=?,receipt=? WHERE eventId=? AND state=\'uncertain\'')
         .run(state,removed?'record_removed':'receipt_confirmed',JSON.stringify(receipt),row.eventId);
       return {state,eventId:row.eventId};
-    } catch {
+    } catch(error) {
       // Unknown delivery remains persisted for exact-ID lookup, with no raw error/data log.
-      return {state:row?'uncertain':'unavailable',...(row?{eventId:row.eventId}:{})};
+      if(row&&error?.projectSyncHeld===true)this.db.prepare("UPDATE mind_project_outbox SET state='held',reason='remote_refused' WHERE eventId=? AND state='uncertain'").run(row.eventId);
+      return row?this._observed(row):{state:'unavailable'};
     } finally {this.inFlight=false;}
   }
 }
