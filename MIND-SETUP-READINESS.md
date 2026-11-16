@@ -1,5 +1,33 @@
 # Onoes-Mind setup readiness
 
+## Inactive protected read-service provisioning
+
+7actual Windows TEMP checks pass160.761s for provision_recall_candidate.py. The
+explicit privileged operation requires the exact existing protected writer and
+matching store/file/environment/authority/scope/review. It holds the managed
+writer lock and current checkpoint lease, reserves a private outcome before
+mutation, and reuses canonical principal/credential APIs. No raw memory SQL write
+is added. Existing files or the service principal prevent reissue.
+
+An empty fixture with zero principals gains only the dedicated read-only service
+identity, no ordinary writer credential or memory record. A protected-storage
+failure preserves the partial source and an uncertain outcome without retry,
+cleanup or native secret/error echo. Damaged current history refuses. The actual
+Mesh client reads through the native adapter after the fixture writer closes;
+subsequent managed checkpoint purge still works.
+
+This function creates grants only when explicitly called; it is not a preview or
+an authorization mechanism. The caller must establish genuine owner approval and
+exclusive writer ownership. No real key, credential, grant, profile, service or
+restart was touched. The681-check app runtime source still matches unchanged.
+
+Next: qualify a separate one-shot operator process and fresh read-only process.
+The operator process must terminate before reader launch so integrity/write keys
+are not retained in the read-service process. In-process close above is not
+independent process retirement evidence. Reuse the existing adapters and named
+process ownership; no new authority, scheduler or database is needed.
+
+
 ## Inactive private service custody and owned reader adapter
 
 9actual Windows checks pass90.441s for native_recall_candidate.py. It protects an

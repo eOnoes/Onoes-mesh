@@ -581,3 +581,23 @@ This reuses the canonical generic DPAPI primitive with distinct purpose entropy;
 it does not put a service token into integrity-key slots or create a writer token.
 No real key/credential/store was read. Independent process attestation, protected
 provisioning, native launch enrollment and separate live approval remain open.
+
+## One-time protected read-service provisioning (inactive)
+
+provision_recall_candidate.py is a privileged explicit function, not a preview,
+CLI or approval mechanism. It requires the exact protected writer, matches the
+reviewed source context, holds its current checkpoint lease, reserves/syncs an
+exclusive private outcome before canonical role/token calls and seals the token
+with the existing native adapter. It never issues an ordinary writer token.
+Existing files/principal refuse reissue; partial failures preserve unknown state.
+The caller owns writer closure, exclusive ownership and genuine owner consent.
+
+7 Windows TEMP cases pass160.761s, including zero-principal setup -> protected
+token -> writer close -> actual Mesh native client read, plus managed-purge
+compatibility. Run with canonical Mind on PYTHONPATH:
+
+    python -m unittest discover -s integrations/mind-recovery-candidate -p test_provision_recall_candidate.py -v
+
+No real grants or credentials were created. The future one-shot operator process
+must exit before a fresh read-only service process; no integrity/write keys may
+be passed into that service. Process retirement/launch enrollment remain open.
