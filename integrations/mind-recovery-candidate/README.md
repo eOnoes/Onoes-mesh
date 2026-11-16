@@ -793,3 +793,28 @@ No live database, grants, keys, services or launch profiles were changed. The
 first phone-accepted live reader remains read-only; project-event delivery stays
 off. A fresh complete source/runtime proposal must replace the superseded source
 refresh draft before any deployment or separately approved live writer setup.
+
+## Bounded delivery lifecycle (staged, 2026-11-15)
+
+`project-sync-runner-candidate.mjs` supplies the deterministic server-owned
+delivery loop. Construction and import are inert. Explicit start schedules one
+timer; concurrent passes coalesce into the same promise. Each pass handles at
+most ten items by default, continues past a held card to unrelated eligible
+cards, and stops on uncertainty, unavailability, busy state or an empty queue.
+Transient failures back off from the five-second base to at most one minute.
+The existing outbox owns all IDs, receipt validation and durable delivery state;
+the runner never invents a replacement event or releases a held item.
+
+Stop cancels scheduled work and waits for the exact in-flight operation before
+releasing its local ownership. It neither closes the caller's database nor
+pretends a cancelled network observation proves failure. A stopped runner cannot
+restart. Its fixed status projection contains no credentials, IDs or raw errors.
+One runner per outbox object is enforced inside this process; this is explicitly
+not a cross-process lease or proof of exclusive workspace ownership.
+
+Five lifecycle tests cover bounded passes, concurrent calls, stop during an
+await, bounded backoff/recovery, held-card progress and fixed error status. A
+sixth actual HTTP composition test commits an event in canonical synthetic Mind,
+drops its acknowledgement, closes/reopens the real task database and reconciles
+the original receipt with exactly one submit, one record and one receipt.
+No production startup imports or starts this runner yet.

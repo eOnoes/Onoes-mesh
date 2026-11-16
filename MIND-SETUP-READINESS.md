@@ -995,3 +995,46 @@ Next: qualify project-event receipts with canonical checkpoint/deletion/encrypte
 backup recovery, then prepare one complete source/runtime handoff. Keep the local
 release score at 18/21 and the broader goal active until its remaining acceptance
 requirements are actually met.
+
+## Recovery and delivery lifecycle checkpoint - staged 2026-11-15 Chicago
+
+The seven explicit protected recovery cases now pass, including an actual
+encrypted E: archive populated with synthetic project events and receipts.
+An older snapshot could previously recreate a subsequently deleted card: random
+record IDs did not match retained opaque deletion evidence. The staged format-2
+writer now uses one stable canonical record per card, revision-bound receipts
+and authenticated current deletion authority. Both pre-creation and populated
+snapshots preserve later deletion, including attempted replay with a new event ID.
+Unresolved purge, rolled-back history and missing format markers refuse access.
+This qualifies event-data recovery with independent current authority retained;
+purpose-service credential recovery and full-machine authority loss remain open.
+
+The new deterministic delivery runner is inert until explicitly started by its
+server owner. It bounds each pass, serializes concurrent calls, backs off unknown
+delivery and waits for current work at stop. Its actual HTTP recovery test uses
+the existing task-store hooks, canonical synthetic receiver and exact receipt
+lookup after a lost reply and task-store reopen. It does not supply a scheduler
+for Rook or an LLM worker. Local object ownership is not a cross-process lease.
+
+Before one live project-sync activation proposal, finish these specific gates:
+
+1. Protect and qualify purpose-only writer credential custody/recovery without
+   reusing the read credential or supplying Mind integrity keys to Node.
+2. Bind one protected receiver to the canonical store/current authority and one
+   process owner. Prove terminal retirement and restart reconciliation before
+   a replacement can write; a timer or stale file is not ownership evidence.
+3. Supply trusted native constructor input for the receiver/runner and explicitly
+   approved project/card/field policy. No environment, browser request or fixture
+   option can enroll production. Unknown cards and raw conversations stay unshared.
+4. Qualify the complete native app save -> durable outbox -> bounded service ->
+   canonical receipt -> read-only card status journey, including offline restart,
+   revocation, withdrawal and source/profile mismatch, on disposable stores first.
+5. Generate a fresh complete source/profile deployment and rollback proposal.
+   Pin every participating runtime dependency, including integration modules;
+   retain unchanged approved working bytes and independent read-service settings.
+6. Request exact owner approval only after that setup and rollback are reviewable.
+   Existing phone acceptance proves read-only recall, not writer activation.
+
+The old three-pin refresh proposal stays superseded. Live Mesh and its approved
+reader remain unchanged. The local release score remains 18/21; the canonical
+private checkpoint retains proofs and the remaining full-goal work.

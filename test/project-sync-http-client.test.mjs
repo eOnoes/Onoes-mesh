@@ -9,6 +9,7 @@ import {join,resolve} from 'node:path';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {createWorkroomProjectSyncCandidate} from '../integrations/workroom-project-sync-candidate.mjs';
 import {createProjectSyncHttpClient,ProjectSyncTransportError} from '../integrations/project-sync-http-client-candidate.mjs';
+import {createProjectSyncRunner} from '../integrations/project-sync-runner-candidate.mjs';
 
 const token='synthetic-service-token-0123456789';
 const query={projectId:'project-A',eventId:'event-A'};
@@ -48,6 +49,34 @@ test('real store transaction -> bounded HTTP -> canonical receipt; revocation ho
   assert.equal((await controller.outbox.drainOne(m.client)).state,'held');
   assert.equal(controller.outbox.status(card.id).at(-1).reason,'remote_refused');
   assert.deepEqual(await m.rpc({op:'stats'}),{records:1,receipts:1});
+});
+
+test('delivery runtime reconciles a committed lost reply after task-store reopen without resending',async t=>{
+  const m=await mind(t),dir=mkdtempSync(join(tmpdir(),'mesh-runner-sync-')),filename=join(dir,'tasks.sqlite');
+  let controller,store,runner,submits=0,lookups=0;
+  const open=initialize=>openTaskStore(filename,{projectSyncFactory:context=>controller=
+    createWorkroomProjectSyncCandidate(context,{storeId:m.options.storeId,initialize})});
+  t.after(async()=>{await runner?.stop();store?.close();rmSync(dir,{recursive:true,force:true});});
+  store=open(true);
+  const card=store.create({title:'Synthetic recovery card',description:'Unshared text',label:'',status:'open',owner:'nims'});
+  const eventId=controller.link({cardId:card.id,projectId:'project-A',approvalRef:'synthetic-owner',fields:['title','stage']});
+  const transport={
+    async lookup(query){lookups++;return m.client.lookup(query);},
+    async submit(event){submits++;await m.client.submit(event);throw Error('Synthetic lost acknowledgement');},
+  };
+  runner=createProjectSyncRunner({outbox:controller.outbox,transport});
+  await runner.runOnce();assert.equal(controller.status(card.id).state,'uncertain');
+  assert.equal(submits,1);assert.equal(lookups,1);
+  assert.deepEqual(await m.rpc({op:'stats'}),{records:1,receipts:1});
+  await runner.stop();store.close();store=null;
+  store=open(false);
+  runner=createProjectSyncRunner({outbox:controller.outbox,transport});
+  await runner.runOnce();
+  assert.equal(controller.status(card.id).state,'saved');
+  assert.equal(controller.outbox.status(card.id)[0].eventId,eventId);
+  assert.equal(submits,1);assert.equal(lookups,2);
+  assert.deepEqual(await m.rpc({op:'stats'}),{records:1,receipts:1});
+  await runner.stop();
 });
 
 test('client rejects public hosts, credentials in URL, path overrides and unbounded timers',()=>{
