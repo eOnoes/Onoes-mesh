@@ -128,7 +128,7 @@ class MeshLauncherWindow:
         raw = read(profile_path)
         require(sha(raw) == profile_sha256, 'Native profile changed.')
         profile = json.loads(raw)
-        require(profile.get('schema') in ('onoes-mesh-native-launch/v1', 'onoes-mesh-native-launch/v2')
+        require(profile.get('schema') in ('onoes-mesh-native-launch/v1', 'onoes-mesh-native-launch/v2', 'onoes-mesh-native-capture-launch/v1')
                 and profile.get('workspace') == str(self.workspace), 'Native workspace mismatch.')
         executable = Path(profile['nodeExecutable'])
         require(executable.resolve() == executable and sha(executable.read_bytes()) == profile['nodeSha256'],
@@ -145,12 +145,16 @@ class MeshLauncherWindow:
         require(self.kernel.QueryFullProcessImageNameW(child._handle, 0, image, ctypes.byref(size))
                 and Path(image.value) == executable, 'Native child executable mismatch.')
         attempt = json.loads(read(Path(profile['attemptPath'])))
-        require(attempt.get('schema') in ('onoes-mesh-native-child/v1','onoes-mesh-native-child/v2')
+        require(attempt.get('schema') in ('onoes-mesh-native-child/v1','onoes-mesh-native-child/v2','onoes-mesh-native-child/v3')
                 and attempt.get('profileSha256') == profile_sha256 and attempt.get('pid') == child.pid
                 and attempt.get('creationTicks') == ticks and attempt.get('state') == 'input_sent'
                 and attempt.get('executable') == str(executable)
                 and attempt.get('entryPoint') == args[1] and attempt.get('credentialsInRecord') is False,
                 'Native launch attempt does not identify this child.')
+        require((profile['schema']=='onoes-mesh-native-capture-launch/v1') == (attempt['schema']=='onoes-mesh-native-child/v3'),
+                'Native launch mode and profile disagree.')
+        if attempt['schema']=='onoes-mesh-native-child/v3':
+            require(attempt.get('mode')=='capture_only' and 'peers' not in attempt, 'Invalid offline capture identity.')
         port = profile['settings']['MESH_PREVIEW_PORT']
         require(type(port) is str and port.isdecimal() and 1 <= int(port) <= 65535,
                 'Explicit native gateway port required.')

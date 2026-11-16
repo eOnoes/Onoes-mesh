@@ -29,14 +29,16 @@ def valid_memory_peers(value):
 def identified_native_attempt(record):
     if type(record) is not dict:return False
     version=record.get('schema')
-    if version not in ('onoes-mesh-native-child/v1','onoes-mesh-native-child/v2'):return False
+    if version not in ('onoes-mesh-native-child/v1','onoes-mesh-native-child/v2','onoes-mesh-native-child/v3'):return False
     keys={'schema','profileSha256','pid','creationTicks','executable','entryPoint','state','credentialsInRecord'}
     if version.endswith('/v2'):keys.add('peers')
+    if version.endswith('/v3'):keys.add('mode')
     return (set(record)==keys and record['state']=='input_sent' and record['credentialsInRecord'] is False
         and all(type(record[name]) is str and bool(record[name]) for name in ('profileSha256','executable','entryPoint'))
         and type(record['pid']) is int and 0<record['pid']<=0xffffffff
         and type(record['creationTicks']) is int and 0<record['creationTicks']<=0xffffffffffffffff
-        and (version.endswith('/v1') or valid_memory_peers(record['peers'])))
+        and (version.endswith('/v1') or (version.endswith('/v2') and valid_memory_peers(record['peers']))
+             or (version.endswith('/v3') and record['mode']=='capture_only')))
 
 
 def archive_retired_mesh_attempt(window, *, launch_module, mesh_profile,

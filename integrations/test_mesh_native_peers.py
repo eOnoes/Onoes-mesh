@@ -36,6 +36,13 @@ class NativePeerTests(unittest.TestCase):
         self.record.update(schema='onoes-mesh-native-child/v2',peers=self.peers())
         self.assertTrue(identified_native_attempt(self.record))
 
+    def test_capture_identity_requires_explicit_mode_and_no_memory_peers(self):
+        self.record.update(schema='onoes-mesh-native-child/v3',mode='capture_only')
+        self.assertTrue(identified_native_attempt(self.record))
+        self.record['mode']='connected';self.assertFalse(identified_native_attempt(self.record))
+        self.record['mode']='capture_only';self.record['peers']=self.peers()
+        self.assertFalse(identified_native_attempt(self.record))
+
     def test_unknown_peer_fields_or_missing_peers_are_not_accepted(self):
         self.record['schema']='onoes-mesh-native-child/v2'
         self.assertFalse(identified_native_attempt(self.record))

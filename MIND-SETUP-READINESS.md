@@ -48,6 +48,34 @@ Ensure may recover Mesh without its native Mind binding after that owner exits;
 it must not be represented as successful memory synchronization. Local release
 remains 18/21, and production team, skills/MCP and external-machine work remain.
 
+## Native offline capture launcher - qualified, not activated
+
+The Windows launcher accepts a separate source-pinned capture profile and explicit
+offline-capture owner decision. It does not open Mind's canonical store, reader or
+writer profiles, credentials or enrollment proofs. Private profile custody,
+Windows identity, runtime hashes, approved Workroom database identity and existing
+link/field policy remain required. Policy is checked read-only before the existing
+hidden gateway starts. There is no automatic fallback from failed memory authority.
+Capture-only process records cannot masquerade as a connected launch profile.
+
+Seventy focused checks passed. The final actual Windows cold-start/restart test
+passed in 31.034 seconds including cleanup. All 111 pinned working checkout files
+and all other declared code pins matched the frozen test copy exactly. Mind role
+access functions were blocked in the test. With no Mind store or service, Mesh
+opened with Mind disconnected, saved a real card edit, refused a duplicate launch,
+archived only its proven-retired attempt and reopened with the same pending event
+IDs, hashes, states and unsent receipts. The old ownership receipt was preserved.
+Earlier failed test fixtures remain: they exposed a missing ownership schema case
+and missing optional-payload/beforeimage inputs. Ownership guards were retained.
+Git archive newline normalization also differed from some unchanged checkout files;
+the final scenario used their exact working bytes, without changing the repository.
+
+This qualifies capture-only startup and owned reopen, not an automatic switch back
+to connected mode. Explicit owner transition, host cold-start-to-canonical catch-up,
+recovery latency and reviewed live/source/startup activation remain. Connected app
+catch-up has separate 748-check evidence. No live app, credential, Mind database,
+worker, Rook, model service or historical hold changed. Local release stays 18/21.
+
 ## Credential-free offline app capture - qualified, not deployed
 
 An explicit native capture-only input now starts Mesh without a live Mind reader

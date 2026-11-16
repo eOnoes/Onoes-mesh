@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import sqlite3
 import subprocess
 import sys
 
@@ -45,6 +46,98 @@ def source_paths(*, project=False):
     return paths
 
 
+CAPTURE_SCHEMA='onoes-mesh-native-capture-launch/v1'
+
+
+def capture_source_paths(runtime):
+    # The role helpers supply file permissions/process identity only. No role
+    # profile, credential, terminal proof or canonical database is opened.
+    import recall_process_candidate as roles
+    require(Path(roles.__file__).resolve()==Path(__file__).resolve().parent/'recall_process_candidate.py')
+    return source_paths(project=True)|roles.source_paths(runtime)|{ROOT/'integrations/mesh_launcher_window.py'}
+
+
+def capture_frame(p):
+    value=p['projectCapture']
+    require(type(value) is dict and set(value)=={'schema','source','storeId','links'}
+        and value['schema']=='onoes-mesh-native-project-capture/v1'
+        and type(value['storeId']) is str and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._:-]{0,127}',value['storeId']))
+    require(len(json.dumps(value).encode('utf-8'))<=12288)
+    source=value['source'];require(type(source) is dict and set(source)=={'databasePath','fileDevice','fileInode'})
+    database=Path(source['databasePath']);expected=ROOT/p['settings']['MESH_DATA_DIR']/'tasks.sqlite'
+    require(database.is_absolute() and database.resolve(strict=True)==database==expected
+        and all(type(source[k]) is str and re.fullmatch(r'(0|[1-9][0-9]{0,19})',source[k]) for k in ('fileDevice','fileInode')))
+    spec=importlib.util.find_spec('project_mesh_input_candidate')
+    require(spec is not None and Path(spec.origin).resolve()==Path(__file__).resolve().parent/'project_mesh_input_candidate.py')
+    from project_mesh_input_candidate import node_source_identity
+    require(node_source_identity(p,database)=={k:source[k] for k in ('fileDevice','fileInode')})
+    links=value['links'];require(type(links) is list and 1<=len(links)<=32)
+    seen=set()
+    for link in links:
+        require(type(link) is dict and set(link)=={'cardId','projectId','approvalRef','fields'}
+            and all(type(link[k]) is str and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._:-]{0,127}',link[k]) for k in ('cardId','projectId'))
+            and link['cardId'] not in seen)
+        seen.add(link['cardId']);fields=link['fields'];ref=link['approvalRef']
+        require(type(ref) is str and ref.strip()==ref and 1<=len(ref)<=300 and not re.search(r'[\x00-\x1f\x7f]',ref)
+            and type(fields) is list and all(type(f) is str for f in fields) and len(fields)==len(set(fields))
+            and {'title','stage'}.issubset(fields) and set(fields).issubset({'title','goal','owner','stage','result','blocker'}))
+    before=database.stat();db=sqlite3.connect(database.as_uri()+'?mode=ro',uri=True)
+    try:
+        db.execute('PRAGMA query_only=ON');db.execute('BEGIN')
+        rows=db.execute('SELECT cardId,projectId,storeId,approvalRef FROM mind_project_links').fetchall()
+        policies=db.execute('SELECT cardId,fields FROM mind_project_capture_policy').fetchall()
+        require(len(rows)==len(links)==len(policies));by_card={link['cardId']:link for link in links};policy=dict(policies)
+        for card,project,store,ref in rows:
+            link=by_card.get(card);require(link is not None and project==link['projectId'] and store==value['storeId']
+                and ref==link['approvalRef'] and card in policy)
+            actual=json.loads(policy[card]);require(type(actual) is list and all(type(f) is str for f in actual)
+                and len(actual)==len(set(actual))==len(link['fields']) and set(actual)==set(link['fields']))
+        db.execute('COMMIT');require(db.total_changes==0)
+    finally:db.close()
+    after=database.stat();require(database.resolve(strict=True)==database and (before.st_dev,before.st_ino)==(after.st_dev,after.st_ino))
+    return dict(schema='onoes-mesh-native-capture-input/v1',projectCaptureOptions=value)
+
+
+def inspect_capture(p,path,expected_sha,approval_path):
+    require(os.name=='nt' and set(p)=={'schema','workspace','pythonExecutable','nodeExecutable','pythonSha256','nodeSha256',
+        'sourceHashes','settings','attemptPath','stdoutPath','stderrPath','runtime','ownerSid','pwshSha256','projectCapture'})
+    require(Path(p['workspace']).resolve()==ROOT and Path(p['pythonExecutable']).resolve()==Path(sys.executable).resolve()
+        and digest(sys.executable)==p['pythonSha256'])
+    node=Path(p['nodeExecutable']);require(node.is_absolute() and node.resolve()==node and digest(node)==p['nodeSha256'])
+    runtime=p['runtime'];require(type(runtime) is dict and set(runtime)=={'python','pwsh','mindSource'}
+        and Path(runtime['python']).resolve()==Path(sys.executable).resolve())
+    pwsh=Path(runtime['pwsh']);require(pwsh.is_absolute() and pwsh.resolve()==pwsh and digest(pwsh)==p['pwshSha256'])
+    pins=p['sourceHashes'];require(type(pins) is dict and source_paths(project=True).issubset({Path(n) for n in pins})
+        and all(digest(n)==sha for n,sha in pins.items()))
+    sys.path.insert(0,str(Path(runtime['mindSource'])));sys.path.insert(0,str(ROOT/'integrations'))
+    require({Path(n) for n in pins}==capture_source_paths(runtime))
+    spec=importlib.util.find_spec('onoes_mind');require(spec is not None
+        and Path(spec.origin).resolve()==Path(runtime['mindSource'])/'onoes_mind/__init__.py')
+    from onoes_mind.enrollment_store import qualify_private_storage
+    import recall_process_candidate as roles
+    qualify_private_storage(path,kind='file');root=qualify_private_storage(path.parent)
+    approval_path=Path(approval_path);require(approval_path.parent==root and approval_path!=path)
+    qualify_private_storage(approval_path,kind='file');approval=roles.plain_json(approval_path)
+    require(approval==dict(schema='onoes-mesh-offline-capture-approval/v1',decision='approve_exact_workroom_offline_capture',
+        ownerSid=p['ownerSid'],workspace=str(ROOT),profileSha256=expected_sha))
+    sid=subprocess.run([str(pwsh),'-NoLogo','-NoProfile','-NonInteractive','-Command',
+        '[Security.Principal.WindowsIdentity]::GetCurrent().User.Value'],capture_output=True,text=True,
+        timeout=15,creationflags=subprocess.CREATE_NO_WINDOW)
+    require(sid.returncode==0 and sid.stdout.strip()==p['ownerSid'])
+    settings=p['settings'];require(type(settings) is dict and set(settings)==SETTINGS
+        and all(type(v) is str and len(v)<=256 and not re.search(r'[\x00-\x1f\x7f]',v) for v in settings.values()))
+    require(settings['MESH_PREVIEW_PORT'].isdigit() and 0<=int(settings['MESH_PREVIEW_PORT'])<=65535
+        and re.fullmatch(r'data/[A-Za-z0-9_-]+',settings['MESH_DATA_DIR'])
+        and settings['MESH_RELAY'] in ('0','1') and settings['MESH_RELAY_MODE'] in ('http','child')
+        and all(settings[n] in ('0','1') for n in ('MESH_NIMS','MESH_MODEL_OBSERVATION','MESH_NEMOTRON_CONTROL'))
+        and settings['MESH_SIMPLE_FLOW']=='0' and Path(settings['MESH_GATE_KEY_FILE']).is_absolute())
+    targets=[Path(p[n]) for n in ('attemptPath','stdoutPath','stderrPath')]
+    require(len(set(targets))==3 and all(target.is_absolute() and target.parent==root
+        and target not in (path,approval_path,Path(settings['MESH_GATE_KEY_FILE'])) for target in targets))
+    capture_frame(p)
+    return p,roles
+
+
 def inspect_launch(path,expected_sha,approval_path):
     # Inspect the profile and pin our imports before loading the participant code.
     path=Path(path);raw=path.read_bytes();require(len(raw)<=65536 and digest(path)==expected_sha)
@@ -54,6 +147,7 @@ def inspect_launch(path,expected_sha,approval_path):
         return result
     p=json.loads(raw,object_pairs_hook=unique)
     require(type(p) is dict)
+    if p.get('schema')==CAPTURE_SCHEMA:return inspect_capture(p,path,expected_sha,approval_path)
     project=p.get('schema')=='onoes-mesh-native-launch/v2'
     require(set(p)=={'schema','workspace','pythonExecutable','nodeExecutable',
         'pythonSha256','nodeSha256','sourceHashes','readerProfile','readerProfileSha256',
@@ -94,7 +188,8 @@ def inspect_launch(path,expected_sha,approval_path):
 def checked_launch(path,expected_sha,approval_path):
     p,roles=inspect_launch(path,expected_sha,approval_path)
     # Ordinary launch still requires the live reader; inspection cannot launch.
-    require(roles.reader_state(p['readerProfile'],p['readerProfileSha256'],approval_path)['ready'])
+    if p['schema']!=CAPTURE_SCHEMA:
+        require(roles.reader_state(p['readerProfile'],p['readerProfileSha256'],approval_path)['ready'])
     return p,roles
 
 
@@ -111,6 +206,7 @@ def native_peers(p,roles,approval_path,options):
 
 
 def native_frame(p,roles,approval_path,profile_sha):
+    if p.get('schema')==CAPTURE_SCHEMA:return capture_frame(p)
     options=roles.native_options(p['readerProfile'],p['readerProfileSha256'],approval_path)
     if p.get('schema')!='onoes-mesh-native-launch/v2':
         return dict(schema='onoes-mesh-native-recall-input/v1',mindRecallOptions=options)
@@ -148,6 +244,7 @@ def launch_mesh(path,expected_sha,approval_path):
                 record=dict(schema='onoes-mesh-native-child/v1',profileSha256=expected_sha,pid=child.pid,
                     creationTicks=None,executable=p['nodeExecutable'],entryPoint=str(ROOT/'serve.mjs'),
                     state='identity_pending',credentialsInRecord=False)
+                if p.get('schema')==CAPTURE_SCHEMA:record.update(schema='onoes-mesh-native-child/v3',mode='capture_only')
                 if peers is not None:record.update(schema='onoes-mesh-native-child/v2',peers=peers)
                 attempt.write(json.dumps(record).encode());attempt.flush();os.fsync(attempt.fileno())
                 stamp=roles.creation_ticks(child._handle)

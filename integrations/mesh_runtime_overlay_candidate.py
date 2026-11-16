@@ -100,11 +100,13 @@ def declared_attempt_stopped(p,observer,entry):
     require(path.is_file() and path.resolve()==path and path.stat().st_size<=8192)
     record=json.loads(path.read_bytes())
     mesh=entry['kind']=='mesh'
-    require(record.get('schema') in (('onoes-mesh-native-child/v1','onoes-mesh-native-child/v2') if mesh else ('onoes-mind-project-service-attempt/v1',))
+    require(record.get('schema') in (('onoes-mesh-native-child/v1','onoes-mesh-native-child/v2','onoes-mesh-native-child/v3') if mesh else ('onoes-mind-project-service-attempt/v1',))
         and record.get('profileSha256')==entry['profileSha256']
         and record.get('state')==('input_sent' if mesh else 'started')
         and type(record.get('pid')) is int and record['pid']>0
         and type(record.get('creationTicks')) is int and record['creationTicks']>0)
+    if mesh and record.get('schema')=='onoes-mesh-native-child/v3':
+        require(record.get('mode')=='capture_only' and 'peers' not in record)
     if mesh:
         require(record.get('entryPoint')==str(Path(p['workspace'])/'serve.mjs') and record.get('credentialsInRecord') is False)
     else:require(type(record.get('runId')) is str and re.fullmatch('[A-Za-z0-9:_-]{1,100}',record['runId']))
