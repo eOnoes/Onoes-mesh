@@ -48,6 +48,47 @@ Ensure may recover Mesh without its native Mind binding after that owner exits;
 it must not be represented as successful memory synchronization. Local release
 remains 18/21, and production team, skills/MCP and external-machine work remain.
 
+## Hidden capture-first launcher - qualified, not activated
+
+The stateless task-draft helper renders a hidden WScript wrapper for the exact
+approved Python startup command and changes only the existing task's action
+arguments. Principal, triggers, executable, overlap policy and other task
+properties remain unchanged. Rendering writes no files, registers no task and
+starts no process. Hash/owner/source drift, an unknown route, duplicate actions,
+explicitly disabled tasks and unsafe path expansion are refused. Windows may
+omit settingsType.Enabled because its documented default is true; that omission
+is preserved instead of adding a setting. Microsoft schema reference:
+https://learn.microsoft.com/en-us/windows/win32/taskschd/taskschedulerschema-enabled-settingstype-element
+
+Eighty focused checks pass, including actual hidden Windows transport with exact
+arguments/working directory, zero and nonzero exit codes, invisible console, and
+Unicode/ampersand paths. The complete synthetic hidden startup journey passed in
+800.799 seconds. WScript opened the local board while an unresolved memory attempt
+stayed untouched; an admitted offline edit then caught up through the same grant
+with its original event ID/hash. Earlier receipts, credential/key-package hashes
+and private-field exclusion were preserved. A subsequent hidden tick kept the
+same owner and events. No task was registered by the test. All 121 frozen source
+files and 256 declared source-pin comparisons matched; isolated actors retired.
+
+Measured commands took 48.844 seconds for local-board/held-memory operation,
+286.678 seconds for restoration/handoff and 0.243 seconds for a healthy hidden
+tick. The separately profiled direct healthy tick took 0.160 seconds with zero
+private-storage checks. These fixture measurements are not latency guarantees.
+Failure logs are retained: restricted WScript execution timed out, a Unicode test
+worker needed explicit UTF-8 encoding, and the first full hidden run refused an
+omitted Enabled default before the reader was corrected.
+
+A separate read-only source projection verified all 46 original live reader pins.
+Five candidate files differ only in line endings; preserve their exact live bytes.
+The prepared code-only payload keeps six reader-pinned workspace files unchanged
+and proposes 12 changes across 110 source files. Its draft is explicitly wrapped
+as non-activatable, has unresolved future profile bindings, and has no approval or
+installation journal. The hidden-runtime proof above is not qualification of that
+projected cutover. Next qualify the exact preserved-byte source/profile/task
+installation and rollback, then prepare the concrete owner activation decision.
+No live task, service, grant or credential changed. Workers, Rook and eight
+historical holds stay unchanged; full local release remains 18/21.
+
 ## Capture-first startup - qualified, not activated
 
 The explicit startup candidate opens the previously approved local board before

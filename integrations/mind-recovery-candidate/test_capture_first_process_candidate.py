@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 import unittest
+import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
 import mesh_launch_candidate as launch
@@ -22,6 +23,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from mesh_launcher_window import MeshLauncherWindow
 import mesh_recovery_candidate as recovery
 import mesh_startup_candidate as startup
+import mesh_startup_task_candidate as startup_task
 
 
 @unittest.skipUnless(os.name=='nt' and os.environ.get('MESH_CAPTURE_FIRST_WORKSPACE'),
@@ -87,6 +89,21 @@ class CaptureFirstProcessTests(unittest.TestCase):
             sourceHashes={str(ws/'integrations'/name):launch.digest(ws/'integrations'/name) for name in startup.SOURCES},
             handoffApprovalPath=str(handoff),handoffApprovalSha256=launch.digest(handoff),memoryApprovalPath=str(memory),memoryApprovalSha256=launch.digest(memory))
         roles.private_new_json(approval,approved);approval_sha=launch.digest(approval)
+        hidden_mode=os.environ.get('MESH_CAPTURE_FIRST_HIDDEN')=='1'
+        hidden_draft=None
+        if hidden_mode:
+            # Adapt only the workspace action in a read-only exported task copy.
+            # No scheduler API is called or task registered by this scenario.
+            original_task=Path(os.environ['MESH_CAPTURE_FIRST_TASK_XML']).read_text(encoding='utf-8-sig')
+            tree=ET.fromstring(original_task);tag='{'+startup_task.NS+'}'
+            tree.find('.//'+tag+'Actions/'+tag+'Exec/'+tag+'Arguments').text='//B //Nologo "'+str(ws/'integrations/ensure-workroom-hidden.vbs')+'"'
+            task_bytes=ET.tostring(tree,encoding='utf-8',xml_declaration=True)
+            hidden_draft=startup_task.prepare_hidden_task(approval_path=str(approval),approval_sha=approval_sha,
+                task_xml=task_bytes,task_sha=startup_task.sha(task_bytes),wrapper_path=str(root/startup_task.WRAPPER_NAME))
+            Path(hidden_draft['wrapperPath']).write_bytes(hidden_draft['wrapperBytes'])
+            from onoes_mind.enrollment_store import qualify_private_storage
+            qualify_private_storage(Path(hidden_draft['wrapperPath']),kind='file')
+            (root/'hidden-task-draft.xml').write_bytes(hidden_draft['taskBytes'])
         with MeshLauncherWindow(ws,launch.digest(ws/'integrations/restart-workroom-preview.ps1')) as window:
             window.publish_native_owner(case.mesh,roles.creation_ticks(case.mesh._handle),profile,sha,previous_sha256=None)
             old_reader=roles.reader_state(case.reader.reader,case.reader.reader_sha,case.reader.approval)
@@ -116,13 +133,30 @@ class CaptureFirstProcessTests(unittest.TestCase):
             args=[sys.executable,'-I']
             if profile_output:args+=['-m','cProfile','-o',str(profile_output)]
             args += [str(ws/'integrations/mesh_startup_candidate.py'),'--approval',str(approval),'--sha256',approval_sha]
+            hidden=hidden_mode and profile_output is None
+            if hidden:args=[str(Path(os.environ['WINDIR'])/'System32/wscript.exe'),'//B','//Nologo',hidden_draft['wrapperPath']]
             start=time.monotonic();child=subprocess.Popen(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,creationflags=subprocess.CREATE_NO_WINDOW)
             try:
                 while True:
                     try:out,err=child.communicate(timeout=30);break
                     except subprocess.TimeoutExpired:phase(label+'_same_command_'+str(int(time.monotonic()-start))+'s')
-                (ws.parent/(label+'-RESULT.json')).write_text(json.dumps(dict(code=child.returncode,seconds=time.monotonic()-start,stdout=out,stderr=err),indent=2))
-                self.assertEqual(child.returncode,0,out+err);return json.loads(out)
+                result=dict(code=child.returncode,seconds=time.monotonic()-start,stdout=out,stderr=err,transport='hidden_wscript' if hidden else 'python_cli')
+                (ws.parent/(label+'-RESULT.json')).write_text(json.dumps(result,indent=2))
+                self.assertEqual(child.returncode,0,out+err)
+                if hidden:
+                    owner=json.loads(receipt.read_text());observed=None
+                    for mode,selected,expected in [('capture',cp,capture_sha),('connected',p,sha)]:
+                        path=Path(selected['attemptPath'])
+                        if not path.is_file():continue
+                        record=json.loads(path.read_text())
+                        if record.get('profileSha256')==expected and record.get('pid')==owner['Id']:
+                            self.assertEqual(record['creationTicks'],startup.receipt_ticks(owner))
+                            self.assertTrue(roles.same_process_alive(record['pid'],record['creationTicks']))
+                            observed=dict(state='capture_pending' if mode=='capture' else 'connected',
+                                startupMode=mode,pid=record['pid'],evidence='exact_owner_receipt_and_attempt')
+                    self.assertIsNotNone(observed);result['observed']=observed
+                    (ws.parent/(label+'-RESULT.json')).write_text(json.dumps(result,indent=2));return observed
+                return json.loads(out)
             finally:
                 for path,expected in [(cp['attemptPath'],capture_sha),(p['attemptPath'],sha),
                     (managed_attempt,managed_sha),(case.fixture.value['attemptPath'],case.fixture.sha)]:attach(path,expected)
@@ -156,6 +190,9 @@ class CaptureFirstProcessTests(unittest.TestCase):
         receipt_before=receipt.read_bytes();warm_profile=ws.parent/'WARM.pstats';warm=command('WARM',warm_profile)
         self.assertEqual(warm['state'],'observed_running');self.assertEqual(warm['pid'],connected['pid']);self.assertEqual(warm['processChanges'],0)
         self.assertEqual(receipt.read_bytes(),receipt_before);self.assertEqual(events(),after)
+        if hidden_mode:
+            hidden_warm=command('HIDDEN-WARM');self.assertEqual(hidden_warm['pid'],connected['pid'])
+            self.assertEqual(receipt.read_bytes(),receipt_before);self.assertEqual(events(),after)
         stats=pstats.Stats(str(warm_profile));private_calls=sum(value[1] for (file,line,name),value in stats.stats.items() if name=='qualify_private_storage')
         self.assertEqual(private_calls,0);self.assertEqual({str(path):launch.digest(path) for path in protected},protected_hashes)
         phase('automatic_same_grant_catch_up_and_observation_only_warm_tick_passed')
@@ -164,6 +201,10 @@ class CaptureFirstProcessTests(unittest.TestCase):
             originalEventIdsAndReceiptsPreserved=True,warmTickNoProcessChanges=True,warmTickPrivateChecks=0,
             protectedCredentialTerminalKeyHashesUnchanged=True,privateFieldExcluded=True,sourceHashes=approved['sourceHashes'],
             captureSourceHashes=cp['sourceHashes'],connectedSourceHashes=p['sourceHashes'])
+        if hidden_mode:
+            proof.update(hiddenWscriptStartupAndRecovery=True,hiddenWarmTickPreservedOwnerAndEvents=True,
+                taskRegistered=False,taskPropertiesPreserved=True,wrapperSha256=hidden_draft['wrapperSha256'],
+                taskGeneratorSourceHashes={str(Path(startup_task.__file__).resolve()):launch.digest(startup_task.__file__)})
         (ws.parent/'STARTUP-PROOF.json').write_text(json.dumps(proof,indent=2))
 
 
