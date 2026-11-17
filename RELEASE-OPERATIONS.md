@@ -1,3 +1,37 @@
+## Live capture-first recovery cutover - November 16, 2026 (Chicago)
+
+Eddie approved the exact cutover and conditional rollback. The live gateway now
+opens the board in capture mode before reconnecting existing Mind access. The
+finite installer applied all 111 declared source files (12 changes) and exactly
+13 runtime files. The original reader stayed running; the project writer used
+the same profile and grant. No keys, credentials, scopes or model settings changed.
+
+The single installed startup command completed connected mode. Normal admitted
+API reads confirmed Mind configured, the existing linked card readable, and the
+previously accepted shared result retrievable. All 30 saved app tables matched
+their pre-cutover fingerprints, including old holds and send/claim records.
+Protected credential, terminal and key-package hashes stayed unchanged.
+
+Only the existing Mesh recovery task was updated. Its actual registered XML
+matches the approved projection, preserving principal, triggers, IgnoreNew and
+other properties; its original enabled state was restored. An actual scheduler
+warm tick finished with result 0 in 0.291 seconds, preserving gateway/writer and
+reader identities and all saved data. Loopback and private Tailscale returned
+identical successful app pages. No rollback or PC restart was needed.
+
+Preflight failures are retained separately: a relative data-folder path and
+Windows PowerShell's metadata encoding were corrected before any service stop.
+The idle helper interrupt was initially rejected by automatic review; evidence
+proved zero children, untouched sources/targets/owners/task, and the same cleanup
+was then accepted. Fresh checks now write separate activation evidence and do
+not rewrite frozen review artifacts.
+
+Echo/Relay/DSH, local models, automatic workers and Rook were not changed. The
+eight historical job holds remain held. All earlier phone checks remain accepted;
+a short smoke check of this newly deployed cutover is pending. Local release is
+still 18/21: production-team qualification, historic-hold recovery and final
+release acceptance remain outstanding. Raw receipts and task data stay local.
+
 ## Complete capture-first install and rollback qualification (2026-11-16)
 
 The corrected isolated journey explicitly installs a managed-reader helper that
