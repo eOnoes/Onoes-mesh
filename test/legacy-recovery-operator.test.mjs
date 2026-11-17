@@ -17,6 +17,8 @@ import { legacyRecoveryFingerprint as hash } from '../lib/workroom-legacy-eviden
 import { readLegacyRows, legacyRecoverySources } from '../integrations/legacy-recovery-plan.mjs';
 import { normalizeRelayDelivery, verifyDshOrigins, inspectReplayQueues, inspectRetainedRecords, verifyRetainedReview, verifyReplayRecords, verifyStartupControls, verifyDeploymentScope, loadOperatorScope, runLegacyOperator } from '../integrations/legacy-recovery-operator.mjs';
 import { readMaintenanceRecovery } from '../integrations/read-maintenance-recovery.mjs';
+import { prepareFrozenLegacyController } from '../lib/legacy-controller-bundle.mjs';
+import { pathToFileURL } from 'node:url';
 
 const test = process.platform === 'win32' && process.arch === 'x64' ? nodeTest : nodeTest.skip;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -155,6 +157,31 @@ test('current-boot operator pins the old witness and needs new authority plus un
     assert.equal(f.db.prepare('SELECT title FROM tasks').get().title,'Legitimate postboot board edit');
     assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n,8);
   }finally{f.close();}
+});
+
+test('a frozen external controller preserves target code and runs the complete current-boot guarded closure in disposable stores',async()=>{
+ const f=await fixture();
+ try{
+  const root=join(resolve('data'),'mesh-legacy-controller-operator-'+f.dir.split(/[\\/]/).at(-1));
+  const bundle=prepareFrozenLegacyController({sourceRoot:realpathSync.native(process.cwd()),destinationRoot:root});
+  const frozen=await import(pathToFileURL(bundle.entry));
+  await assert.rejects(frozen.runLegacyOperator({...f.options,action:'prepare'},f.runtime),/external controller/);
+  f.scope.controllerBundle=bundle.descriptor;
+  writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));
+  await frozen.runLegacyOperator({...f.options,action:'prepare'},f.runtime);
+  const historicalWitnessPath=f.options.planPath,historicalWitnessSha256=sha(readFileSync(historicalWitnessPath));f.boot();
+  f.scope.additionalSources={legacyRetirementWitness:historicalWitnessPath};
+  writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));
+  f.options.planPath=join(f.dir,'frozen-current-boot-plan.json');
+  await frozen.runLegacyOperator({...f.options,action:'prepare-current-boot',historicalWitnessPath,historicalWitnessSha256},f.runtime);
+  const plan=JSON.parse(readFileSync(f.options.planPath,'utf8'));
+  assert.ok(Object.keys(plan.sources).some(k=>k.startsWith('frozenControllerFile')));
+  const original=f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all();
+  const receipt=await frozen.runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime);
+  assert.equal(receipt.disposition,'historical_outcome_unknown');assert.equal(receipt.dispatchRemainsPaused,true);
+  assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),original);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n,8);
+ }finally{f.close();}
 });
 
 test('the assembled operator prepares, denies same-boot apply, commits only after the fixture boot and exact approval, and stays paused', async () => {

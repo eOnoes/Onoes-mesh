@@ -15,6 +15,7 @@ import { issueLegacyRecoveryPermit, createLegacyRecoveryStore } from '../lib/wor
 import { makeLegacyRecoveryPlan, makeCurrentBootLegacyRecoveryPlan, assessLegacyRecovery, legacyRecoveryFingerprint as fingerprint } from '../lib/workroom-legacy-evidence.mjs';
 import { observeLegacyRecovery, legacyRecoverySources } from './legacy-recovery-plan.mjs';
 import { runLegacyRecoveryConsole, formatLegacyRecoveryPrompt, formatLegacyRecoveryResult } from '../lib/workroom-legacy-console.mjs';
+import { bindFrozenLegacyController } from '../lib/legacy-controller-bundle.mjs';
 import { createInterface } from 'node:readline/promises';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -347,7 +348,11 @@ export function loadOperatorScope(scopePath, expectedSha256) {
     new Set(dshBindings.map(binding => binding.originMessageId)).size === 2,
   'Both independently pinned DSH originating message boundaries are required.');
   const sourceFiles = { ...legacyRecoverySources(scope.workspace), operatorScope: scopePath, operatorRunner: fileURLToPath(import.meta.url),
+    controllerBundlePolicy: fileURLToPath(new URL('../lib/legacy-controller-bundle.mjs', import.meta.url)),
     dshTaskStoreSnapshot: scope.dsh.path };
+  if (scope.controllerBundle) Object.assign(sourceFiles, bindFrozenLegacyController(scope.controllerBundle, fileURLToPath(import.meta.url)));
+  else requireValue(key(realpathSync.native(fileURLToPath(import.meta.url))) === key(realpathSync.native(resolve(scope.workspace, 'integrations/legacy-recovery-operator.mjs'))),
+    'An external controller requires its exact reviewed frozen bundle.');
   if (scope.retainedReview) {
     const review = readPinnedObject(scope.retainedReview);
     readPinnedObject(review.qualifications?.relay); readPinnedObject(review.qualifications?.native);

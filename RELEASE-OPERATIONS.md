@@ -2641,3 +2641,29 @@ Open the existing Finish Onoes-Mesh card in To do to read the overview. No new
 card or worker was created, review was not approved and project completion was
 not asserted. The original eight historical holds and no-extra-restart decision
 remain in force.
+
+## Frozen current-boot recovery controller (inactive, 2026-11-16)
+
+The current-boot recovery candidate can run from a separate, fixed controller
+folder while the target application keeps its accepted code and startup pins.
+The controller manifest binds the actual entry, Node executable, all required
+local code/configuration files and private copies of both Koffi 3.3.8 packages.
+External controllers without that exact scope-bound manifest are refused, as are
+changed/missing sources, loader overrides, aliases and unreviewed extra files.
+Target application source pins and existing native/file/dispatch guards remain.
+
+Disposable acceptance covers a fresh process loading the copied Windows native
+addon and taking actual owned native/file barriers, plus the complete synthetic
+current-boot eight-send closure through the frozen controller. This is not live
+legacy-job recovery. The original eight jobs remain held; no services, startup
+settings, grants or live records were changed. The original recovery window stays
+closed and its approval is not reused. No additional PC restart is requested.
+
+Before a live owner request, finish the exact current service/startup pause and
+restore package, same-grant Mind reader/writer recovery proof, deployed readback
+compatibility, and total protected-path count within the existing 128-file limit.
+Do not omit required inputs or increase the bound merely to fit a package.
+
+Verification: all 758 local checks passed (628 Node and 130 Python), including
+52 frozen files, a fresh native-addon process and synthetic guarded eight-send
+closure. This remains inactive; no live service or historical job was changed.
