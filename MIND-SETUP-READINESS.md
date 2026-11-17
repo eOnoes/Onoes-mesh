@@ -1,3 +1,34 @@
+## Capture-first installation dependency closure (2026-11-16)
+
+The real deployment projection found the managed reader wrapper absent from the
+live checkout, although earlier copied test checkouts supplied it. The revised
+inactive source package explicitly includes it: 111 source files, 12 changed,
+with the six original reader helpers and PowerShell launcher preserved exactly.
+The installation journey now requires that wrapper to be absent before install,
+installed with its declared hash, and removed again by exact before-state rollback.
+Its proof also retains memory-recovery, managed-reader and handoff source pins.
+
+The overlay accepts the existing post-backup service receipt filename while
+retaining exact profile hash, PID/birth and terminal-process checks. Fourteen
+focused overlay checks pass, including live-worker and wrong-profile refusal for
+that filename; ten startup and nine hidden-task checks pass as well.
+
+Thirteen inactive proposal files retain the current writer profile and access
+limits. Independent projection checks verified 364 source pins and nine nested
+hash references, with rollback checked against original source. Windows
+TASK_VALIDATE_ONLY accepts the proposed task and rejects invalid task settings;
+the existing task is unchanged. A failed encoding probe is preserved separately
+and is not acceptance evidence.
+
+The corrected complete installed-process journey passed in 915.435 seconds.
+Independent readback verified 123 source origins, 269 source pins, all 111
+before states restored, and no remaining exact synthetic workspace actors.
+The hidden warm tick took 0.259 seconds and made no private-storage checks. These checks
+do not approve new runtime profiles, edit the real task, restart services, retire
+historical jobs or activate workers. The live cutover needs a completed proof,
+fresh owner/process checks, verified backup and concrete execution/rollback review
+before the final owner activation decision. Local release remains 18/21.
+
 # Onoes-Mind setup readiness
 
 ## Current state — 2026-11-16

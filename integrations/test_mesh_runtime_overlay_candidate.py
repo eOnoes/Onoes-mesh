@@ -61,6 +61,24 @@ class MeshOverlayTests(unittest.TestCase):
             self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,approval)
         self.assertFalse((self.root/'journal').exists());self.assertEqual((self.live/'lib/a.mjs').read_bytes(),b'// exact original\r\n')
 
+    def test_after_backup_receipt_keeps_exact_identity_and_quiescence_guards(self):
+        self.plan['runtime']['serviceAttemptPath']=str(self.ops/'fixture-service-attempt-after-backup.json')
+        self.assertTrue(overlay.inspect_overlay(self.plan)['createsNothing'])
+        observer=overlay.roles();attempt=Path(self.plan['runtime']['serviceAttemptPath'])
+        record=dict(schema='onoes-mind-project-service-attempt/v1',profileSha256='a'*64,
+            state='started',runId='fixture-after-backup',pid=os.getpid(),creationTicks=observer.current_ticks())
+        attempt.write_text(json.dumps(record))
+        self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        self.assertFalse((self.root/'journal').exists())
+        record.update(pid=self.plan['runtime']['meshPid'],creationTicks=self.plan['runtime']['meshCreationTicks'],profileSha256='b'*64)
+        attempt.write_text(json.dumps(record));self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        record['profileSha256']='a'*64;attempt.write_text(json.dumps(record))
+        self.assertEqual(overlay.apply_overlay(self.plan,self.approve())['state'],'installed')
+        self.assertEqual(overlay.rollback_overlay(self.plan,self.approve(True))['state'],'original')
+        for name in ('fixture-service-attempt-after-backup.json.extra','fixture-attempt-after-backup.json'):
+            p=copy.deepcopy(self.plan);p['runtime']['serviceAttemptPath']=str(self.ops/name)
+            self.assertRaises(RuntimeError,overlay.checked,p)
+
     def test_exact_startup_helpers_install_and_rollback_without_allowing_other_python(self):
         expected={f'integrations/{name}.py' for name in (
             'mesh_startup_candidate','mesh_recovery_candidate','mesh_native_recovery',

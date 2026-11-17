@@ -1,3 +1,26 @@
+## Complete capture-first install and rollback qualification (2026-11-16)
+
+The corrected isolated journey explicitly installs a managed-reader helper that
+is absent from the real before state. It passes in 915.435 seconds, preserving
+the original reader, existing grant/key hashes, saved event IDs and receipts.
+The board stays usable while memory is held, then the same event catches up.
+Code rollback restores all 111 before states and read-only recall still finds
+the new fact; no canonical data rollback or credential rotation occurs.
+
+Independent readback verifies 123 source origins and 269 source pins, including
+the managed-reader, memory-recovery and handoff boundaries. All exact synthetic
+workspace actors are absent. Thirty-three focused checks pass. The overlay now
+accepts the existing service-attempt-after-backup.json filename with the same
+exact profile/PID/birth and quiescence guards.
+
+Thirteen inactive live proposals retain current writer access and existing
+scopes. Their 364 projected source pins and nine nested hash references match.
+Native TASK_VALIDATE_ONLY checks pass without changing or running the task.
+These are qualification and preparation results, not live activation. The
+actual cutover still needs fresh checks, a reviewed execution/rollback sequence
+and final owner approval for runtime trust changes. No live service, historical
+hold, Rook/worker setting or private memory scope changed. Release stays 18/21.
+
 # Mesh private release candidate
 
 ## Parked Inference request - Onoes-Tripp and temperature rings

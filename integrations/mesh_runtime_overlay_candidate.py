@@ -50,7 +50,7 @@ def checked(value):
         and 1024<=r['gatewayPort']<=65535 and type(r['serviceProfileSha256']) is str
         and re.fullmatch('[a-f0-9]{64}',r['serviceProfileSha256']))
     attempt=Path(r['serviceAttemptPath']);require(attempt.is_absolute() and attempt.resolve()==attempt
-        and attempt.parent.is_dir() and attempt.name.endswith('-service-attempt.json')
+        and attempt.parent.is_dir() and re.fullmatch(r'.+-service-attempt(?:-after-backup)?\.json',attempt.name)
         and not any(attempt.is_relative_to(root) for root in roots))
     fresh=r['freshLaunchAttempts'];require(type(fresh) is list and 1<=len(fresh)<=8)
     declared={attempt};mesh=False

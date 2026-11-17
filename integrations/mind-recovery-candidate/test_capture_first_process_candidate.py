@@ -47,7 +47,7 @@ class CaptureFirstProcessTests(unittest.TestCase):
             self.assertTrue(ws.parent.name.startswith('mesh-capture-first-install-'))
             import mesh_runtime_overlay_candidate as overlay
             self.assertEqual(overlay.digest(overlay.__file__),install['toolSha256'])
-            case.fixture.value['attemptPath']=str(case.root/'fixture-service-attempt.json');case.fixture.write()
+            case.fixture.value['attemptPath']=str(case.root/'fixture-service-attempt-after-backup.json');case.fixture.write()
             for f in install['files']:
                 target=ws/f['relativePath'];self.assertTrue(target.resolve().is_relative_to(ws))
                 self.assertEqual(overlay.digest(target),f['afterSha256'])
@@ -57,6 +57,10 @@ class CaptureFirstProcessTests(unittest.TestCase):
                     self.assertEqual(overlay.digest(Path(install['beforeRoot'])/f['relativePath']),f['beforeSha256'])
                     target.write_bytes(body)
             self.assertTrue(all(overlay.digest(ws/f['relativePath'])==f['beforeSha256'] for f in install['files']))
+            managed_relative='integrations/mind-recovery-candidate/reader_service_process_candidate.py'
+            managed_entry=next(f for f in install['files'] if f['relativePath']==managed_relative)
+            self.assertIsNone(managed_entry['beforeSha256'])
+            self.assertFalse((ws/managed_relative).exists())
             spec=importlib.util.spec_from_file_location('before_capture_launcher',ws/'integrations/mind-recovery-candidate/mesh_launch_candidate.py')
             old_launch=importlib.util.module_from_spec(spec);spec.loader.exec_module(old_launch)
         def code_digest(path):
@@ -288,7 +292,10 @@ class CaptureFirstProcessTests(unittest.TestCase):
             localBoardSurvivedMemoryHold=True,unresolvedAttemptPreserved=True,sameGrantRecoveryAndCatchUp=True,
             originalEventIdsAndReceiptsPreserved=True,warmTickNoProcessChanges=True,warmTickPrivateChecks=0,
             protectedCredentialTerminalKeyHashesUnchanged=True,privateFieldExcluded=True,sourceHashes=approved['sourceHashes'],
-            captureSourceHashes=cp['sourceHashes'],connectedSourceHashes=p['sourceHashes'])
+            captureSourceHashes=cp['sourceHashes'],connectedSourceHashes=p['sourceHashes'],
+            managedReaderSourceHashes=json.loads(managed.read_text())['sourceHashes'],
+            memoryRecoverySourceHashes=json.loads(memory.read_text())['sourceHashes'],
+            handoffSourceHashes=json.loads(handoff.read_text())['sourceHashes'])
         if hidden_mode:
             proof.update(hiddenWscriptStartupAndRecovery=True,hiddenWarmTickPreservedOwnerAndEvents=True,
                 taskRegistered=False,taskPropertiesPreserved=True,wrapperSha256=hidden_draft['wrapperSha256'],
