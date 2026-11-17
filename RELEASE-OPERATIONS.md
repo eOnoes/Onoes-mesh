@@ -53,6 +53,47 @@ The hidden-launcher delegation and composed source/profile/task cutover/rollback
 are not qualified yet. Prepare those together before asking to activate startup
 recovery. Do not represent this installation boundary test as deployed recovery.
 
+## Installed hidden startup and rollback - qualified, not activated
+
+The composed Windows journey now runs the actual restored old launcher first,
+delivers its baseline, and binds capture, connected and read-only fallback profile
+hashes before installation. Its before-owner receipt is seeded from the real old
+actor after exact PID/birth/image/command observation; production already has that
+receipt. The old gateway is retired and its exact writer stops gracefully. The
+same reader PID and original reader bytes stay in place. The finite overlay then
+installs 110 declared source files with 11 changes under the existing mutex; the
+PowerShell launcher source stays unchanged so its identity guard remains valid.
+A deliberate capture bootstrap publishes its new owner before hidden recovery.
+
+The full installed-source journey passed in 937.436 seconds. An unresolved memory
+attempt remained untouched while the new board saved an offline edit. Hidden
+same-grant recovery delivered the original event ID/hash once; earlier receipts
+and credential/key-package hashes stayed unchanged. Direct and hidden healthy
+checks kept the connected owner. The exact new gateway and writer then retired,
+all 110 before-images were verified, and the actual restored old launcher started
+a read-only fallback that recalled the newly saved fact from the canonical store.
+The original reader still had the same PID after rollback. Source events/receipts
+were preserved; there was no grant revocation, rotation or data rollback.
+
+All 121 declared source origins matched, including six reader files and the
+PowerShell launcher preserved from the live layout. All 256 declared runtime/
+generator source-pin comparisons matched. Installed after-hashes matched all110
+payload entries; restored before-hashes matched afterward. The journal's terminal
+state is restored (the public rollback result is original), with the same plan
+hash as the proof. Every isolated actor retired. Eighty focused checks also pass.
+The installed layout manifest is the deployment source of truth: retain those
+seven exact live files when preparing the real package.
+
+Measured held-memory, restoration, direct warm and hidden warm commands took
+34.763, 270.464, 0.155 and 0.318 seconds respectively in this fixture. These are
+observations, not latency guarantees. Task definition rendering and native
+validate-only checks remain separate from actual task registration: no Windows
+task was installed or changed by this journey. Production profile bindings,
+current-owner checks and the concrete owner activation/rollback decision remain
+next. No live app/service, permission, credential or model setting changed.
+Workers, Rook and eight historical holds stay unchanged; local release is 18/21.
+Local proof: data/installed-startup-qualified-verification-20261116.json.
+
 ## Hidden capture-first launcher - qualified, not activated
 
 The stateless task-draft helper renders a hidden WScript wrapper for the exact
