@@ -12,7 +12,7 @@ import { createDispatchBarrier, assertDispatchHold } from '../lib/workroom-dispa
 import { holdWindowsNativeMaintenance, assertNativeMaintenanceHold, holdWindowsFileReadBarrier, assertWindowsFileReadBarrier, productionWorkerRuntimeNames, nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { createLegacyAuthorizationReader } from '../lib/workroom-legacy-authorization.mjs';
 import { issueLegacyRecoveryPermit, createLegacyRecoveryStore } from '../lib/workroom-legacy-recovery.mjs';
-import { makeLegacyRecoveryPlan, assessLegacyRecovery, legacyRecoveryFingerprint as fingerprint } from '../lib/workroom-legacy-evidence.mjs';
+import { makeLegacyRecoveryPlan, makeCurrentBootLegacyRecoveryPlan, assessLegacyRecovery, legacyRecoveryFingerprint as fingerprint } from '../lib/workroom-legacy-evidence.mjs';
 import { observeLegacyRecovery, legacyRecoverySources } from './legacy-recovery-plan.mjs';
 import { runLegacyRecoveryConsole, formatLegacyRecoveryPrompt, formatLegacyRecoveryResult } from '../lib/workroom-legacy-console.mjs';
 import { createInterface } from 'node:readline/promises';
@@ -393,9 +393,13 @@ export function verifyDeploymentScope(scope) {
 
 // Import-only dependency injection permits disposable OS observations in tests;
 // the CLI has no flag, environment switch or JSON field selecting these functions.
-export async function runLegacyOperator({ action, scopePath, scopeSha256, planPath, authorizationPath, authorizationSha256 },
+export async function runLegacyOperator({ action, scopePath, scopeSha256, planPath, authorizationPath, authorizationSha256,
+  historicalWitnessPath, historicalWitnessSha256 },
   { collect = observeLegacyRecovery, startupReader = readWindowsStartupTasks, validateDeployment = verifyDeploymentScope } = {}) {
-  requireValue(['prepare', 'inspect', 'apply'].includes(action), 'Use prepare, inspect or apply.');
+  requireValue(['prepare', 'prepare-current-boot', 'inspect', 'apply'].includes(action), 'Use prepare, prepare-current-boot, inspect or apply.');
+  requireValue(action === 'prepare-current-boot' ? historicalWitnessPath && digest(historicalWitnessSha256) &&
+    !authorizationPath && !authorizationSha256 : !historicalWitnessPath && !historicalWitnessSha256,
+  'Historical witness inputs belong only to explicit current-boot preparation.');
   const { scope, sourceFiles, checkScope } = loadOperatorScope(scopePath, scopeSha256);
   validateDeployment(scope);
   const sendIds = scope.bindings.map(binding => binding.sendId);
@@ -406,14 +410,21 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
     verifyReplayRecords(scope, targets);
   };
   const observation = await observe();
-  if (action === 'prepare') {
+  if (action === 'prepare' || action === 'prepare-current-boot') {
     checkControls(observation.targets);
     const db = new DatabaseSync(scope.databasePath, { readOnly: true });
     try {
       const gate = createDispatchBarrier(db).status();
-      requireValue(gate.state === 'paused' && !gate.held && gate.activeAdmissions === 0, 'Dispatch must already be paused, unheld and drained before freezing a preboot plan.');
+      requireValue(gate.state === 'paused' && !gate.held && gate.activeAdmissions === 0, 'Dispatch must already be paused, unheld and drained before freezing a recovery plan.');
     } finally { db.close(); }
-    const plan = makeLegacyRecoveryPlan(observation);
+    let plan;
+    if (action === 'prepare-current-boot') {
+      const source = Object.entries(sourceFiles).find(([, path]) => key(path) === key(historicalWitnessPath));
+      requireValue(source && observation.sources[source[0]] === historicalWitnessSha256,
+        'The exact historical witness must already be pinned in the reviewed scope.');
+      plan = makeCurrentBootLegacyRecoveryPlan(observation, { sourceKey: source[0],
+        raw: readPinned(historicalWitnessPath, historicalWitnessSha256).toString('utf8') });
+    } else plan = makeLegacyRecoveryPlan(observation);
     writeFileSync(planPath, JSON.stringify(plan, null, 2) + '\n', { flag: 'wx' });
     return { status: 'prepared_only', planHash: plan.planHash, canRelease: false };
   }
@@ -535,9 +546,11 @@ async function main() {
     return;
   }
   requireValue(action && scopePath && scopeSha256 && planPath && !extra.length &&
-    (action === 'apply' ? authorizationPath && authorizationSha256 : !authorizationPath && !authorizationSha256),
-  'Usage: diagnose (read-only), or <prepare|inspect|apply> <absolute-scope.json> <reviewed-scope-sha256> <plan.json> [<absolute-owner-record.json> <reviewed-owner-sha256>]. No pause, resume or restart action exists.');
-  const result = await runLegacyOperator({ action, scopePath, scopeSha256, planPath, authorizationPath, authorizationSha256 });
+    (['apply', 'prepare-current-boot'].includes(action) ? authorizationPath && authorizationSha256 : !authorizationPath && !authorizationSha256),
+  'Usage: <prepare|inspect|apply|prepare-current-boot> <scope> <scope-sha> <plan> [<owner-record|historical-witness> <sha>]. No pause, resume or restart action exists.');
+  const result = await runLegacyOperator({ action, scopePath, scopeSha256, planPath,
+    ...(action === 'prepare-current-boot' ? { historicalWitnessPath: authorizationPath, historicalWitnessSha256: authorizationSha256 } :
+      { authorizationPath, authorizationSha256 }) });
   process.stdout.write(JSON.stringify(result) + '\n');
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

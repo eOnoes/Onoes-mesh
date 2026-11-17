@@ -129,6 +129,34 @@ async function fixture() {
     close() { db.close(); store.close(); } };
 }
 
+test('current-boot operator pins the old witness and needs new authority plus unchanged offline fences',async()=>{
+  const f=await fixture();
+  try{
+    await runLegacyOperator({...f.options,action:'prepare'},f.runtime);
+    const historicalWitnessPath=f.options.planPath,historicalWitnessSha256=sha(readFileSync(historicalWitnessPath));
+    f.boot();const oldAuthority=f.authorize();
+    f.db.prepare('UPDATE tasks SET title=?').run('Legitimate postboot board edit');
+    const original=f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all();
+    f.options.planPath=join(f.dir,'current-boot-plan.json');
+    await assert.rejects(runLegacyOperator({...f.options,action:'prepare-current-boot',historicalWitnessPath,historicalWitnessSha256},f.runtime),/already be pinned/);
+    assert.equal(existsSync(f.options.planPath),false);
+    f.scope.additionalSources={legacyRetirementWitness:historicalWitnessPath};
+    writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));
+    const prepared=await runLegacyOperator({...f.options,action:'prepare-current-boot',historicalWitnessPath,historicalWitnessSha256},f.runtime);
+    assert.equal(prepared.canRelease,false);
+    const plan=JSON.parse(readFileSync(f.options.planPath,'utf8'));
+    assert.equal(plan.schema,'mesh/legacy-recovery-plan/v3');
+    assert.equal(plan.retirementWitness.sha256,historicalWitnessSha256);
+    assert.equal((await runLegacyOperator({...f.options,action:'inspect'},f.runtime)).status,'ready_for_operator_review');
+    await assert.rejects(runLegacyOperator({...f.options,action:'apply',...oldAuthority},f.runtime),/authorization|owner|plan/i);
+    const receipt=await runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime);
+    assert.equal(receipt.disposition,'historical_outcome_unknown');assert.equal(receipt.dispatchRemainsPaused,true);
+    assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),original);
+    assert.equal(f.db.prepare('SELECT title FROM tasks').get().title,'Legitimate postboot board edit');
+    assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n,8);
+  }finally{f.close();}
+});
+
 test('the assembled operator prepares, denies same-boot apply, commits only after the fixture boot and exact approval, and stays paused', async () => {
   const f = await fixture();
   try {

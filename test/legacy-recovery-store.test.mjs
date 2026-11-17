@@ -12,7 +12,7 @@ import { holdWindowsNativeMaintenance, nativeResourceFingerprint } from '../lib/
 import { openTaskStore } from '../lib/task-store.mjs';
 import { writerQuiescenceBlockers } from '../lib/workroom-claim-policy.mjs';
 import { issueLegacyRecoveryPermit, isLegacyRecovered, createLegacyRecoveryStore } from '../lib/workroom-legacy-recovery.mjs';
-import {makeLegacyRecoveryPlan,legacyRecoveryFingerprint as hash} from '../lib/workroom-legacy-evidence.mjs';
+import {makeLegacyRecoveryPlan,makeCurrentBootLegacyRecoveryPlan,legacyRecoveryFingerprint as hash} from '../lib/workroom-legacy-evidence.mjs';
 import {readLegacyRows} from '../integrations/legacy-recovery-plan.mjs';
 import {createLegacyAuthorizationReader} from '../lib/workroom-legacy-authorization.mjs';
 import {assertDispatchHold,createDispatchBarrier} from '../lib/workroom-dispatch-barrier.mjs';
@@ -65,6 +65,29 @@ async function fixture({hold=true}={}) {
     get store() { return store; }, setOwner(value) { owner = value; },
     reopen() { store.close(); store = openTaskStore(path); }, close() { releaseNative(); release(); db.close(); store.close(); } };
 }
+
+test('current-boot witness still needs authentic leases and fresh authority before atomic unknown-outcome closure',async()=>{
+  const f=await fixture();
+  try{
+    const raw=JSON.stringify(f.plan,null,2)+'\n',sourceKey='legacyRetirementWitness';
+    f.snapshot().sources[sourceKey]=createHash('sha256').update(raw).digest('hex');
+    f.db.prepare('UPDATE tasks SET title=? WHERE id=?').run('Legitimate postboot idea edit',f.next.id);
+    const plan=makeCurrentBootLegacyRecoveryPlan(f.snapshot(),{sourceKey,raw});
+    const base=f.options(),owner={...base.authorize(),planHash:plan.planHash};
+    const boundary=(p,o)=>({...f.boundary(p,o),planHash:plan.planHash});
+    const opts={...base,plan,authorize:()=>owner,verifyFence:boundary,commitGuard:(p,o)=>({owner,boundary:boundary(p,o)})};
+    await assert.rejects(issueLegacyRecoveryPermit({...opts,authorize:base.authorize}),/authorization|owner/i);
+    await assert.rejects(issueLegacyRecoveryPermit({...opts,meshLease:{}}),/authentic|hold/i);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length,8);
+    const originals=f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all();
+    const receipt=await f.store.workroom.legacyRecovery.commit(await issueLegacyRecoveryPermit(opts));
+    assert.equal(receipt.duplicate,false);
+    assert.equal(writerQuiescenceBlockers(f.store.workroom.list()).length,0);
+    assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),originals);
+    assert.equal(f.store.get(f.next.id).title,'Legitimate postboot idea edit');
+    assert.equal(f.store.workroom.get(f.old.id).messages[0].legacyRecovery.workerRetirementEstablished,false);
+  }finally{f.close();}
+});
 
 test('opening and reading an older database never creates recovery tables', async () => {
   const f = await fixture({hold:false});

@@ -1,3 +1,35 @@
+## Current-boot recovery candidate and accepted phone cutover - November 16, 2026
+
+Eddie accepted both the deployed Workroom and Mind screens on his phone after
+capture-first recovery. Those checks remain accepted and need no repeat.
+
+Read-only review found the current same-machine boot occurs after the original
+frozen eight-send witness. All eight exact send fingerprints and the three
+retained records still match, with no extra work sends or writer holds. The
+current board and nine of 80 historical source pins changed legitimately, so
+the old closed plan correctly remains unusable. Nothing was released or retried.
+
+An inactive v3 candidate now builds a genuinely fresh current-state plan from an
+explicit original v2 witness pinned in the reviewed source set. It embeds exact
+witness bytes, preserves the eight targets and machine/database identity, and
+requires the already-observed boot to follow the witness. It never backdates a
+new plan or reuses old authorization. Current board/source drift, a later boot,
+additional work and missing/changed witness all refuse eligibility. Ordinary v2
+same-boot refusal is unchanged.
+
+The operator has explicit prepare-current-boot input; preparation cannot grant
+release. Existing owner, dispatch, offline native resource, replay, file barrier
+and final synchronous commit guards remain required. Synthetic assembled tests
+reject old authority and unpinned witnesses, preserve original sends and current
+card edits, and record only historical outcome unknown under authentic leases.
+The complete local npm test gate passed 754 checks (624 Node, 130 Python).
+
+The candidate is not deployed. Production source/profile binding and a fresh
+quiet-worker scope/owner decision still precede any real closure. No restart,
+service change or live hold release was performed for this candidate. The live
+capture-first gateway and its accepted phone behavior stay unchanged. Local
+release remains 18/21; production teams and the wider goal are unfinished.
+
 ## Live capture-first recovery cutover - November 16, 2026 (Chicago)
 
 Eddie approved the exact cutover and conditional rollback. The live gateway now
