@@ -1,14 +1,30 @@
 # Onoes-Mesh
 
-## Current working preview - updated 2026-11-14
+## Local verification commands - November 18, 2026
+
+Use `npm run check:current` for the existing focused design, session, application
+and UI behavior checks. Use `npm test` for the complete local suite. These commands
+use disposable test data; passing them does not activate workers or qualify a
+deployment on its own.
+
+`npm run check` retains the historical APP03 snapshot-pin check. Its committed
+`APP03-SOURCE-CONTEXT.json` records an early input snapshot, and its task-store pin
+does not match the current committed task store. That command currently fails
+with `Immutable pin: lib/task-store.mjs`. The historical pins and guard remain
+unchanged; a passing current behavioral check is not a passing historical-pin
+check. Do not regenerate those pins merely to obtain a green result.
+
+## Current working preview - updated 2026-11-18
 
 Open https://emitchell.tail8c4a75.ts.net:8453/#workroom for the current work. The active goal is **Finish Onoes-Mesh - all assessed stages**, task c2a77ea9-05bb-4b63-85c7-c2d8e9fb2547. Its ordered backlog, current evidence and blockers are in [WORKROOM-AB-CHECKPOINT.md](WORKROOM-AB-CHECKPOINT.md); [MESH-REPO-INDEX.md](MESH-REPO-INDEX.md) identifies the current worktree, database and process receipts.
 
 The current preview uses data/workroom-preview/tasks.sqlite with Tailscale owner admission, local task sessions, CSRF and revision checks. The original8446 deployment and historical owner data are separate and remain protected. Read the older operating details below as historical qualification records, not instructions to overwrite a current store or start a default server.
 
-Current facts: independent review and changes-requested / correction / fresh review loops are verified in bounded trials, with deliberate completion and preserved provenance. Permission denial and same-session recovery are proven. The Agent workspace lists observed Relay peers and links their saved task handoffs; it does not infer coding capabilities or start jobs. Overview identifies the running build and selected store. [RELEASE-OPERATIONS.md](RELEASE-OPERATIONS.md) names the canonical current installation, startup and rollback. Verified source/data backups are under E:/App-Backups/ONOes-Mesh. Eddie confirmed basic phone card/recovery checks and main-PC Nemotron load/chat/unload. The first local release remains 18/21: production-team qualification, an unassisted production workflow and final deployed release acceptance remain open. Automatic assignments, Rook and live Mind remain off. Off-device backup and automatic backup scheduling are deferred. This is a private release candidate.
+Current facts: independent review and changes-requested / correction / fresh review loops are verified in bounded trials, with deliberate completion and preserved provenance. Permission denial and same-session recovery are proven. The Agent workspace lists observed Relay peers and links their saved task handoffs; it does not infer coding capabilities or start jobs. Overview identifies the running build and selected store. [RELEASE-OPERATIONS.md](RELEASE-OPERATIONS.md) names the canonical current installation, startup and rollback. Verified source/data backups are under E:/App-Backups/ONOes-Mesh. Eddie confirmed basic phone card/recovery checks and main-PC Nemotron load/chat/unload. The first local release remains 18/21: production-team qualification, an unassisted production workflow and final deployed release acceptance remain open. Automatic assignments and Rook remain off. The approved shared-facts Mind reader and limited, explicitly linked Workroom updates are connected; private agent memory and cross-channel conversation sharing are not enabled. Off-device backup and automatic backup scheduling are deferred. This is a private release candidate.
 
-Mind can deliberately retrieve a selected saved Workroom task with source revisions and recorded review status under MIND-CONTRACT.md. It adds no personal memory store or automatic writes. Ordinary Relay chat/session/retry/privacy acceptance and the bounded compatibility decision are recorded under RELAY-INTEGRATION.md. Use [remaining owner checks](NEXT-OWNER-CHECKS.md) for confirmed phone checks and the next acceptance gate; use [the quick start](MESH-QUICK-START.md) for card and review instructions. The older foundation records below retain their original addresses and evidence; they are not current startup instructions.
+The Mind workspace can retrieve a selected saved Workroom task with source revisions and recorded review status under MIND-CONTRACT.md. The separately approved canonical Onoes-Mind reader and limited project-sync connection now also exist; their runtime profiles and current checkpoint define the exact scope. This does not authorize sharing every card or chat, and it does not create a second memory authority. Ordinary Relay chat/session/retry/privacy acceptance and the bounded compatibility decision are recorded under RELAY-INTEGRATION.md. Use [remaining owner checks](NEXT-OWNER-CHECKS.md) for confirmed phone checks and the next acceptance gate; use [the quick start](MESH-QUICK-START.md) for card and review instructions. The older foundation records below retain their original addresses and evidence; they are not current startup instructions.
+
+Published source can be ahead of the running app. The November 18 Help and reconnect corrections are tested source candidates; they have not been installed into the live runtime. A Git commit alone is not proof of deployment. Preserve the installed source-profile bindings and use the current checkpoint when preparing a later cutover.
 
 ## Historical foundation and qualification records
 

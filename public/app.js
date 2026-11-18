@@ -379,6 +379,9 @@ async function loadTasks() {
     const current = tasks.find(task => task.id === selected.id);
     if (current) selectTask(current, true);
   }
+  // An empty list may not produce a DOM mutation. Notify only after admission
+  // and generation checks, so the board can make its own current, guarded read.
+  window.dispatchEvent(new Event('mesh-tasks-refreshed'));
 }
 function taskFields(prefix, status) {
   return { title: $(`${prefix}-title`).value, description: $(`${prefix}-description`).value, label: $(`${prefix}-label`).value, status };

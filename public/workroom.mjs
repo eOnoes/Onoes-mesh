@@ -23,11 +23,23 @@ if(root){
   const maintenanceNotice=el('p');maintenanceNotice.setAttribute('role','status');maintenanceNotice.hidden=true;
   const paintMaintenance=()=>{maintenanceNotice.textContent=teamRequestNotice(teamPolicy);maintenanceNotice.hidden=!maintenanceNotice.textContent;};
   const board=el('div');board.className='workroom-lanes';
+  const createLead=document.getElementById('create-owner');
+  const createLeadLabel=document.querySelector('label[for="create-owner"]');
+  const createLeadHint=createLead?.nextElementSibling;
+  const originalLead=createLead?{required:createLead.required,hidden:createLead.hidden,labelHidden:createLeadLabel?.hasAttribute('hidden')||false,hint:createLeadHint?.textContent}:null;
+  function paintCreateLead(){
+    if(!createLead)return;
+    const managed=teamPolicy?.simpleFlow===true;
+    createLead.required=managed?false:originalLead.required;
+    createLead.hidden=managed||originalLead.hidden;
+    createLeadLabel?.toggleAttribute('hidden',managed||originalLead.labelHidden);
+    if(createLeadHint)createLeadHint.textContent=managed?'Ideas stay unassigned in To do. Move to In progress for the team to inspect them.':originalLead.hint;
+  }
   let checkingStatus='';
   const boardLoader=createBoardLoader({request,onBoard(result){
     tasks=result.tasks;teamPolicy=result.teamPolicy||null;agentsKnown=false;paintMaintenance();draw();if(guide.open)paintGuide(false);
     root.dataset.managedFlow=teamPolicy?.simpleFlow?'1':'0';
-    if(teamPolicy?.simpleFlow){const lead=document.getElementById('create-owner');if(lead){lead.required=false;lead.hidden=true;document.querySelector('label[for="create-owner"]')?.setAttribute('hidden','');if(lead.nextElementSibling)lead.nextElementSibling.textContent='Ideas stay unassigned in To do. Move to In progress for the team to inspect them.';}}
+    paintCreateLead();
     checkingStatus=`${tasks.length} saved tasks · Checking agent connections…`;status.textContent=checkingStatus;
   },onAgents(peers,available){
     agents=peers;agentsKnown=available;draw();
@@ -39,6 +51,8 @@ if(root){
   function closeDetails(){viewEpoch++;clearTimeout(followTimer);const id=selected?.id;details.close();selected=null;pending=null;(Array.from(board.querySelectorAll('[data-task-id]')).find(node=>node.dataset.taskId===id)||returnFocus)?.focus();}
   details.addEventListener('cancel',event=>{if(busy){event.preventDefault();return;}event.preventDefault();closeDetails();});
   root.append(heading,description,refresh,projectFilter,dragHelp,maintenanceNotice,status,board,details);
+  // Keep the existing admission control visible when the board is locked.
+  root.insertBefore(document.getElementById('workroom-session-recovery'),board);
   const createButton=el('button','+ New task');createButton.type='button';
   refresh.before(createButton);
   const helpButton=el('button','? Help');helpButton.type='button';helpButton.setAttribute('aria-label','Workroom walkthrough');
@@ -69,7 +83,7 @@ if(root){
   const createStatus=el('p');createStatus.id='workroom-create-status';createStatus.setAttribute('role','status');
   const createForm=document.getElementById('create-form');
   createForm.closest('article').hidden=true;
-  createDialog.append(el('h2','New task'),document.getElementById('workroom-session-recovery'),createForm,createStatus,createClose);
+  createDialog.append(el('h2','New task'),createForm,createStatus,createClose);
   root.append(createDialog);
   createButton.addEventListener('click',()=>{createStatus.textContent='';createDialog.showModal();if(!document.getElementById('create-title').disabled)document.getElementById('create-title').focus();});
   createClose.addEventListener('click',()=>createDialog.close());
@@ -123,7 +137,7 @@ if(root){
   window.meshWorkroom.onClear(()=>{
     boardLoader.clear();cardOpener.clear();agentsKnown=false;root.dataset.managedFlow='0';
     viewEpoch++;clearTimeout(followTimer);
-    tasks=[];selected=null;agents=[];pending=null;teamPolicy=null;paintMaintenance();
+    tasks=[];selected=null;agents=[];pending=null;teamPolicy=null;paintMaintenance();paintCreateLead();
     details.close();details.replaceChildren();board.replaceChildren();
     createDialog.close();createForm.reset();createStatus.textContent='';
     pendingMove=null;moveDialog.close();moveNote.textContent='';moveNotice.textContent='';moveOwner.replaceChildren();
@@ -555,7 +569,8 @@ if(root){
   });
   projectFilter.addEventListener('input',draw);
   document.getElementById('tab-workroom')?.addEventListener('click',()=>act(load));
-  const savedTasks=document.getElementById('tasks');
-  if(savedTasks)new MutationObserver(()=>{if(!busy)act(load);}).observe(savedTasks,{childList:true});
+  // Loading cards is read-only; a busy editor must not lose this notification.
+  // The loader's epoch/read guards discard responses after a lock or newer read.
+  window.addEventListener('mesh-tasks-refreshed',()=>{void load().catch(error=>{status.textContent=error.message;});});
   if(location.hash==='#workroom')document.getElementById('tab-workroom')?.click();
 }

@@ -6,6 +6,27 @@ import {randomUUID} from 'node:crypto';
 
 import {source,html,mockUI,response,flush,bodyFor} from './app-ui-fixture.mjs';
 
+test('MOCK UI: successful empty-task refresh explicitly notifies the board',async()=>{
+  const ui=mockUI({responder:route=>response(route.endsWith('bootstrap')?201:200,
+    route.endsWith('bootstrap')?{csrfToken:'z'.repeat(43),expiresAt:Date.now()+60000}:bodyFor(route))});
+  const observations=[];
+  ui.events['mesh-tasks-refreshed']=()=>observations.push(ui.ids.get('total-count').textContent);
+  ui.ids.get('demo-start').events.click();await flush();
+  assert.deepEqual(observations,['0']);
+});
+
+test('MOCK UI: a task read completed after privacy clearance cannot announce a ready board',async()=>{
+  let release;
+  const pending=new Promise(resolve=>{release=resolve;});
+  const ui=mockUI({responder:route=>route==='/api/tasks'?pending:response(route.endsWith('bootstrap')?201:200,
+    route.endsWith('bootstrap')?{csrfToken:'y'.repeat(43),expiresAt:Date.now()+60000}:bodyFor(route))});
+  let notifications=0;ui.events['mesh-tasks-refreshed']=()=>notifications++;
+  ui.ids.get('demo-start').events.click();await flush();
+  assert.ok(ui.requests.some(request=>request.route==='/api/tasks'));
+  ui.events.pagehide();release(response(200,{tasks:[]}));await flush();
+  assert.equal(notifications,0);assert.equal(ui.ids.get('tasks').children.length,0);
+});
+
 test('MOCK UI: seven panels, keyboard tabs, local task labels and initially disabled board', () => {
   const ui = mockUI(); assert.equal(ui.tabs.length, 7); assert.equal((html.match(/role="tabpanel"/g) ?? []).length, 7);
   assert.equal(html.includes('Local task board'), true); assert.equal(ui.requests.length, 0);

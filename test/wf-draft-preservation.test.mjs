@@ -27,7 +27,7 @@ function harness() {
   const context = vm.createContext({ document: { visibilityState: 'visible', addEventListener() {},
     getElementById: id => ids.get(id), createElement: () => new Element(),
     querySelectorAll: selector => selector.startsWith('form ') ? [...ids.values()] : [] },
-    navigator: { onLine: true }, window: { addEventListener() {} },
+    navigator: { onLine: true }, window: { addEventListener() {}, dispatchEvent() { return true; } }, Event,
     // These separate workspaces are outside the legacy editor under test.
     createRelayChat: () => ({setAvailable() {}, clear() {}}),
     createMindWorkspace: () => ({setAvailable() {}, clear() {}, setTasks() {}}),
