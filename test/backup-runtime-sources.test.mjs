@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,realpathSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,realpathSync,symlinkSync,renameSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,resolve,sep} from 'node:path';
 import {collectRuntimeBackupSources} from '../lib/backup-runtime-sources.mjs';
@@ -37,4 +37,27 @@ test('data files cannot be admitted as source and external dependencies are excl
   const f=fixture(t);assert.throws(()=>collectRuntimeBackupSources(f.root,[],f.profile({sourceHashes:{[join(f.root,'data/private.json')]:hash(join(f.root,'data/private.json'))}})),/non-source app path/);
   const external=join(resolve(f.root,'..'),'external-memory.json');writeFileSync(external,'synthetic external data');
   const ref=f.profile({sourceHashes:{[join(f.root,'server.mjs')]:hash(join(f.root,'server.mjs')),[external]:hash(external)}});const result=collectRuntimeBackupSources(f.root,[],ref);assert(!result.entries.some(x=>x.includes('external-memory')));assert.equal(result.coverage.requiredAppFiles,1);
+});
+test('initial archive entries cannot escape the app root or select directories',t=>{
+  const f=fixture(t),external=resolve(f.root,'../outside.mjs');writeFileSync(external,'synthetic outside source');
+  assert.throws(()=>collectRuntimeBackupSources(f.root,['../outside.mjs']),/outside|relative/i);
+  assert.throws(()=>collectRuntimeBackupSources(f.root,['integrations/nested']),/regular file/i);
+});
+test('a linked integration root is refused even when every contained file is ordinary',t=>{
+  const f=fixture(t),source=join(f.root,'integrations'),target=join(f.root,'original-integrations');
+  renameSync(source,target);symlinkSync(target,source,process.platform==='win32'?'junction':'dir');
+  assert.throws(()=>collectRuntimeBackupSources(f.root,[]),/link/i);
+});
+test('a profile cannot admit a nested dependency through a linked parent directory',t=>{
+  const f=fixture(t),external=resolve(f.root,'../external'),linked=join(f.root,'integrations/nested/linked');
+  mkdirSync(external);writeFileSync(join(external,'adapter.mjs'),'synthetic outside source');
+  symlinkSync(external,linked,process.platform==='win32'?'junction':'dir');
+  const source=join(linked,'adapter.mjs'),ref=f.profile({sourceHashes:{[source]:hash(source)}});
+  assert.throws(()=>collectRuntimeBackupSources(f.root,[],ref),/link/i);
+  assert.throws(()=>collectRuntimeBackupSources(f.root,['integrations/nested/linked/adapter.mjs']),/link/i);
+});
+test('the selected app root must itself be a real directory rather than a link',t=>{
+  const f=fixture(t),alias=resolve(f.root,'../app-alias');
+  symlinkSync(f.root,alias,process.platform==='win32'?'junction':'dir');
+  assert.throws(()=>collectRuntimeBackupSources(alias,[]),/link/i);
 });
