@@ -1,6 +1,6 @@
 # Remaining owner checks
 
-## Current Workroom - 2026-11-14
+## Current Workroom - 2026-11-18
 
 Open [Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom) or
 [Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference).
@@ -13,21 +13,29 @@ reload, both themes, background/resume, rotation with an unsaved draft, network
 reconnection, starting a scoped team from the phone, and main-PC Nemotron
 load/chat/unload ending STOPPED. Do not repeat these simply because work resumed.
 
-Focused ordinary-app check: open
-[Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay), refresh and open the agent
-selector. Choose Echo: the recent conversation should open. Tap Load older
-messages: earlier messages should appear without moving the passage you were
-reading. No send is needed. This narrow check is pending; preserve all accepted phone results above.
+Also accepted by Eddie: [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay)
+shows his messages separately from Echo's replies, and older history loads without
+replacing messages or losing the reading position. The Workroom and Mind screens
+also passed the post-cutover phone smoke check. Preserve these accepted results;
+no repeat phone test is requested here.
 
 The next production phone check is a complete production team workflow after the
 legacy recovery and production enrollment have been qualified. That prerequisite
-is not ready: automatic assignment, Rook and live Mind remain off. No phone test,
-restart or service change is requested by this document. When ready, Nims will
+is not ready: automatic assignment and Rook remain off, and the eight historical
+job holds have not been cleared. The approved shared-facts Mind reader and limited
+Workroom project-sync connection have been activated and phone-verified; this is not broad shared-chat or
+agent-private memory access. No phone test, restart or service change is requested
+by this document. When ready, Nims will
 provide the exact link, card name, short steps and expected result together.
 
 Remaining first-release gates: C1 production workflow without operator rescue;
 C4 deployed release/custody and owner acceptance; E2 qualified production team.
-Other machines and shared Mind context remain later stages of the full goal.
+Other machines and broader shared conversation context, skills and MCP tools remain later stages of the full goal.
+
+The tested November 18 Help and board-reconnect source candidates are not yet
+installed into the live runtime. The standalone backup-source confinement fix
+is installed and its real milestone backup passed restore checks without a
+service restart. Keep those deployment states separate.
 
 ## Historical 8446 checks - retained for that separate installation
 

@@ -16,7 +16,7 @@ check. Do not regenerate those pins merely to obtain a green result.
 
 ## Current working preview - updated 2026-11-18
 
-Open https://emitchell.tail8c4a75.ts.net:8453/#workroom for the current work. The active goal is **Finish Onoes-Mesh - all assessed stages**, task c2a77ea9-05bb-4b63-85c7-c2d8e9fb2547. Its ordered backlog, current evidence and blockers are in [WORKROOM-AB-CHECKPOINT.md](WORKROOM-AB-CHECKPOINT.md); [MESH-REPO-INDEX.md](MESH-REPO-INDEX.md) identifies the current worktree, database and process receipts.
+Open https://emitchell.tail8c4a75.ts.net:8453/#workroom for the current work. The active goal is **Finish Onoes-Mesh - all assessed stages**, task c2a77ea9-05bb-4b63-85c7-c2d8e9fb2547. Its ordered backlog, current evidence and blockers are in the installed working copy's local-only `WORKROOM-AB-CHECKPOINT.md` and `data/relay-directory-integration-checkpoint-20261114.json`; these private records are not included in a fresh Git checkout. [MESH-REPO-INDEX.md](MESH-REPO-INDEX.md) identifies the current worktree, database and process receipts.
 
 The current preview uses data/workroom-preview/tasks.sqlite with Tailscale owner admission, local task sessions, CSRF and revision checks. The original8446 deployment and historical owner data are separate and remain protected. Read the older operating details below as historical qualification records, not instructions to overwrite a current store or start a default server.
 
