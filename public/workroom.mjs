@@ -6,6 +6,7 @@ import {handoffStatus,taskTimeline,cardNextAction,nativeWorkerStatus} from './wo
 import {nimsPlanningBrief} from './lead-policy.mjs';
 import {createPlanEditor,scopedTeamStatus,teamRequestNotice} from './workroom-plan.mjs';
 import {paintMemoryState} from './workroom-memory-state.mjs';
+import {workroomGuide} from './workroom-guide.mjs';
 const root=document.getElementById('workroom-board');
 const request=(...args)=>window.meshWorkroom.request(...args);
 const stages=[['backlog','Backlog'],['ready','Ready'],['working','Working'],['needs_you','Needs you'],['done','Done']];
@@ -24,7 +25,7 @@ if(root){
   const board=el('div');board.className='workroom-lanes';
   let checkingStatus='';
   const boardLoader=createBoardLoader({request,onBoard(result){
-    tasks=result.tasks;teamPolicy=result.teamPolicy||null;agentsKnown=false;paintMaintenance();draw();
+    tasks=result.tasks;teamPolicy=result.teamPolicy||null;agentsKnown=false;paintMaintenance();draw();if(guide.open)paintGuide(false);
     root.dataset.managedFlow=teamPolicy?.simpleFlow?'1':'0';
     if(teamPolicy?.simpleFlow){const lead=document.getElementById('create-owner');if(lead){lead.required=false;lead.hidden=true;document.querySelector('label[for="create-owner"]')?.setAttribute('hidden','');if(lead.nextElementSibling)lead.nextElementSibling.textContent='Ideas stay unassigned in To do. Move to In progress for the team to inspect them.';}}
     checkingStatus=`${tasks.length} saved tasks · Checking agent connections…`;status.textContent=checkingStatus;
@@ -50,26 +51,18 @@ if(root){
   const guideBack=el('button','Back');guideBack.type='button';
   const guideNext=el('button','Next');guideNext.type='button';
   const guideClose=el('button','Close help');guideClose.type='button';
-  const walkthrough=[
-    ['A board is a visual to-do list','Each card is one task. The columns show where that task is in your workflow. Start with something small, such as “Fix the Relay send button.”'],
-    ['The three columns','To do: work you have not started. In progress: work underway, including cards marked Needs you. Done: work with a saved approved review. Backlog and Ready both appear in To do.'],
-    ['Create your first card','Tap + New task. Give it a short title, describe what you want, and choose Nims or Echo as project lead, then tap Create task. If the workspace is locked, open [menu] and tap Reconnect workspace; your saved tasks are still there.'],
-    ['Tell the team what success looks like','Tap the card, then Edit card. Add a Project, a Goal and Acceptance criteria: how you will know it worked. Add a few checklist steps under Goal, checklist and review. Choose Nims or Echo as project lead before moving work into In progress. Save changes saves your edits; Cancel edits discards unsaved changes.'],
-    ['Move a card','On a PC, drag anywhere on the card into another column. On touch screens, hold anywhere on the card briefly, then drag. Swipe without holding to scroll. Tap the card itself to read its details. You can also change Board stage under Edit card, or focus the card and use the left/right arrow keys. When moving an unassigned card into In progress, choose Nims or Echo in the project-lead prompt. Moving a card updates the board; it does not start an agent.'],
-    ['Ask an agent to work','Inside a card, Team handoffs lets you choose a worker and reviewer. Ask for a plan requests steps without editing. Prepare worker request shows the saved scope; Start this worker sends one bounded work request. An accepted message means delivered to Relay, not finished. Follow agent replies shows incoming reports while the card is open. Inspect a report before applying it to your checklist.'],
-    ['Review, finish, or recover','Save a result and verification evidence, then have someone other than the worker check it. Record the review before moving the card to Done; ticking every step alone is not approval. Needs you means something needs attention. If an agent is waiting, read Handoff status and open Relay for details. If delivery is uncertain, check the original message status in Conversation and history. Do not send another copy while its outcome is unknown. Follow the available recovery action only after checking that original status.'],
-  ];
   let guideStep=0;
-  function paintGuide(){
+  function paintGuide(focus=true){
+    const walkthrough=workroomGuide(teamPolicy);
     guideCount.textContent=`Step ${guideStep+1} of ${walkthrough.length}`;
     guideBody.replaceChildren(el('h3',walkthrough[guideStep][0]),el('p',walkthrough[guideStep][1]));
     guideBack.disabled=guideStep===0;guideNext.textContent=guideStep===walkthrough.length-1?'Done':'Next';
-    guideBody.focus();
+    if(focus)guideBody.focus();
   }
   guideActions.append(guideBack,guideNext,guideClose);guide.append(guideTitle,guideCount,guideBody,guideActions);root.append(guide);
   helpButton.addEventListener('click',()=>{guideStep=0;guide.showModal();paintGuide();});
   guideBack.addEventListener('click',()=>{if(guideStep>0){guideStep--;paintGuide();}});
-  guideNext.addEventListener('click',()=>{if(guideStep<walkthrough.length-1){guideStep++;paintGuide();}else guide.close();});
+  guideNext.addEventListener('click',()=>{if(guideStep<workroomGuide(teamPolicy).length-1){guideStep++;paintGuide();}else guide.close();});
   guideClose.addEventListener('click',()=>guide.close());guide.addEventListener('close',()=>helpButton.focus());
   const createDialog=el('dialog');createDialog.className='workroom-sheet';createDialog.setAttribute('aria-label','New task');
   const createClose=el('button','Cancel');createClose.type='button';
