@@ -44,14 +44,72 @@ def unique(pairs):
     return result
 
 
-def checked_profile(path,expected_sha,approval_path=None):
+def read_pinned_profile(path, raw_sha):
+    with path.open('rb') as source:
+        raw = source.read(65537)
+    require(len(raw) <= 65536 and hashlib.sha256(raw).hexdigest() == raw_sha)
+    return json.loads(raw, object_pairs_hook=unique)
+
+
+def checked_service_runtime(p, profile_path, expected_sha, approval_path, operator):
+    # The original operator record and terminal proof keep their old digest.
+    # Only a service can use this view. Operator commands reject its approval.
+    root = profile_path.parent
+    old_path = Path(p['operatorProfilePath'])
+    view_path = Path(p['serviceRuntimeProfilePath'])
+    require(all(f.is_absolute() and f.resolve(strict=True) == f and f.parent == root
+                for f in (old_path, view_path)) and len({old_path, view_path, profile_path}) == 3)
+    old = read_pinned_profile(old_path, p['operatorProfileSha256'])
+    view = read_pinned_profile(view_path, p['serviceRuntimeProfileSha256'])
+    require(approval_path is not None)
+    approve = Path(approval_path)
+    require(approve.parent == root and approve.resolve(strict=True) == approve
+            and approve not in (old_path, view_path, profile_path))
+    with approve.open('rb') as source:
+        approval_bytes = source.read(65537)
+    require(len(approval_bytes) <= 65536)
+    a = json.loads(approval_bytes, object_pairs_hook=unique)
+    require(set(a) == {'decision','ownerSid','profiles','storeId','scopeId','projects','reviewRef','actions'}
+            and a['decision'] == operator.DECISION and a['ownerSid'] == old['ownerSid']
+            and type(a['actions']) is list and 'run_service' in a['actions']
+            and set(a['actions']) <= {'run_service','run_mesh_sync'}
+            and type(a['profiles']) is list and expected_sha in a['profiles']
+            and p['serviceRuntimeProfileSha256'] not in a['profiles']
+            and a['storeId'] == old['binding']['store_id'] and a['scopeId'] == operator.SCOPE
+            and a['projects'] == [v[0] for v in old['projects']] and a['reviewRef'] == old['reviewRef'])
+    require({k: v for k, v in old.items() if k not in ('runtime', 'sourceHashes')}
+            == {k: v for k, v in view.items() if k not in ('runtime', 'sourceHashes')})
+    old_shell = Path(old['runtime']['pwsh'])
+    new_shell = Path(view['runtime']['pwsh'])
+    require(new_shell.is_absolute() and new_shell.resolve(strict=True) == new_shell
+            and view['runtime'] == {**old['runtime'], 'pwsh': str(new_shell)})
+    old_pins = {Path(k): v for k, v in old['sourceHashes'].items()}
+    new_pins = {Path(k): v for k, v in view['sourceHashes'].items()}
+    require(new_pins.get(new_shell) == old_pins.pop(old_shell)
+            and all(new_pins.get(k) == v for k, v in old_pins.items()))
+    base, binding = operator.checked_profile(view_path, p['serviceRuntimeProfileSha256'])
+    from onoes_mind.enrollment_store import qualify_private_storage
+    from checkpoint_candidate import read_plain
+    qualify_private_storage(old_path, kind='file')
+    require(hashlib.sha256(read_plain(old_path, 65536)).hexdigest() == p['operatorProfileSha256'])
+    qualify_private_storage(approve, kind='file')
+    require(read_plain(approve, 65536) == approval_bytes)
+    return base, binding
+
+
+def checked_profile(path,expected_sha,approval_path=None,*,preview=False):
     require(os.name=='nt')
     path=Path(path)
     with path.open('rb') as source: raw=source.read(65537)
     require(len(raw)<=65536 and hashlib.sha256(raw).hexdigest()==expected_sha)
     p=json.loads(raw,object_pairs_hook=unique)
-    require(type(p) is dict and set(p)=={'schema','sourceHashes','operatorProfilePath','operatorProfileSha256',
-        'attemptPath','readyPath','stopPath'} and p['schema']==SCHEMA)
+    require(type(p) is dict and p.get('schema') in (SCHEMA,'onoes-mind-project-service/v2'))
+    separate_runtime = p['schema'] == 'onoes-mind-project-service/v2'
+    if preview and not separate_runtime:
+        approval_path = None
+    extra = {'serviceRuntimeProfilePath','serviceRuntimeProfileSha256'} if separate_runtime else set()
+    require(set(p)=={'schema','sourceHashes','operatorProfilePath','operatorProfileSha256',
+        'attemptPath','readyPath','stopPath'} | extra)
     required={Path(__file__).resolve(),HERE/'project_operator_process_candidate.py'}
     require(type(p['sourceHashes']) is dict and {Path(n) for n in p['sourceHashes']}==required
         and all(type(h) is str and re.fullmatch('[0-9a-f]{64}',h) and digest(n)==h for n,h in p['sourceHashes'].items()))
@@ -59,7 +117,10 @@ def checked_profile(path,expected_sha,approval_path=None):
     # canonical/candidate dependency set before importing any participant.
     sys.path.insert(0,str(HERE))
     import project_operator_process_candidate as operator
-    base,binding=operator.checked_profile(p['operatorProfilePath'],p['operatorProfileSha256'],approval_path)
+    if separate_runtime:
+        base,binding=checked_service_runtime(p,path,expected_sha,approval_path,operator)
+    else:
+        base,binding=operator.checked_profile(p['operatorProfilePath'],p['operatorProfileSha256'],approval_path)
     require(base['mode'] in ('first_setup','replace'))
     from onoes_mind.enrollment_store import qualify_private_storage
     from checkpoint_candidate import read_plain
@@ -70,6 +131,7 @@ def checked_profile(path,expected_sha,approval_path=None):
     require(len(set(targets))==3)
     occupied={base[n] for n in ('attemptPath','terminalPath','outcomePath','credentialPath')}
     occupied.update((str(path),p['operatorProfilePath'],str(approval_path)))
+    if separate_runtime: occupied.add(p['serviceRuntimeProfilePath'])
     for value in targets:
         target=Path(value);require(target.is_absolute() and target.parent==root and '..' not in target.parts and value not in occupied)
     if approval_path is not None:
@@ -274,7 +336,7 @@ def main():
     parser.add_argument('--approval');parser.add_argument('--run',action='store_true');args=parser.parse_args()
     try:
         require(not args.run or args.approval is not None)
-        p,base,binding=checked_profile(args.profile,args.sha256,args.approval if args.run else None)
+        p,base,binding=checked_profile(args.profile,args.sha256,args.approval,preview=not args.run)
         if not args.run:
             print(json.dumps(dict(status='preview',createsNothing=True,needsOwnerApproval=True)));return 0
         service_role(p,base,binding,args.sha256);return 0

@@ -2667,3 +2667,28 @@ Do not omit required inputs or increase the bound merely to fit a package.
 Verification: all 758 local checks passed (628 Node and 130 Python), including
 52 frozen files, a fresh native-addon process and synthetic guarded eight-send
 closure. This remains inactive; no live service or historical job was changed.
+
+## Recover a project writer after its PowerShell package moves
+
+The operator profile records what issued the credential. Keep the original file,
+attempt, outcome and terminal receipt together. The project service can use a
+separate runtime profile when an update removes the original PowerShell path.
+
+1. Copy the original operator profile to a new file in the same private directory.
+   In the copy, select the replacement PowerShell installation and update the
+   source list. The replacement executable must match the original SHA-256.
+   Every other previously pinned file must keep its digest. Review any additional
+   files required by the deployed source. The project list, database, credential
+   location, owner, operation ID and all other enrollment fields must stay identical.
+2. Prepare a new service profile with schema `onoes-mind-project-service/v2`.
+   Keep `operatorProfilePath` and `operatorProfileSha256` bound to the original.
+   Set `serviceRuntimeProfilePath` and `serviceRuntimeProfileSha256` to the copy.
+   Use separate, reviewed attempt, ready and stop paths for a new generation.
+3. Review the service profile digest in its own approval file. Allow `run_service`
+   and, for a connected gateway, `run_mesh_sync` with the gateway profile digest.
+   Exclude the runtime copy's digest and all operator actions. Preview with
+   `project_service_process_candidate.py` using `--profile`, `--sha256` and
+   `--approval`. Startup also checks the original receipt and credential.
+4. Qualify the complete Mesh launch and read-only fallback on a disposable board.
+   Check a saved card and its shared Mind result after stopping the writer.
+   A profile pointing to a removed package cannot serve as the fallback.

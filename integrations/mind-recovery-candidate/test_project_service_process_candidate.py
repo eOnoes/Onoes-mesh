@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -67,6 +68,60 @@ class ProjectServiceProcessTests(unittest.TestCase):
             headers={'Authorization':'Bearer '+destination['token'],'Content-Type':'application/json'},method='POST')
         with urllib.request.urlopen(request,timeout=10) as response:
             self.assertEqual(response.status,200);return json.load(response)
+
+    def test_relocated_shell_serves_original_enrollment_with_service_only_approval(self):
+        self.prepare()
+        original = json.loads(self.base.profile.read_bytes())
+        artifacts = [self.base.profile] + [Path(original[key]) for key in
+                    ('credentialPath','terminalPath','outcomePath','attemptPath')]
+        before = [service.digest(path) for path in artifacts]
+        runtime_path = self.profile.parent / 'reviewed-service-runtime.json'
+        view = json.loads(self.base.profile.read_bytes())
+        old_shell = Path(view['runtime']['pwsh'])
+        self.assertTrue((old_shell.parent / 'pwsh.dll').is_file())
+        relocated = self.profile.parent / 'relocated-shell'
+        shutil.copytree(old_shell.parent, relocated)
+        new_shell = relocated / old_shell.name
+        view['runtime']['pwsh'] = str(new_shell)
+        view['sourceHashes'] = {str(p): service.digest(p) for p in operator.source_paths(view['runtime'])}
+
+        def select_view():
+            runtime_path.write_text(json.dumps(view), encoding='utf-8')
+            self.value.update(schema='onoes-mind-project-service/v2',
+                              serviceRuntimeProfilePath=str(runtime_path),
+                              serviceRuntimeProfileSha256=service.digest(runtime_path))
+            self.write(actions=['run_service'])
+
+        select_view()
+        with self.assertRaises(operator.ProjectProcessError):
+            operator.checked_profile(runtime_path, service.digest(runtime_path), self.base.approval)
+        self.write(actions=['replace','run_service'])
+        with patch.object(operator,'checked_profile',side_effect=AssertionError('unapproved runtime inspected')):
+            with self.assertRaises(service.ServiceProcessError):
+                service.checked_profile(self.profile,self.sha,self.base.approval)
+            with self.assertRaises(service.ServiceProcessError):
+                service.checked_profile(self.profile,self.sha)
+        view['projects'].append(['extra','Other project'])
+        select_view()
+        with self.assertRaises(service.ServiceProcessError):
+            service.checked_profile(self.profile,self.sha,self.base.approval)
+        view['projects'].pop()
+        view['sourceHashes'][str(new_shell)] = '0'*64
+        select_view()
+        with self.assertRaises(service.ServiceProcessError):
+            service.checked_profile(self.profile,self.sha,self.base.approval)
+        self.assertFalse(Path(self.value['attemptPath']).exists())
+
+        view['sourceHashes'][str(new_shell)] = service.digest(new_shell)
+        select_view()
+        child, stamp = service.launch_service(self.profile,self.sha,self.base.approval)
+        self.children.append((child,stamp))
+        self.ready(child)
+        receipt = self.send(service.native_options(self.profile,self.sha,self.base.approval))
+        self.assertTrue(receipt['receiptId'])
+        service.request_stop(self.profile,self.sha,self.base.approval)
+        self.assertEqual(child.wait(timeout=120),0)
+        self.assertEqual([service.digest(path) for path in artifacts],before)
 
     def test_terminal_operator_then_service_readonly_reload_exact_stop_and_retired_restart(self):
         self.prepare()
