@@ -1,3 +1,4 @@
+import {pixelReading} from './control-models.mjs';
 import {createAdmissionPeers} from './session-entry.mjs';
 import { renderAgentWorkspace } from './agent-workspace.mjs';
 import { createMindWorkspace } from './mind-workspace.mjs';
@@ -483,7 +484,7 @@ export function renderInference(snapshot) {
   if (!valid || snapshot.nodes.length === 0) { paragraph(box, 'No configured node observations available. Hardware and model residency unknown.'); return; }
   for (const n of snapshot.nodes) {
     const card = document.createElement('article'); card.className = 'node-observation';
-    const title = document.createElement('h3'); title.textContent = n.label + ' (' + n.id + ')'; card.append(title);
+    const title = document.createElement('h3'); title.textContent = n.id === 'laptop' ? "Tripp's PC" : "Echo's PC"; card.append(title);
     paragraph(card, 'Status at observation: ' + n.status + ' · source: ' + n.source + ' · ' + age(n.observedAt));
     paragraph(card, 'Observed at: ' + (n.observedAt ?? 'unknown') + ' · observation capability: ' + n.capabilities.observation + ' · load/unload: unavailable');
     paragraph(card, 'Expected hardware: ' + details(n.hardware.expected));
@@ -622,7 +623,7 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
   for (const n of snapshot.nodes) {
     const card = document.createElement('article'); card.className = 'node-observation';
     card.setAttribute('data-node-id', n.id);
-    const title = document.createElement('h3'); title.textContent = n.label + ' (' + n.id + ')'; card.append(title);
+    const title = document.createElement('h3'); title.textContent = n.id === 'laptop' ? "Tripp's PC" : "Echo's PC"; card.append(title);
     paragraph(card, n.dnsName + ' · ' + n.tailscaleIp);
     // Local aging never refreshes the CLI or advances last-success timestamps.
     const successAge = n.lastSuccessAt === null ? Infinity :
@@ -645,6 +646,21 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       !hasObservation ? ' · no machine status result available' : n.observationAvailability === 'unavailable'
       ? ' · offline not established by this read' : ' · cached Tailscale Online: ' + n.tailscaleOnline);
     card.append(statusLine);
+    if (n.id === 'laptop' && Object.hasOwn(n, 'hardware')) {
+      const hardwareAge = Date.parse(snapshot.observedAt) - Date.parse(n.hardwareObservedAt) + elapsed;
+      const freshHardware = status === 'ready' && n.hardware && hardwareAge >= 0 && hardwareAge < 30000;
+      if (freshHardware) {
+        const meters = document.createElement('div');
+        meters.className = 'pixel-readings';
+        meters.append(pixelReading('ram', 'RAM', n.hardware.ramPct, null, document),
+          pixelReading('gpu', 'GPU', n.hardware.gpuPct, n.hardware.gpuTempC, document),
+          pixelReading('cpu', 'CPU', n.hardware.cpuPct, n.hardware.cpuTempC, document));
+        card.append(meters);
+      } else {
+        paragraph(card, 'Hardware readings unavailable');
+      }
+      paragraph(card, 'Model loaded: Unknown');
+    }
     paragraph(card, 'Last probe: ' + (n.lastProbeAt ?? 'never') + ' · Last success (Online=true): ' + (n.lastSuccessAt ?? 'never'));
     paragraph(card, 'Observation: ' + n.observationAvailability + ' · source: ' + snapshot.source + ' · local probe completion timestamps');
     paragraph(card, 'Packet reachability: unknown · Inference readiness: unknown · Model readiness: unknown');

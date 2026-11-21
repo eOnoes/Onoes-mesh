@@ -1,5 +1,19 @@
 # Remaining owner checks
 
+## November 21 source qualification
+
+The remote telemetry candidate uses the existing private laptop identity and
+strict SSH host-key verification. The approved deployment profile would need
+to opt in with `MESH_TRIPP_HARDWARE=1`. An explicit machine-status refresh can
+then collect RAM, CPU, GPU and available temperature readings for Tripp's PC.
+Model residency requires a separately verified laptop source. A cached online
+flag alone cannot establish that a model is loaded.
+
+The SSH collector has been exercised locally on Windows. End-to-end qualification
+on Tripp still requires that laptop to be online. Eddie's accepted main-PC phone
+checks are retained. The first MCP reader and composed Workroom update trial use
+disposable projects. Live channel/tool enrollment is pending.
+
 ## Current Workroom - 2026-11-18
 
 Open [Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom) or

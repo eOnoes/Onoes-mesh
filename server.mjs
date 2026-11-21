@@ -28,6 +28,7 @@ import { createTrialSessionManager, createTrialHttpGuard, SESSION_COOKIE_NAME } 
 import { createRelayLink } from './lib/relay-link.mjs';
 import { createRelayHttpLink } from './lib/relay-http.mjs';
 import { createNodeProbeReader } from './lib/node-probes.mjs';
+import { withTrippHardware } from './lib/tripp-hardware.mjs';
 import { createLocalInference, createDisabledLocalAdapter } from './lib/local-inference.mjs';
 import {createRookRuntime} from './lib/workroom-rook.mjs';
 import {writerQuiescenceBlockers} from './lib/workroom-claim-policy.mjs';
@@ -154,8 +155,10 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     throw new Error('Invalid test node probe hooks.');
   const absentNodes = () => ({ schemaVersion: 'mesh-node-probes/v1', observedAt: new Date().toISOString(),
     status: 'not_configured', source: 'none', scope: 'standalone', nodes: [] });
-  const nodeProbes = standalone ? { snapshot: absentNodes, refresh: async () => absentNodes() }
+  const baseNodeProbes = standalone ? { snapshot: absentNodes, refresh: async () => absentNodes() }
     : createNodeProbeReader(nodeProbeTestOptions);
+  const nodeProbes = !standalone && !nodeProbeTestOptions && process.env.MESH_TRIPP_HARDWARE === '1'
+    ? withTrippHardware(baseNodeProbes) : baseNodeProbes;
   const fixedInferenceConfig = inferenceConfig === undefined ? undefined : structuredClone(inferenceConfig);
   const directory = await confinedPath(dataDir);
   const release = releaseInfo(ROOT, dataDir);

@@ -1,3 +1,4 @@
+import {pixelReading} from '../public/control-models.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -19,7 +20,7 @@ class Element {
 }
 function ui() {
   const box = new Element('div');
-  const context = vm.createContext({ document: { createElement: tag => new Element(tag) },
+  const context = vm.createContext({ pixelReading, document: { createElement: tag => new Element(tag) },
     $: () => box, tick: 0, busy: true, nodeProbeSnapshot: null, nodeProbeReceivedAt: 0 });
   vm.runInContext(`const probeTick = () => tick;
     function paragraph(parent, text) {
@@ -117,4 +118,18 @@ test('status CSS uses scoped theme tokens without changing the global palette', 
     assert.ok(css.includes(`.node-observation .node-status--${state}{color:var(${token})}`));
   }
   assert.ok(!/\.node-status--neutral\s*\{[^}]*color:/i.test(css), 'neutral status inherits the existing paragraph color');
+});
+
+test('Tripp hardware expires on screen and is never confused with main-PC or model telemetry', async () => {
+  const {snapshot} = await ready(), view = ui(), laptop = snapshot.nodes[1];
+  laptop.hardwareObservedAt = snapshot.observedAt;
+  laptop.hardware = {ramPct:22,cpuPct:0,gpuPct:5,gpuTempC:39,cpuTempC:null};
+  const [pc,remote] = view.render(snapshot);
+  assert.doesNotMatch(pc.card.textContent, /39 °C/);
+  assert.match(remote.card.textContent, /Tripp's PC/);
+  assert.match(remote.card.textContent, /GPU5%39 °CCPU0%Temperature unavailable/);
+  assert.match(remote.card.textContent, /Model loaded: Unknown/);
+  const aged = view.render(snapshot,30001)[1];
+  assert.match(aged.card.textContent, /Hardware readings unavailable/);
+  assert.doesNotMatch(aged.card.textContent, /39 °C/);
 });

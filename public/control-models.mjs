@@ -35,3 +35,37 @@ export function supervisorControlView(snapshot,now=Date.now()){
     hints:resident||empty?[]:[note],
   };
 }
+
+export function pixelReading(kind,label,pct,tempC = null, dom = document) {
+  function el(tag, className, text) {
+    const node = dom.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+  const valid=Number.isFinite(pct)&&pct>=0&&pct<=100;
+  const patterns={ram:['0000000000','0000000000','0111111110','0101010110','0111111110','0010101000','0000000000','0000000000','0000000000'],gpu:['0000000000','0111111110','0100110010','0101001010','0100110010','0111111110','0010101000','0000000000','0000000000'],cpu:['0010101000','0111111110','1100000011','0101111010','1101001011','0101111010','1100000011','0111111110','0010101000']};
+  const line=el('div','pixel-reading'),icon=el('span','pixel-icon');icon.setAttribute?.('aria-hidden','true');
+  for(const bit of patterns[kind].join(''))icon.append(el('i',bit==='1'?'is-on':null));
+  const copy=el('div','pixel-reading-copy'),head=el('div','pixel-reading-head');
+  head.append(el('span',null,label),el('strong',null,valid?`${Math.round(pct)}%`:'Unknown'));
+  const bar=el('div','pixel-reading-bar');bar.setAttribute?.('aria-hidden','true');
+  for(let i=0;i<10;i++)bar.append(el('i',valid&&i<Math.ceil(pct/10)?'is-on':null));
+  let visual = icon;
+  if (kind === 'gpu' || kind === 'cpu') {
+    const measured = Number.isFinite(tempC) && tempC >= 0 && tempC <= 150;
+    visual = el('span', 'thermal-gauge');
+    if (measured) {
+      const segments = Math.min(8, Math.ceil(tempC * 8 / 100));
+      visual.className += ' thermal-' + segments;
+      visual.title = 'Temperature scale 0–100 °C';
+    }
+    visual.append(icon);
+    copy.append(head, bar, el('small', 'thermal-caption',
+      measured ? Math.round(tempC) + ' °C' : 'Temperature unavailable'));
+  } else {
+    copy.append(head, bar);
+  }
+  line.append(visual, copy);
+  return line;
+}

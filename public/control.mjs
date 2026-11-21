@@ -5,7 +5,7 @@
 //
 // Thresholds (chosen, not inherited): utilisation meters go amber at 70% and red at 90%;
 // temperature goes amber at 70 C and red at 85 C.
-import {supervisorControlView} from './control-models.mjs';
+import {supervisorControlView, pixelReading} from './control-models.mjs';
 const root = document.getElementById('ctl-root');
 const inferenceHost = document.getElementById('inference-host-telemetry');
 const loading = document.getElementById('ctl-loading');
@@ -36,33 +36,6 @@ export function inferenceModelLabel(snapshot, now = Date.now()) {
   if(engine.loaded===false)return 'No';
   if(engine.loaded!==true)return 'Unknown';
   return ({'qwen3.8-flash-next-iq3-s':'Qwen3.8-Flash-Next','qwen3.6-35b-a3b-ud-q6_k_xl':'Qwen3.6-35B','qwen3.8-27b':'Qwen3.8-27B','nemotron-3.5-bolt-74b-a9b':'Nemotron3.5-Bolt'})[engine.modelAlias]||'Unknown';
-}
-function pixelReading(kind,label,pct,tempC = null) {
-  const valid=Number.isFinite(pct)&&pct>=0&&pct<=100;
-  const patterns={ram:['0000000000','0000000000','0111111110','0101010110','0111111110','0010101000','0000000000','0000000000','0000000000'],gpu:['0000000000','0111111110','0100110010','0101001010','0100110010','0111111110','0010101000','0000000000','0000000000'],cpu:['0010101000','0111111110','1100000011','0101111010','1101001011','0101111010','1100000011','0111111110','0010101000']};
-  const line=el('div','pixel-reading'),icon=el('span','pixel-icon');icon.setAttribute?.('aria-hidden','true');
-  for(const bit of patterns[kind].join(''))icon.append(el('i',bit==='1'?'is-on':null));
-  const copy=el('div','pixel-reading-copy'),head=el('div','pixel-reading-head');
-  head.append(el('span',null,label),el('strong',null,valid?`${Math.round(pct)}%`:'Unknown'));
-  const bar=el('div','pixel-reading-bar');bar.setAttribute?.('aria-hidden','true');
-  for(let i=0;i<10;i++)bar.append(el('i',valid&&i<Math.ceil(pct/10)?'is-on':null));
-  let visual = icon;
-  if (kind === 'gpu' || kind === 'cpu') {
-    const measured = Number.isFinite(tempC) && tempC >= 0 && tempC <= 150;
-    visual = el('span', 'thermal-gauge');
-    if (measured) {
-      const segments = Math.min(8, Math.ceil(tempC * 8 / 100));
-      visual.className += ' thermal-' + segments;
-      visual.title = 'Temperature scale 0–100 °C';
-    }
-    visual.append(icon);
-    copy.append(head, bar, el('small', 'thermal-caption',
-      measured ? Math.round(tempC) + ' °C' : 'Temperature unavailable'));
-  } else {
-    copy.append(head, bar);
-  }
-  line.append(visual, copy);
-  return line;
 }
 function renderInferenceHost() {
   if (!inferenceHost) return;
