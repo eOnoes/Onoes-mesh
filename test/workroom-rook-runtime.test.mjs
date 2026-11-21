@@ -39,6 +39,13 @@ test('report inbox shows latest notices while pending delivery retains oldest-fi
     assert.equal(f.runtime.reports()[0].payload.title, '24');
     assert.equal(f.runtime.reports().length, 20);
     assert.equal(f.store.reports({pending: true})[0].payload.title, '0');
+    assert.equal(f.runtime.status().pendingReports, 25);
+    f.runtime.start();
+    assert.equal(f.runtime.status().pendingReports, 25);
+    await f.runtime.tick();
+    assert.equal(f.runtime.status().pendingReports, 20);
+    await f.runtime.pause();
+    assert.equal(f.runtime.status().pendingReports, 20);
   } finally {await f.close();}
 });
 

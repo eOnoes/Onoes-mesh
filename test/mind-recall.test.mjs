@@ -18,6 +18,23 @@ test('recall client sends only the fixed versioned read and refuses oversized/er
 });
 
 
+test('recall preserves Unicode engineering units and refuses damaged source text',async()=>{
+ const record = {
+  record_id:'record-1', scope_id:'project/onoes-mind/shared', kind:'project_fact',
+  project_id:'tray', payload_hash:'fixture-hash', claim:'Clearance ±0.2 mm at 21 °C',
+  source_class:'operator', observed_at:null, provenance:[]
+ };
+ const bytes = Buffer.from(JSON.stringify({...valid, records:[record]}));
+ const client = createMindRecallClient({
+  baseUrl:'http://127.0.0.1:12345/', token:'synthetic',
+  fetchImpl:async()=>new Response(bytes, {headers:{'Content-Type':'application/json'}})
+ });
+ const request = {query:'clearance',limit:1};
+ assert.equal((await client.recall(request)).records[0].claim, record.claim);
+ bytes[bytes.indexOf(Buffer.from('±'))] = 0xff;
+ await assert.rejects(client.recall(request), /could not be verified/);
+});
+
 test('ordinary Mesh has no configured Mind reader and rejects fixture injection outside standalone',async()=>{
  const {startApp}=await import('../server.mjs');const {randomUUID}=await import('node:crypto');const previous=process.env.MESH_STANDALONE;
  delete process.env.MESH_STANDALONE;

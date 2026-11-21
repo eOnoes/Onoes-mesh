@@ -14,6 +14,15 @@ on Tripp still requires that laptop to be online. Eddie's accepted main-PC phone
 checks are retained. The first MCP reader and composed Workroom update trial use
 disposable projects. Live channel/tool enrollment is pending.
 
+The cross-repository handoff now uses events captured by the Workroom card
+store when a shared printing spec changes. Echo's channel and Nims's MCP client
+must read the same updated CAD filename and card revision. Replaying the event
+must preserve the receipt. Removing Nims's tool grant must leave Echo's allowed
+project read available. To run this qualification, install Mind's optional MCP
+test dependency, set `PYTHONPATH` to the matching Mind checkout, and run
+`python -m pytest -q test/project-context-handoff-qualification.py` from Mesh.
+It uses temporary agent identities and an in-memory board.
+
 ## Current Workroom - 2026-11-18
 
 Open [Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom) or
