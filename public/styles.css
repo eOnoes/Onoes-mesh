@@ -1518,3 +1518,21 @@ html[data-theme=light] .workroom-sheet h2{font-family:var(--display);text-transf
 #panel-inference .pixel-reading-bar{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;color:var(--accent,currentColor)}
 #panel-inference .pixel-reading-bar i{display:block;height:8px;border:1px solid currentColor;opacity:.25}
 #panel-inference .pixel-reading-bar .is-on{background:currentColor;opacity:1}
+
+#panel-inference .thermal-gauge { position: relative; display: grid; place-items: center; width: 60px; height: 60px; }
+#panel-inference .thermal-gauge .pixel-icon { transform: scale(.64); }
+#panel-inference .thermal-gauge::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(var(--accent,currentColor) 0 var(--thermal-fill, 0deg), color-mix(in srgb, currentColor 22%, transparent) 0);
+  mask-image: radial-gradient(circle closest-side, transparent 84%, black 86%), repeating-conic-gradient(transparent 0 4deg, black 4deg 42deg, transparent 42deg 45deg);
+  mask-composite: intersect;
+}
+#panel-inference .thermal-caption { display: block; margin-top: 4px; }
+#panel-inference .thermal-1 { --thermal-fill: 45deg; }
+#panel-inference .thermal-2 { --thermal-fill: 90deg; }
+#panel-inference .thermal-3 { --thermal-fill: 135deg; }
+#panel-inference .thermal-4 { --thermal-fill: 180deg; }
+#panel-inference .thermal-5 { --thermal-fill: 225deg; }
+#panel-inference .thermal-6 { --thermal-fill: 270deg; }
+#panel-inference .thermal-7 { --thermal-fill: 315deg; }
+#panel-inference .thermal-8 { --thermal-fill: 360deg; }

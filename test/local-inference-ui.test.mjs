@@ -89,7 +89,7 @@ test('UI fixture: ownership uncertainty and expired confirmation disable control
   await ui.click('local-inference-refresh'); assert.match(el('state').textContent, /UNCERTAIN/);
   for (const id of ['load', 'stop', 'unload', 'send']) { assert.equal(el(id).disabled, true); assert.ok(el(id).title); }
   const before = ui.requests.length,starts=ui.fixture.calls.start.length,stops=ui.fixture.calls.stop.length; ui.intervals.forEach(f => f()); await flush();
-  assert.ok(ui.requests.slice(before).every(r=>(r.options.method||'GET')==='GET'&&['/api/inference/status','/relay/api/agents'].includes(r.route)),JSON.stringify(ui.requests.slice(before).map(r=>({route:r.route,method:r.options.method}))));
+  assert.ok(ui.requests.slice(before).every(r=>(r.options.method||'GET')==='GET'&&['/api/inference/status','/api/relay/native/api/agents'].includes(r.route)),JSON.stringify(ui.requests.slice(before).map(r=>({route:r.route,method:r.options.method}))));
   assert.equal(ui.fixture.calls.start.length,starts);assert.equal(ui.fixture.calls.stop.length,stops);
 });
 

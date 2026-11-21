@@ -28,7 +28,7 @@ test('shared host readings age, clear on failure and never invoke model controls
   const makeNode = () => ({ children: [], textContent: '',dataset:{},style:{},append(...nodes) { this.children.push(...nodes); }, replaceChildren(...nodes) { this.children = nodes; } });
   const host = makeNode(),control=makeNode(),summary=makeNode(),location=makeNode(), timers = [], requests = [];
   let fail = false,hold=false,honorAbort=false;const held=[],events={},timeouts=[];
-  const sample = { generatedAt: new Date().toISOString(), host: 'Test PC', system:{cpuLoadPct:12},ram:{usedGB:16,totalGB:64,usedPct:25},gpu: {name:'Test GPU',vramUsedMiB:100,vramTotalMiB:32000,utilPct:5} };
+  const sample = { generatedAt: new Date().toISOString(), host: 'Test PC', system:{cpuLoadPct:12},ram:{usedGB:16,totalGB:64,usedPct:25},gpu: {name:'Test GPU',tempC:58,vramUsedMiB:100,vramTotalMiB:32000,utilPct:5} };
   const text = node => [node.textContent, ...node.children.map(text)].join(' ');
   try {
     globalThis.document = {hidden:false,addEventListener:(name,fn)=>{events[name]=fn;}, getElementById: id => id === 'inference-host-telemetry' ? host : id==='ctl-root'?control:id==='inference-loaded-summary'?summary:id==='inference-location'?location:null, querySelectorAll: () => [], createElement: makeNode };
@@ -53,6 +53,15 @@ test('shared host readings age, clear on failure and never invoke model controls
     modelReading.modelObservation.expiresAt=Date.now()-1;assert.equal(inferenceModelLabel(modelReading),'Unknown');
     assert.equal(inferenceModelLabel({...sample,gpu:{utilPct:0,vramUsedMiB:0}}),'Unknown','zero GPU usage cannot establish unloaded status');
     assert.match(text(host), /Test GPU/);
+    assert.match(text(host), /58 °C/);
+    assert.match(text(host), /Temperature unavailable/);
+    const gauge = () => host.children[0].children[1].children[0];
+    assert.match(gauge().className, /thermal-5/);
+    sample.gpu.tempC = null;
+    await timers.find(timer => timer.interval === 4000).fn();
+    assert.doesNotMatch(text(host), /58 °C/);
+    assert.doesNotMatch(gauge().className, /thermal-5/);
+
     assert.match(text(host), /100 \/ 32000 MiB/);
     assert.match(text(host), /CPU use 12%/);assert.match(text(host), /RAM 16 \/ 64 GB/);assert.match(text(host), /RAM use 25%/);
     const unchanged = host.children[0];

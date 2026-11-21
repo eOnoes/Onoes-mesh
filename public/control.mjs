@@ -37,7 +37,7 @@ export function inferenceModelLabel(snapshot, now = Date.now()) {
   if(engine.loaded!==true)return 'Unknown';
   return ({'qwen3.8-flash-next-iq3-s':'Qwen3.8-Flash-Next','qwen3.6-35b-a3b-ud-q6_k_xl':'Qwen3.6-35B','qwen3.8-27b':'Qwen3.8-27B','nemotron-3.5-bolt-74b-a9b':'Nemotron3.5-Bolt'})[engine.modelAlias]||'Unknown';
 }
-function pixelReading(kind,label,pct) {
+function pixelReading(kind,label,pct,tempC = null) {
   const valid=Number.isFinite(pct)&&pct>=0&&pct<=100;
   const patterns={ram:['0000000000','0000000000','0111111110','0101010110','0111111110','0010101000','0000000000','0000000000','0000000000'],gpu:['0000000000','0111111110','0100110010','0101001010','0100110010','0111111110','0010101000','0000000000','0000000000'],cpu:['0010101000','0111111110','1100000011','0101111010','1101001011','0101111010','1100000011','0111111110','0010101000']};
   const line=el('div','pixel-reading'),icon=el('span','pixel-icon');icon.setAttribute?.('aria-hidden','true');
@@ -46,7 +46,23 @@ function pixelReading(kind,label,pct) {
   head.append(el('span',null,label),el('strong',null,valid?`${Math.round(pct)}%`:'Unknown'));
   const bar=el('div','pixel-reading-bar');bar.setAttribute?.('aria-hidden','true');
   for(let i=0;i<10;i++)bar.append(el('i',valid&&i<Math.ceil(pct/10)?'is-on':null));
-  copy.append(head,bar);line.append(icon,copy);return line;
+  let visual = icon;
+  if (kind === 'gpu' || kind === 'cpu') {
+    const measured = Number.isFinite(tempC) && tempC >= 0 && tempC <= 150;
+    visual = el('span', 'thermal-gauge');
+    if (measured) {
+      const segments = Math.min(8, Math.ceil(tempC * 8 / 100));
+      visual.className += ' thermal-' + segments;
+      visual.title = 'Temperature scale 0–100 °C';
+    }
+    visual.append(icon);
+    copy.append(head, bar, el('small', 'thermal-caption',
+      measured ? Math.round(tempC) + ' °C' : 'Temperature unavailable'));
+  } else {
+    copy.append(head, bar);
+  }
+  line.append(visual, copy);
+  return line;
 }
 function renderInferenceHost() {
   if (!inferenceHost) return;
@@ -55,12 +71,12 @@ function renderInferenceHost() {
   if(summary&&summary.textContent!==`Model loaded: ${modelLabel}`)summary.textContent=`Model loaded: ${modelLabel}`;
   const location=document.getElementById('inference-location');
   if(location)location.textContent=typeof data?.host==='string'?data.host.slice(0,120):"Echo's PC";
-  const renderKey = JSON.stringify([freshness, modelLabel, data?.generatedAt, data?.host, data?.gpu?.name, data?.gpu?.vramUsedMiB, data?.gpu?.vramTotalMiB, data?.gpu?.utilPct, data?.system?.cpuLoadPct, data?.ram?.usedGB, data?.ram?.totalGB, data?.ram?.usedPct]);
+  const renderKey = JSON.stringify([freshness, modelLabel, data?.generatedAt, data?.host, data?.gpu?.name, data?.gpu?.vramUsedMiB, data?.gpu?.vramTotalMiB, data?.gpu?.utilPct, data?.gpu?.tempC, data?.system?.cpuTempC, data?.system?.cpuLoadPct, data?.ram?.usedGB, data?.ram?.totalGB, data?.ram?.usedPct]);
   if (renderKey === inferenceHostKey) return;
   inferenceHostKey = renderKey;
   inferenceHost.replaceChildren();
   const meters=el('div','pixel-readings'),fresh=freshness==='fresh';
-  meters.append(pixelReading('ram','RAM',fresh?data.ram?.usedPct:null),pixelReading('gpu','GPU',fresh?data.gpu?.utilPct:null),pixelReading('cpu','CPU',fresh?data.system?.cpuLoadPct:null));
+  meters.append(pixelReading('ram','RAM',fresh?data.ram?.usedPct:null),pixelReading('gpu','GPU',fresh?data.gpu?.utilPct:null,fresh?data.gpu?.tempC:null),pixelReading('cpu','CPU',fresh?data.system?.cpuLoadPct:null,fresh?data.system?.cpuTempC:null));
   inferenceHost.append(meters);
   if (!fresh) {
     inferenceHost.append(el('p', 'fine', `PC readings ${freshness}. Previous readings are cleared; model controls are unchanged.`));
