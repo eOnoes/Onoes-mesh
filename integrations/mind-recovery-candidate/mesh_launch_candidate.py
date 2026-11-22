@@ -59,6 +59,28 @@ def source_paths(*, project=False):
 
 CAPTURE_SCHEMA='onoes-mesh-native-capture-launch/v1'
 
+def rook_frame_fields(profile, profile_sha):
+    if 'rookEnrollment' not in profile:
+        return {}
+    record = profile['rookEnrollment']
+    require(type(record) is dict and set(record) == {'id', 'destination', 'mode', 'boardIdentity'}
+            and record['id'] == 'rook' and record['destination'] == 'mesh_relay_inbox'
+            and record['mode'] == 'paused' and type(record['boardIdentity']) is str
+            and re.fullmatch('[0-9a-f]{64}', record['boardIdentity']) and re.fullmatch('[0-9a-f]{64}', profile_sha))
+    board = ROOT / profile['settings']['MESH_DATA_DIR'] / 'tasks.sqlite'
+    require(board.is_file() and board.resolve(strict=True) == board)
+    node = Path(profile['nodeExecutable'])
+    module = ROOT / 'lib' / 'database-identity.mjs'
+    require(node.is_absolute() and node.resolve(strict=True) == node and digest(node) == profile['nodeSha256']
+            and module.resolve(strict=True) == module and digest(module) == profile['sourceHashes'].get(str(module)))
+    check = "import {databaseFileIdentity} from './lib/database-identity.mjs'; console.log(databaseFileIdentity(process.argv[1]));"
+    env = {k:v for k,v in os.environ.items() if k.upper() not in ('NODE_OPTIONS','NODE_PATH')}
+    result = subprocess.run([str(node), '--input-type=module', '-e', check, str(board)],
+                            env=env, cwd=ROOT, capture_output=True, text=True, timeout=10,
+                            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    require(result.returncode == 0 and result.stdout.strip() == record['boardIdentity'])
+    return {'rookEnrollment': {**record, 'boardPath': str(board), 'approvalRef': profile_sha}}
+
 
 def capture_source_paths(runtime):
     # The role helpers supply file permissions/process identity only. No role
@@ -110,7 +132,7 @@ def capture_frame(p):
 
 
 def inspect_capture(p,path,expected_sha,approval_path):
-    require(os.name=='nt' and set(p)=={'schema','workspace','pythonExecutable','nodeExecutable','pythonSha256','nodeSha256',
+    require(os.name=='nt' and set(p)-{'rookEnrollment'}=={'schema','workspace','pythonExecutable','nodeExecutable','pythonSha256','nodeSha256',
         'sourceHashes','settings','attemptPath','stdoutPath','stderrPath','runtime','ownerSid','pwshSha256','projectCapture'})
     require(Path(p['workspace']).resolve()==ROOT and Path(p['pythonExecutable']).resolve()==Path(sys.executable).resolve()
         and digest(sys.executable)==p['pythonSha256'])
@@ -141,6 +163,7 @@ def inspect_capture(p,path,expected_sha,approval_path):
     require(len(set(targets))==3 and all(target.is_absolute() and target.parent==root
         and target not in (path,approval_path,Path(settings['MESH_GATE_KEY_FILE'])) for target in targets))
     capture_frame(p)
+    rook_frame_fields(p, expected_sha)
     return p,roles
 
 
@@ -155,7 +178,7 @@ def inspect_launch(path,expected_sha,approval_path):
     require(type(p) is dict)
     if p.get('schema')==CAPTURE_SCHEMA:return inspect_capture(p,path,expected_sha,approval_path)
     project=p.get('schema')=='onoes-mesh-native-launch/v2'
-    require(set(p)=={'schema','workspace','pythonExecutable','nodeExecutable',
+    require(set(p)-{'rookEnrollment'}=={'schema','workspace','pythonExecutable','nodeExecutable',
         'pythonSha256','nodeSha256','sourceHashes','readerProfile','readerProfileSha256',
         'settings','attemptPath','stdoutPath','stderrPath'} | ({'projectSync'} if project else set()))
     require(p['schema'] in ('onoes-mesh-native-launch/v1','onoes-mesh-native-launch/v2') and Path(p['workspace']).resolve()==ROOT)
@@ -182,6 +205,7 @@ def inspect_launch(path,expected_sha,approval_path):
     for name in ('stdoutPath','stderrPath'):
         target=Path(p[name]);require(target.is_absolute() and target.parent==root)
     require(len({p[n] for n in ('attemptPath','stdoutPath','stderrPath')})==3)
+    rook_frame_fields(p, expected_sha)
     return p,roles
 
 
@@ -206,6 +230,13 @@ def native_peers(p,roles,approval_path,options):
 
 
 def native_frame(p,roles,approval_path,profile_sha):
+    options = _mind_frame(p,roles,approval_path,profile_sha)
+    options.update(rook_frame_fields(p, profile_sha))
+    require(len(json.dumps(options).encode('utf-8')) <= 16384)
+    return options
+
+
+def _mind_frame(p,roles,approval_path,profile_sha):
     if p.get('schema')==CAPTURE_SCHEMA:return capture_frame(p)
     options=roles.native_options(p['readerProfile'],p['readerProfileSha256'],approval_path)
     if p.get('schema')!='onoes-mesh-native-launch/v2':

@@ -179,7 +179,10 @@ class ProjectMeshLauncherTests(unittest.TestCase):
     def test_two_project_capture_then_service_only_gateway_delivers_both_linked_cards(self):
         self.exercise_gateway(with_pilot=True)
 
-    def exercise_gateway(self, with_pilot=False):
+    def test_paused_rook_needs_a_new_exact_launch_approval_and_coexists_with_project_sync(self):
+        self.exercise_gateway(with_rook=True)
+
+    def exercise_gateway(self, with_pilot=False, with_rook=False):
         # Qualify the separate read-only identity first, with original-handle proof.
         child,stamp=roles.launch_operator(self.reader.operator,self.reader.operator_sha,self.reader.approval)
         self.reader.children.append(child); self.assertEqual(child.wait(timeout=120),0)
@@ -249,7 +252,8 @@ if(pilotPlan){
   const add=inspectProjectSourceAddition(plan,pilotPlan.cardId);
   prepareProjectSourceAddition(plan,{decision:'approve_exact_mesh_project_source_addition',addedCardId:pilotPlan.cardId,planSha256:add.planSha256});
 }
-console.log(JSON.stringify({link,links,source}));"""
+const {databaseFileIdentity}=await import('./lib/database-identity.mjs');
+console.log(JSON.stringify({link,links,source,boardIdentity:databaseFileIdentity(process.argv[1])}));"""
         initialized=subprocess.run([shutil.which('node'),'--input-type=module','-e',source,str(database),self.reader.reader_data['binding']['store_id'],
                                     'onoes-mesh' if with_pilot else 'project-A'],
             cwd=launch.ROOT,capture_output=True,text=True,timeout=30,creationflags=subprocess.CREATE_NO_WINDOW)
@@ -274,6 +278,14 @@ console.log(JSON.stringify({link,links,source}));"""
                 a=json.loads(approval_path.read_text());a['profiles']=list(dict.fromkeys(a['profiles']+[sha]));approval_path.write_text(json.dumps(a))
             return sha
         sha=write(p)
+        if with_rook:
+            p['rookEnrollment']=dict(id='rook',mode='paused',destination='mesh_relay_inbox',
+                                     boardIdentity=initialized['boardIdentity'])
+            profile.write_text(json.dumps(p),encoding='utf-8')
+            with self.assertRaises(launch.LaunchError):
+                launch.inspect_launch(profile,launch.digest(profile),self.reader.approval)
+            self.assertFalse(Path(p['attemptPath']).exists())
+            sha=write(p)
         if with_pilot:
             self.exercise_capture(p,initialized['links'][1]['cardId'])
         checked,read_roles=launch.checked_launch(profile,sha,self.reader.approval)
@@ -315,6 +327,12 @@ console.log(JSON.stringify({link,links,source}));"""
         listening=self.wait_for(listening,self.mesh)
         request=admitted_http(listening['url'])
         admitted=request('/api/trial-session/bootstrap',{});csrf=admitted['csrfToken']
+        if with_rook:
+            status=request('/api/workroom/rook',csrf=csrf,method='GET')
+            self.assertEqual((status['connection']['id'],status['connection']['source'],status['connection']['status']),
+                             ('rook','native_mesh_profile','paused'))
+            self.assertFalse(status['sweep']['schedulerInstalled'])
+            self.assertIsNone(status['sweep']['lastScheduledAt'])
         card=request('/api/tasks/'+link['cardId'],csrf=csrf,method='GET')['task']
         request('/api/tasks/'+link['cardId'],edited_card(card,'Composed launcher saved title'),csrf,method='PATCH')
         def recorded():

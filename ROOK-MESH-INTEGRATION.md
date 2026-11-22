@@ -1,10 +1,16 @@
 # Rook / Mesh integration checkpoint
 
+## Paused native enrollment
+
+The existing owner-reviewed Mesh launch profile can include a `rookEnrollment` record for principal `rook`, destination `mesh_relay_inbox`, mode `paused`, and the selected board's `boardIdentity` from `databaseFileIdentity`. The owner approval must cover the resulting profile hash. The launcher derives the path from the profile's existing data directory and checks the file before launch. The node process checks the same file around board opening and when reporting the connection. A detected replacement invalidates enrollment for that process.
+
+Relay shows “Rook · paused” on an enrolled board. This identity grants no worker dispatch, scheduler, external messaging or Mind access. The paired offline capture and connected profiles each need their own reviewed binding for the status to persist across recovery modes. Omitting the field keeps the original startup behavior. To withdraw an installed enrollment, restore the previously approved profiles and reload Mesh. The live installation still needs its own owner-reviewed cutover.
+
 ## Mesh Relay inbox qualification, November 22
 
 The first reporting destination is the Rook panel in Mesh Relay. The receiver records the report ID, content digest and receipt time in the board database. The title and question stay in the original notice. “Received by Mesh Relay” confirms receipt in that inbox. Eddie can open the linked Workroom card there. Reading the notice, taking an owner decision and starting a worker are separate actions.
 
-The standalone test selects `mesh_relay_inbox` through the existing Rook test configuration. It saves a notice, loses the reply, reopens the database and reconciles the original ID. A mismatched payload is rejected. The production watcher still needs a verified Rook identity, one scheduler owner and qualification on the deployed board before activation.
+The standalone test selects `mesh_relay_inbox` through the existing Rook test configuration. It saves a notice, loses the reply, reopens the database and reconciles the original ID. A mismatched payload is rejected. Live automatic assignments require separate activation and qualification on the deployed board.
 
 ## Scheduler handoff qualification, November 22
 

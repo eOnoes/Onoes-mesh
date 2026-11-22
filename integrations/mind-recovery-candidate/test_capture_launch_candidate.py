@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import shutil
 import sqlite3
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -39,6 +40,26 @@ class CaptureFrameTests(unittest.TestCase):
         self.assertEqual(frame['schema'],'onoes-mesh-native-capture-input/v1')
         self.assertEqual(before,launch.digest(self.db))
         self.assertNotIn('token',json.dumps(frame))
+
+    def test_paused_rook_enrollment_uses_the_same_board_and_survives_capture_only_startup(self):
+        lib = self.root / 'lib'
+        lib.mkdir()
+        shutil.copyfile(Path(__file__).resolve().parents[2] / 'lib/database-identity.mjs', lib / 'database-identity.mjs')
+        self.p['sourceHashes']={str(lib/'database-identity.mjs'):launch.digest(lib/'database-identity.mjs')}
+        identity = subprocess.check_output([self.p['nodeExecutable'], '--input-type=module', '-e',
+            "import {databaseFileIdentity} from './lib/database-identity.mjs';console.log(databaseFileIdentity(process.argv[1]))",
+            str(self.db)], cwd=self.root, text=True, creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0)).strip()
+        record = dict(id='rook', mode='paused', destination='mesh_relay_inbox', boardIdentity=identity)
+        self.p['rookEnrollment'] = record
+        before = launch.digest(self.db)
+        digest = 'b' * 64
+        actual = launch.native_frame(self.p, object(), 'unused', digest)
+        self.assertEqual(actual['rookEnrollment'], dict(record, boardPath=str(self.db), approvalRef=digest))
+        self.assertEqual(set(actual), {'schema','projectCaptureOptions','rookEnrollment'})
+        self.assertEqual(launch.digest(self.db), before)
+        for extra in ({'id':'nims'}, {'mode':'running'}, {'token':'fixture'}, {'boardIdentity':'c'*64}):
+            with self.subTest(extra=extra), self.assertRaises(launch.LaunchError):
+                launch.rook_frame_fields(dict(self.p, rookEnrollment=dict(record, **extra)), digest)
 
     def test_changed_store_and_broader_fields_are_refused(self):
         for update in (dict(storeId='another-store'),dict(links=[dict(

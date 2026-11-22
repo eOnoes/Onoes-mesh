@@ -30,7 +30,7 @@ import { createRelayHttpLink } from './lib/relay-http.mjs';
 import { createNodeProbeReader } from './lib/node-probes.mjs';
 import { withTrippHardware } from './lib/tripp-hardware.mjs';
 import { createLocalInference, createDisabledLocalAdapter } from './lib/local-inference.mjs';
-import {createRookRuntime} from './lib/workroom-rook.mjs';
+import {createRookRuntime, nativeRookOptions} from './lib/workroom-rook.mjs';
 import {writerQuiescenceBlockers} from './lib/workroom-claim-policy.mjs';
 import {prepareNativeProjectSync,prepareNativeProjectCapture} from './integrations/project-sync-native-candidate.mjs';
 
@@ -104,10 +104,12 @@ async function activity(registryPath) {
     return await readWorkerActivity({ registryPath, nowIso: new Date().toISOString(), staleAfterMs: 600000 });
   } catch { return snapshot('unavailable'); }
 }
-export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, mindRecallOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, projectSyncTestOptions, projectSyncOptions, projectCaptureOptions, nativeWorkerOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
+export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, mindRecallOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, rookEnrollment, projectSyncTestOptions, projectSyncOptions, projectCaptureOptions, nativeWorkerOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
   // Process configuration only. Standalone wins over ambient Relay enablement
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
+  if (rookEnrollment !== undefined && (standalone || rookRuntimeTestOptions !== undefined))
+    throw Error('Native Rook enrollment cannot use a fixture runtime.');
   if([projectSyncOptions,projectSyncTestOptions,projectCaptureOptions].filter(v=>v!==undefined).length>1)throw Error('Conflicting project sync configuration.');
   if(projectCaptureOptions!==undefined&&(mindRecallOptions!==undefined||mindRecallTestOptions!==undefined))throw Error('Capture-only mode cannot enroll memory access.');
   if(projectSyncTestOptions!==undefined&&(!standalone||!/^test[\\/]app03-[A-Za-z0-9_-]+$/.test(dataDir)||
@@ -163,6 +165,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const directory = await confinedPath(dataDir);
   const release = releaseInfo(ROOT, dataDir);
   const filename = await confinedPath(path.join(directory, 'tasks.sqlite'));
+  const nativeRook = rookEnrollment === undefined ? undefined : nativeRookOptions(rookEnrollment, filename);
   const nativeProjectSync=projectCaptureOptions===undefined
     ?prepareNativeProjectSync(projectSyncOptions,{filename,standalone})
     :prepareNativeProjectCapture(projectCaptureOptions,{filename,standalone});
@@ -176,12 +179,13 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   let executionPersistenceFailed = false;
   try { store = openTaskStore(filename,nativeProjectSync?{projectSyncFactory:nativeProjectSync.factory}:projectSyncTestOptions?{projectSyncFactory:projectSyncTestOptions.factory}:{}); }
   catch { await nativeProjectSync?.close();if(nativeProjectSync)throw Error('Native project-sync storage unavailable; preserve data.');/* Preserve invalid data; serve a visible failure. */ }
-  // No production identity/transport is enrolled here. Activation is a separate owner gate.
+  // Native enrollment recognizes the local Relay inbox and never enables a timer.
+  nativeRook?.verifyIdentity(nativeRook.identity);
   const rookRuntime = store ? createRookRuntime({store: store.workroom.rook, flow: store.workroom.flow,
-    board: () => store.workroom.list(), ...rookRuntimeTestOptions,
-    transport: rookRuntimeTestOptions?.transport === 'mesh_relay_inbox'
+    board: () => store.workroom.list(), ...rookRuntimeTestOptions, ...nativeRook,
+    transport: nativeRook || rookRuntimeTestOptions?.transport === 'mesh_relay_inbox'
       ? store.workroom.rook.relayInbox : rookRuntimeTestOptions?.transport,
-    enabled: process.env.MESH_SIMPLE_FLOW === '1' && rookRuntimeTestOptions?.enabled === true}) : null;
+    enabled: !nativeRook && process.env.MESH_SIMPLE_FLOW === '1' && rookRuntimeTestOptions?.enabled === true}) : null;
   let modelDatabase;
   if(!standalone && supervisedInferenceTestOptions && store){modelDatabase=new DatabaseSync(filename);localInference=createSupervisedInference({...supervisedInferenceTestOptions,operations:createModelOperationStore(modelDatabase)});}
   else if(!standalone && process.env.MESH_NEMOTRON_CONTROL==='1' && store){

@@ -709,6 +709,8 @@ function renderRookReports(snapshot) {
   $('rook-summary').textContent = snapshot ? `Rook · ${state}` : 'Rook · connect to check';
   $('rook-status').textContent = !snapshot ? 'Saved notices unavailable. Connect and check again.'
     : state === 'not connected' ? 'Rook is not connected yet. Saved notices do not mean a worker has started.'
+    : state === 'paused' && snapshot.connection.source === 'native_mesh_profile'
+      ? 'Rook is enrolled on this board. Automatic assignments are off.'
     : `Watcher: ${state}. Opening these notices does not start work or approve a result.`;
   const openCard = (parent, taskId) => {
     if (typeof taskId !== 'string' || !/^[0-9a-f-]{36}$/.test(taskId)) return;
