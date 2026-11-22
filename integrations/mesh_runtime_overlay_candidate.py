@@ -16,6 +16,7 @@ STARTUP_HELPERS=frozenset({
     'integrations/mesh_native_pair.py',
     'integrations/mesh_launcher_window.py',
 })
+MANAGED_WRITER_ATTEMPT = re.compile(r'mesh-[a-z0-9-]+-[0-9]{8}-writer-attemptPath\.json')
 
 
 def require(ok):
@@ -50,7 +51,9 @@ def checked(value):
         and 1024<=r['gatewayPort']<=65535 and type(r['serviceProfileSha256']) is str
         and re.fullmatch('[a-f0-9]{64}',r['serviceProfileSha256']))
     attempt=Path(r['serviceAttemptPath']);require(attempt.is_absolute() and attempt.resolve()==attempt
-        and attempt.parent.is_dir() and re.fullmatch(r'.+-service-attempt(?:-after-backup)?\.json',attempt.name)
+        and attempt.parent.is_dir()
+        and (re.fullmatch(r'.+-service-attempt(?:-after-backup)?\.json',attempt.name)
+             or MANAGED_WRITER_ATTEMPT.fullmatch(attempt.name))
         and not any(attempt.is_relative_to(root) for root in roots))
     fresh=r['freshLaunchAttempts'];require(type(fresh) is list and 1<=len(fresh)<=8)
     declared={attempt};mesh=False
@@ -103,9 +106,11 @@ def roles(expected_sha=None):
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
 
-def declared_attempt_stopped(p,observer,entry):
+def declared_attempt_stopped(p,observer,entry,*,required=False):
     path=Path(entry['path'])
-    if not os.path.lexists(path):return
+    if not os.path.lexists(path):
+        require(not required)
+        return
     require(path.is_file() and path.resolve()==path and path.stat().st_size<=8192)
     record=json.loads(path.read_bytes())
     mesh=entry['kind']=='mesh'
@@ -128,8 +133,11 @@ class stopped_window:
         r=self.p['runtime'];observer=self.observer
         require(digest(observer_path())==self.p['observerSha256'])
         require(not observer.same_process_alive(r['meshPid'],r['meshCreationTicks']))
-        entries=[dict(kind='service',path=r['serviceAttemptPath'],profileSha256=r['serviceProfileSha256']),*r['freshLaunchAttempts']]
-        for entry in entries:declared_attempt_stopped(self.p,observer,entry)
+        original=dict(kind='service',path=r['serviceAttemptPath'],profileSha256=r['serviceProfileSha256'])
+        # An enrolled recovery writer must have an identifiable original run.
+        managed=MANAGED_WRITER_ATTEMPT.fullmatch(Path(original['path']).name) is not None
+        declared_attempt_stopped(self.p,observer,original,required=managed)
+        for entry in r['freshLaunchAttempts']:declared_attempt_stopped(self.p,observer,entry)
     def __enter__(self):
         self.observer=roles(self.p['observerSha256']);self.assert_stopped()
         r=self.p['runtime'];reservation=socket.socket(socket.AF_INET,socket.SOCK_STREAM)

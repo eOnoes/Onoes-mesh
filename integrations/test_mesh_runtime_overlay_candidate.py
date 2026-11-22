@@ -79,6 +79,28 @@ class MeshOverlayTests(unittest.TestCase):
             p=copy.deepcopy(self.plan);p['runtime']['serviceAttemptPath']=str(self.ops/name)
             self.assertRaises(RuntimeError,overlay.checked,p)
 
+    def test_managed_writer_requires_its_original_receipt_for_install_and_rollback(self):
+        runtime=self.plan['runtime']
+        attempt=self.ops/'mesh-runtime-recovery-20261121-writer-attemptPath.json'
+        runtime['serviceAttemptPath']=str(attempt)
+        self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        observed=overlay.roles()
+        record=dict(schema='onoes-mind-project-service-attempt/v1',state='started',runId='fixture',
+            pid=os.getpid(),creationTicks=observed.current_ticks(),profileSha256=runtime['serviceProfileSha256'])
+        attempt.write_text(json.dumps(record))
+        self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        record.update(pid=runtime['meshPid'],creationTicks=runtime['meshCreationTicks'],profileSha256='0'*64)
+        attempt.write_text(json.dumps(record))
+        self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
+        self.assertFalse((self.root/'journal').exists())
+        record['profileSha256']=runtime['serviceProfileSha256']
+        attempt.write_text(json.dumps(record))
+        self.assertEqual(overlay.apply_overlay(self.plan,self.approve())['state'],'installed')
+        attempt.unlink()
+        self.assertRaises(RuntimeError,overlay.rollback_overlay,self.plan,self.approve(True))
+        attempt.write_text(json.dumps(record))
+        self.assertEqual(overlay.rollback_overlay(self.plan,self.approve(True))['state'],'original')
+
     def test_exact_startup_helpers_install_and_rollback_without_allowing_other_python(self):
         expected={f'integrations/{name}.py' for name in (
             'mesh_startup_candidate','mesh_recovery_candidate','mesh_native_recovery',

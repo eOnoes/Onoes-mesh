@@ -28,6 +28,10 @@ The live board now has a 3D Print Pilot specification card in To do. A restored 
 
 In a disposable two-project startup test, Workroom accepted a pilot edit while offline. After reconnection, all four queued and connected edits had matching receipts on the board and in Mind. The current pilot revision included the updated title and CAD filename. The original card's private description stayed out of Mind.
 
+For the live pilot update, take the before-change archive after the existing Mind writer has stopped and its exit matches its saved run. Repeat that check against the replacement writer for the after-change archive. The operator enters the saved archive password locally for each backup. Resume delivery and verify both card receipts after the second archive passes recovery readback.
+
+An installation rehearsal used a restored 16-card board. Interrupting the six-file update after its third replacement restored all six originals and preserved the board database hash. In a second run, losing the acknowledgement after the pilot link committed was recoverable by reading the link back. Both cards opened in offline capture, and a pilot edit kept the same queued event ID across a second startup.
+
 ## Historical connection status - 2026-11-15 Chicago
 
 The first canonical shared read-only connection is live and accepted on Eddie's
