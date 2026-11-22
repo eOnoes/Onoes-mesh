@@ -62,12 +62,48 @@ class ProjectServiceProcessTests(unittest.TestCase):
             time.sleep(0.2)
         self.fail('Owned service readiness did not settle; no replacement launched')
 
-    def send(self,options):
+    def send(self,options, **event_fields):
         destination=options['destination']
-        request=urllib.request.Request(destination['baseUrl']+'v1/project-events/submit',data=json.dumps(event()).encode(),
+        request=urllib.request.Request(destination['baseUrl']+'v1/project-events/submit',data=json.dumps(event(**event_fields)).encode(),
             headers={'Authorization':'Bearer '+destination['token'],'Content-Type':'application/json'},method='POST')
         with urllib.request.urlopen(request,timeout=10) as response:
             self.assertEqual(response.status,200);return json.load(response)
+
+    def test_single_project_addition_requires_its_own_approval_then_serves_both_projects(self):
+        self.prepare()
+        root = self.profile.parent
+        p = self.base.value
+        self.base.profile = root/'addition.json'
+        self.base.approval = root/'addition-approval.json'
+        p.update(mode='add_project', addedProjectId='project-B', operationId='add-project-B')
+        p['projects'].append(['project-B', 'Second design'])
+        for field in ('attemptPath','terminalPath','credentialPath','outcomePath'):
+            p[field] = str(root/('add-'+field+'.json'))
+        self.base.write()
+        decision = json.loads(self.base.approval.read_text())
+        decision['projects'] = ['project-A','project-B']
+        self.base.approval.write_text(json.dumps(decision))
+        self.value.update(operatorProfilePath=str(self.base.profile), operatorProfileSha256=self.base.sha)
+        self.write(actions=['replace','run_service'])
+        with self.assertRaises(operator.ProjectProcessError):
+            operator.launch_operator(self.base.profile,self.base.sha,self.base.approval)
+        self.assertFalse(Path(p['attemptPath']).exists())
+        self.write(actions=['add_project','run_service'])
+        receipt = self.prepare()
+        self.assertEqual(receipt['mode'],'add_project')
+        self.assertFalse(Path(self.value['readyPath']).exists())
+        child, stamp = service.launch_service(self.profile,self.sha,self.base.approval)
+        self.children.append((child,stamp))
+        self.ready(child)
+        options = service.native_options(self.profile,self.sha,self.base.approval)
+        self.assertTrue(self.send(options)['receiptId'])
+        self.assertTrue(self.send(options,projectId='project-B',eventId='second',cardId='card-B')['receiptId'])
+        with self.assertRaises(urllib.error.HTTPError) as refused:
+            self.send(options,projectId='project-C',eventId='third',cardId='card-C')
+        with refused.exception as response:
+            self.assertEqual(response.code,403)
+        service.request_stop(self.profile,self.sha,self.base.approval)
+        self.assertEqual(child.wait(timeout=120),0)
 
     def test_relocated_shell_serves_original_enrollment_with_service_only_approval(self):
         self.prepare()

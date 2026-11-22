@@ -10,7 +10,8 @@ import os
 
 from onoes_mind.enrollment_store import qualify_private_storage
 from checkpoint_candidate import history_view
-from native_project_sync_candidate import context, seal_project_credential, ProjectServiceLease
+from native_project_sync_candidate import (context, seal_project_credential, ProjectServiceLease,
+    _stage_project_credential, load_project_credential)
 from project_events_candidate import PRINCIPAL, identifier, text
 from provision_recall_candidate import new_private_file
 
@@ -24,7 +25,8 @@ def require(ok):
         raise ProjectProvisionError('Protected project-service operation refused; preserve existing state.')
 
 
-def prepare_project_service(events, *, mode, projects, credential_path, outcome_path, operation_id, review_ref):
+def prepare_project_service(events, *, mode, projects, credential_path, outcome_path, operation_id, review_ref,
+                            added_project_id=None):
     """Prepare once and return nonsecret evidence only; never activate access."""
     outcome = lease = None
     result = None
@@ -33,25 +35,32 @@ def prepare_project_service(events, *, mode, projects, credential_path, outcome_
     registered = False
     stage = 'preflight'
     try:
-        require(mode in ('first_setup', 'replace', 'revoke') and identifier(operation_id))
+        require(mode in ('first_setup', 'replace', 'revoke', 'add_project') and identifier(operation_id))
         require(type(projects) is tuple and 1 <= len(projects) <= 8
                 and all(type(p) is tuple and len(p) == 2 and identifier(p[0])
                         and text(p[1], 160) and p[1].strip() == p[1] and p[1] for p in projects))
         project_ids = tuple(p[0] for p in projects)
+        if mode == 'add_project':
+            require(len(project_ids) >= 2 and added_project_id in project_ids)
+        else:
+            require(added_project_id is None)
         entropy = context(events, project_ids, review_ref)
         require(mode != 'revoke' or credential_path is None)
         credential = new_private_file(credential_path) if mode != 'revoke' else None
         target = new_private_file(outcome_path)
         require(credential != target)
-        request_hash = hashlib.sha256(json.dumps(dict(mode=mode, projects=projects,
+        request = dict(mode=mode, projects=projects,
             operationId=operation_id, contextSha256=hashlib.sha256(entropy).hexdigest(),
-            credentialPath=str(credential), outcomePath=str(target)), sort_keys=True).encode()).hexdigest()
+            credentialPath=str(credential), outcomePath=str(target))
+        if mode == 'add_project': request['addedProjectId'] = added_project_id
+        request_hash = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
         ledger = events.ledger
         result = dict(schema='onoes-mind-project-service-outcome/v1', operationId=operation_id,
             requestHash=request_hash, mode=mode, storeId=events.binding.store_id,
             environment=events.binding.environment, principal=PRINCIPAL, projects=project_ids,
             status='attempt_reserved', serviceStarted=False, runtimeEnrollment=False,
             previousRuntimeRetirementQualified=False)
+        if mode == 'add_project': result['addedProjectId'] = added_project_id
 
         def save():
             result.update(stage=stage, mayHaveChanged=changed)
@@ -89,6 +98,7 @@ def prepare_project_service(events, *, mode, projects, credential_path, outcome_
             outcome = target.open('x', encoding='utf-8'); save()
             qualify_private_storage(target, kind='file')
             stage = 'database_change_pending'; changed = True; save()
+            storage = None
             if mode == 'first_setup':
                 events.initialize(); register()
                 for project, label in projects: events.register_project(project, label)
@@ -96,6 +106,15 @@ def prepare_project_service(events, *, mode, projects, credential_path, outcome_
             elif mode == 'replace':
                 register()
                 token = events.replace_credential(project_ids, operation_id)
+            elif mode == 'add_project':
+                register()
+                def stage_credential(fresh_token):
+                    nonlocal storage
+                    storage = _stage_project_credential(credential, fresh_token, entropy)
+                token = events.replace_credential(project_ids, operation_id, added_project_id=added_project_id,
+                    reviewed_projects=projects, stage_credential=stage_credential)
+                require(load_project_credential(credential, events=events,
+                    project_ids=project_ids, review_ref=review_ref) == token)
             else:
                 register()
                 with events._history_guard(), ledger._transaction(immediate=True):
@@ -105,8 +124,7 @@ def prepare_project_service(events, *, mode, projects, credential_path, outcome_
                     require(epoch_after == epoch_before + 1)
                     events.db.execute("UPDATE project_sync_admin_operations SET state='unknown' WHERE operation_id=?", (operation_id,))
                     result.update(epochBefore=epoch_before, epochAfter=epoch_after)
-            storage = None
-            if mode != 'revoke':
+            if mode in ('first_setup', 'replace'):
                 stage = 'protected_storage'; save()
                 storage = seal_project_credential(credential, token, events=events,
                     project_ids=project_ids, review_ref=review_ref)
@@ -119,7 +137,8 @@ def prepare_project_service(events, *, mode, projects, credential_path, outcome_
                 events.db.execute("UPDATE project_sync_admin_operations SET state='complete' WHERE operation_id=? AND request_hash=?", (operation_id,request_hash))
                 ledger._audit('project_service_revoked' if mode == 'revoke' else 'project_service_prepared', PRINCIPAL, operation_id)
             stage = 'complete'
-            result.update(status={'first_setup':'provisioned_inactive','replace':'replaced_inactive','revoke':'revoked_inactive'}[mode],
+            result.update(status={'first_setup':'provisioned_inactive','replace':'replaced_inactive',
+                          'revoke':'revoked_inactive','add_project':'project_added_inactive'}[mode],
                           credentialIssued=mode != 'revoke')
             if storage is not None: result['credentialStorage'] = storage
             save()

@@ -172,17 +172,15 @@ def load_project_client_credential(path, *, binding, project_ids, review_ref):
         token = None
 
 
-def seal_project_credential(path, token, *, events, project_ids, review_ref):
-    """Seal once; never issue, replace, rebind or silently repair credentials."""
+def _stage_project_credential(path, token, entropy):
+    """Write fresh private custody and verify it before a grant can take effect."""
     try:
-        entropy = context(events, project_ids, review_ref)
         raw = token_bytes(token)
         target = Path(path)
         require(target.is_absolute() and '..' not in target.parts and not os.path.lexists(target))
         parent = qualify_private_storage(target.parent)
         require(parent.resolve(strict=True) == parent)
         identity = (parent.stat().st_dev, parent.stat().st_ino)
-        authorize(events, token, project_ids, review_ref)
         encrypted = _crypt(raw, entropy, protect=True)
         envelope = dict(schema=SCHEMA, protection='windows-current-user',
             bindingSha256=hashlib.sha256(entropy).hexdigest(),
@@ -194,11 +192,23 @@ def seal_project_credential(path, token, *, events, project_ids, review_ref):
             output.write(data); output.flush(); os.fsync(output.fileno())
         qualify_private_storage(target, kind='file')
         require(read_plain(target, 8192) == data)
-        require(load_project_credential(target, events=events, project_ids=project_ids, review_ref=review_ref) == token)
+        require(_unseal(target, entropy) == token)
         qualify_private_storage(parent)
         require((parent.stat().st_dev, parent.stat().st_ino) == identity)
         return dict(schema=SCHEMA, protected=True, bindingSha256=envelope['bindingSha256'],
                     fileSha256=hashlib.sha256(data).hexdigest())
+    except Exception:
+        raise ProjectCredentialError('Project-sync credential was not committed successfully; preserve files.') from None
+
+
+def seal_project_credential(path, token, *, events, project_ids, review_ref):
+    """Seal once; never issue, replace, rebind or silently repair credentials."""
+    try:
+        entropy = context(events, project_ids, review_ref)
+        authorize(events, token, project_ids, review_ref)
+        storage = _stage_project_credential(path, token, entropy)
+        require(load_project_credential(path, events=events, project_ids=project_ids, review_ref=review_ref) == token)
+        return storage
     except Exception:
         raise ProjectCredentialError('Project-sync credential was not committed successfully; preserve files.') from None
 

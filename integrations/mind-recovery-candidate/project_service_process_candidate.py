@@ -121,7 +121,7 @@ def checked_profile(path,expected_sha,approval_path=None,*,preview=False):
         base,binding=checked_service_runtime(p,path,expected_sha,approval_path,operator)
     else:
         base,binding=operator.checked_profile(p['operatorProfilePath'],p['operatorProfileSha256'],approval_path)
-    require(base['mode'] in ('first_setup','replace'))
+    require(base['mode'] in ('first_setup','replace','add_project'))
     from onoes_mind.enrollment_store import qualify_private_storage
     from checkpoint_candidate import read_plain
     import recall_process_candidate as roles
@@ -148,7 +148,8 @@ def terminal_proof(base,binding,operator_sha):
     for name in ('terminalPath','outcomePath','attemptPath','credentialPath'):
         qualify_private_storage(Path(base[name]),kind='file')
     terminal=roles.plain_json(base['terminalPath']);attempt=roles.plain_json(base['attemptPath'])
-    expected='provisioned_inactive' if base['mode']=='first_setup' else 'replaced_inactive'
+    expected={'first_setup':'provisioned_inactive','replace':'replaced_inactive',
+              'add_project':'project_added_inactive'}[base['mode']]
     require(terminal.get('schema')=='onoes-mind-project-operator-terminal/v1'
         and terminal.get('profileSha256')==operator_sha and terminal.get('exitCode')==0
         and terminal.get('operationId')==base['operationId'] and terminal.get('mode')==base['mode']
@@ -161,6 +162,7 @@ def terminal_proof(base,binding,operator_sha):
     require(outcome.get('status')==expected and outcome.get('operationId')==base['operationId']
         and outcome.get('storeId')==binding.store_id and outcome.get('environment')==binding.environment
         and outcome.get('projects')==[v[0] for v in base['projects']]
+        and outcome.get('addedProjectId')==base.get('addedProjectId')
         and outcome.get('principal')=='mesh-project-sync' and outcome.get('serviceStarted') is False
         and outcome.get('runtimeEnrollment') is False and outcome.get('credentialIssued') is True)
     require(digest(base['credentialPath'])==terminal['credentialFileSha256']==outcome['credentialStorage']['fileSha256'])

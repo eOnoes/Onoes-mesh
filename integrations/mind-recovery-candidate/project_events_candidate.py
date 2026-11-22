@@ -212,7 +212,8 @@ class ProjectEventsCandidate:
             self.db.executemany("INSERT INTO project_sync_grants VALUES(?,?,1)", [(PRINCIPAL, p) for p in project_ids])
         return token
 
-    def replace_credential(self, project_ids, operation_id):
+    def replace_credential(self, project_ids, operation_id, *, added_project_id=None,
+                           reviewed_projects=(), stage_credential=None):
         """Privileged owner recovery only; never exposed by the event HTTP API."""
         require(type(project_ids) is tuple and 1 <= len(project_ids) <= 8
                 and all(identifier(p) for p in project_ids)
@@ -232,12 +233,33 @@ class ProjectEventsCandidate:
                 require(not self.db.execute("SELECT 1 FROM recall_service_credentials WHERE principal_id=?", (PRINCIPAL,)).fetchone(),
                         "Ordinary credential collision.")
             active = tuple(r[0] for r in self.db.execute("SELECT project_id FROM project_sync_grants WHERE principal_id=? AND active=1 ORDER BY project_id", (PRINCIPAL,)))
-            require(active == project_ids, "Explicit reviewed projects differ from existing grants.")
-            for project in project_ids:
+            mode = 'replace' if added_project_id is None else 'add_project'
+            if mode == 'add_project':
+                require(row[1] == row[2] and active and added_project_id in project_ids
+                        and active == tuple(p for p in project_ids if p != added_project_id)
+                        and tuple(p for p, _ in reviewed_projects) == project_ids
+                        and callable(stage_credential), "One new project and a current credential required.")
+                for project, label in reviewed_projects:
+                    saved = self.db.execute("SELECT label,deleted FROM project_sync_projects WHERE project_id=?",
+                                            (project,)).fetchone()
+                    if project == added_project_id:
+                        require(saved is None and text(label, 160) and label.strip() == label and label,
+                                "New project registration required.")
+                    else:
+                        require(saved is not None and tuple(saved) == (label, 0), "Reviewed project changed.")
+            else:
+                require(active == project_ids, "Explicit reviewed projects differ from existing grants.")
+            for project in active:
                 require(self.db.execute("SELECT 1 FROM project_sync_projects WHERE project_id=? AND deleted=0", (project,)).fetchone(), "Project is deleted.")
             operation = self.db.execute("SELECT mode,state FROM project_sync_admin_operations WHERE operation_id=?", (operation_id,)).fetchone()
-            require(operation is not None and tuple(operation) == ('replace', 'reserved'),
+            require(operation is not None and tuple(operation) == (mode, 'reserved'),
                     "Reserved owner operation required.")
+            if mode == 'add_project':
+                # Verify custody while the original epoch and grants still work.
+                stage_credential(token)
+                self.db.execute("INSERT INTO project_sync_projects(project_id,label) VALUES(?,?)",
+                                (added_project_id, dict(reviewed_projects)[added_project_id]))
+                self.db.execute("INSERT INTO project_sync_grants VALUES(?,?,1)", (PRINCIPAL, added_project_id))
             self.ledger.rotate_credentials(PRINCIPAL)
             epoch = self.db.execute("SELECT credential_epoch FROM principals WHERE principal_id=?", (PRINCIPAL,)).fetchone()[0]
             self.db.execute("UPDATE project_sync_credentials SET salt=?,verifier=?,epoch=? WHERE principal_id=?", (salt, verifier, epoch, PRINCIPAL))

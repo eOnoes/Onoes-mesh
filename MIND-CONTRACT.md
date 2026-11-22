@@ -10,6 +10,14 @@ A disposable integration check compared two publication paths. Publishing two or
 
 The print pilot still needs explicit writer scope for its project and a read-only connection reserved for Echo. The channel checks used test credentials. Live Echo enrollment and cross-channel retrieval on Eddie's PC are pending.
 
+### Adding one project to an existing writer
+
+The offline owner operation `add_project` takes the complete reviewed list of project IDs and labels and one explicit `addedProjectId`. It requires a separately approved profile, fresh output paths, and exclusive access to the writer. Existing active projects must still match. A revoked credential or a previously registered project cannot be used for this operation.
+
+The operation verifies Windows-protected storage for a fresh credential before committing the new registration, grant and credential rotation together. A storage failure leaves the previous credential usable at its original scope. Preserve the attempt and its files if completion is uncertain. A successful result identifies the added project and records `project_added_inactive`. Starting the writer and enrolling a reader each have their own approval.
+
+For the print pilot, the intended pair is `onoes-mesh` and `3d-print-pilot`. Before live activation, rehearse recovery after the grant commits but the new writer fails to start. At that point the previous credential has expired. Mesh can keep edits pending through its existing capture mode. Recovery must account for those pending edits and verify the original Mesh card still reaches Mind.
+
 ## Historical connection status - 2026-11-15 Chicago
 
 The first canonical shared read-only connection is live and accepted on Eddie's

@@ -65,8 +65,10 @@ def checked_profile(path, expected_sha, approval_path=None):
     p = json.loads(raw, object_pairs_hook=unique)
     keys = {'schema','ownerSid','runtime','sourceHashes','binding','projects','mode','operationId','reviewRef',
         'credentialPath','outcomePath','terminalPath','attemptPath','keyEnrollmentPath','authorityBindingPath','historyPath'}
-    require(type(p) is dict and set(p) == keys and p['schema'] == SCHEMA
-            and p['mode'] in ('first_setup','replace','revoke'))
+    require(type(p) is dict)
+    if p.get('mode') == 'add_project': keys.add('addedProjectId')
+    require(set(p) == keys and p['schema'] == SCHEMA
+            and p['mode'] in ('first_setup','replace','revoke','add_project'))
     runtime = p['runtime']
     require(type(runtime) is dict and set(runtime) == {'python','pwsh','mindSource'}
             and Path(runtime['python']).resolve() == Path(sys.executable).resolve())
@@ -90,6 +92,7 @@ def checked_profile(path, expected_sha, approval_path=None):
             and all(type(v) is list and len(v)==2 and identifier(v[0]) and text(v[1],160)
                     and v[1] and v[1].strip()==v[1] for v in p['projects']))
     ids = [v[0] for v in p['projects']]; require(ids == sorted(set(ids)))
+    if p['mode'] == 'add_project': require(len(ids) >= 2 and p['addedProjectId'] in ids)
     database = qualify_private_storage(Path(binding.database_path),kind='file')
     require(database.resolve() == database)
     stat = database.stat(); require((stat.st_dev,stat.st_ino) == (binding.file_device,binding.file_inode))
@@ -117,7 +120,7 @@ def checked_profile(path, expected_sha, approval_path=None):
             and a['storeId'] == binding.store_id and a['scopeId'] == SCOPE
             and a['projects'] == ids and a['reviewRef'] == p['reviewRef']
             and type(a['actions']) is list and len(a['actions']) == len(set(a['actions']))
-            and all(x in ('first_setup','replace','revoke','run_service','run_mesh_sync') for x in a['actions']) and p['mode'] in a['actions'])
+            and all(x in ('first_setup','replace','revoke','add_project','run_service','run_mesh_sync') for x in a['actions']) and p['mode'] in a['actions'])
     return p, binding
 
 
@@ -148,7 +151,7 @@ def operator_role(p, binding, profile_sha):
             store_id=binding.store_id,environment=binding.environment,**keys)
         prepare_project_service(ProjectEventsCandidate(writer,binding),mode=p['mode'],
             projects=tuple(tuple(v) for v in p['projects']),credential_path=p['credentialPath'],outcome_path=p['outcomePath'],
-            operation_id=p['operationId'],review_ref=p['reviewRef'])
+            operation_id=p['operationId'],review_ref=p['reviewRef'],added_project_id=p.get('addedProjectId'))
     finally:
         if writer is not None: writer.close()
         keys = None
@@ -201,11 +204,13 @@ def finish_operator(child, stamp, profile_path, profile_sha, approval_path):
     attempt = roles.plain_json(p['attemptPath']); outcome = roles.plain_json(p['outcomePath'])
     require(attempt.get('profileSha256') == profile_sha and attempt.get('pid') == child.pid
             and attempt.get('creationTicks') == stamp and attempt.get('state') == 'started')
-    expected = {'first_setup':'provisioned_inactive','replace':'replaced_inactive','revoke':'revoked_inactive'}[p['mode']]
+    expected = {'first_setup':'provisioned_inactive','replace':'replaced_inactive','revoke':'revoked_inactive',
+                'add_project':'project_added_inactive'}[p['mode']]
     require(outcome.get('status') == expected and outcome.get('operationId') == p['operationId']
         and outcome.get('storeId') == binding.store_id and outcome.get('environment') == binding.environment
         and outcome.get('principal') == 'mesh-project-sync' and outcome.get('mode') == p['mode']
         and outcome.get('projects') == [v[0] for v in p['projects']]
+        and outcome.get('addedProjectId') == p.get('addedProjectId')
         and outcome.get('serviceStarted') is False and outcome.get('runtimeEnrollment') is False
         and outcome.get('credentialIssued') is (p['mode'] != 'revoke'))
     credential_sha = None
