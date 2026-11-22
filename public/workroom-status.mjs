@@ -1,7 +1,15 @@
+export function recoveredHandoff(message){
+  return message?.legacyRecovery?.state==='owner_recovered_unknown';
+}
+
+export function handoffDisplayState(message){
+  return recoveredHandoff(message)?'Outcome unknown after recovery':message.state;
+}
+
 // Agent state is live observation, never proof that a specific task ran.
 export function nativeWorkerStatus(message){
   const saved=message?.nativeReceipt;
-  if(message?.agentId!=='echo'||!saved)return null;
+  if(message?.agentId!=='echo'||!saved||recoveredHandoff(message))return null;
   const pending={label:'Worker status unconfirmed',next:'Refresh agent replies to check this request. Do not resend it just because its worker status is unavailable.'};
   const receipt=saved.receipt;
   if(saved.observationState!=='observed'||receipt?.observation!=='observed'
@@ -33,6 +41,7 @@ export function cardNextAction(task,simpleFlow=false){
 export function handoffStatus(task,agents){
   const send=task.messages?.filter(m=>['plan','work','review'].includes(m.phase)).at(-1);
   if(!send)return null;
+  if(recoveredHandoff(send))return {label:handoffDisplayState(send),next:'Mesh recorded the original delivery. The result of this job is unknown.'};
   if(send.nims&&['failed','blocked','interrupted'].includes(send.nims.state))return {label:'Nims '+send.nims.state,next:'This exact native request ended without a usable report. Inspect its replies/native identity; it was not replayed.'};
   if(['unknown','prepared'].includes(send.state))return {label:'Delivery uncertain',next:'Open Conversation and history and retry the original message identity. Do not send a new copy.'};
   if(send.state!=='accepted')return {label:'Delivery '+send.state,next:'Inspect the saved receipt before sending again.'};
@@ -72,6 +81,8 @@ export function taskTimeline(task){
   for(const send of sends.values()){
     const label={plan:'Planning requested',work:'Worker assigned',review:'Independent review requested',message:'Message sent'}[send.phase]||'Message sent';
     add('send-'+send.id,send.at,label,`${send.agentId} · delivery ${send.state}. Delivery is not completion.`);
+    if(recoveredHandoff(send))add('recovery-'+send.id,send.legacyRecovery.recordedAt,handoffDisplayState(send),
+      `${send.agentId} · Mesh closed this old assignment with its result unknown.`);
     if(send.nims)add('nims-'+send.id,send.nims.finishedAt||send.at,'Nims '+send.nims.state,'Task-bound read-only Codex request. Thread: '+(send.nims.threadId||'pending')+'; turn: '+(send.nims.turnId||'pending')+'. This is separate from task approval.');
     if(send.outcome)add('outcome-'+send.id,send.outcome.verifiedAt,'Native request '+(send.outcome.state==='TASK_STATE_COMPLETED'?'completed':send.outcome.state.replace('TASK_STATE_','').toLowerCase()),'Verified for this exact attempt; separate from the task review.');
   }

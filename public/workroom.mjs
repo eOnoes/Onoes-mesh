@@ -2,7 +2,7 @@ import {bindCardDrag} from './workroom-drag.mjs';
 import {captureBoardView,restoreBoardView} from './workroom-view.mjs';
 import {saveCardBrief} from './workroom-edit.mjs';
 import {createBoardLoader,createCardOpener} from './workroom-load.mjs';
-import {handoffStatus,taskTimeline,cardNextAction,nativeWorkerStatus} from './workroom-status.mjs';
+import {handoffStatus,handoffDisplayState,recoveredHandoff,taskTimeline,cardNextAction,nativeWorkerStatus} from './workroom-status.mjs';
 import {nimsPlanningBrief} from './lead-policy.mjs';
 import {createPlanEditor,scopedTeamStatus,teamRequestNotice} from './workroom-plan.mjs';
 import {paintMemoryState} from './workroom-memory-state.mjs';
@@ -166,8 +166,8 @@ if(root){
         const report=task.agentUpdates?.at(-1);if(report && !report.applied)button.append(el('small',`Agent: ${report.update.checklist.filter(step=>step.status==='done').length}/${report.update.checklist.length} · unreviewed`));
         if(task.workroom.stage==='needs_you')button.append(el('small','Needs you'));
         const handoff=task.messages.filter(message=>['plan','work','review'].includes(message.phase)).at(-1);
-        if(handoff)button.append(el('small',`${handoff.phase} → ${handoff.agentId} · ${handoff.state}`));
-        const signal=agentsKnown?handoffStatus(task,agents):null;if(signal)button.append(el('small',signal.label));
+        if(handoff)button.append(el('small',`${handoff.phase} → ${handoff.agentId} · ${handoffDisplayState(handoff)}`));
+        const signal=agentsKnown&&!recoveredHandoff(handoff)?handoffStatus(task,agents):null;if(signal)button.append(el('small',signal.label));
         }
         button.addEventListener('click',()=>{returnFocus=button;cardOpener.request(task.id);});
         const card=el('div');card.className='workroom-card';
@@ -346,12 +346,17 @@ if(root){
     function paintRecovery(){
       recovery.replaceChildren();const signal=handoffStatus(selected,agents);if(!signal)return;
       const latest=selected.messages.filter(m=>['plan','work','review'].includes(m.phase)).at(-1);
-      recovery.append(el('b',signal.label),el('p',signal.next),el('small',`Last handoff: ${new Date(latest.at).toLocaleString()} · Status checked: ${new Date().toLocaleTimeString()}`));
+      recovery.append(el('b',signal.label),el('p',signal.next));
+      if(recoveredHandoff(latest)){
+        recovery.append(el('small','Recovery recorded '+new Date(latest.legacyRecovery.recordedAt).toLocaleString()));
+        return;
+      }
+      recovery.append(el('small',`Last handoff: ${new Date(latest.at).toLocaleString()} · Status checked: ${new Date().toLocaleTimeString()}`));
       if(latest.outcome)recovery.append(el('small',`Native outcome verified: ${new Date(latest.outcome.verifiedAt).toLocaleString()}`));
       const relayButton=el('button','Open Relay');relayButton.type='button';relayButton.addEventListener('click',()=>{closeDetails();document.getElementById('tab-relay').click();});recovery.append(relayButton);
     }
     paintRecovery();
-    if(selected.messages.some(message=>message.agentId==='dsh' && message.state==='accepted' && !message.outcome)){
+    if(selected.messages.some(message=>message.agentId==='dsh' && message.state==='accepted' && !message.outcome && !recoveredHandoff(message))){
       const permissionPanel=el('section');permissionPanel.className='agent-reports';
       const permissionStatus=el('p','If DeepSeek is waiting for permission, inspect the exact request here.');permissionStatus.setAttribute('role','status');
       const permissionBody=el('div');
@@ -406,7 +411,7 @@ if(root){
       const text=el('textarea');text.readOnly=true;text.rows=10;text.setAttribute('aria-label','Nims planning brief');text.value=nimsPlanningBrief(selected);brief.append(text);team.append(brief);
     }
     const handoffHistory=selected.messages.filter(message=>['plan','work','review'].includes(message.phase));
-    for(const message of handoffHistory.slice(-3))team.append(el('p',`${message.phase} → ${message.agentId} · ${message.state}`));
+    for(const message of handoffHistory.slice(-3))team.append(el('p',`${message.phase} → ${message.agentId} · ${handoffDisplayState(message)}`));
     const pendingHandoffs=new Map();
     for(const [phase,label] of [['plan','Ask for a plan · no edits'],['work','Prepare worker request'],['review','Request independent review']]){
       const button=el('button',phase==='plan'&&['echo','nims'].includes(selected.workroom.owner)?'Ask '+(selected.workroom.owner==='nims'?'Nims':'Echo')+' to plan · no edits':label);button.type='button';button.disabled=(phase==='plan'?(!agents.some(a=>a.id===selected.workroom.owner&&a.conversation_id)&&!workerAgent.options.length):!workerAgent.options.length)||selected.status==='done'||selected.progress.decision==='approved'||(phase==='plan'&&selected.workroom.owner==='nims'&&!agents.some(a=>a.id==='nims'&&a.conversation_id))||(phase!=='plan'&&selected.plan&&selected.plan.state!=='locked')||(phase==='review'&&(!selected.worker||!selected.progress.result.trim()||!selected.progress.evidence.trim()||selected.progress.checklist.some(step=>step.status!=='done')));
@@ -489,7 +494,7 @@ if(root){
     function paintSavedMessages(task){
       savedMessages.replaceChildren();
       for(const message of task.messages||[]){
-        const item=el('article');item.append(el('p',`${message.agentId} · ${message.state} · ${message.text}`));
+        const item=el('article');item.append(el('p',`${message.agentId} · ${handoffDisplayState(message)} · ${message.text}`));
         const worker=nativeWorkerStatus(message);
         if(worker){item.append(el('strong',worker.label),el('p',worker.next));
           const checked=message.nativeReceipt.lastCheckedAt;

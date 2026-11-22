@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {handoffStatus,taskTimeline,cardNextAction,nativeWorkerStatus} from '../public/workroom-status.mjs';
+import {handoffStatus,handoffDisplayState,taskTimeline,cardNextAction,nativeWorkerStatus} from '../public/workroom-status.mjs';
 import {withNims} from '../lib/nims-link.mjs';
 
 function nativeMessage(){
@@ -8,6 +8,23 @@ function nativeMessage(){
     receipt:{agentId:'echo',sendId:'send',conversationId:'chat',runId:'run_one',observation:'observed',status:'completed',
       writerLifecycle:{state:'observed',runId:'run_one',ownerId:'owner',generation:'generation',observationOnly:true,writerQuiescence:false,localWorkEnded:false}}}};
 }
+test('a recovered send keeps its delivery history and shows its unknown outcome independently of live agent activity',()=>{
+  const at='2026-11-01T12:00:00Z',recordedAt='2026-11-22T12:00:00Z';
+  const send={...nativeMessage(),phase:'work',state:'accepted',at,legacyRecovery:{state:'owner_recovered_unknown',recordedAt}};
+  const task={messages:[send]};
+  assert.equal(handoffStatus(task,[{id:'echo',conversation_id:'chat',status:'waiting'}]).label,'Outcome unknown after recovery');
+  assert.equal(nativeWorkerStatus(send),null);
+  assert.equal(handoffDisplayState(send),'Outcome unknown after recovery');
+  const events=taskTimeline(task);
+  assert.equal(events.length,2);
+  assert.match(events[0].detail,/delivery accepted/);
+  assert.equal(events[1].at,recordedAt);
+  assert.equal(events[1].label,'Outcome unknown after recovery');
+  task.messages.push({...send,id:'next',legacyRecovery:undefined,nativeReceipt:undefined});
+  assert.equal(handoffStatus(task,[]).label,'Agent unavailable');
+  assert.equal(handoffDisplayState(task.messages[1]),'accepted');
+  assert.equal(taskTimeline(task).filter(e=>e.label===events[1].label).length,1);
+});
 test('completed reply does not hide unfinished local work, and local end never implies Done',()=>{
   const message=nativeMessage(),before=JSON.stringify(message);
   assert.equal(nativeWorkerStatus(message).label,'Local worker not finished');
