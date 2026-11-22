@@ -105,6 +105,18 @@ test('owner probe is bounded hidden metadata inspection and fails closed on erro
   assert.equal(await probeSupervisorOwner({platform:'win32',runImpl:async()=>{throw Error('timeout');}}),false);
 });
 
+test('an uppercase inherited module path cannot shadow the Windows probe override',async()=>{
+  const env={PSMODULEPATH:'inherited',PsModulePath:'other spelling',SystemRoot:'C:\\Windows'};
+  let observed;
+  const runImpl=async(_command,_args,options)=>{
+    observed=options.env;
+    return {stdout:JSON.stringify(ownerFixture())};
+  };
+  assert.equal(await probeSupervisorOwner({platform:'win32',env,runImpl}),true);
+  assert.deepEqual(observed,{SystemRoot:'C:\\Windows',PSModulePath:''});
+  assert.equal(env.PSMODULEPATH,'inherited');
+});
+
 test('owner is rechecked after a successful observation and before any later network read',async()=>{
   let owners=0,calls=0;const source=fixture();
   const read=createSupervisorObservation({enabled:true,ownerProbe:async()=>++owners===1,fetchImpl:async()=>{calls++;return Response.json({});}});
