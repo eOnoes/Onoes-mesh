@@ -1,3 +1,11 @@
+## November 22, 2026 | Installed phone release
+
+The running Workroom now opens a saved card from its direct link and includes the seven-step board guide. The 15-file update comes from `bdfaa31`. A 390 px touch browser opened every saved card, advanced through the guide, and returned to the board after visiting all seven Mesh tabs over the private connection.
+
+During installation, Workroom served its local board before the shared-card writer reconnected. The original reader stayed available, the writer resumed with its existing grant, and all 22 checked Workroom and project-sync tables matched their before-images. The next scheduled startup check succeeded. The milestone backup restored the app and board, including the updated checklist and its saved Mind receipts.
+
+Inference shows the two configured machines. The optional laptop sensor launcher in `83816bb` awaits its own rollout and real hardware check. The print pilot remains private to Workroom. Historical job recovery requires fresh inputs for this installed version and an attended window.
+
 ## Current-boot recovery candidate and accepted phone cutover - November 16, 2026
 
 Eddie accepted both the deployed Workroom and Mind screens on his phone after
