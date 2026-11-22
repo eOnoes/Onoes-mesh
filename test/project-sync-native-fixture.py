@@ -4,12 +4,15 @@ from pathlib import Path
 import sys
 import threading
 import os
+import sqlite3
 
 sys.path.insert(0, sys.argv[1])
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'integrations/mind-recovery-candidate'))
 import test_checkpointed_ledger_candidate as fixtures
 from project_events_candidate import ProjectEventsCandidate, EventBinding
-from native_project_sync_candidate import NativeProjectSyncHost, seal_project_credential
+from native_project_sync_candidate import NativeProjectSyncHost, ProjectCredentialError, seal_project_credential
+from checkpointed_ledger_candidate import CheckpointedLedgerCandidate
+from provision_project_sync_candidate import prepare_project_service
 from native_recall_candidate import NativeRecallHost, seal_service_credential, SCOPE
 from onoes_mind.recall_binding import RecallBinding, prepare_mesh_principal, issue_mesh_recall_credential
 from recall_process_candidate import current_ticks
@@ -25,10 +28,13 @@ try:
     binding = EventBinding(str(ledger.path.resolve()), stat.st_dev, stat.st_ino,
         fixture.store_id, fixture.environment, 'fixture:source')
     events = ProjectEventsCandidate(ledger, binding)
-    events.initialize(); events.register_project('project-A', 'Synthetic Mesh project')
-    token = events.enroll(['project-A'])
+    mesh_project = 'onoes-mesh' if sys.argv[2:] == ['--mesh-and-pilot'] else 'project-A'
+    projects = (mesh_project,)
+    review = 'fixture:project'
+    events.initialize(); events.register_project(mesh_project, 'Synthetic Mesh project')
+    token = events.enroll(list(projects))
     credential = fixture.root/'project-credential.json'
-    seal_project_credential(credential, token, events=events, project_ids=('project-A',), review_ref='fixture:project')
+    seal_project_credential(credential, token, events=events, project_ids=projects, review_ref=review)
     token = None
     prepare_mesh_principal(ledger, scope_id=SCOPE)
     read_token = issue_mesh_recall_credential(ledger)
@@ -43,7 +49,7 @@ try:
 
     def start_project():
         host = NativeProjectSyncHost(binding=binding, history_path=fixture.history, authority=fixture.authority,
-            **fixture.keys, credential_path=credential, project_ids=('project-A',), review_ref='fixture:project')
+            **fixture.keys, credential_path=credential, project_ids=projects, review_ref=review)
         host.start()
         return host
 
@@ -62,6 +68,38 @@ try:
                         receipts=db.execute('SELECT count(*) FROM project_sync_events').fetchone()[0]))
         elif op == 'stop':
             project.close(); output(dict(stopped=True))
+        elif op == 'addPrintPilot':
+            assert projects == ('onoes-mesh',)
+            project.close()
+            owner = CheckpointedLedgerCandidate(binding.database_path, fixture.history, fixture.authority,
+                store_id=binding.store_id, environment=binding.environment, **fixture.keys)
+            replacement = fixture.root/'mesh-and-pilot.json'
+            try:
+                outcome = prepare_project_service(ProjectEventsCandidate(owner, binding), mode='add_project',
+                    projects=(('3d-print-pilot','3D Print Pilot'), (mesh_project,'Synthetic Mesh project')),
+                    added_project_id='3d-print-pilot', credential_path=replacement,
+                    outcome_path=fixture.root/'pilot-outcome.json', operation_id='add-print-pilot',
+                    review_ref='fixture:mesh-and-pilot')
+            finally:
+                owner.close()
+            # The original startup configuration is now stale. Exercise its real refusal.
+            try:
+                project = start_project()
+            except ProjectCredentialError:
+                pass
+            else:
+                raise AssertionError('Old writer started after project addition')
+            credential, projects, review = replacement, ('3d-print-pilot', mesh_project), 'fixture:mesh-and-pilot'
+            output(dict(status=outcome['status'], oldStartupRefused=True))
+        elif op == 'receivedEvents':
+            db = sqlite3.connect(Path(binding.database_path).as_uri()+'?mode=ro', uri=True)
+            try:
+                db.row_factory = sqlite3.Row
+                rows = db.execute('SELECT event_id AS eventId,card_id AS cardId,project_id AS projectId,'
+                                  'sequence,receipt_id AS receiptId FROM project_sync_events ORDER BY card_id,sequence')
+                output([dict(row) for row in rows])
+            finally:
+                db.close()
         elif op == 'restart':
             project = start_project(); output(dict(project=project_options(), recall=reader.native_options()))
         elif op == 'revoke':

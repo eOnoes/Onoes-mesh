@@ -109,12 +109,49 @@ export function inspectProjectSource(value){
 export function prepareProjectSource(value,approval){
   const p=checked(value);
   require(exact(approval,['decision','planSha256'])&&approval.decision==='approve_exact_mesh_project_source_setup'&&approval.planSha256===hash(p));
+  return writeProjectSource(p,null);
+}
+
+function addedLink(db,p,cardId){
+  const link=p.links.find(row=>row.cardId===cardId);
+  require(link && p.links.length>=2);
+  // Previously shared cards may have changed. Compare their original baselines
+  // and current sharing policy. Only the new card must match its current contents.
+  receipt(db,{...p,links:p.links.filter(row=>row.cardId!==cardId)});
+  snapshots(db,{links:[link]});
+  return link;
+}
+
+export function inspectProjectSourceAddition(value,cardId){
+  const p=checked(value),db=open(p,true);
+  try{
+    db.exec('BEGIN');
+    addedLink(db,p,cardId);
+    db.exec('COMMIT');identity(p);
+    return {state:'ready_to_add',createsNothing:true,addedCardId:cardId,planSha256:hash(p)};
+  }finally{db.close();}
+}
+
+export function prepareProjectSourceAddition(value,approval){
+  const p=checked(value);
+  require(exact(approval,['decision','planSha256','addedCardId'])&&
+    approval.decision==='approve_exact_mesh_project_source_addition'&&approval.planSha256===hash(p)&&id(approval.addedCardId));
+  return writeProjectSource(p,approval.addedCardId);
+}
+
+function writeProjectSource(p,addedCardId){
   const db=open(p,false);let commitAttempted=false;
   try{
-    db.exec('BEGIN IMMEDIATE');require(present(db).length===0);snapshots(db,p);
+    db.exec('BEGIN IMMEDIATE');
+    let links=p.links;
+    if(addedCardId===null){
+      require(present(db).length===0);snapshots(db,p);
+    }else{
+      links=[addedLink(db,p,addedCardId)];
+    }
     const store={workroom:{get:cardId=>card(db,cardId)}};
-    const controller=createWorkroomProjectSyncCandidate({db,store},{storeId:p.storeId,initialize:true,joinTransaction:true});
-    for(const {cardId,projectId,approvalRef,fields} of p.links)controller.link({cardId,projectId,approvalRef,fields});
+    const controller=createWorkroomProjectSyncCandidate({db,store},{storeId:p.storeId,initialize:addedCardId===null,joinTransaction:true});
+    for(const {cardId,projectId,approvalRef,fields} of links)controller.link({cardId,projectId,approvalRef,fields});
     const result=receipt(db,p);identity(p);commitAttempted=true;db.exec('COMMIT');return result;
   }catch(error){
     if(db.isTransaction){try{db.exec('ROLLBACK');}catch{commitAttempted=true;}}

@@ -9,7 +9,8 @@ import {resolve,join} from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
 import {startApp} from '../server.mjs';
 import {openTaskStore} from '../lib/task-store.mjs';
-import {createWorkroomProjectSyncCandidate} from '../integrations/workroom-project-sync-candidate.mjs';
+import {createWorkroomProjectSyncCandidate,projectSnapshot} from '../integrations/workroom-project-sync-candidate.mjs';
+import {inspectProjectSourceAddition,prepareProjectSourceAddition} from '../integrations/project-sync-source-setup-candidate.mjs';
 import {validateNativeProjectSync,prepareNativeProjectSync,nativeSyncSchema,captureSyncSchema,validateNativeProjectCapture} from '../integrations/project-sync-native-candidate.mjs';
 import {startNativeMesh,readNativeRecallInput,readNativeMeshInput,meshFrameSchema,captureFrameSchema} from '../integrations/native-mind-mesh-entry.mjs';
 
@@ -28,19 +29,19 @@ function environment(t){
   process.env.MESH_RELAY_MODE='child';for(const key of keys.slice(2))process.env[key]='0';
   t.after(()=>{for(const key of keys)if(old[key]===undefined)delete process.env[key];else process.env[key]=old[key];});
 }
-function baseline(destination){
-  const dataDir='test/app03-native-sync-'+randomUUID(),directory=resolve(dataDir);mkdirSync(directory);
+function baseline(destination,projectId='project-A',parent='test'){
+  const dataDir=parent+'/app03-native-sync-'+randomUUID(),directory=resolve(dataDir);mkdirSync(directory);
   const filename=join(directory,'tasks.sqlite');let controller;
   const store=openTaskStore(filename,{projectSyncFactory:c=>controller=createWorkroomProjectSyncCandidate(c,{storeId:destination.storeId,initialize:true})});
   const card=store.create({title:'Synthetic native pipeline',description:'PRIVATE-UNSHARED-GOAL',owner:'nims'});
-  const link={cardId:card.id,projectId:'project-A',approvalRef:'fixture:approved-card',fields:['title','stage']};
+  const link={cardId:card.id,projectId,approvalRef:'fixture:approved-card',fields:['title','stage']};
   controller.link(link);store.close();
   const stat=statSync(filename,{bigint:true});
   return {dataDir,filename,cardId:card.id,cleanup:()=>rmSync(directory,{recursive:true,force:true}),config:{schema:nativeSyncSchema,destination,links:[link],
     source:{databasePath:realpathSync(filename),fileDevice:stat.dev.toString(),fileInode:stat.ino.toString()}}};
 }
-async function mind(){
-  const child=spawn('python',['-B',resolve('test/project-sync-native-fixture.py'),process.env.MIND_CANDIDATE_SOURCE||'D:/Dev/Onoes-Mind'],
+async function mind(...fixtureOptions){
+  const child=spawn('python',['-B',resolve('test/project-sync-native-fixture.py'),process.env.MIND_CANDIDATE_SOURCE||'D:/Dev/Onoes-Mind',...fixtureOptions],
     {windowsHide:true,stdio:['pipe','pipe','pipe']});
   const terminal=new Promise(r=>child.once('exit',code=>r(code)));let stderr='';child.stderr.on('data',b=>stderr+=b);
   const lines=createInterface({input:child.stdout}),iterator=lines[Symbol.asyncIterator]();
@@ -235,6 +236,97 @@ test('explicit credential-free capture starts offline, survives reopen and catch
   assert.doesNotMatch(JSON.stringify(recall.value),/PRIVATE-UNSHARED-GOAL|Offline unrelated card/);
 });
 
+
+test('a committed project addition survives failed writer startup and delivers both projects once', {timeout:240000},async t=>{
+  environment(t);
+  const m=await mind('--mesh-and-pilot');
+  let app,b;
+  t.after(async()=>{try{await app?.close();}finally{try{await m.close();}finally{b?.cleanup();}}});
+  b=baseline(m.options.project,'onoes-mesh','data');
+  const start=async frame=>{
+    app=await startNativeMesh({input:stream(frame),appOptions:{dataDir:b.dataDir,relayEnabled:false}});
+    return admitted(app);
+  };
+  const connected=()=>({schema:meshFrameSchema,mindRecallOptions:m.options.recall,
+    projectSyncOptions:{...b.config,destination:m.options.project}});
+  const stop=async()=>{await app.close();app=null;};
+  let request=await start(connected());
+  const cardState=async id=>(await request('/api/workroom/'+id)).value.memorySync.state;
+  await until(async()=>await cardState(b.cardId)==='saved');
+  const before=await m.rpc('receivedEvents');
+  assert.equal(before.length,1);
+  assert.equal(before[0].projectId,'onoes-mesh');
+  await stop();
+  assert.deepEqual(await m.rpc('addPrintPilot'),{status:'project_added_inactive',oldStartupRefused:true});
+
+  const store=openTaskStore(b.filename);
+  let pilot,plan;
+  try{
+    pilot=store.create({title:'Pilot coupon draft',description:'Unshared printer notes',owner:'echo'});
+    const link={cardId:pilot.id,projectId:'3d-print-pilot',approvalRef:'fixture:pilot',fields:['title','stage']};
+    b.config.links.push(link);
+    plan={schema:'onoes-mesh-project-source-setup/v1',workspace:realpathSync('.'),dataDir:b.dataDir,
+      source:b.config.source,storeId:m.options.project.storeId,links:b.config.links.map(link=>{
+        const snapshot=projectSnapshot(store.workroom.get(link.cardId),link.fields);
+        return {...link,revisions:snapshot.revisions,projectionSha256:snapshot.evidence[0].content_hash.slice(7)};
+      })};
+  }finally{store.close();}
+  const preview=inspectProjectSourceAddition(plan,pilot.id);
+  const sourceReceipt=prepareProjectSourceAddition(plan,{decision:'approve_exact_mesh_project_source_addition',
+    addedCardId:pilot.id,planSha256:preview.planSha256});
+  assert.equal(sourceReceipt.baselines.length,2);
+  const offline={schema:captureFrameSchema,projectCaptureOptions:{schema:captureSyncSchema,
+    source:b.config.source,storeId:m.options.project.storeId,links:b.config.links}};
+  request=await start(offline);
+  const edits=[[b.cardId,'Mesh recovery guide revision two','guide'],[pilot.id,'Pilot coupon revision two','coupon']];
+  for(const [id,title] of edits){
+    assert.equal(await cardState(id),'offline');
+    const path='/api/tasks/'+id;
+    const {task}= (await request(path)).value;
+    const result=await request(path,{method:'PATCH',body:{title,description:task.description,
+      label:task.label,status:task.status,owner:task.owner,revision:task.revision}});
+    assert.equal(result.status,200);
+  }
+  const queue=()=>rows(b.filename).sort((a,b)=>a.eventId.localeCompare(b.eventId));
+  const pending=queue();
+  assert.equal(pending.length,4);
+  assert.equal(pending.filter(row=>row.state==='pending').length,3);
+  await stop();
+  request=await start(offline);
+  for(const [id,title] of edits) assert.equal((await request('/api/tasks/'+id)).value.task.title,title);
+  await m.restart();
+  assert.deepEqual(await m.rpc('receivedEvents'),before);
+  assert.deepEqual(queue(),pending);
+  await stop();
+  request=await start(connected());
+  await until(async()=>await cardState(b.cardId)==='saved' && await cardState(pilot.id)==='saved');
+  const saved=queue();
+  assert.deepEqual(saved.map(r=>r.eventId),pending.map(r=>r.eventId));
+  const canonical=await m.rpc('receivedEvents');
+  assert.equal(canonical.length,4);
+  assert.ok(canonical.some(e=>e.eventId===before[0].eventId && e.receiptId===before[0].receiptId));
+  for(const [cardId,projectId] of [[b.cardId,'onoes-mesh'],[pilot.id,'3d-print-pilot']]){
+    const events=canonical.filter(e=>e.cardId===cardId && e.projectId===projectId);
+    assert.deepEqual(events.map(e=>e.sequence),[1,2]);
+    for(const event of events){
+      const row=saved.find(r=>r.eventId===event.eventId);
+      assert.equal(row.state,'saved');
+      assert.equal(JSON.parse(row.receipt).receiptId,event.receiptId);
+    }
+  }
+  await stop();
+  request=await start(connected());
+  for(const [id,title,query] of edits){
+    assert.equal(await cardState(id),'saved');
+    const recall=await request('/api/mind/recall',{method:'POST',body:{query,limit:8}});
+    assert.equal(recall.status,200);
+    assert.equal(recall.value.records.length,1);
+    assert.ok(JSON.stringify(recall.value.records[0]).includes(title));
+    assert.doesNotMatch(JSON.stringify(recall.value),/Unshared printer notes|PRIVATE-UNSHARED-GOAL/);
+  }
+  assert.deepEqual(await m.rpc('receivedEvents'),canonical);
+  assert.deepEqual(queue(),saved);
+});
 
 test('capture-only startup rejects mismatched authority and never repairs or widens sharing',async t=>{
   environment(t);

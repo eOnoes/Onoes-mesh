@@ -16,7 +16,13 @@ The offline owner operation `add_project` takes the complete reviewed list of pr
 
 The operation verifies Windows-protected storage for a fresh credential before committing the new registration, grant and credential rotation together. A storage failure leaves the previous credential usable at its original scope. Preserve the attempt and its files if completion is uncertain. A successful result identifies the added project and records `project_added_inactive`. Starting the writer and enrolling a reader each have their own approval.
 
-For the print pilot, the intended pair is `onoes-mesh` and `3d-print-pilot`. Before live activation, rehearse recovery after the grant commits but the new writer fails to start. At that point the previous credential has expired. Mesh can keep edits pending through its existing capture mode. Recovery must account for those pending edits and verify the original Mesh card still reaches Mind.
+For the print pilot, the intended pair is `onoes-mesh` and `3d-print-pilot`. Once the grant commits, the previous credential expires. In a disposable rehearsal, the old startup configuration was refused. Workroom saved edits to both cards locally and reopened them while offline. With the replacement writer connected, all four events matched Mind receipts. Reopening a second time preserved those receipts and both current titles.
+
+### Linking a card on an existing board
+
+Prepare the complete target list of card links. Keep the original projection and field approval for each existing link. For the new card, review its current revision, fields and projected content. `inspectProjectSourceAddition` previews one named addition. `prepareProjectSourceAddition` requires that card ID, the full plan hash and the `approve_exact_mesh_project_source_addition` decision. It appends one baseline in a transaction. If the acknowledgement is lost, `inspectProjectSource` can read back the completed plan and its original event IDs.
+
+On a private copy of the 15-card board, adding a pilot card with title, stage and shared goal preserved every original row across 30 tables. The pilot's goal contained the revision-one specification and CAD reference. No service was started by the addition. The live board and writer still need their own approved link and project scope.
 
 ## Historical connection status - 2026-11-15 Chicago
 

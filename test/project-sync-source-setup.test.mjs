@@ -8,7 +8,8 @@ import {openTaskStore} from '../lib/task-store.mjs';
 import {readWorkroomCardState,workroomBriefFingerprint} from '../lib/workroom-card-state.mjs';
 import {projectSnapshot} from '../integrations/workroom-project-sync-candidate.mjs';
 import {initializeProjectOutbox,canonicalProjectEvent} from '../integrations/project-sync-outbox-candidate.mjs';
-import {inspectProjectSource,prepareProjectSource} from '../integrations/project-sync-source-setup-candidate.mjs';
+import {inspectProjectSource,prepareProjectSource,inspectProjectSourceAddition,prepareProjectSourceAddition}
+  from '../integrations/project-sync-source-setup-candidate.mjs';
 
 const hash=value=>createHash('sha256').update(canonicalProjectEvent(value)).digest('hex');
 const copy=value=>JSON.parse(JSON.stringify(value));
@@ -125,6 +126,40 @@ test('ordinary initialization cannot join a card transaction implicitly',t=>{
   const f=fixture(t),db=new DatabaseSync(f.filename);
   try{db.exec('BEGIN IMMEDIATE');assert.throws(()=>initializeProjectOutbox(db));db.exec('ROLLBACK');}
   finally{db.close();}
+});
+
+test('adding one reviewed card preserves existing sharing and reconciles a lost acknowledgement',t=>{
+  const f=fixture(t,{cards:2}),[first,added]=f.plan.links;
+  const original={...f.plan,links:[first]};
+  const originalReceipt=prepareProjectSource(original,{decision:'approve_exact_mesh_project_source_setup',planSha256:hash(original)});
+  added.projectId='3d-print-pilot';
+  const preview=inspectProjectSourceAddition(f.plan,added.cardId);
+  const decision={decision:'approve_exact_mesh_project_source_addition',addedCardId:added.cardId,planSha256:preview.planSha256};
+  const before=originalTables(f.filename);
+  assert.throws(()=>prepareProjectSourceAddition(f.plan,f.approval()));
+  assert.throws(()=>prepareProjectSourceAddition(f.plan,{...decision,addedCardId:first.cardId}));
+  const changed=copy(f.plan);
+  changed.links[0].fields=['title','stage'];
+  assert.throws(()=>prepareProjectSourceAddition(changed,{...decision,planSha256:hash(changed)}));
+  const stale=copy(f.plan);
+  stale.links[1].revisions.task++;
+  assert.throws(()=>prepareProjectSourceAddition(stale,{...decision,planSha256:hash(stale)}));
+  assert.deepEqual(inspectProjectSource(original).baselines,originalReceipt.baselines);
+  const exec=DatabaseSync.prototype.exec;
+  const lost=t.mock.method(DatabaseSync.prototype,'exec',function(sql){
+    const result=exec.call(this,sql);
+    if(sql==='COMMIT')throw Error('Lost acknowledgement');
+    return result;
+  });
+  try{assert.throws(()=>prepareProjectSourceAddition(f.plan,decision),e=>e.projectSourceOutcomeUnknown===true);}
+  finally{lost.mock.restore();}
+  const recovered=inspectProjectSource(f.plan);
+  assert.equal(recovered.baselines.length,2);
+  assert.deepEqual(recovered.baselines[0],originalReceipt.baselines[0]);
+  assert.equal(recovered.baselines[1].cardId,added.cardId);
+  assert.throws(()=>prepareProjectSourceAddition(f.plan,decision));
+  assert.deepEqual(inspectProjectSource(f.plan),recovered);
+  assert.deepEqual(originalTables(f.filename),before);
 });
 
 test('readonly projection preserves the UI interpretation of stale approved Done cards',t=>{
