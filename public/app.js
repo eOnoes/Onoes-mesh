@@ -222,7 +222,11 @@ async function api(route, options = {}) {
     if (!sameRequest() || lifecycleSuspended || !navigator.onLine || (!admission && !currentDemo(requestDemo, requestGeneration))) throw new Error('Demo changed or expired while request was pending.');
   };
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), route === '/api/inference/chat' ? 18000 : /^\/api\/workroom\/.+\/(message|sync|handoff|approval)$/.test(route) ? 15000 : route === '/api/inference/approve' ? 8000 : 2500);
+  const machineCheck = route === '/api/node-probes/refresh';
+  // The explicit machine check runs up to 2s of discovery then up to 8s of SSH.
+  const timeoutMs = machineCheck ? 15000 :
+    route === '/api/inference/chat' ? 18000 : /^\/api\/workroom\/.+\/(message|sync|handoff|approval)$/.test(route) ? 15000 : route === '/api/inference/approve' ? 8000 : 2500;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     checkRequest();
     const requestOptions = { ...options, signal: controller.signal, cache: 'no-store', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', ...options.headers, ...(!admission ? { 'X-Trial-CSRF': requestDemo.csrfToken } : {}) } };
@@ -271,6 +275,10 @@ async function api(route, options = {}) {
     let body; try { body = JSON.parse(raw); } catch { throw new Error('Local app returned an invalid response.'); }
     return body;
   } catch (e) {
+    if (machineCheck && controller.signal.aborted) {
+      checkRequest();
+      throw new Error('Machine check timed out. Tap Check machine status to try again.');
+    }
     if (e.name === 'AbortError' || e instanceof TypeError) { if (sameRequest()) clearPrivate('Local app unreachable. Private data cleared; reconnect and start a local task session.'); throw new Error('Local app unreachable or observation timed out.'); }
     throw e;
   } finally { clearTimeout(timer); }
