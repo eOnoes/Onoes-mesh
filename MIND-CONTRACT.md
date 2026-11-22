@@ -1,4 +1,16 @@
-## Current connection status - 2026-11-15 Chicago
+## Mesh and Mind connection status | November 22, 2026
+
+The live Workroom serves saved cards, and Mesh can retrieve the deliberately shared result from its existing linked card in Onoes-Mind. Workroom owns task stage and review. Mind keeps the linked project record and its revision history. The live writer is scoped to Onoes-Mesh.
+
+### Changing project specifications
+
+Use one linked Workroom card per changing specification. Keep its project and card IDs stable. When the design changes, update the shared goal with the revision, units, dimensions and CAD filename. A project reader can then return the current revision and its Workroom source reference.
+
+A disposable integration check compared two publication paths. Publishing two ordinary owner facts with different event IDs left both searchable. Editing one linked card produced one current Mind revision. A late replay of the first event preserved the newer revision. Relay and Telegram adapters read the same result through the project tool.
+
+The print pilot still needs explicit writer scope for its project and a read-only connection reserved for Echo. The channel checks used test credentials. Live Echo enrollment and cross-channel retrieval on Eddie's PC are pending.
+
+## Historical connection status - 2026-11-15 Chicago
 
 The first canonical shared read-only connection is live and accepted on Eddie's
 phone. Its fixed project/onoes-mind/shared scope excludes agent-private memory;
