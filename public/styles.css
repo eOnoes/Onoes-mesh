@@ -1343,6 +1343,7 @@ footer{background:transparent}
 .workroom-sheet button{min-height:44px;margin:3px 0}
 .workroom-sheet [role=status]{color:var(--cyan)}
 .workroom-task-sheet[open]{display:flex;flex-direction:column;overflow:hidden}
+.workroom-send-gate{display:contents}
 .workroom-task-sheet .workroom-sheet-toolbar{position:static;flex:0 0 auto;gap:8px}
 .workroom-sheet-content{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 2px;scroll-padding-block:12px}
 .workroom-writeup,.workroom-card-summary>p{white-space:pre-wrap;overflow-wrap:anywhere}

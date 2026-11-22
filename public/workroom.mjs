@@ -21,7 +21,8 @@ if(root){
   const projectFilter=el('input');projectFilter.placeholder='Filter by project';projectFilter.setAttribute('aria-label','Filter board by project');
   const status=el('p');status.setAttribute('role','status');
   const maintenanceNotice=el('p');maintenanceNotice.setAttribute('role','status');maintenanceNotice.hidden=true;
-  const paintMaintenance=()=>{maintenanceNotice.textContent=teamRequestNotice(teamPolicy);maintenanceNotice.hidden=!maintenanceNotice.textContent;};
+  let paintCardPolicy=null;
+  const paintMaintenance=()=>{maintenanceNotice.textContent=teamRequestNotice(teamPolicy);maintenanceNotice.hidden=!maintenanceNotice.textContent;paintCardPolicy?.();};
   const board=el('div');board.className='workroom-lanes';
   const createLead=document.getElementById('create-owner');
   const createLeadLabel=document.querySelector('label[for="create-owner"]');
@@ -55,7 +56,7 @@ if(root){
   const dragHelp=el('p','Drag anywhere on a card with your mouse. On your phone, hold briefly, then drag. Tap once for details; swipe without holding to scroll.');
   const details=el('dialog');details.className='workroom-sheet';details.setAttribute('aria-label','Task details');
   let returnFocus=null;
-  function closeDetails(){viewEpoch++;clearTimeout(followTimer);const id=selected?.id;details.close();selected=null;pending=null;(Array.from(board.querySelectorAll('[data-task-id]')).find(node=>node.dataset.taskId===id)||returnFocus)?.focus();}
+  function closeDetails(){viewEpoch++;paintCardPolicy=null;clearTimeout(followTimer);const id=selected?.id;details.close();selected=null;pending=null;(Array.from(board.querySelectorAll('[data-task-id]')).find(node=>node.dataset.taskId===id)||returnFocus)?.focus();}
   details.addEventListener('cancel',event=>{if(busy){event.preventDefault();return;}event.preventDefault();closeDetails();});
   root.append(heading,description,refresh,projectFilter,dragHelp,maintenanceNotice,status,board,details);
   // Keep the existing admission control visible when the board is locked.
@@ -143,7 +144,7 @@ if(root){
   }
   window.meshWorkroom.onClear(()=>{
     boardLoader.clear();cardOpener.clear();agentsKnown=false;root.dataset.managedFlow='0';
-    viewEpoch++;clearTimeout(followTimer);
+    viewEpoch++;paintCardPolicy=null;clearTimeout(followTimer);
     tasks=[];selected=null;agents=[];pending=null;teamPolicy=null;paintMaintenance();paintCreateLead();
     details.close();details.replaceChildren();board.replaceChildren();
     createDialog.close();createForm.reset();createStatus.textContent='';
@@ -195,7 +196,7 @@ if(root){
     const epoch=++viewEpoch;clearTimeout(followTimer);
     const opened=await request('/api/workroom/'+id);
     if(epoch!==viewEpoch)return;
-    selected=opened.task;teamPolicy=opened.teamPolicy||null;paintMaintenance();
+    paintCardPolicy=null;selected=opened.task;teamPolicy=opened.teamPolicy||null;paintMaintenance();
     // Never carry an uncertain message into another task.
     pending=null;details.replaceChildren();details.classList.add('workroom-task-sheet');details.classList.toggle('workroom-simple-flow',Boolean(teamPolicy?.simpleFlow));
     const content=el('div');content.className='workroom-sheet-content';
@@ -209,7 +210,7 @@ if(root){
     const dialogStatus=el('p');dialogStatus.setAttribute('role','status');content.append(dialogStatus);
     const memoryState=el('p');memoryState.className='workroom-memory-state';memoryState.setAttribute('role','status');
     paintMemoryState(memoryState,opened.memorySync);content.append(memoryState);
-    if(teamRequestNotice(teamPolicy))content.append(el('p',teamRequestNotice(teamPolicy)));
+    const cardNotice=el('p');cardNotice.setAttribute('role','status');content.append(cardNotice);
     const writeup=el('p',selected.description);writeup.className='workroom-writeup';
     content.append(el('h2',selected.title),writeup);
     if(selected.flow?.state==='clarification')content.append(el('h3','Clarification requested · '+new Date(selected.flow.askedAt).toLocaleString()),el('p',selected.flow.question));
@@ -419,7 +420,7 @@ if(root){
     }
     const handoffHistory=selected.messages.filter(message=>['plan','work','review'].includes(message.phase));
     for(const message of handoffHistory.slice(-3))team.append(el('p',`${message.phase} → ${message.agentId} · ${handoffDisplayState(message)}`));
-    const pendingHandoffs=new Map();
+    const pendingHandoffs=new Map(),handoffButtons=new Map();
     for(const [phase,label] of [['plan','Ask for a plan · no edits'],['work','Prepare worker request'],['review','Request independent review']]){
       const button=el('button',phase==='plan'&&['echo','nims'].includes(selected.workroom.owner)?'Ask '+(selected.workroom.owner==='nims'?'Nims':'Echo')+' to plan · no edits':label);button.type='button';button.disabled=(phase==='plan'?(!agents.some(a=>a.id===selected.workroom.owner&&a.conversation_id)&&!workerAgent.options.length):!workerAgent.options.length)||selected.status==='done'||selected.progress.decision==='approved'||(phase==='plan'&&selected.workroom.owner==='nims'&&!agents.some(a=>a.id==='nims'&&a.conversation_id))||(phase!=='plan'&&selected.plan&&selected.plan.state!=='locked')||(phase==='review'&&(!selected.worker||!selected.progress.result.trim()||!selected.progress.evidence.trim()||selected.progress.checklist.some(step=>step.status!=='done')));
       const dispatch=()=>act(async()=>{
@@ -434,7 +435,7 @@ if(root){
         await request('/api/workroom/'+id+'/handoff',{method:'POST',body:JSON.stringify(body)});
         pendingHandoffs.delete(phase);await load();await open(id);status.textContent=`${phase} handoff accepted. Acceptance is not completion.`;
       });
-      button.disabled=button.disabled||Boolean(teamRequestNotice(teamPolicy));
+      handoffButtons.set(button,button.disabled);
       if(phase==='work')button.addEventListener('click',()=>{
         if(teamRequestNotice(teamPolicy)){dialogStatus.textContent=teamRequestNotice(teamPolicy);return;}
         if(!editor.hidden){dialogStatus.textContent='Save or cancel edits before preparing worker execution.';return;}
@@ -448,7 +449,7 @@ if(root){
       });else button.addEventListener('click',dispatch);
       team.append(button);
     }
-    let paintAuto=()=>{};
+    let paintAuto=()=>{},paintScopedAvailability=()=>{};
     if(selected.plan){
       const auto=el('section');auto.append(el('h3','Automatic scoped team'),el('p','Starts the assigned Echo builder, applies its completed report, then asks the independent reviewer. Stops for you to inspect/record the review. Never auto-approves or marks Done. Pause stops next steps; already accepted work continues. Qualified for this Mesh checkout only.'));
       const teamState=el('p'),qualification=el('p');auto.append(qualification,teamState);let visible=selected;const buttons=new Map(),originalPlanRevision=selected.plan.revision;
@@ -459,12 +460,15 @@ if(root){
           await request('/api/workroom/'+id+'/automation',{method:'POST',body:JSON.stringify({action,...basis})});await load();await open(id);
         }));auto.append(b);
       }
-      paintAuto=task=>{visible=task;const state=task.automation?.state,changed=task.plan?.revision!==originalPlanRevision;
+      paintScopedAvailability=()=>{const task=visible,state=task.automation?.state,changed=task.plan?.revision!==originalPlanRevision;
         const qualified=scopedTeamStatus(task.plan,teamPolicy);qualification.textContent=qualified.message;
-        teamState.textContent='Team: '+(state||'not started')+' · '+(task.automation?.reason||'One build → one review, no automatic rework loop.')+(changed?' Scope changed; reopen this card before starting/resuming.':'');
-        buttons.get('pause').disabled=state!=='active';buttons.get('close').disabled=!['paused','needs_review'].includes(state);
         buttons.get('resume').disabled=!qualified.matches||changed||task.plan?.state!=='locked'||state!=='paused';
         buttons.get('start').disabled=!qualified.matches||changed||task.plan?.state!=='locked'||['active','paused','needs_review'].includes(state)||task.status==='done'||task.progress.decision==='approved';
+      };
+      paintAuto=task=>{visible=task;const state=task.automation?.state,changed=task.plan?.revision!==originalPlanRevision;
+        teamState.textContent='Team: '+(state||'not started')+' · '+(task.automation?.reason||'One build → one review, no automatic rework loop.')+(changed?' Scope changed; reopen this card before starting/resuming.':'');
+        buttons.get('pause').disabled=state!=='active';buttons.get('close').disabled=!['paused','needs_review'].includes(state);
+        paintScopedAvailability();
         renderActions(task);
       };paintAuto(selected);team.append(auto);
     }
@@ -478,15 +482,28 @@ if(root){
       ['Prepare review handoff','Review the implementation and evidence for this task. Check the actual changes if you have repository access. Return APPROVED or CHANGES REQUESTED with reasons and checks actually run. Do not treat checked boxes or an agent summary as proof. If evidence is missing, request it.']
     ]){const button=el('button',label);button.type='button';button.addEventListener('click',()=>{compose.value=instruction;compose.focus();});handoffs.append(button);}
     messageForm.append(handoffs);
-    const send=el('button','Send in this task');send.type='submit';send.disabled=!destination.options.length;messageForm.append(send);
-    messageForm.append(el('p','This sends one message; it does not start the full team workflow. Accepted means queued by Relay, not completed.'));
+    const send=el('button','Send in this task');send.type='submit';
+    // Keep the task gate independent of the app's session-wide form lock.
+    const sendGate=el('fieldset');sendGate.className='workroom-send-gate';sendGate.append(send);
+    const sendHelp=el('p');messageForm.append(sendGate,sendHelp);
+    paintCardPolicy=()=>{
+      const notice=teamRequestNotice(teamPolicy);
+      cardNotice.textContent=notice;cardNotice.hidden=!notice;
+      sendGate.disabled=Boolean(notice)||!destination.options.length;
+      sendHelp.textContent=notice?'Sending is paused. You can keep drafting here.':
+        destination.options.length?'Accepted messages are queued by Relay.':'No connected agent is available for this task message.';
+      for(const [button,unavailable] of handoffButtons)button.disabled=unavailable||Boolean(notice);
+      if(notice)team.querySelector('.worker-preview')?.remove();
+      paintScopedAvailability();
+    };
+    paintCardPolicy();
     const unresolved=selected.messages.filter(message=>['unknown','prepared'].includes(message.state));
     for(const message of unresolved){
       const retry=el('button',`Retry uncertain message to ${message.agentId}`);retry.type='button';
       retry.addEventListener('click',()=>{pending={id:message.id,agentId:message.agentId,conversationId:message.conversationId,text:message.text,phase:message.phase};compose.value=message.text;destination.value=message.agentId;status.textContent='Original message selected. Send retries the same message identity.';});
       messageForm.append(retry);
     }
-    messageForm.addEventListener('submit',event=>{event.preventDefault();act(async()=>{
+    messageForm.addEventListener('submit',event=>{event.preventDefault();if(teamRequestNotice(teamPolicy))return;act(async()=>{
       const agent=agents.find(agent=>agent.id===destination.value);
       if(!agent)throw new Error('Refresh and choose an available agent.');
       if(pending && (pending.text!==compose.value || pending.agentId!==agent.id))throw new Error('Retry the original message unchanged before sending a new one.');
