@@ -69,25 +69,28 @@ class ProjectServiceProcessTests(unittest.TestCase):
         with urllib.request.urlopen(request,timeout=10) as response:
             self.assertEqual(response.status,200);return json.load(response)
 
-    def test_single_project_addition_requires_its_own_approval_then_serves_both_projects(self):
-        self.prepare()
+    def configure_addition(self, project_id, label):
         root = self.profile.parent
         p = self.base.value
         self.base.profile = root/'addition.json'
         self.base.approval = root/'addition-approval.json'
-        p.update(mode='add_project', addedProjectId='project-B', operationId='add-project-B')
-        p['projects'].append(['project-B', 'Second design'])
+        p.update(mode='add_project', addedProjectId=project_id, operationId='add-'+project_id)
+        p['projects'] = sorted(p['projects'] + [[project_id, label]])
         for field in ('attemptPath','terminalPath','credentialPath','outcomePath'):
             p[field] = str(root/('add-'+field+'.json'))
         self.base.write()
         decision = json.loads(self.base.approval.read_text())
-        decision['projects'] = ['project-A','project-B']
+        decision['projects'] = [row[0] for row in p['projects']]
         self.base.approval.write_text(json.dumps(decision))
         self.value.update(operatorProfilePath=str(self.base.profile), operatorProfileSha256=self.base.sha)
+
+    def test_single_project_addition_requires_its_own_approval_then_serves_both_projects(self):
+        self.prepare()
+        self.configure_addition('project-B', 'Second design')
         self.write(actions=['replace','run_service'])
         with self.assertRaises(operator.ProjectProcessError):
             operator.launch_operator(self.base.profile,self.base.sha,self.base.approval)
-        self.assertFalse(Path(p['attemptPath']).exists())
+        self.assertFalse(Path(self.base.value['attemptPath']).exists())
         self.write(actions=['add_project','run_service'])
         receipt = self.prepare()
         self.assertEqual(receipt['mode'],'add_project')

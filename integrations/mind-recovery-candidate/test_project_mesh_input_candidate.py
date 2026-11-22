@@ -1,5 +1,6 @@
 """Disposable composed launcher; no live profiles, services or model calls."""
 import copy
+from contextlib import closing
 import http.cookiejar
 import json
 import os
@@ -173,12 +174,40 @@ class ProjectMeshLauncherTests(unittest.TestCase):
         self.fail('Owned fixture observation did not settle; no replacement launched')
 
     def test_exact_profiles_preflight_then_owned_gateway_delivers_only_approved_fields(self):
+        self.exercise_gateway()
+
+    def test_two_project_capture_then_service_only_gateway_delivers_both_linked_cards(self):
+        self.exercise_gateway(with_pilot=True)
+
+    def exercise_gateway(self, with_pilot=False):
         # Qualify the separate read-only identity first, with original-handle proof.
         child,stamp=roles.launch_operator(self.reader.operator,self.reader.operator_sha,self.reader.approval)
         self.reader.children.append(child); self.assertEqual(child.wait(timeout=120),0)
         roles.finish_operator(child,stamp,self.reader.operator,self.reader.operator_sha,self.reader.approval)
+        if with_pilot:
+            base=self.fixture.base
+            base.value['projects']=[['onoes-mesh','Onoes-Mesh']]
+            base.write()
+            decision=json.loads(base.approval.read_bytes())
+            decision['projects']=['onoes-mesh']
+            base.approval.write_text(json.dumps(decision))
         self.fixture.write(actions=['first_setup','run_service','run_mesh_sync'])
         self.fixture.prepare()
+        if with_pilot:
+            self.fixture.configure_addition('3d-print-pilot','3D Print Pilot')
+            self.fixture.write(actions=['add_project'])
+            self.fixture.prepare()
+            # The recurring launcher receives its own service-only decision.
+            runtime_view=self.root/'pilot-service-runtime.json'
+            roles.private_new_json(runtime_view,base.value)
+            self.fixture.value.update(schema='onoes-mind-project-service/v2',serviceRuntimeProfilePath=str(runtime_view),
+                                      serviceRuntimeProfileSha256=launch.digest(runtime_view))
+            decision=json.loads(base.approval.read_bytes())
+            base.approval=self.root/'pilot-service-only.json'
+            self.fixture.profile.write_text(json.dumps(self.fixture.value))
+            self.fixture.sha=launch.digest(self.fixture.profile)
+            decision.update(actions=['run_service','run_mesh_sync'],profiles=[self.fixture.sha])
+            roles.private_new_json(base.approval,decision)
         read_child,read_stamp=roles.launch_reader(self.reader.reader,self.reader.reader_sha,self.reader.approval)
         self.reader.children.append(read_child)
         self.wait_for(lambda:roles.reader_state(self.reader.reader,self.reader.reader_sha,self.reader.approval)['ready'],read_child)
@@ -191,18 +220,38 @@ import {statSync,realpathSync} from 'node:fs';
 import path from 'node:path';import {createHash} from 'node:crypto';
 import {projectSnapshot} from './integrations/workroom-project-sync-candidate.mjs';
 import {canonicalProjectEvent} from './integrations/project-sync-outbox-candidate.mjs';
-import {inspectProjectSource,prepareProjectSource} from './integrations/project-sync-source-setup-candidate.mjs';
+import {inspectProjectSource,prepareProjectSource,inspectProjectSourceAddition,prepareProjectSourceAddition} from './integrations/project-sync-source-setup-candidate.mjs';
 const store=openTaskStore(process.argv[1]);
 const card=store.create({title:'Synthetic composed launcher',description:'EXCLUDED-PRIVATE-PROSE',owner:'nims'});
-const link={cardId:card.id,projectId:'project-A',approvalRef:'fixture:launch-sharing',fields:['title','stage']};
-const snapshot=projectSnapshot(store.workroom.get(card.id),link.fields);store.close();
+const link={cardId:card.id,projectId:process.argv[3],approvalRef:'fixture:launch-sharing',fields:['title','stage']};
+const snapshot=projectSnapshot(store.workroom.get(card.id),link.fields);
+const links=[link];
+let pilotPlan;
+if(process.argv[3]==='onoes-mesh'){
+  const pilot=store.create({title:'Pilot coupon draft',owner:'nims'});
+  const task=store.workroom.get(pilot.id);
+  store.workroom.saveProgress(pilot.id,{goal:'Coupon v1, 24 x 16 x 3 mm, coupon-v1.scad',checklist:[],
+    result:'',evidence:'',reviewer:'',decision:'pending',revision:task.progress.revision,
+    taskRevision:task.revision,briefRevision:task.workroom.revision});
+  const pilotLink={cardId:pilot.id,projectId:'3d-print-pilot',approvalRef:'fixture:pilot',fields:['title','stage','goal']};
+  const selected=projectSnapshot(store.workroom.get(pilot.id),pilotLink.fields);
+  pilotPlan={...pilotLink,revisions:selected.revisions,projectionSha256:selected.evidence[0].content_hash.slice(7)};
+  links.push(pilotLink);
+}
+store.close();
 const s=statSync(process.argv[1],{bigint:true}),source={databasePath:realpathSync(process.argv[1]),fileDevice:String(s.dev),fileInode:String(s.ino)};
 const projectionSha256=createHash('sha256').update(canonicalProjectEvent({revisions:snapshot.revisions,snapshot:snapshot.snapshot})).digest('hex');
 const plan={schema:'onoes-mesh-project-source-setup/v1',workspace:realpathSync(process.cwd()),dataDir:path.relative(process.cwd(),path.dirname(process.argv[1])).split(path.sep).join('/'),source,storeId:process.argv[2],links:[{...link,revisions:snapshot.revisions,projectionSha256}]};
 const preview=inspectProjectSource(plan);const receipt=prepareProjectSource(plan,{decision:'approve_exact_mesh_project_source_setup',planSha256:preview.planSha256});
 if(receipt.baselines.length!==1||inspectProjectSource(plan).baselines[0].eventId!==receipt.baselines[0].eventId)throw Error('Source preparation readback failed');
-console.log(JSON.stringify({link,source}));"""
-        initialized=subprocess.run([shutil.which('node'),'--input-type=module','-e',source,str(database),self.reader.reader_data['binding']['store_id']],
+if(pilotPlan){
+  plan.links.push(pilotPlan);
+  const add=inspectProjectSourceAddition(plan,pilotPlan.cardId);
+  prepareProjectSourceAddition(plan,{decision:'approve_exact_mesh_project_source_addition',addedCardId:pilotPlan.cardId,planSha256:add.planSha256});
+}
+console.log(JSON.stringify({link,links,source}));"""
+        initialized=subprocess.run([shutil.which('node'),'--input-type=module','-e',source,str(database),self.reader.reader_data['binding']['store_id'],
+                                    'onoes-mesh' if with_pilot else 'project-A'],
             cwd=launch.ROOT,capture_output=True,text=True,timeout=30,creationflags=subprocess.CREATE_NO_WINDOW)
         self.assertEqual(initialized.returncode,0,initialized.stderr)
         initialized=json.loads(initialized.stdout);link=initialized['link']
@@ -217,7 +266,7 @@ console.log(JSON.stringify({link,source}));"""
             readerProfile=str(self.reader.reader),readerProfileSha256=self.reader.reader_sha,settings=settings,
             attemptPath=str(self.root/'mesh-attempt.json'),stdoutPath=str(self.root/'mesh-out.log'),stderrPath=str(self.root/'mesh-err.log'),
             projectSync=dict(serviceProfile=str(self.fixture.profile),serviceProfileSha256=self.fixture.sha,approvalPath=str(self.fixture.base.approval),
-                source=initialized['source'],links=[link]))
+                source=initialized['source'],links=initialized['links']))
         profile=self.root/'mesh-launch.json'
         def write(value):
             profile.write_text(json.dumps(value),encoding='utf-8');sha=launch.digest(profile)
@@ -225,6 +274,8 @@ console.log(JSON.stringify({link,source}));"""
                 a=json.loads(approval_path.read_text());a['profiles']=list(dict.fromkeys(a['profiles']+[sha]));approval_path.write_text(json.dumps(a))
             return sha
         sha=write(p)
+        if with_pilot:
+            self.exercise_capture(p,initialized['links'][1]['cardId'])
         checked,read_roles=launch.checked_launch(profile,sha,self.reader.approval)
         frame=launch.native_frame(checked,read_roles,self.reader.approval,sha)
         self.assertEqual(frame['projectSyncOptions']['destination']['peer']['pid'],service_child.pid)
@@ -271,13 +322,52 @@ console.log(JSON.stringify({link,source}));"""
             try:
                 events=db.execute('SELECT * FROM project_sync_events').fetchall()
                 memories=db.execute('SELECT * FROM memory_revisions WHERE is_current=1').fetchall()
-                return (events,memories) if len(events)==2 and 'Composed launcher saved title' in str(memories) else None
+                count=4 if with_pilot else 2
+                return (events,memories) if len(events)==count and 'Composed launcher saved title' in str(memories) else None
             finally:db.close()
         events,memories=self.wait_for(recorded,self.mesh)
-        self.assertEqual(len(events),2);self.assertNotIn('EXCLUDED-PRIVATE-PROSE',str(events)+str(memories))
+        self.assertEqual(len(events),4 if with_pilot else 2);self.assertNotIn('EXCLUDED-PRIVATE-PROSE',str(events)+str(memories))
+        if with_pilot:
+            self.assertIn('Offline pilot coupon',str(memories))
+            self.assertIn('coupon-v1.scad',str(memories))
+            with closing(sqlite3.connect(self.reader.database)) as ledger:
+                actual=ledger.execute('SELECT event_id,receipt_id FROM project_sync_events ORDER BY event_id').fetchall()
+            def saved_receipts():
+                with closing(sqlite3.connect(database)) as board:
+                    saved=board.execute("SELECT eventId,receipt FROM mind_project_outbox WHERE state='saved' ORDER BY eventId").fetchall()
+                return saved if len(saved)==4 else None
+            saved=self.wait_for(saved_receipts,self.mesh)
+            self.assertEqual([(event_id,json.loads(receipt)['receiptId']) for event_id,receipt in saved],actual)
         request('/api/trial-session/logout',{},csrf)
         secret=frame['projectSyncOptions']['destination']['token']
         self.assertNotIn(secret,Path(p['attemptPath']).read_text()+Path(p['stdoutPath']).read_text()+Path(p['stderrPath']).read_text())
+
+    def exercise_capture(self, connected, pilot_id):
+        runtime=self.reader.reader_data['runtime']
+        capture={key:connected[key] for key in ('workspace','settings','pythonExecutable','pythonSha256','nodeExecutable','nodeSha256')}
+        capture.update(schema=launch.CAPTURE_SCHEMA,runtime=runtime,ownerSid=self.reader.reader_data['ownerSid'],
+            pwshSha256=launch.digest(runtime['pwsh']),sourceHashes={str(f):launch.digest(f) for f in launch.capture_source_paths(runtime)},
+            attemptPath=str(self.root/'capture-attempt.json'),stdoutPath=str(self.root/'capture-out.log'),stderrPath=str(self.root/'capture-err.log'),
+            projectCapture=dict(schema='onoes-mesh-native-project-capture/v1',source=connected['projectSync']['source'],
+                links=connected['projectSync']['links'],storeId=self.reader.reader_data['binding']['store_id']))
+        profile=self.root/'capture-profile.json';roles.private_new_json(profile,capture)
+        sha=launch.digest(profile);approval=self.root/'capture-decision.json'
+        roles.private_new_json(approval,dict(schema='onoes-mesh-offline-capture-approval/v1',
+            decision='approve_exact_workroom_offline_capture',profileSha256=sha,workspace=capture['workspace'],ownerSid=capture['ownerSid']))
+        self.mesh,_,_=launch.launch_mesh(profile,sha,approval)
+        def address():
+            for line in Path(capture['stdoutPath']).read_text().splitlines():
+                row=json.loads(line)
+                if row.get('event')=='mesh_listening':return row['url']
+        request=admitted_http(self.wait_for(address,self.mesh))
+        csrf=request('/api/trial-session/bootstrap',{})['csrfToken']
+        card=request('/api/tasks/'+pilot_id,csrf=csrf,method='GET')['task']
+        request('/api/tasks/'+pilot_id,edited_card(card,'Offline pilot coupon'),csrf,method='PATCH')
+        state=request('/api/workroom/'+pilot_id,csrf=csrf,method='GET')['memorySync']['state']
+        self.assertEqual(state,'offline')
+        with closing(sqlite3.connect(self.data/'tasks.sqlite')) as db:
+            self.assertEqual(db.execute('SELECT state,COUNT(*) FROM mind_project_outbox GROUP BY state').fetchall(),[('pending',3)])
+        self.mesh.terminate();self.mesh.wait(timeout=30);self.mesh=None
 
 
 if __name__=='__main__':unittest.main()

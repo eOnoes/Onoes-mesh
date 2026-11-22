@@ -24,6 +24,10 @@ Prepare the complete target list of card links. Keep the original projection and
 
 On a private copy of the 15-card board, adding a pilot card with title, stage and shared goal preserved every original row across 30 tables. The pilot's goal contained the revision-one specification and CAD reference. No service was started by the addition. The live board and writer still need their own approved link and project scope.
 
+The live board now has a 3D Print Pilot specification card in To do. A restored 16-card backup preserved its goal and its unshared status. Both proposed startup configurations select the same three pilot fields (title, stage and goal) and retain the original card's field selection. The live writer still serves only Onoes-Mesh.
+
+In a disposable two-project startup test, Workroom accepted a pilot edit while offline. After reconnection, all four queued and connected edits had matching receipts on the board and in Mind. The current pilot revision included the updated title and CAD filename. The original card's private description stayed out of Mind.
+
 ## Historical connection status - 2026-11-15 Chicago
 
 The first canonical shared read-only connection is live and accepted on Eddie's
