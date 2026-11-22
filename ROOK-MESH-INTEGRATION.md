@@ -6,6 +6,12 @@ The first reporting destination is the Rook panel in Mesh Relay. The receiver re
 
 The standalone test selects `mesh_relay_inbox` through the existing Rook test configuration. It saves a notice, loses the reply, reopens the database and reconciles the original ID. A mismatched payload is rejected. The production watcher still needs a verified Rook identity, one scheduler owner and qualification on the deployed board before activation.
 
+## Scheduler handoff qualification, November 22
+
+Mesh owns the timer inside its server process. The board stores the owner's process ID, heartbeat and time of the last scheduled scan in UTC. A second process can take over after the original process exits. The five-hour interval starts again from the single scan performed on return. The read-only Rook endpoint reports whether the scheduler has a current lease and heartbeat.
+
+The two-process regression uses a disposable board and advances the clock by 25 hours. The second process waits while the first is alive, takes over after exit and claims one card. Repeated checks before the next five-hour boundary produce no further claim. Other checks cover a resume during pause and a failure to install the timer. These checks exercise scheduler ownership independently of worker dispatch.
+
 ## Original build checkpoint
 
 Status: local candidate, 2026-11-08. Not deployed or activated. Echo owns Rook's scheduler/agent; Mesh owns the authoritative board, claim records and team runner. Do not install a second scheduler. Rook v3 is the behavioral contract.

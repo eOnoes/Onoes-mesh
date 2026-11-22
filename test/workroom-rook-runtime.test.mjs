@@ -6,6 +6,9 @@ import {mkdirSync} from 'node:fs';
 import {randomUUID} from 'node:crypto';
 import {join} from 'node:path';
 import {startApp} from '../server.mjs';
+import {fork} from 'node:child_process';
+import {once} from 'node:events';
+import {openTaskStore} from '../lib/task-store.mjs';
 
 function fixture(extra = {}) {
   const db = new DatabaseSync(':memory:');
@@ -72,6 +75,90 @@ test('overlapping ticks share a flight; pause waits and prevents post-pause repo
   } finally {await f.close();}
 });
 
+test('resume cannot acquire the lease while an earlier pause is draining its observation', async () => {
+  let release;
+  const board = new Promise(resolve => {release = resolve;});
+  const f = fixture({board: () => board});
+  try {
+    f.runtime.start();
+    const observing = f.runtime.tick();
+    await Promise.resolve();
+    const pauses = [f.runtime.pause(), f.runtime.pause()];
+    assert.equal(f.runtime.start().scheduler.enabled, false);
+    release([{id: 'old', flow: {claim: {claimId: 'before-pause'}}}]);
+    await Promise.all([observing, ...pauses]);
+    assert.equal(f.sent.length, 0);
+    assert.equal(f.timers.size, 0);
+    assert.equal(f.store.snapshot().ownerId, '');
+    assert.equal(f.runtime.start().status, 'running');
+    assert.equal(f.timers.size, 1);
+  } finally { release([]); await f.close(); }
+});
+
+test('a failed timer installation leaves the lease available to a healthy replacement', async () => {
+  const f = fixture({schedule: () => {throw Error('Timer unavailable');}});
+  const replacement = createRookRuntime({...f.options, schedule: () => 1, cancel: () => {}});
+  try {
+    assert.equal(f.runtime.start().status, 'failing');
+    assert.equal(f.store.snapshot().ownerId, '');
+    assert.equal(f.sweeps(), 0);
+    assert.equal(replacement.start().scheduler.enabled, true);
+    assert.equal((await replacement.tick()).status, 'empty');
+  } finally { await replacement.close(); await f.close(); }
+});
+
+test('a surviving process takes over only after the old owner exits, coalescing missed sweeps', {timeout: 12000}, async () => {
+  const directory = 'data/rook-ownership-' + randomUUID();
+  mkdirSync(directory, {recursive: true});
+  const filename = join(directory, 'tasks.sqlite');
+  const board = openTaskStore(filename);
+  const {workroom} = board;
+  const hour = 3600000;
+  let now = Date.now() + 13 * hour;
+  const runtime = createRookRuntime({store: workroom.rook, flow: workroom.flow, board: () => workroom.list(),
+    enabled: true, identity: {id: 'rook', approvalRef: 'fixture'}, verifyIdentity: () => true,
+    now: () => now, transport: workroom.rook.relayInbox, schedule: () => 1, cancel: () => {}});
+  let child, exited;
+  try {
+    for (const title of ['One', 'Two', 'Three']) board.create({title, description: 'Disposable idea'});
+    child = fork(new URL('./fixtures/rook-scheduler-owner.mjs', import.meta.url), [filename, String(now)],
+      {execArgv: [], stdio: ['ignore', 'ignore', 'ignore', 'ipc'], windowsHide: true});
+    exited = once(child, 'exit');
+    const [first] = await Promise.race([once(child, 'message'), exited.then(() => {throw Error('Owner exited before first sweep');})]);
+    assert.equal(first.result, 'claimed');
+    assert.equal(workroom.rook.snapshot().ownerPid, child.pid);
+    now += 25 * hour;
+    assert.equal(runtime.start().reason, 'SCHEDULER_OWNER_UNAVAILABLE');
+    assert.equal((await runtime.tick()).status, 'paused');
+    assert.equal(workroom.rook.snapshot().ownerPid, first.pid);
+    child.disconnect();
+    assert.equal((await exited)[0], 0);
+    assert.equal(workroom.rook.snapshot().ownerPid, first.pid);
+    assert.equal(runtime.start().status, 'running');
+    const second = await runtime.tick();
+    assert.equal(second.status, 'claimed');
+    assert.notEqual(second.taskId, first.claimed);
+    assert.equal(workroom.flow.sweepStatus().lastScheduledAt, new Date(now).toISOString());
+    assert.equal((await runtime.tick()).status, 'not_due');
+    now += 5 * hour - 1;
+    assert.equal((await runtime.tick()).status, 'not_due');
+    now++;
+    assert.equal((await runtime.tick()).status, 'claimed');
+    assert.equal(workroom.rook.snapshot().ownerPid, process.pid);
+    const dispatchIds = workroom.list().map(card => card.flow.claim.dispatchId);
+    assert.equal(new Set(dispatchIds).size, 3);
+    assert.ok(dispatchIds.every(id => typeof id === 'string' && id.length > 0));
+    const db = new DatabaseSync(filename, {readOnly: true});
+    try {assert.equal(db.prepare('SELECT COUNT(*) AS n FROM workroom_sends').get().n, 0);}
+    finally {db.close();}
+  } finally {
+    if (child?.connected) child.disconnect();
+    if (exited) await exited;
+    await runtime.close();
+    board.close();
+  }
+});
+
 test('lost acknowledgement is looked up after restart and never resent', async () => {
   let sends = 0, lookups = 0;
   const f = fixture({board: () => [{id: 'a', title: 'Example', flow: {claim: {claimId: 'c'}}}],
@@ -97,9 +184,26 @@ test('revocation stops sweeping; stale health is not reported as running', async
   const f = fixture();
   try {
     f.runtime.start(); f.advance(120001); assert.equal(f.runtime.status().status, 'unavailable');
+    assert.equal(f.runtime.status().scheduler.enabled, false);
     f.revoke(); await f.runtime.tick(); assert.equal(f.sweeps(), 0); assert.equal(f.timers.size, 0);
     assert.equal(f.runtime.status().status, 'not_configured');
   } finally {await f.close();}
+});
+
+test('a timer whose stored lease changed cannot advertise itself as enabled or sweep', async () => {
+  const f = fixture();
+  const other = createRookRuntime(f.options);
+  try {
+    f.runtime.start();
+    f.store.release(f.store.snapshot().ownerId, f.options.now());
+    other.start();
+    assert.equal(other.status().scheduler.enabled, true);
+    assert.equal(f.runtime.status().status, 'unavailable');
+    assert.equal(f.runtime.status().scheduler.enabled, false);
+    assert.equal((await f.runtime.tick()).status, 'paused');
+    assert.equal(f.sweeps(), 0);
+    assert.equal(other.status().scheduler.enabled, true);
+  } finally {await other.close(); await f.close();}
 });
 
 test('local Relay reconciles the exact saved notice after a lost reply and database reopen', async () => {
