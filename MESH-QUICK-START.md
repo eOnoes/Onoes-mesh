@@ -2,6 +2,8 @@
 
 Open the current private Workroom at https://emitchell.tail8c4a75.ts.net:8453/#workroom. Use port 8453 for this Workroom; the older 8446 installation and its data are separate. Workroom is a private release candidate, not whole-app production acceptance.
 
+For build progress, tap **Finish Onoes-Mesh — all assessed stages**. Its checklist tracks the milestones, and the result summary explains what works on your phone and what still needs attention.
+
 ## Make and shape a task
 
 1. Tap “+ New task.” Enter a short title and description, choose Nims or Echo as project lead, then tap “Create task.” If prompted, tap “Start fresh local session”; previously saved tasks remain available, but an unsaved editor draft is not restored. In the task card, use “Edit card” to set the Project, Goal, Acceptance criteria and Project lead. In “Goal, checklist and review,” add a few small checklist steps and tap “Save changes.” A checklist is a progress aid, not proof of approval.
@@ -26,7 +28,7 @@ If another edit makes the open editor stale, Save may be rejected with “Task c
 
 Backups are manual or milestone-based; no automatic schedule or off-device backup is enabled. The documented backup writes to E:\App-Backups\ONOes-Mesh; check LATEST.txt for the verified matching source/data snapshot. Keep labelled milestone copies. Do not merge the older 8446 store into the current Workroom store.
 
-Current limits: the listed phone recovery cases are accepted, but whole-app owner release acceptance remains open. Main-PC Nemotron 3.5 Bolt is qualified for the tested profile, including Eddie's phone load/chat/unload check ending STOPPED. Use the [Inference tab](https://emitchell.tail8c4a75.ts.net:8453/#inference) for model controls; other models and machines are not covered by that qualification. Mind is not live personal-memory recall: it can deliberately show a selected saved Workroom task, not shared conversation or personal-memory context. Telegram and shared context are not synchronized. Off-device backup remains deferred. Automatic assignments and production workers remain off pending legacy recovery and enrollment; the isolated scoped-team trials do not authorize starting production work. The scoped team flow pauses for owner review; it does not auto-approve or mark Done. See [remaining owner checks](NEXT-OWNER-CHECKS.md) before a new acceptance run.
+Current limits: the listed phone recovery cases are accepted, but whole-app owner release acceptance remains open. Main-PC Nemotron 3.5 Bolt is qualified for the tested profile, including Eddie's phone load/chat/unload check ending STOPPED. Use the [Inference tab](https://emitchell.tail8c4a75.ts.net:8453/#inference) for model controls; other models and machines are not covered by that qualification. Mind can recall deliberately shared project facts. Workroom syncs the existing Mesh goal card, and the Mind tab can retrieve its current result. The 3D Print Pilot card is private to Workroom while its connection is being prepared. Relay and Telegram still have separate conversations. Off-device backup remains deferred. Automatic assignments and production workers remain off pending legacy recovery and enrollment; the isolated scoped-team trials do not authorize starting production work. The scoped team flow pauses for owner review; it does not auto-approve or mark Done. See [remaining owner checks](NEXT-OWNER-CHECKS.md) before a new acceptance run.
 
 ## Phone workflow reference
 

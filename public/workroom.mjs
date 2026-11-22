@@ -41,6 +41,13 @@ if(root){
     root.dataset.managedFlow=teamPolicy?.simpleFlow?'1':'0';
     paintCreateLead();
     checkingStatus=`${tasks.length} saved tasks · Checking agent connections…`;status.textContent=checkingStatus;
+    const linkedId=window.meshWorkroom.linkedTask;
+    if(linkedId && !document.querySelector('dialog[open]')){
+      const task=tasks.find(item=>item.id===linkedId);
+      window.meshWorkroom.finishTaskLink(task);
+      if(task)cardOpener.request(task.id);
+      else status.textContent='This card is unavailable. Choose another card from the board.';
+    }
   },onAgents(peers,available){
     agents=peers;agentsKnown=available;draw();
     if(status.textContent===checkingStatus)status.textContent=`${tasks.length} saved tasks · ${available?'Plan / build / review handoffs':'Agent connections unavailable; saved cards remain usable'}`;
@@ -577,5 +584,14 @@ if(root){
   // Loading cards is read-only; a busy editor must not lose this notification.
   // The loader's epoch/read guards discard responses after a lock or newer read.
   window.addEventListener('mesh-tasks-refreshed',()=>{void load().catch(error=>{status.textContent=error.message;});});
+  // Wait for admission and let an open editor keep its draft until the user closes it.
+  function loadTaskLink(){
+    if(window.meshWorkroom.linkedTask && !document.querySelector('dialog[open]')){
+      void load().catch(error=>{status.textContent=error.message;});
+    }
+  }
+  window.addEventListener('hashchange',loadTaskLink);
+  document.addEventListener('close',loadTaskLink,true);
+  loadTaskLink();
   if(location.hash==='#workroom')document.getElementById('tab-workroom')?.click();
 }

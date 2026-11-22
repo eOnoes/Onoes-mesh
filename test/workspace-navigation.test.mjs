@@ -78,3 +78,17 @@ test('history failures do not blank the selected workspace or start network work
   assert.equal(b.panels['panel-control'].hidden, false);
   assert.equal(b.networkCalls(), 0);
 });
+
+test('a card link selects Workroom and retains its target until admission', () => {
+  const hash = '#task=08418c32-6287-4f01-a940-b74e677c309b';
+  const b = browser(hash);
+  assert.equal(b.panels['panel-workroom'].hidden, false);
+  assert.equal(b.window.location.hash, hash);
+  assert.equal(b.writes.length, 0);
+  assert.equal(b.networkCalls(), 0);
+  b.tab('mind').events.click();
+  assert.equal(b.window.location.hash, '#mind');
+  b.window.location.hash = '#task=invalid';
+  b.events.hashchange();
+  assert.equal(b.panels['panel-mind'].hidden, false);
+});

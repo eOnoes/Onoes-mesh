@@ -6,14 +6,14 @@ import { createRelayChat } from './chat.mjs';
 let clearWorkroom = () => {};
 const $ = id => document.getElementById(id);
 const tabs = [...document.querySelectorAll('[role=tab]')];
-function activate(tab, focus = false) {
+function activate(tab, focus = false, updateHash = true) {
   for (const t of tabs) {
     const selected = t === tab;
     t.setAttribute('aria-selected', String(selected)); t.tabIndex = selected ? 0 : -1;
     $(t.getAttribute('aria-controls')).hidden = !selected;
   }
   const name = tab?.getAttribute('aria-controls')?.replace(/^panel-/, '');
-  if (/^(overview|relay|inference|workroom|agent|mind|control)$/.test(name ?? '')) {
+  if (updateHash && /^(overview|relay|inference|workroom|agent|mind|control)$/.test(name ?? '')) {
     try {
       const hash = '#' + name;
       if (window.location?.hash !== hash) window.history?.replaceState?.(window.history.state, '', hash);
@@ -34,7 +34,16 @@ for (const tab of tabs) {
   });
 }
 // Workspace links select a panel only; they never admit a session or dispatch work.
+let handledTaskLink;
+function linkedTaskId() {
+  return /^#task=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(window.location?.hash ?? '')?.[1];
+}
 function activateLinkedWorkspace() {
+  handledTaskLink = undefined;
+  if (linkedTaskId()) {
+    activate($('tab-workroom'), false, false);
+    return;
+  }
   const name = /^#(overview|relay|inference|workroom|agent|mind|control)$/.exec(window.location?.hash ?? '')?.[1];
   if (name) activate($('tab-' + name));
 }
@@ -824,12 +833,6 @@ export async function refresh() {
     }, results[10].status === 'fulfilled' ? results[10].value.teamPolicy : undefined);
   if (probeRequest === nodeProbeRequest) renderNodeProbes(results[7].status === 'fulfilled' ? results[7].value : undefined);
   renderLocalInference(results[8].status === 'fulfilled' ? results[8].value : undefined);
-  const linkedId = /^#task=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(window.location?.hash ?? '')?.[1];
-  if (linkedId && selected?.id !== linkedId) {
-    const task = (await api(`/api/tasks/${linkedId}`)).task;
-    if (!currentDemo(refreshDemo, refreshGeneration)) return;
-    selectTask(task); activate($('tab-workroom'));
-  }
   message(failed ? results.find(r => r.status === 'rejected').reason.message : 'Local app status and saved tasks refreshed.', failed);
 }
 // Visible inference status is a read-only observation, never a model action.
@@ -1016,7 +1019,21 @@ if (savedDemo && navigator.onLine && !workspaceLocked) {
 } else { savedDemo = undefined; }
 
 // Reuse the same admitted request path for Workroom; no second credential store.
-window.meshWorkroom = Object.freeze({ request: api, get simpleFlow(){return document.getElementById('workroom-board')?.dataset.managedFlow==='1';}, onClear: listener => { clearWorkroom = listener; } });
+window.meshWorkroom = Object.freeze({
+  request: api,
+  get simpleFlow(){return document.getElementById('workroom-board')?.dataset.managedFlow==='1';},
+  get linkedTask(){
+    const id=linkedTaskId();
+    return admitted && id!==handledTaskLink ? id : undefined;
+  },
+  finishTaskLink(task){
+    if (!admitted || !proofAvailable()) return;
+    handledTaskLink=linkedTaskId();
+    if (task) selectTask(task, true);
+    activate($('tab-workroom'));
+  },
+  onClear: listener => { clearWorkroom = listener; }
+});
 
 // Only the serving adapter can declare this an authorized automatic-entry surface.
 import('/session-entry.mjs').then(({createSessionEntry})=>{
