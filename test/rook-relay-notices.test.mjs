@@ -44,6 +44,16 @@ test('each notice shows its saved delivery state even when the watcher is offlin
   ]);
 });
 
+test('Relay can confirm receipt when the watcher missed its reply', async () => {
+  const ui = await admittedUi({connection: {status: 'paused'}, reports: [
+    {...notice.reports[0], state: 'unknown', relayReceivedAt: '2026-11-08T20:01:02Z'},
+    {...notice.reports[0], state: 'unknown', relayReceivedAt: null},
+  ]});
+  const rows = walk(ui.ids.get('rook-reports')).map(node => node.textContent);
+  assert.equal(rows.filter(line => line.startsWith('Received by Mesh Relay · Saved ')).length, 1);
+  assert.equal(rows.filter(line => line.startsWith('Delivery unconfirmed · Saved ')).length, 1);
+});
+
 test('assignment holds explain the original worker and open its card without releasing it', async () => {
   const hold={taskId:id,title:'Unconfirmed original worker',reason:'writer_quiescence_unproven'};
   const ui=await admittedUi({connection:{status:'not_configured'},assignmentHolds:[hold,{...hold,sendId:'another-attempt'}],reports:[]});

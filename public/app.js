@@ -750,7 +750,8 @@ function renderRookReports(snapshot) {
     const at = Date.parse(report.createdAt);
     const saved = Number.isFinite(at) ? `Saved ${new Date(at).toLocaleString()}` : 'Saved time unavailable';
     const delivery = Object.hasOwn(deliveryLabels, report.state) ? deliveryLabels[report.state] : 'Delivery status unavailable';
-    timestamp.textContent = `${delivery} · ${saved}`;
+    const receivedInRelay = typeof report.relayReceivedAt === 'string' && Number.isFinite(Date.parse(report.relayReceivedAt));
+    timestamp.textContent = `${receivedInRelay ? 'Received by Mesh Relay' : delivery} · ${saved}`;
     article.append(timestamp);
     openCard(article, payload.taskId);
     root.append(article);

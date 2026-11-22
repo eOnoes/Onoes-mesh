@@ -179,6 +179,8 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   // No production identity/transport is enrolled here. Activation is a separate owner gate.
   const rookRuntime = store ? createRookRuntime({store: store.workroom.rook, flow: store.workroom.flow,
     board: () => store.workroom.list(), ...rookRuntimeTestOptions,
+    transport: rookRuntimeTestOptions?.transport === 'mesh_relay_inbox'
+      ? store.workroom.rook.relayInbox : rookRuntimeTestOptions?.transport,
     enabled: process.env.MESH_SIMPLE_FLOW === '1' && rookRuntimeTestOptions?.enabled === true}) : null;
   let modelDatabase;
   if(!standalone && supervisedInferenceTestOptions && store){modelDatabase=new DatabaseSync(filename);localInference=createSupervisedInference({...supervisedInferenceTestOptions,operations:createModelOperationStore(modelDatabase)});}

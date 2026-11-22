@@ -102,6 +102,66 @@ test('revocation stops sweeping; stale health is not reported as running', async
   } finally {await f.close();}
 });
 
+test('local Relay reconciles the exact saved notice after a lost reply and database reopen', async () => {
+  const directory = 'data/rook-inbox-' + randomUUID();
+  mkdirSync(directory, {recursive: true});
+  const filename = join(directory, 'tasks.sqlite');
+  const payload = {kind: 'needs_input', title: 'Pick a workspace'};
+  let sends = 0, lookups = 0;
+  let db = new DatabaseSync(filename);
+  let store = createRookStore(db);
+  const id = store.enqueue('question:first', payload, Date.now());
+  const wrong = store.enqueue('question:second', {...payload, title: 'Pick a file'}, Date.now());
+  const options = {enabled: true, identity: {id: 'rook', approvalRef: 'fixture'}, verifyIdentity: () => true,
+    board: () => [], flow: {scheduledSweep: () => ({status: 'empty'})}, schedule: () => 1, cancel: () => {}};
+  let runtime = createRookRuntime({...options, store, transport: {lookup: store.relayInbox.lookup,
+    send(report) { sends++; assert.ok(store.relayInbox.send(report).accepted); throw Error('Reply lost'); }}});
+  try {
+    assert.deepEqual(store.relayInbox.lookup(id), {id, accepted: false});
+    assert.throws(() => store.relayInbox.send({id: wrong, ...payload}), /does not match/);
+    runtime.start();
+    assert.equal((await runtime.tick()).status, 'failed');
+    const first = store.reports()[0];
+    assert.equal(first.state, 'unknown');
+    assert.ok(first.relayReceivedAt);
+    await runtime.close();
+    db.close();
+    db = new DatabaseSync(filename);
+    store = createRookStore(db);
+    runtime = createRookRuntime({...options, store, transport: {
+      send(report) { assert.notEqual(report.id, id); return store.relayInbox.send(report); },
+      lookup(reportId) { lookups++; assert.equal(reportId, id); return store.relayInbox.lookup(reportId); },
+    }});
+    runtime.start();
+    await runtime.tick();
+    assert.equal(store.reports()[0].state, 'delivered');
+    assert.equal(sends, 1);
+    assert.equal(lookups, 1);
+    assert.deepEqual(store.relayInbox.send({id, ...payload}), {id, accepted: true});
+    assert.equal(store.reports()[0].relayReceivedAt, first.relayReceivedAt);
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM workroom_rook_relay_receipts WHERE reportId=?').get(id).n, 1);
+    db.prepare('UPDATE workroom_rook_reports SET payload=? WHERE id=?').run(JSON.stringify({...payload, title: 'Changed'}), id);
+    assert.equal(store.relayInbox.lookup(id).accepted, false);
+    assert.equal(store.reports()[0].relayReceivedAt, null);
+  } finally {await runtime.close(); db.close();}
+});
+
+test('opening an older board preserves its delivery history without inventing inbox receipts', () => {
+  const db = new DatabaseSync(':memory:');
+  try {
+    db.exec(`CREATE TABLE workroom_rook_reports(id TEXT PRIMARY KEY, eventKey TEXT NOT NULL UNIQUE,
+      taskId TEXT NOT NULL, kind TEXT NOT NULL, payload TEXT NOT NULL, state TEXT NOT NULL,
+      createdAt TEXT NOT NULL, deliveredAt TEXT)`);
+    const before = ['old-report', 'old-event', '', 'watcher_failed', '{"kind":"watcher_failed"}',
+      'delivered', '2026-11-01T00:00:00.000Z', '2026-11-01T00:00:01.000Z'];
+    db.prepare('INSERT INTO workroom_rook_reports VALUES(?,?,?,?,?,?,?,?)').run(...before);
+    const store = createRookStore(db);
+    assert.deepEqual(Object.values(db.prepare('SELECT * FROM workroom_rook_reports').get()), before);
+    assert.equal(store.reports()[0].relayReceivedAt, null);
+    assert.deepEqual(store.relayInbox.lookup(before[0]), {id: before[0], accepted: false});
+  } finally {db.close();}
+});
+
 test('board errors remain contained and unreviewed Done never produces a success report', async () => {
   let fail = true;
   const f = fixture({board: () => {if (fail) throw Error('private detail');
@@ -123,17 +183,24 @@ test('actual admitted Mesh endpoint exposes fixture runtime health and shutdown 
     app = await startApp({dataDir: directory, rookRuntimeTestOptions: {
       source: 'disposable_fixture', enabled: true, identity: {id: 'rook', approvalRef: 'synthetic'},
       verifyIdentity: () => true, schedule: () => 1, cancel: () => {},
-      transport: {send: async r => ({id: r.id, accepted: true}), lookup: async id => ({id, accepted: true})}}});
+      transport: 'mesh_relay_inbox'}});
     assert.equal((await fetch(app.url + '/api/workroom/rook')).status, 401);
     const boot = await fetch(app.url + '/api/trial-session/bootstrap', {method: 'POST',
       headers: {Origin: app.url, 'Content-Type': 'application/json'}, body: '{}'});
     assert.equal(boot.status, 201); const body = await boot.json();
     const headers = {Origin: app.url, Cookie: boot.headers.get('set-cookie').split(';')[0], 'X-Trial-CSRF': body.csrfToken};
+    const seed = new DatabaseSync(join(directory, 'tasks.sqlite'));
+    let reportId;
+    try {reportId = createRookStore(seed).enqueue('fixture-notice', {kind: 'needs_input', title: 'Which file?'}, Date.now());}
+    finally {seed.close();}
     await app.rookRuntime.tick();
     const response = await fetch(app.url + '/api/workroom/rook', {headers});
     assert.equal(response.status, 200); const status = await response.json();
     assert.equal(status.connection.status, 'running'); assert.equal(status.sweep.schedulerEnabled, true);
     assert.equal(status.connection.writerClearance, false); assert.equal(status.connection.source, 'disposable_fixture');
+    const report = status.reports.find(item => item.id === reportId);
+    assert.equal(report.state, 'delivered');
+    assert.ok(Number.isFinite(Date.parse(report.relayReceivedAt)));
     await app.close(); app = null;
     const db = new DatabaseSync(join(directory, 'tasks.sqlite'), {readOnly: true});
     try {assert.equal(db.prepare('SELECT ownerId FROM workroom_rook_runtime').get().ownerId, '');}

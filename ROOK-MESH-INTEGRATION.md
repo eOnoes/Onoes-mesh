@@ -1,5 +1,13 @@
 # Rook / Mesh integration checkpoint
 
+## Mesh Relay inbox qualification, November 22
+
+The first reporting destination is the Rook panel in Mesh Relay. The receiver records the report ID, content digest and receipt time in the board database. The title and question stay in the original notice. “Received by Mesh Relay” confirms receipt in that inbox. Eddie can open the linked Workroom card there. Reading the notice, taking an owner decision and starting a worker are separate actions.
+
+The standalone test selects `mesh_relay_inbox` through the existing Rook test configuration. It saves a notice, loses the reply, reopens the database and reconciles the original ID. A mismatched payload is rejected. The production watcher still needs a verified Rook identity, one scheduler owner and qualification on the deployed board before activation.
+
+## Original build checkpoint
+
 Status: local candidate, 2026-11-08. Not deployed or activated. Echo owns Rook's scheduler/agent; Mesh owns the authoritative board, claim records and team runner. Do not install a second scheduler. Rook v3 is the behavioral contract.
 
 ## Candidate board API
