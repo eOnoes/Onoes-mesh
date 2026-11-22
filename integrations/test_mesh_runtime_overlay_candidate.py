@@ -61,6 +61,35 @@ class MeshOverlayTests(unittest.TestCase):
             self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,approval)
         self.assertFalse((self.root/'journal').exists());self.assertEqual((self.live/'lib/a.mjs').read_bytes(),b'// exact original\r\n')
 
+    def test_existing_ui_files_replace_and_restore_only_exact_named_originals(self):
+        for folder in (self.live, self.payload):
+            (folder / 'public').mkdir()
+        files = []
+        for name in ('app.js', 'index.html', 'styles.css'):
+            rel = 'public/' + name
+            (self.live / rel).write_bytes(b'original ' + name.encode())
+            (self.payload / rel).write_bytes(b'updated ' + name.encode())
+            files.append(dict(relativePath=rel, beforeSha256=overlay.digest(self.live / rel),
+                              afterSha256=overlay.digest(self.payload / rel)))
+        self.plan['files'] = files
+        for entry in files:
+            missing_original = dict(entry, beforeSha256=None)
+            with self.subTest(path=entry['relativePath']):
+                self.assertRaises(RuntimeError, overlay.checked, dict(self.plan, files=[missing_original]))
+        for rel in ('public/custom.js', 'public/help.html', 'public/theme.css'):
+            (self.payload / rel).write_bytes(b'other')
+            (self.live / rel).write_bytes(b'prior')
+            other = dict(relativePath=rel, beforeSha256=overlay.digest(self.live / rel),
+                         afterSha256=overlay.digest(self.payload / rel))
+            with self.subTest(path=rel):
+                self.assertRaises(RuntimeError, overlay.checked, dict(self.plan, files=[other]))
+        self.assertEqual(overlay.apply_overlay(self.plan, self.approve())['state'], 'installed')
+        for entry in files:
+            self.assertEqual(overlay.digest(self.live / entry['relativePath']), entry['afterSha256'])
+        self.assertEqual(overlay.rollback_overlay(self.plan, self.approve(True))['state'], 'original')
+        for entry in files:
+            self.assertEqual(overlay.digest(self.live / entry['relativePath']), entry['beforeSha256'])
+
     def test_after_backup_receipt_keeps_exact_identity_and_quiescence_guards(self):
         self.plan['runtime']['serviceAttemptPath']=str(self.ops/'fixture-service-attempt-after-backup.json')
         self.assertTrue(overlay.inspect_overlay(self.plan)['createsNothing'])

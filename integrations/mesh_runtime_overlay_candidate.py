@@ -17,6 +17,7 @@ STARTUP_HELPERS=frozenset({
     'integrations/mesh_launcher_window.py',
 })
 MANAGED_WRITER_ATTEMPT = re.compile(r'mesh-[a-z0-9-]+-[0-9]{8}-writer-attemptPath\.json')
+EXISTING_UI_FILES = frozenset({'public/app.js', 'public/index.html', 'public/styles.css'})
 
 
 def require(ok):
@@ -71,6 +72,7 @@ def checked(value):
         rel=f['relativePath'];require(type(rel) is str and '\\' not in rel)
         parts=PurePosixPath(rel).parts
         allowed=(rel in ('package.json','server.mjs','serve.mjs') or rel in STARTUP_HELPERS or
+            (rel in EXISTING_UI_FILES and f['beforeSha256'] is not None) or
             len(parts)==2 and parts[0] in ('lib','public') and parts[1].endswith('.mjs') or
             len(parts)==2 and parts[0]=='integrations' and Path(parts[1]).suffix in ('.mjs','.ps1') or
             len(parts)==3 and parts[:2]==('integrations','mind-recovery-candidate') and parts[2].endswith('.py'))
