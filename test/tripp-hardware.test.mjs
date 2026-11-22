@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeTrippSample, withTrippHardware} from '../lib/tripp-hardware.mjs';
+import {readFile} from 'node:fs/promises';
+import {encodeTrippProbe, normalizeTrippSample, withTrippHardware} from '../lib/tripp-hardware.mjs';
+
+test('only the reviewed sensor query is encoded for the laptop', async () => {
+  const script = (await readFile(new URL('../integrations/tripp-hardware.ps1', import.meta.url), 'utf8')).replaceAll('\r\n', '\n');
+  const encoded = encodeTrippProbe(script);
+  assert.equal(Buffer.from(encoded, 'base64').toString('utf16le'), script);
+  assert.equal(encodeTrippProbe(script.replaceAll('\n', '\r\n')), encoded);
+  assert.throws(() => encodeTrippProbe(script.replace('cpuPct', 'otherMetric')), /reviewed version/);
+});
 
 test('only the expected laptop supplies bounded readings; missing sensors remain unknown', () => {
   const json = obj => JSON.stringify({hostName:'EMITCHELL109-ROG', ...obj});

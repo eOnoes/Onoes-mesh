@@ -141,6 +141,9 @@ test('three-machine view keeps Echo and Tripp visible when the AI box is unavail
   const rows = view.render({...snapshot,nodes:[...snapshot.nodes,box]});
   assert.deepEqual(rows.map(row => row.card.children[0].textContent), ["Echo's PC","Tripp's PC",'AI box']);
   check(rows[0],'Online','online'); check(rows[1],'Online','online'); check(rows[2],'Unavailable','neutral');
+  assert.match(rows[1].card.textContent,/Laptop sensors are off in this Mesh setup/);
+  assert.match(rows[1].card.textContent,/Model loaded: Unknown/);
+  assert.match(rows[2].card.textContent,/Model loaded: Unknown/);
   assert.doesNotMatch(rows[2].card.textContent,/Tripp|Echo/);
   view.render({...snapshot,configurationIssue:'ai_box_identity_invalid'});
   assert.match(view.box.textContent,/Check the AI box name and address/);

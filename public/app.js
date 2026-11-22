@@ -679,8 +679,10 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       } else {
         paragraph(card, 'Hardware readings unavailable');
       }
-      paragraph(card, 'Model loaded: Unknown');
+    } else if (n.id === 'laptop') {
+      paragraph(card, 'Laptop sensors are off in this Mesh setup.');
     }
+    if (n.id !== 'pc') paragraph(card, 'Model loaded: Unknown');
     paragraph(card, 'Last probe: ' + (n.lastProbeAt ?? 'never') + ' · Last success (Online=true): ' + (n.lastSuccessAt ?? 'never'));
     paragraph(card, 'Observation: ' + n.observationAvailability + ' · source: ' + snapshot.source + ' · local probe completion timestamps');
     paragraph(card, 'Packet reachability: unknown · Inference readiness: unknown · Model readiness: unknown');

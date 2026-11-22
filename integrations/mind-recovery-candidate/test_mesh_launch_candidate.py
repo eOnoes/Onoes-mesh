@@ -1,6 +1,7 @@
 """Early launcher refusals use no ledger, credential, process or service."""
 import copy
 import json
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -15,6 +16,18 @@ import mesh_launch_candidate as launch
 
 
 class MeshLaunchRefusalTests(unittest.TestCase):
+    def test_laptop_observation_is_an_optional_boolean_in_the_profile(self):
+        settings={k:'0' for k in launch.SETTINGS}
+        settings.update(MESH_DATA_DIR='data/cards',MESH_RELAY_MODE='http',MESH_GATE_KEY_FILE=str(Path.cwd()/'gate'))
+        launch.check_settings(settings)
+        for value in ('0','1'):
+            launch.check_settings(dict(settings,MESH_TRIPP_HARDWARE=value))
+        for extra in ({'MESH_TRIPP_HARDWARE':'yes'}, {'MESH_TRIPP_HARDWARE':1}, {'MESH_TRIPP_HOST':'other'}):
+            with self.subTest(extra=extra), self.assertRaises(launch.LaunchError):
+                launch.check_settings(dict(settings,**extra))
+        with self.assertRaises(launch.LaunchError):
+            launch.check_settings({k:v for k,v in settings.items() if k!='MESH_SIMPLE_FLOW'})
+
     def test_preflight_authentication_failure_refuses_before_stop_without_echoing_details(self):
         with tempfile.TemporaryDirectory(prefix='mesh-preflight-auth-') as directory:
             root=Path(directory)
@@ -41,11 +54,12 @@ class MeshLaunchRefusalTests(unittest.TestCase):
                 creation_ticks=lambda handle:(_ for _ in ()).throw(RuntimeError('synthetic observation error')),
                 RoleLaunchUnknown=roles.RoleLaunchUnknown)
             actual=launch.subprocess.Popen
-            with patch.object(launch,'checked_launch',return_value=(p,fake)),patch.object(launch.subprocess,'Popen',wraps=actual) as spawn:
+            with patch.dict(os.environ,{'MESH_TRIPP_HARDWARE':'1'}),patch.object(launch,'checked_launch',return_value=(p,fake)),patch.object(launch.subprocess,'Popen',wraps=actual) as spawn:
                 with self.assertRaises(roles.RoleLaunchUnknown) as caught:launch.launch_mesh('unused','synthetic-profile','unused')
                 child=caught.exception.child
                 try:
                     self.assertEqual(spawn.call_count,1);self.assertIsNone(caught.exception.creation_ticks)
+                    self.assertNotIn('MESH_TRIPP_HARDWARE',spawn.call_args.kwargs['env'])
                     record=json.loads((root/'attempt').read_text());self.assertEqual(record['pid'],child.pid)
                     self.assertEqual(record['state'],'identity_pending');self.assertNotIn('synthetic-not-delivered',json.dumps(record))
                     # Closing the undelivered pipe lets the fixed entry refuse;

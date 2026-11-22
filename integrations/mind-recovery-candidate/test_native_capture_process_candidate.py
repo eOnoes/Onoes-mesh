@@ -60,7 +60,8 @@ console.log(JSON.stringify({link,source:{databasePath:realpathSync(file),fileDev
         with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
         gate=private/'synthetic-gate.txt';gate.write_text('synthetic-offline-fixture-gate',encoding='utf-8')
         settings={key:'0' for key in launch.SETTINGS};settings.update(MESH_PREVIEW_PORT=str(port),
-            MESH_DATA_DIR='data/offline-capture',MESH_RELAY_MODE='http',MESH_GATE_KEY_FILE=str(gate),MESH_TAILSCALE_HOST='synthetic.invalid')
+            MESH_DATA_DIR='data/offline-capture',MESH_RELAY_MODE='http',MESH_GATE_KEY_FILE=str(gate),
+            MESH_TAILSCALE_HOST='synthetic.invalid',MESH_TRIPP_HARDWARE='1')
         import onoes_mind
         runtime=dict(python=sys.executable,pwsh=str(pwsh),mindSource=str(Path(onoes_mind.__file__).resolve().parents[1]))
         profile=private/'capture-profile.json';approval=private/'capture-approval.json'
@@ -101,6 +102,11 @@ console.log(JSON.stringify({link,source:{databasePath:realpathSync(file),fileDev
             with MeshLauncherWindow(workspace,launch.digest(workspace/'integrations/restart-workroom-preview.ps1')) as window:
                 child,ticks,record=launch.launch_mesh(profile,sha,approval);children.append(child)
                 request=admitted_http(address(child));token=request('/api/trial-session/bootstrap',{})['csrfToken']
+                nodes=request('/api/node-probes',csrf=token,method='GET')['nodes']
+                laptop=next(n for n in nodes if n['id']=='laptop')
+                self.assertIsNone(laptop['hardware'])
+                self.assertIsNone(laptop['hardwareObservedAt'])
+                self.assertIsNone(laptop['lastProbeAt'])
                 self.assertTrue(identified_native_attempt(record));self.assertEqual(record['mode'],'capture_only')
                 window.publish_native_owner(child,ticks,profile,sha,previous_sha256=None)
                 card=initialized['link']['cardId']
@@ -127,7 +133,8 @@ console.log(JSON.stringify({link,source:{databasePath:realpathSync(file),fileDev
                 self.assertEqual(events(),saved);request('/api/trial-session/logout',{},token)
                 again.terminate();again.wait(timeout=30)
         proof=dict(schema='onoes-mesh-synthetic-native-capture-proof/v1',syntheticOnly=True,liveChanged=False,
-            coldStartWithoutMemoryRoleAccess=True,ownedPublicationAndRetirement=True,duplicateLaunchRefused=True,
+            coldStartWithoutMemoryRoleAccess=True,optionalLaptopSensorsPresentBeforeFirstProbe=True,
+            ownedPublicationAndRetirement=True,duplicateLaunchRefused=True,
             editAndReopenPassed=True,originalPendingEventsUnchanged=True,noCredentialsInFrame=True,
             sourceHashes=p['sourceHashes'],pendingEventCount=2,profileSha256=sha)
         (workspace.parent/'CAPTURE-PROOF.json').write_text(json.dumps(proof,indent=2),encoding='utf-8')

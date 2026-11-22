@@ -30,6 +30,17 @@ def require(ok):
 def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def check_settings(settings):
+    require(type(settings) is dict and set(settings) in (SETTINGS, SETTINGS | {'MESH_TRIPP_HARDWARE'}))
+    require(all(type(v) is str and len(v)<=256 and not re.search(r'[\x00-\x1f\x7f]',v) for v in settings.values()))
+    require(settings['MESH_PREVIEW_PORT'].isdigit() and 0<=int(settings['MESH_PREVIEW_PORT'])<=65535
+        and re.fullmatch(r'data/[A-Za-z0-9_-]+',settings['MESH_DATA_DIR'])
+        and settings['MESH_RELAY'] in ('0','1') and settings['MESH_RELAY_MODE'] in ('http','child')
+        and all(settings[n] in ('0','1') for n in ('MESH_NIMS','MESH_MODEL_OBSERVATION','MESH_NEMOTRON_CONTROL'))
+        and settings.get('MESH_TRIPP_HARDWARE','0') in ('0','1')
+        and settings['MESH_SIMPLE_FLOW']=='0' and Path(settings['MESH_GATE_KEY_FILE']).is_absolute())
+
+
 def source_paths(*, project=False):
     paths={Path(__file__).resolve(),ROOT/'package.json',ROOT/'server.mjs',ROOT/'serve.mjs',
            ROOT/'integrations/native-mind-mesh-entry.mjs',
@@ -124,13 +135,8 @@ def inspect_capture(p,path,expected_sha,approval_path):
         '[Security.Principal.WindowsIdentity]::GetCurrent().User.Value'],capture_output=True,text=True,
         timeout=15,creationflags=subprocess.CREATE_NO_WINDOW)
     require(sid.returncode==0 and sid.stdout.strip()==p['ownerSid'])
-    settings=p['settings'];require(type(settings) is dict and set(settings)==SETTINGS
-        and all(type(v) is str and len(v)<=256 and not re.search(r'[\x00-\x1f\x7f]',v) for v in settings.values()))
-    require(settings['MESH_PREVIEW_PORT'].isdigit() and 0<=int(settings['MESH_PREVIEW_PORT'])<=65535
-        and re.fullmatch(r'data/[A-Za-z0-9_-]+',settings['MESH_DATA_DIR'])
-        and settings['MESH_RELAY'] in ('0','1') and settings['MESH_RELAY_MODE'] in ('http','child')
-        and all(settings[n] in ('0','1') for n in ('MESH_NIMS','MESH_MODEL_OBSERVATION','MESH_NEMOTRON_CONTROL'))
-        and settings['MESH_SIMPLE_FLOW']=='0' and Path(settings['MESH_GATE_KEY_FILE']).is_absolute())
+    settings=p['settings']
+    check_settings(settings)
     targets=[Path(p[n]) for n in ('attemptPath','stdoutPath','stderrPath')]
     require(len(set(targets))==3 and all(target.is_absolute() and target.parent==root
         and target not in (path,approval_path,Path(settings['MESH_GATE_KEY_FILE'])) for target in targets))
@@ -170,14 +176,8 @@ def inspect_launch(path,expected_sha,approval_path):
     reader,binding=roles.approved_profile(p['readerProfile'],p['readerProfileSha256'],approval_path)
     require(reader['role']=='reader' and Path(p['readerProfile']).parent==root)
     approval=roles.plain_json(approval_path);require(expected_sha in approval['profiles'])
-    settings=p['settings'];require(type(settings) is dict and set(settings)==SETTINGS
-        and all(type(v) is str and len(v)<=256 and not re.search(r'[\x00-\x1f\x7f]',v) for v in settings.values()))
-    require(settings['MESH_PREVIEW_PORT'].isdigit() and 0<=int(settings['MESH_PREVIEW_PORT'])<=65535
-        and re.fullmatch(r'data/[A-Za-z0-9_-]+',settings['MESH_DATA_DIR'])
-        and settings['MESH_RELAY'] in ('0','1') and settings['MESH_RELAY_MODE'] in ('http','child')
-        and all(settings[n] in ('0','1') for n in ('MESH_NIMS','MESH_MODEL_OBSERVATION','MESH_NEMOTRON_CONTROL'))
-        and settings['MESH_SIMPLE_FLOW']=='0')
-    require(Path(settings['MESH_GATE_KEY_FILE']).is_absolute())
+    settings=p['settings']
+    check_settings(settings)
     require(Path(p['attemptPath']).is_absolute() and Path(p['attemptPath']).parent==root)
     for name in ('stdoutPath','stderrPath'):
         target=Path(p[name]);require(target.is_absolute() and target.parent==root)

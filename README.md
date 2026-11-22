@@ -106,6 +106,8 @@ The native terminal HTML comes from the actual Relay root route through admitted
 
 ## M5 PC and laptop observation
 
+For Tripp's hardware meters, the Windows launcher accepts `MESH_TRIPP_HARDWARE` in the reviewed Mesh profile settings. Omit it or use `"0"` to keep collection off. With `"1"`, an explicit machine refresh can collect readings when Tripp's verified laptop is online. Opening Inference shows the last available observation. Changing a live profile follows the existing Mesh startup approval process.
+
 The current two-machine setup uses `mesh-node-identities/v1` in `config/nodes.json`. Once the AI box joins Eddie's tailnet, an operator can select `mesh-node-identities/v2`, keep the existing PC and laptop entries, and append one entry with `id` set to `ai-box`, `label` set to `AI box`, and its verified full `dnsName` and `tailscaleIp`. Mesh reads this file at startup. The Inference tab can then show all three machines from one Tailscale status read. A name/address mismatch leaves the affected machine unverified. Hardware and loaded-model readings for the AI box require a sensor and model source on that machine.
 
 On the accepted private deployment, open **https://emitchell.tail8c4a75.ts.net:8446/**, Start local session, select **Inference**, and press **Refresh nodes**. The fixed identities are PC `emitchell.tail8c4a75.ts.net` / `100.72.250.65` and Laptop `emitchell109-rog.tail8c4a75.ts.net` / `100.119.162.99`. This reads the fixed local Tailscale executable with only `status --json`, through one server-owned `createNodeProbeReader`. It observes cached Tailscale `Online`, not packet reachability or inference/model readiness; those remain unknown. There are no model or remote-command controls.
