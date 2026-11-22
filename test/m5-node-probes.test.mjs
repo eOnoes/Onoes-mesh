@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, writeFile, readFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, copyFile, writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createNodeProbeReader, NODE_IDENTITIES, NODE_PROBE_LIMITS,
   TAILSCALE_EXECUTABLE, TAILSCALE_STATUS_ARGV } from '../lib/node-probes.mjs';
 
@@ -53,6 +53,46 @@ function time() {
   const base = Date.parse('2026-10-04T01:00:00.000Z');
   return { clock: () => base + elapsed, monotonic: () => elapsed, advance: ms => { elapsed += ms; } };
 }
+
+test('a locally enrolled AI box has independent identity, lifetime and observation-only status', async () => {
+  const root = await mkdtemp(join(evidence, 'three-hosts-'));
+  await mkdir(join(root, 'lib'));
+  await mkdir(join(root, 'config'));
+  const module = join(root, 'lib/node-probes.mjs');
+  await copyFile(new URL('../lib/node-probes.mjs', import.meta.url), module);
+  const {createNodeProbeReader: createReader} = await import(pathToFileURL(module).href);
+  const box = { id: 'ai-box', label: 'AI box', dnsName: 'test-box.tail8c4a75.ts.net', tailscaleIp: '100.64.0.23' };
+  const configure = nodes => writeFile(join(root, 'config/nodes.json'), JSON.stringify({schemaVersion:'mesh-node-identities/v2',nodes}));
+  await configure([...NODE_IDENTITIES,box]);
+  const data = status(true,true);
+  data.Peer.box = peer(box,true);
+  const disconnected = structuredClone(data);
+  disconnected.Peer.box.Online = false;
+  const crossed = structuredClone(data);
+  crossed.Peer.box.TailscaleIPs = ['100.64.0.24'];
+  const tx = await transport([input(data),input(disconnected),input(crossed),input(data)]);
+  const tm = time(), reader = createReader({...tm, spawnImpl:tx.spawnImpl});
+  const first = await reader.refresh();
+  assert.deepEqual(first.nodes.map(n => n.status), ['ready','ready','ready']);
+  assert.equal(first.nodes[2].capabilities.control, false);
+  tm.advance(NODE_PROBE_LIMITS.staleGraceMs);
+  const offline = await reader.refresh();
+  assert.deepEqual(offline.nodes.map(n => n.status), ['ready','ready','offline']);
+  assert.equal(offline.nodes[2].lastSuccessAt, first.nodes[2].lastSuccessAt);
+  const mismatch = await reader.refresh();
+  assert.deepEqual(mismatch.nodes.map(n => n.observationAvailability), ['available','available','unavailable']);
+  assert.equal(mismatch.nodes[2].errors[0].code,'identity_mismatch');
+  assert.equal((await reader.refresh()).nodes[2].status, 'ready');
+  for (const bad of [{...box,tailscaleIp:NODE_IDENTITIES[0].tailscaleIp},
+    {...box,dnsName:NODE_IDENTITIES[1].dnsName}, {...box,dnsName:'wrong.example'}, {...box,tailscaleIp:'127.0.0.1'},
+    {...box,tailscaleIp:null}, {...box,id:'anything-else'}]) {
+    await configure([...NODE_IDENTITIES,bad]);
+    const fixture = await transport([input(data)]);
+    const result = await createReader({spawnImpl:fixture.spawnImpl}).refresh();
+    assert.deepEqual(result.nodes.map(n => n.status), ['ready','ready']);
+    assert.equal(result.configurationIssue,'ai_box_identity_invalid');
+  }
+});
 const find = (snapshot, id) => snapshot.nodes.find(node => node.id === id);
 const hasError = (node, code) => node.errors.some(error => error.code === code);
 

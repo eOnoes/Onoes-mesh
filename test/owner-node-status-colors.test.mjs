@@ -133,3 +133,15 @@ test('Tripp hardware expires on screen and is never confused with main-PC or mod
   assert.match(aged.card.textContent, /Hardware readings unavailable/);
   assert.doesNotMatch(aged.card.textContent, /39 °C/);
 });
+
+test('three-machine view keeps Echo and Tripp visible when the AI box is unavailable', async () => {
+  const {snapshot} = await ready(), view = ui();
+  const box = {...snapshot.nodes[1],id:'ai-box',label:'AI box',dnsName:'test-box.tail8c4a75.ts.net',
+    tailscaleIp:'100.64.0.23',observationAvailability:'unavailable',tailscaleOnline:null,lastSuccessAt:null};
+  const rows = view.render({...snapshot,nodes:[...snapshot.nodes,box]});
+  assert.deepEqual(rows.map(row => row.card.children[0].textContent), ["Echo's PC","Tripp's PC",'AI box']);
+  check(rows[0],'Online','online'); check(rows[1],'Online','online'); check(rows[2],'Unavailable','neutral');
+  assert.doesNotMatch(rows[2].card.textContent,/Tripp|Echo/);
+  view.render({...snapshot,configurationIssue:'ai_box_identity_invalid'});
+  assert.match(view.box.textContent,/Check the AI box name and address/);
+});

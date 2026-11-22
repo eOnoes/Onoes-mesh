@@ -633,14 +633,17 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
   }
   const valid = snapshot?.schemaVersion === 'mesh-node-probes/v1' &&
     ['native_tailscale_cli', 'disposable_transport'].includes(snapshot.source) &&
-    Array.isArray(snapshot.nodes) && snapshot.nodes.length === 2 &&
-    snapshot.nodes[0].id === 'pc' && snapshot.nodes[1].id === 'laptop';
+    Array.isArray(snapshot.nodes) && (snapshot.nodes.length === 2 ||
+      snapshot.nodes.length === 3 && snapshot.nodes[2]?.id === 'ai-box') &&
+    snapshot.nodes[0]?.id === 'pc' && snapshot.nodes[1]?.id === 'laptop';
   if (!valid) { paragraph(box, 'Node observation unavailable. No online or offline result established.'); return; }
   const elapsed = Math.max(0, probeTick() - nodeProbeReceivedAt);
   for (const n of snapshot.nodes) {
     const card = document.createElement('article'); card.className = 'node-observation';
     card.setAttribute('data-node-id', n.id);
-    const title = document.createElement('h3'); title.textContent = n.id === 'laptop' ? "Tripp's PC" : "Echo's PC"; card.append(title);
+    const title = document.createElement('h3');
+    title.textContent = {pc: "Echo's PC", laptop: "Tripp's PC", 'ai-box': 'AI box'}[n.id];
+    card.append(title);
     paragraph(card, n.dnsName + ' · ' + n.tailscaleIp);
     // Local aging never refreshes the CLI or advances last-success timestamps.
     const successAge = n.lastSuccessAt === null ? Infinity :
@@ -685,6 +688,8 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
     if (snapshot.source === 'disposable_transport') paragraph(card, 'TEST ONLY: controlled transport; no native tailnet claim.');
     box.append(card);
   }
+  if (snapshot.configurationIssue === 'ai_box_identity_invalid')
+    paragraph(box, 'Check the AI box name and address in the Mesh machine configuration.');
 }
 async function refreshNodeProbes() {
   if (!admitted || !proofAvailable() || $('panel-inference').hidden) return;
