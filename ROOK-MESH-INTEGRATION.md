@@ -6,6 +6,12 @@ The existing owner-reviewed Mesh launch profile can include a `rookEnrollment` r
 
 Relay shows “Rook · paused” on an enrolled board. This identity grants no worker dispatch, scheduler, external messaging or Mind access. The paired offline capture and connected profiles each need their own reviewed binding for the status to persist across recovery modes. Omitting the field keeps the original startup behavior. To withdraw an installed enrollment, restore the previously approved profiles and reload Mesh. The live installation still needs its own owner-reviewed cutover.
 
+### Windows recovery check
+
+Run `test_capture_first_process_candidate.CaptureFirstProcessTests.test_real_startup_keeps_local_board_when_memory_held_then_catches_up` with `MESH_CAPTURE_FIRST_WORKSPACE` pointing to a fresh disposable Windows test workspace and `MESH_CAPTURE_FIRST_ROOK=1`. This variant uses the single-project fixture. It checks Rook through the admitted Workroom API while Mind is offline and again after the queued card edit reaches Mind. Both gateways must show the same paused Rook identity with no scheduler or recorded sweep.
+
+The first board open with the Relay inbox adds `workroom_rook_relay_receipts`. When checking a source rollback, compare the saved rows in every original table and open the upgraded board with the prior release. Keep the receipt table and any confirmed deliveries it contains.
+
 ## Mesh Relay inbox qualification, November 22
 
 The first reporting destination is the Rook panel in Mesh Relay. The receiver records the report ID, content digest and receipt time in the board database. The title and question stay in the original notice. “Received by Mesh Relay” confirms receipt in that inbox. Eddie can open the linked Workroom card there. Reading the notice, taking an owner decision and starting a worker are separate actions.

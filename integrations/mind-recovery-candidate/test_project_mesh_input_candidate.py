@@ -223,7 +223,7 @@ import {statSync,realpathSync} from 'node:fs';
 import path from 'node:path';import {createHash} from 'node:crypto';
 import {projectSnapshot} from './integrations/workroom-project-sync-candidate.mjs';
 import {canonicalProjectEvent} from './integrations/project-sync-outbox-candidate.mjs';
-import {inspectProjectSource,prepareProjectSource,inspectProjectSourceAddition,prepareProjectSourceAddition} from './integrations/project-sync-source-setup-candidate.mjs';
+import {inspectProjectSource,prepareProjectSource} from './integrations/project-sync-source-setup-candidate.mjs';
 const store=openTaskStore(process.argv[1]);
 const card=store.create({title:'Synthetic composed launcher',description:'EXCLUDED-PRIVATE-PROSE',owner:'nims'});
 const link={cardId:card.id,projectId:process.argv[3],approvalRef:'fixture:launch-sharing',fields:['title','stage']};
@@ -248,6 +248,7 @@ const plan={schema:'onoes-mesh-project-source-setup/v1',workspace:realpathSync(p
 const preview=inspectProjectSource(plan);const receipt=prepareProjectSource(plan,{decision:'approve_exact_mesh_project_source_setup',planSha256:preview.planSha256});
 if(receipt.baselines.length!==1||inspectProjectSource(plan).baselines[0].eventId!==receipt.baselines[0].eventId)throw Error('Source preparation readback failed');
 if(pilotPlan){
+  const {inspectProjectSourceAddition,prepareProjectSourceAddition}=await import('./integrations/project-sync-source-setup-candidate.mjs');
   plan.links.push(pilotPlan);
   const add=inspectProjectSourceAddition(plan,pilotPlan.cardId);
   prepareProjectSourceAddition(plan,{decision:'approve_exact_mesh_project_source_addition',addedCardId:pilotPlan.cardId,planSha256:add.planSha256});

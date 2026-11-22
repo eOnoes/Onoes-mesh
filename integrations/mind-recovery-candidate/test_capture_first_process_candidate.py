@@ -31,7 +31,15 @@ import mesh_startup_task_candidate as startup_task
 @unittest.skipUnless(os.name=='nt' and os.environ.get('MESH_CAPTURE_FIRST_WORKSPACE'),
                      'Explicit isolated copied capture-first workspace required')
 class CaptureFirstProcessTests(unittest.TestCase):
+    def assert_rook_paused(self, request, token):
+        status = request('/api/workroom/rook', csrf=token, method='GET')
+        self.assertEqual((status['connection']['id'], status['connection']['source'], status['connection']['status']),
+                         ('rook', 'native_mesh_profile', 'paused'))
+        self.assertFalse(status['sweep']['schedulerInstalled'])
+        self.assertIsNone(status['sweep']['lastScheduledAt'])
+
     def test_real_startup_keeps_local_board_when_memory_held_then_catches_up(self):
+        with_rook = os.environ.get('MESH_CAPTURE_FIRST_ROOK') == '1'
         ws=Path(os.environ['MESH_CAPTURE_FIRST_WORKSPACE']).resolve()
         self.assertEqual(ws,launch.ROOT);self.assertEqual(ws,startup.ROOT);self.assertEqual(ws,recovery.ROOT)
         self.assertTrue(ws.parent.name.startswith('mesh-capture-first-'))
@@ -85,7 +93,11 @@ class CaptureFirstProcessTests(unittest.TestCase):
                 self.assertEqual(len(aliases),1)
                 stack.enter_context(patch.object(fixtures,aliases[0],old_launch))
             stack.enter_context(patch.object(old_launch if install else launch,'launch_mesh',side_effect=fixed_gateway))
-            case.test_exact_profiles_preflight_then_owned_gateway_delivers_only_approved_fields()
+            if with_rook:
+                self.assertIsNone(install, 'Use a current-source disposable workspace for the Rook handoff')
+                case.exercise_gateway(with_rook=True)
+            else:
+                case.test_exact_profiles_preflight_then_owned_gateway_delivers_only_approved_fields()
         phase('baseline_delivered')
         profile=case.root/'mesh-launch.json';sha=launch.digest(profile);p=json.loads(profile.read_text());root=case.root
         baseline_profile,baseline_sha,baseline_p=profile,sha,copy.deepcopy(p)
@@ -113,6 +125,8 @@ class CaptureFirstProcessTests(unittest.TestCase):
             settings=p['settings'],attemptPath=str(root/'capture-attempt.json'),stdoutPath=str(root/'capture-out.log'),stderrPath=str(root/'capture-err.log'),
             projectCapture=dict(schema='onoes-mesh-native-project-capture/v1',source=p['projectSync']['source'],
                 storeId=case.reader.reader_data['binding']['store_id'],links=p['projectSync']['links']))
+        if with_rook:
+            cp['rookEnrollment'] = p['rookEnrollment'].copy()
         capture_profile=root/'capture-profile.json';roles.private_new_json(capture_profile,cp);capture_sha=launch.digest(capture_profile)
         capture_approval=root/'capture-approval.json';roles.private_new_json(capture_approval,dict(schema='onoes-mesh-offline-capture-approval/v1',
             decision='approve_exact_workroom_offline_capture',ownerSid=cp['ownerSid'],workspace=str(ws),profileSha256=capture_sha))
@@ -263,6 +277,9 @@ class CaptureFirstProcessTests(unittest.TestCase):
             if required:self.fail('Exact backend was not logged')
         request=fixtures.admitted_http(backend(cp,capture_record['pid']));token=request('/api/trial-session/bootstrap',{})['csrfToken'];card=p['projectSync']['links'][0]['cardId']
         self.assertEqual(request('/api/workroom/'+card,csrf=token,method='GET')['memorySync']['state'],'offline')
+        if with_rook:
+            self.assert_rook_paused(request, token)
+            phase('paused_rook_visible_while_memory_offline')
         task=request('/api/tasks/'+card,csrf=token,method='GET')['task'];request('/api/tasks/'+card,fixtures.edited_card(task,'Bootproof offline edit saved'),token,method='PATCH')
         request('/api/trial-session/logout',{},token);pending=events();self.assertEqual(pending[:2],before);self.assertEqual(pending[-1][2],'pending')
         phase('local_board_usable_while_unresolved_memory_attempt_preserved')
@@ -274,6 +291,9 @@ class CaptureFirstProcessTests(unittest.TestCase):
         connected=json.loads(Path(p['attemptPath']).read_text());self.assertEqual(second['pid'],connected['pid'])
         request=fixtures.admitted_http(backend(p,connected['pid']));token=request('/api/trial-session/bootstrap',{})['csrfToken']
         try:
+            if with_rook:
+                self.assert_rook_paused(request, token)
+                phase('paused_rook_visible_after_reconnect')
             after=case.wait_for(lambda:events() if len(events())==3 and all(row[2]=='saved' for row in events()) else None)
             self.assertEqual(after[:2],before);self.assertEqual(after[-1][:2],pending[-1][:2])
             recall=request('/api/mind/recall',dict(query='bootproof',limit=8),token)
