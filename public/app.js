@@ -735,6 +735,8 @@ function renderRookReports(snapshot) {
   if (!Array.isArray(snapshot?.reports)) return;
   const labels = {claim_saved: 'Assignment reserved', needs_input: 'Your input needed', failed: 'Task needs attention',
     ready_for_review: 'Result ready', watcher_failed: 'Rook needs attention', watcher_recovered: 'Rook recovered'};
+  const deliveryLabels = {pending: 'Queued for delivery', sending: 'Awaiting confirmation',
+    unknown: 'Delivery unconfirmed', delivered: 'Delivery confirmed'};
   for (const report of snapshot.reports.slice(0, 20)) {
     const payload = report?.payload;
     if (!payload || !Object.hasOwn(labels, payload.kind)) continue;
@@ -746,7 +748,9 @@ function renderRookReports(snapshot) {
     }
     const timestamp = document.createElement('p');
     const at = Date.parse(report.createdAt);
-    timestamp.textContent = Number.isFinite(at) ? `Saved ${new Date(at).toLocaleString()}` : 'Saved time unavailable';
+    const saved = Number.isFinite(at) ? `Saved ${new Date(at).toLocaleString()}` : 'Saved time unavailable';
+    const delivery = Object.hasOwn(deliveryLabels, report.state) ? deliveryLabels[report.state] : 'Delivery status unavailable';
+    timestamp.textContent = `${delivery} · ${saved}`;
     article.append(timestamp);
     openCard(article, payload.taskId);
     root.append(article);

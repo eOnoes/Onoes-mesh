@@ -32,6 +32,18 @@ test('unconfigured watcher stays visibly unconnected; unknown report kinds are i
   assert.ok(!text(ui).includes('Never show me'));
 });
 
+test('each notice shows its saved delivery state even when the watcher is offline', async () => {
+  const states = ['pending', 'sending', 'unknown', 'delivered', undefined, 'constructor'];
+  const ui = await admittedUi({connection: {status: 'unavailable'},
+    reports: states.map(state => ({...notice.reports[0], state}))});
+  const rows = walk(ui.ids.get('rook-reports')).map(node => node.textContent)
+    .filter(line => line.includes(' · Saved '));
+  assert.deepEqual(rows.map(line => line.split(' · ')[0]), [
+    'Queued for delivery', 'Awaiting confirmation', 'Delivery unconfirmed',
+    'Delivery confirmed', 'Delivery status unavailable', 'Delivery status unavailable'
+  ]);
+});
+
 test('assignment holds explain the original worker and open its card without releasing it', async () => {
   const hold={taskId:id,title:'Unconfirmed original worker',reason:'writer_quiescence_unproven'};
   const ui=await admittedUi({connection:{status:'not_configured'},assignmentHolds:[hold,{...hold,sendId:'another-attempt'}],reports:[]});
