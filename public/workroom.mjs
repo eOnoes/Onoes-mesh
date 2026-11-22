@@ -203,29 +203,42 @@ if(root){
     const actionBar=el('section');actionBar.className='workroom-sheet-footer';actionBar.setAttribute('aria-label','Card actions');
     let actionTask=selected,finishAction=null,recordAction=null,reviewAnchor=null,renderActions=()=>{};
     const toolbar=el('div');toolbar.className='workroom-sheet-toolbar';
-    const stageName=teamPolicy?.simpleFlow&&['working','needs_you'].includes(selected.workroom.stage)?'In progress':stages.find(stage=>stage[0]===selected.workroom.stage)?.[1]||'Unknown';
-    const stageBadge=el('span',(selected.workroom.stage==='done'?'✓ ':'')+stageName.toUpperCase());stageBadge.className='workroom-sheet-stage';stageBadge.setAttribute('aria-label','Card status: '+stageName);
+    const stageBadge=el('span');stageBadge.className='workroom-sheet-stage';
     const close=el('button','Close card');close.type='button';close.addEventListener('click',()=>{if(!busy)closeDetails();});toolbar.append(stageBadge,close);details.append(toolbar);
     details.append(content,actionBar);
     const dialogStatus=el('p');dialogStatus.setAttribute('role','status');content.append(dialogStatus);
     const memoryState=el('p');memoryState.className='workroom-memory-state';memoryState.setAttribute('role','status');
     paintMemoryState(memoryState,opened.memorySync);content.append(memoryState);
     const cardNotice=el('p');cardNotice.setAttribute('role','status');content.append(cardNotice);
-    const writeup=el('p',selected.description);writeup.className='workroom-writeup';
-    content.append(el('h2',selected.title),writeup);
-    if(selected.flow?.state==='clarification')content.append(el('h3','Clarification requested · '+new Date(selected.flow.askedAt).toLocaleString()),el('p',selected.flow.question));
-    if(teamPolicy?.simpleFlow&&selected.flow?.ownerNote)content.append(el('h3','Your requested changes'),el('p',selected.flow.ownerNote));
-    const summary=el('section');summary.className='workroom-card-summary';
-    summary.append(el('p',`${selected.workroom.project||'No project'} · ${selected.workroom.owner||'Unassigned'} · ${stageName}`),el('h3','Goal'),el('p',selected.progress.goal||'No goal saved yet.'));
-    const checklist=el('ul');for(const step of selected.progress.checklist)checklist.append(el('li',`${step.status==='done'?'✓':step.status==='working'?'→':'○'} ${step.text} — ${step.status}`));summary.append(checklist);
-    summary.append(el('h3','Result'),el('p',selected.progress.result||'No result recorded yet.'),el('p',teamPolicy?.simpleFlow?(selected.workroom.stage==='done'?'Independent checks passed. Your acceptance is separate.':'Team verification: '+selected.progress.decision):'Review: '+selected.progress.decision));
-    const edit=el('button','Edit card');edit.type='button';toolbar.insertBefore(edit,close);content.append(summary);
-    if(selected.workroom.stage!=='done'){
-      const finish=el('button','Move to Done');finish.type='button';finishAction=finish;
-      finish.disabled=selected.progress.decision!=='approved';
-      if(finish.disabled&&!teamPolicy?.simpleFlow)summary.append(el('p','Record an approved review before moving this card to Done.'));
-      finish.addEventListener('click',()=>act(async()=>{await move(actionTask,'done');closeDetails();}));
+    const title=el('h2'),writeup=el('p'),flowNote=el('div');
+    writeup.className='workroom-writeup';content.append(title,writeup,flowNote);
+    const summary=el('section');summary.className='workroom-card-summary';content.append(summary);
+    const edit=el('button','Edit card');edit.type='button';toolbar.insertBefore(edit,close);
+    finishAction=el('button','Move to Done');finishAction.type='button';
+    finishAction.addEventListener('click',()=>act(async()=>{await move(actionTask,'done');closeDetails();}));
+    let summaryKey;
+    function paintSummary(task){
+      const {workroom,progress,flow}=task;
+      const key=JSON.stringify([task.title,task.description,workroom.project,workroom.owner,workroom.stage,progress,
+        flow?.question,flow?.askedAt,flow?.state,flow?.ownerNote,Boolean(teamPolicy?.simpleFlow)]);
+      if(key===summaryKey)return;
+      summaryKey=key;
+      const stageName=teamPolicy?.simpleFlow&&['working','needs_you'].includes(workroom.stage)?'In progress':stages.find(stage=>stage[0]===workroom.stage)?.[1]||'Unknown';
+      stageBadge.textContent=(workroom.stage==='done'?'✓ ':'')+stageName.toUpperCase();
+      stageBadge.setAttribute('aria-label','Card status: '+stageName);
+      title.textContent=task.title;writeup.textContent=task.description;
+      flowNote.replaceChildren();
+      if(flow?.state==='clarification')flowNote.append(el('h3','Clarification requested · '+new Date(flow.askedAt).toLocaleString()),el('p',flow.question));
+      if(teamPolicy?.simpleFlow&&flow?.ownerNote)flowNote.append(el('h3','Your requested changes'),el('p',flow.ownerNote));
+      flowNote.hidden=!flowNote.childElementCount;
+      summary.replaceChildren(el('p',`${workroom.project||'No project'} · ${workroom.owner||'Unassigned'} · ${stageName}`),el('h3','Goal'),el('p',progress.goal||'No goal saved yet.'));
+      const checklist=el('ul');
+      for(const step of progress.checklist)checklist.append(el('li',`${step.status==='done'?'✓':step.status==='working'?'→':'○'} ${step.text} — ${step.status}`));
+      summary.append(checklist,el('h3','Result'),el('p',progress.result||'No result recorded yet.'),el('p',teamPolicy?.simpleFlow?(workroom.stage==='done'?'Independent checks passed. Your acceptance is separate.':'Team verification: '+progress.decision):'Review: '+progress.decision));
+      finishAction.disabled=progress.decision!=='approved';
+      if(workroom.stage!=='done'&&finishAction.disabled&&!teamPolicy?.simpleFlow)summary.append(el('p','Record an approved review before moving this card to Done.'));
     }
+    paintSummary(selected);
     const advanced=el('details');advanced.className='workroom-advanced-controls';advanced.open=!teamPolicy?.simpleFlow;advanced.append(el('summary','Advanced controls and history'));content.append(advanced);
     const timeline=el('section');timeline.className='workroom-timeline';advanced.append(timeline);
     let timelineSignature='';
@@ -236,13 +249,13 @@ if(root){
       const list=el('ol');for(const event of events){const item=el('li');const when=el('time',Number.isFinite(Date.parse(event.at))?new Date(event.at).toLocaleString():'Time unavailable');if(Number.isFinite(Date.parse(event.at)))when.dateTime=new Date(event.at).toISOString();item.append(el('b',event.label),when);if(event.evidence||event.detail.length>180){const evidence=el('details');evidence.append(el('summary','Details and verification evidence'),el('p',event.detail));if(event.evidence)evidence.append(el('p',event.evidence));item.append(evidence);}else item.append(el('p',event.detail));list.append(item);}timeline.append(list);
     }
     paintTimeline(selected);
-    const editor=el('section');editor.hidden=true;edit.addEventListener('click',()=>{summary.hidden=true;editor.hidden=false;renderActions(actionTask);editor.querySelector('input')?.focus();});
+    const editor=el('section');editor.hidden=true;edit.addEventListener('click',()=>{beginEdit(actionTask);summary.hidden=true;editor.hidden=false;renderActions(actionTask);editor.querySelector('input')?.focus();});
     const cancel=el('button','Cancel edits');cancel.type='button';cancel.addEventListener('click',()=>{if(!busy)closeDetails();});content.append(editor);
     const reports=el('section');reports.className='agent-reports';(teamPolicy?.simpleFlow?advanced:content).append(reports);
     let reportSignature=null;
     function paintReports(task){
       const latest=task.agentUpdates?.at(-1);
-      const signature=JSON.stringify([latest?.hash,latest?.applied,task.progress.decision,task.agentReviews?.at(-1)?.hash,task.agentReviews?.at(-1)?.applied,task.assignments?.map(a=>a.hash)]);
+      const signature=JSON.stringify([task.revision,task.workroom.revision,task.progress.revision,task.plan?.revision,latest?.hash,latest?.applied,task.progress.decision,task.agentReviews?.at(-1)?.hash,task.agentReviews?.at(-1)?.applied,task.assignments?.map(a=>a.hash)]);
       if(signature===reportSignature)return;
       reportSignature=signature;
       recordAction=null;reviewAnchor=null;
@@ -251,21 +264,23 @@ if(root){
         const p=offer.proposal,box=el('details');box.append(el('summary','Lead assignment proposal · '+offer.agentId),el('p',p.spec),el('p','Workspace: '+p.workspace),el('p','Allowed files: '+p.allowedFiles),el('p','Checks: '+p.checks),el('p','Builder: '+p.workerId+' · Reviewer: '+p.reviewerId));
         const apply=el('button','Use proposed scope and team');apply.type='button';apply.disabled=task.status==='done'||task.progress.decision==='approved';apply.addEventListener('click',()=>act(async()=>{if(!editor.hidden)throw new Error('Save or cancel card edits first.');await request('/api/workroom/'+id+'/apply-assignment',{method:'POST',body:JSON.stringify({sendId:offer.sendId,messageId:offer.messageId,hash:offer.hash,revision:task.plan?.revision??0,taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision})});await load();await open(id);}));box.append(apply);reports.append(box);
       }
-      if(!latest){reports.append(el('p','No structured update yet. New task messages request a plan or progress report.'));return;}
-      reports.append(el('p',`${latest.agentId} · ${latest.applied?'Applied · review: '+task.progress.decision:'Unreviewed report'}`),el('b',latest.update.goal));
-      const list=el('ul');for(const step of latest.update.checklist)list.append(el('li',`${step.status} · ${step.text}`));reports.append(list);
-      if(latest.update.result)reports.append(el('p','Reported result: '+latest.update.result));
-      if(latest.update.evidence)reports.append(el('p','Reported evidence: '+latest.update.evidence));
-      if(!latest.applied){
-        const apply=el('button','Apply update to checklist');apply.type='button';
-        apply.disabled=task.status==='done'||task.progress.decision==='approved';
-        if(apply.disabled)reports.append(el('p','This card is completed or approved. This update cannot replace its saved checklist.'));
-        apply.addEventListener('click',()=>act(async()=>{
-          if(!editor.hidden)throw new Error('Save or cancel your edits before applying an agent update.');
-          await request('/api/workroom/'+id+'/apply-update',{method:'POST',body:JSON.stringify({sendId:latest.sendId,messageId:latest.messageId,hash:latest.hash,
-            revision:selected.progress.revision,taskRevision:selected.revision,briefRevision:selected.workroom.revision})});
-          await load();await open(id);status.textContent='Agent update applied. The result still needs review.';
-        }));reports.append(apply);
+      if(!latest){reports.append(el('p','No structured update yet. New task messages request a plan or progress report.'));}
+      else{
+        reports.append(el('p',`${latest.agentId} · ${latest.applied?'Applied · review: '+task.progress.decision:'Unreviewed report'}`),el('b',latest.update.goal));
+        const list=el('ul');for(const step of latest.update.checklist)list.append(el('li',`${step.status} · ${step.text}`));reports.append(list);
+        if(latest.update.result)reports.append(el('p','Reported result: '+latest.update.result));
+        if(latest.update.evidence)reports.append(el('p','Reported evidence: '+latest.update.evidence));
+        if(!latest.applied){
+          const apply=el('button','Apply update to checklist');apply.type='button';
+          apply.disabled=task.status==='done'||task.progress.decision==='approved';
+          if(apply.disabled)reports.append(el('p','This card is completed or approved. This update cannot replace its saved checklist.'));
+          apply.addEventListener('click',()=>act(async()=>{
+            if(!editor.hidden)throw new Error('Save or cancel your edits before applying an agent update.');
+            await request('/api/workroom/'+id+'/apply-update',{method:'POST',body:JSON.stringify({sendId:latest.sendId,messageId:latest.messageId,hash:latest.hash,
+              revision:task.progress.revision,taskRevision:task.revision,briefRevision:task.workroom.revision})});
+            await load();await open(id);status.textContent='Agent update applied. The result still needs review.';
+          }));reports.append(apply);
+        }
       }
       const review=task.agentReviews?.at(-1);
       if(review){
@@ -278,7 +293,6 @@ if(root){
           await load();await open(id);status.textContent='Independent review recorded. Move to Done only when approved.';
         }));reports.append(record);}
       }
-      renderActions(task);
     }
     paintReports(selected);
     const form=el('form');
@@ -322,6 +336,16 @@ if(root){
     const reviewer=field(progressForm,'Reviewed by',selected.progress.reviewer);
     const reviewStatus=el('p',`Review: ${selected.progress.decision==='stale'?'Needs a new review because the brief changed':selected.progress.decision}. Checking every step does not finish the task.`);
     progressForm.append(reviewStatus);
+    function beginEdit(task){
+      if(selected.revision===task.revision&&selected.workroom.revision===task.workroom.revision&&selected.progress.revision===task.progress.revision)return;
+      selected=task;
+      project.value=task.workroom.project;criteria.value=task.workroom.criteria;stage.value=task.workroom.stage;
+      if(task.workroom.owner&&!Array.from(owner.options).some(option=>option.value===task.workroom.owner))owner.add(new Option('Existing owner: '+task.workroom.owner,task.workroom.owner));
+      owner.value=task.workroom.owner;
+      goal.value=task.progress.goal;result.value=task.progress.result;evidence.value=task.progress.evidence;reviewer.value=task.progress.reviewer;
+      steps.splice(0,steps.length,...task.progress.checklist.map(step=>({...step})));drawSteps();
+      reviewStatus.textContent='Review: '+task.progress.decision;
+    }
     async function saveBrief(){
       const body={project:project.value,criteria:criteria.value,owner:owner.value,stage:stage.value,team:'local_build',revision:selected.workroom.revision};
       selected=await saveCardBrief(selected,body,request);
@@ -469,7 +493,6 @@ if(root){
         teamState.textContent='Team: '+(state||'not started')+' · '+(task.automation?.reason||'One build → one review, no automatic rework loop.')+(changed?' Scope changed; reopen this card before starting/resuming.':'');
         buttons.get('pause').disabled=state!=='active';buttons.get('close').disabled=!['paused','needs_review'].includes(state);
         paintScopedAvailability();
-        renderActions(task);
       };paintAuto(selected);team.append(auto);
     }
     if(teamPolicy?.simpleFlow){advanced.append(team,conversation);}else content.insertBefore(team,conversation);
@@ -533,26 +556,37 @@ if(root){
     paintReplies(selected);
     const followLabel=el('label');const follow=el('input');follow.type='checkbox';follow.checked=true;followLabel.append(follow,document.createTextNode(' Follow agent replies while this card is open'));reports.append(followLabel);
     const liveStatus=el('p');liveStatus.setAttribute('role','status');reports.append(liveStatus);
-    async function refreshReplies(background=false){
-      const result=await request('/api/workroom/'+id+'/sync',{method:'POST',body:'{}'});
-      if(epoch!==viewEpoch || !details.open)return;
-      if(!editor.hidden || (background && busy))return;
-      // Keep the form's original edit revisions: a remote edit must cause a
-      // conflict, never let unchanged inputs overwrite newer saved progress.
-      selected={...selected,messages:result.task.messages,replies:result.task.replies,agentUpdates:result.task.agentUpdates,agentReviews:result.task.agentReviews,worker:result.task.worker};
-      try{agents=await request('/api/relay/native/api/agents');}catch{agents=[];}
-      if(epoch!==viewEpoch || !details.open)return;
-      paintRecovery();
-      paintMemoryState(memoryState,result.memorySync);
-      paintSavedMessages(result.task);paintReplies(result.task);paintReports(result.task);paintTimeline(result.task);paintAuto(result.task);if(followLabel.parentElement!==reports)reports.append(followLabel,liveStatus);
-      const index=tasks.findIndex(task=>task.id===id);if(index>=0){tasks[index]=result.task;draw();}
-      liveStatus.textContent='Replies checked '+new Date().toLocaleTimeString()+'. New reports require explicit application and review.';
+    let refreshVersion=0;
+    async function refreshCard({replies=false,background=false}={}){
+      const version=++refreshVersion;
+      const current=()=>version===refreshVersion&&epoch===viewEpoch&&details.open&&editor.hidden&&ownerPanel.hidden&&!(background&&busy);
+      const response=replies
+        ?await request('/api/workroom/'+id+'/sync',{method:'POST',body:'{}'})
+        :await request('/api/workroom/'+id);
+      if(!current())return;
+      if(replies){
+        let peers;
+        try{peers=await request('/api/relay/native/api/agents');}catch{peers=[];}
+        if(!current())return;
+        agents=peers;
+      }else{
+        teamPolicy=response.teamPolicy||null;paintMaintenance();
+      }
+      const task=response.task;
+      selected={...selected,messages:task.messages,replies:task.replies,agentUpdates:task.agentUpdates,agentReviews:task.agentReviews,worker:task.worker};
+      paintSummary(task);paintRecovery();paintMemoryState(memoryState,response.memorySync);
+      paintSavedMessages(task);paintReplies(task);paintReports(task);paintTimeline(task);paintAuto(task);renderActions(task);
+      if(followLabel.parentElement!==reports)reports.append(followLabel,liveStatus);
+      const index=tasks.findIndex(item=>item.id===id);if(index>=0){tasks[index]=task;draw();}
+      const message=replies?'Replies checked':'Saved progress checked';
+      liveStatus.textContent=message+' '+new Date().toLocaleTimeString()+'.';
+      if(!replies)dialogStatus.textContent=liveStatus.textContent;
     }
-    sync.addEventListener('click',()=>act(async()=>{await refreshReplies();replyStatus.textContent='Replies refreshed and saved.';}));
+    sync.addEventListener('click',()=>act(async()=>{await refreshCard({replies:true});replyStatus.textContent='Replies refreshed and saved.';}));
     async function followReplies(){
       if(epoch!==viewEpoch || !details.open)return;
       if(follow.checked && !document.hidden && editor.hidden && !busy && selected.messages.some(message=>message.state==='accepted')){
-        try{await refreshReplies(true);}catch(error){if(epoch===viewEpoch)liveStatus.textContent='Live replies paused: '+error.message;}
+        try{await refreshCard({replies:true,background:true});}catch(error){if(epoch===viewEpoch)liveStatus.textContent='Live replies paused: '+error.message;}
       }
       if(epoch===viewEpoch && details.open)followTimer=setTimeout(followReplies,7000);
     }
@@ -560,7 +594,7 @@ if(root){
     conversation.append(el('h3','Task history'));
     for(const entry of selected.history)conversation.append(el('p',`${entry.at} · ${entry.detail}`));
     const inspectReview=el('button','Read review');inspectReview.type='button';inspectReview.addEventListener('click',()=>reviewAnchor?.scrollIntoView({block:'start'}));
-    const checkProgress=el('button','Check progress');checkProgress.type='button';checkProgress.addEventListener('click',()=>act(()=>refreshReplies()));
+    const checkProgress=el('button','Check progress');checkProgress.type='button';checkProgress.addEventListener('click',()=>act(()=>refreshCard()));
     const back=el('button','Back to board');back.type='button';back.addEventListener('click',()=>{if(!busy)closeDetails();});
     const ownerPanel=el('section');ownerPanel.hidden=true;content.append(ownerPanel);
     const ownerNote=field(ownerPanel,'What needs to change?','',true);ownerNote.maxLength=2000;
