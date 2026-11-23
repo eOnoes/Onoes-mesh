@@ -700,11 +700,17 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       const [, , , location, gauges] = card.children;
       location.textContent = 'Omarchy · ' + state;
       const cpu = online ? desktop.cpuTempC : null, gpu = online ? desktop.gpuTempC : null;
-      const key = JSON.stringify([cpu ?? null, gpu ?? null]);
+      const ramPct = online ? desktop.ramPct : null;
+      const cpuPct = online ? desktop.cpuPct : null;
+      const gpuPct = online ? desktop.gpuPct : null;
+      const withUsage = [ramPct,cpuPct,gpuPct].some(v => Number.isFinite(v) && v >= 0 && v <= 100);
+      const key = JSON.stringify([cpu, gpu, ramPct, cpuPct, gpuPct]);
       if (gauges.getAttribute('data-values') !== key) {
         gauges.setAttribute('data-values', key);
-        gauges.replaceChildren(pixelReading('cpu','CPU',null,cpu,document,true),
-          pixelReading('gpu','GPU',null,gpu,document,true));
+        gauges.replaceChildren();
+        if (withUsage) gauges.append(pixelReading('ram','RAM',ramPct,null,document));
+        gauges.append(pixelReading('cpu','CPU',cpuPct,cpu,document,!withUsage),
+          pixelReading('gpu','GPU',gpuPct,gpu,document,!withUsage));
       }
       continue;
     }

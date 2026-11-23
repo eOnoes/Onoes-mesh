@@ -16,7 +16,7 @@ const network = createNodeProbeReader(fixture.options);
 function withBox(view) {
   return {...view, nodes: [...view.nodes, {...view.nodes[1], id:'ai-box', label:'AI box',
     dnsName:'fixture.tail8c4a75.ts.net', tailscaleIp:'100.64.0.23'}],
-    trippDesktop:{state:'online', ageMs:0, cpuTempC:51, gpuTempC:null}};
+    trippDesktop:{state:'online', ageMs:0, cpuTempC:51, gpuTempC:null, ramPct:31, cpuPct:0, gpuPct:77}};
 }
 let boxSensorsAvailable = true;
 const reader = withRemoteHardware({
@@ -66,12 +66,14 @@ try {
   await tripp.getByText('Reported model: Nemotron-boat', {exact:true}).waitFor();
   await tripp.getByRole('heading',{name:'TEMP',exact:true}).waitFor();
   await tripp.getByText('51 °C', {exact:true}).waitFor();
+  for (const reading of ['31%', '0%', '77%']) await tripp.getByText(reading,{exact:true}).waitFor();
   assert.equal(await tripp.locator('.thermal-gauge').count(),2);
   assert.equal(await page.locator('[data-node-id="laptop"]').count(),0);
   assert.doesNotMatch(await tripp.innerText(), /Hermes|ChatGPT|Claude|42%|58 °C/);
   await page.clock.fastForward(31000);
   await box.getByText('Hardware readings unavailable').waitFor();
   await tripp.getByText('Omarchy · Status unavailable').waitFor();
+  assert.doesNotMatch(await tripp.innerText(),/31%|77%|51 °C/);
   assert.equal(await boxMeters.count(),0);
   boxSensorsAvailable = false;
   await Promise.all([page.waitForResponse(origin + '/api/node-probes/refresh'), check.tap()]);

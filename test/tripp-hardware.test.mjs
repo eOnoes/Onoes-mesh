@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {mkdir, mkdtempDisposable, readFile, writeFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {existsSync} from 'node:fs';
 import {encodeTrippProbe, normalizeTrippSample, readWindowsHardware, withRemoteHardware, withTrippHardware} from '../lib/tripp-hardware.mjs';
-import {NODE_IDENTITIES, observeOmarchy, readOmarchyTemperatures} from '../lib/node-probes.mjs';
+import {NODE_IDENTITIES, observeOmarchy, readOmarchyHardware, readOmarchyTemperatures} from '../lib/node-probes.mjs';
 
 test('only the uniquely identified online Omarchy Linux desktop can supply temperatures', async () => {
   const dns = 'omarchy.example.test';
@@ -35,6 +39,42 @@ test('Omarchy temperatures accept only labelled in-range measurements returned b
 });
 
 const box = {id:'ai-box',label:'AI box',dnsName:'fixture.tail8c4a75.ts.net',tailscaleIp:'100.64.0.23'};
+
+test('Omarchy uses measured percentages, keeps zero, and rejects missing or invalid readings independently', async () => {
+  const read = lines => readOmarchyHardware('omarchy.example.test',async()=>({stdout:['host omarchy',...lines].join('\n')}));
+  assert.deepEqual(await read(['cpuPct 0','ramPct 37','gpuPct 55','gpuPct 8','gpuC 51','gpuPct 120']),
+    {cpuPct:0,ramPct:37,gpuPct:55,cpuTempC:null,gpuTempC:51});
+  assert.deepEqual(await read(['ramPct -1','gpuPct N/A','cpuPct 101','cpuMilli 54000']),
+    {cpuPct:null,ramPct:null,gpuPct:null,cpuTempC:54,gpuTempC:null});
+});
+
+const shell = process.platform === 'win32' ? join(process.env.ProgramFiles,'Git','bin','sh.exe') : '/bin/sh';
+test('the Linux reader computes CPU deltas, available RAM and independent GPU metrics', {skip:!existsSync(shell)}, async () => {
+  await using fixture = await mkdtempDisposable(join(tmpdir(),'mesh-omarchy-'));
+  const put = (name, data) => writeFile(join(fixture.path,name), data);
+  await put('hostname','omarchy\n');
+  await put('meminfo','MemTotal: 10000 kB\nMemAvailable: 6200 kB\n');
+  // Guest time is already included in user time. Large counters exercise awk precision.
+  await put('stat','cpu  9000000000 0 10 1000 30 0 0 0 50 0\n');
+  await put('second','cpu  9000000015 0 15 1070 40 0 0 0 55 0\n');
+  await mkdir(join(fixture.path,'drm','card0','device'),{recursive:true});
+  await put('drm/card0/device/gpu_busy_percent','64\n');
+  await writeFile(join(fixture.path,'nvidia-smi'),"#!/bin/sh\nprintf '51, 35\\n'\n",{mode:0o755});
+  const run = async (_exe,args) => {
+    const script = args.at(-1).replace('/proc/sys/kernel/hostname','hostname')
+      .replace('/proc/meminfo','meminfo').replace('/proc/stat','stat')
+      .replace('/sys/class/drm','./drm').replace('/sys/class/hwmon','./hwmon');
+    const setup = 'sleep() { cp second stat; }\n';
+    const stdout = execFileSync(shell,[],{cwd:fixture.path, windowsHide:true,
+      env:{...process.env,PATH:'.:/usr/bin:/bin'},input:setup+script,encoding:'utf8'});
+    return {stdout};
+  };
+  const sample = await readOmarchyHardware('omarchy.example.test',run);
+  assert.equal(sample.cpuPct,20);
+  assert.equal(sample.ramPct,38);
+  assert.equal(sample.gpuPct,64);
+  assert.equal(sample.gpuTempC,51);
+});
 
 test('the Windows collector uses the selected machine and verifies its returned name', async () => {
   for (const [node, name, alias] of [[NODE_IDENTITIES[1],'emitchell109-rog','laptop-echo'],[box,'print-host','ai-box-echo']]) {
