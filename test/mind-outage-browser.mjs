@@ -12,6 +12,7 @@ import { canonicalMindFixture } from './mind-canonical-fixture.mjs';
 
 const { chromium } = await import(process.env.M5_NODES_PLAYWRIGHT
   ? pathToFileURL(process.env.M5_NODES_PLAYWRIGHT).href : 'playwright');
+process.env.MESH_STANDALONE = '1';
 const dir = 'data/mind-outage-' + randomUUID();
 await mkdir(dir);
 const store = openTaskStore(path.join(dir, 'tasks.sqlite'));
@@ -36,7 +37,7 @@ let app, browser;
 try {
   link.listen(0, '127.0.0.1');
   await once(link, 'listening');
-  app = await startApp({ dataDir: dir, standalone: true, relayEnabled: false,
+  app = await startApp({ dataDir: dir, relayEnabled: false,
     mindRecallTestOptions: {source: 'disposable_fixture', baseUrl: 'http://127.0.0.1:' + link.address().port, token: reader.token} });
   browser = await chromium.launch({executablePath: process.env.M5_NODES_CHROMIUM});
   const page = await browser.newPage({viewport: {width: 390, height: 844}, isMobile: true, hasTouch: true});
@@ -53,11 +54,20 @@ try {
   const read = page.getByRole('button', {name: 'Read matching memories'});
   const query = page.getByLabel('Search Onoes-Mind');
   const record = page.getByText('meshfixture shared', {exact: false});
+  const sourceToggle = page.getByRole('article').filter({has: record}).getByText('Source details', {exact: true});
   async function readShared() {
     await check.tap();
     await query.fill('meshfixture');
     await read.tap();
     await record.waitFor();
+    const citation = page.getByText('fixture: synthetic-memory.md · sha256:synthetic', {exact: true});
+    assert.equal(await citation.count(), 1);
+    assert.equal(await citation.isVisible(), false);
+    await sourceToggle.tap();
+    await citation.waitFor();
+    await sourceToggle.tap();
+    await citation.waitFor({state: 'hidden'});
+    assert.equal(await record.isVisible(), true);
     assert.equal(await page.getByText(/meshfixture (HIDDEN|Echo private)/).count(), 0);
   }
   await readShared();
@@ -66,6 +76,7 @@ try {
   await page.getByText('Memory read unavailable or invalid. Previous results cleared.').waitFor();
   assert.ok(interrupted > 0);
   assert.equal(await record.count(), 0);
+  assert.equal(await sourceToggle.count(), 0);
 
   const openCard = () => page.evaluate(id => { location.hash = 'task=' + id; }, card.id);
   const sheet = page.getByRole('dialog', {name: 'Task details'});
@@ -89,7 +100,7 @@ try {
   await page.evaluate(() => { location.hash = 'mind'; });
   await readShared();
   assert.equal(sessions, 1);
-  console.log('Shared memory read, outage visible, old result cleared, Workroom goal saved and reopened, shared reader recovered in the same session.');
+  console.log('Shared record and source details verified before and after outage, old result cleared, Workroom goal saved and reopened in the same session.');
 } finally {
   try { await browser?.close(); } finally {
     try { await app?.close(); } finally {
