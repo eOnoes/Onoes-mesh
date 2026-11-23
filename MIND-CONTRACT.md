@@ -12,6 +12,10 @@ The print pilot still needs explicit writer scope for its project and a read-onl
 
 For the print pilot, look up `project:3d-print-pilot/AGENT-HANDOFF.md` through the project reader. Search returns the reviewed reference. When using a copy of the guide, verify its exact bytes against the single current, operator-reviewed record. If the reference is missing, two revisions are current, or the copy differs, pause and obtain the current reviewed guide. Look up the changing dimensions and CAD filename in the linked specification.
 
+Mind commit `53d056d` exposes this check to separately authorized MCP clients as `verify_project_skill`. Supply the source reference and the SHA-256 of the copy the agent intends to use. Existing search-only profiles require separate enrollment for verification.
+
+On Eddie’s PC, the live writer verifies the actual files under `D:/Dev/Onoes-Mind/onoes_mind`, including their line endings. That checkout currently supplies runtime release `87eb6d7`. Develop newer Mind source in a separate worktree. Before promoting it into that path, qualify the reader and writer startup profiles against the exact release bytes. Publishing source can proceed independently.
+
 Two disposable readers with independent grants found the same handoff. After replacement, the old copy failed verification. Withdrawing one reader's tool grant ended its lookup while the other could still read. Withdrawing the guide itself removed the remaining reader's result.
 
 ### Echo's reader and delegated workers
@@ -29,6 +33,10 @@ The opt-in worker check in `test/project-context-handoff-qualification.py` exerc
 The installed Workroom native assignment launcher was also exercised with a disposable child under the desktop account. The child ran as a separate Windows process under the same account as its parent. Given the path, it read a random marker in a sibling temporary folder and returned its digest. This checks the default process launcher and file access. It uses neither the chat model nor an active Workroom job. Repeat it with the managed Hermes Python, `integrations/qualify_native_worker_file_access.py` and the gateway's source checkout as its argument. The result records the hashes of the two imported launcher modules. A working folder, a limited environment and process retirement tracking alone do not establish the file isolation needed for an Echo-only reader. Before enrollment, exercise the selected isolated worker route end to end and verify denial against a disposable parent-only marker.
 
 The offline check now runs the selected brief through Workroom's locked plan, handoff and reply APIs on a disposable SQLite board. Its test transport delivers the brief to the container. A control container reads one synthetic marker mounted read-only. The worker sees no mounts and confirms the same marker path is unavailable while it completes the calculation. A repeated handoff dispatches once. Reopening the board returns the applied result and its source reference on the original card, with review pending. The unrelated card stays empty. The live Hermes and Relay routes still need their own isolation and enrollment decision.
+
+The print handoff fixture locks the selected project, source, revision and spec in the plan. The test lead extracts those fields from the delivered Workroom message. The original message also contains the card description and evidence. Only the selected fields and assignment IDs go to the isolated calculator. Removing the spec from the message prevents that handoff.
+
+On Windows, setting `MESH_TEST_WINDOWS_HERMES_CHECKOUT` in the existing Docker test exercises the installed Hermes assignment launcher with a disposable admission. The test checks the Windows client process has ended and separately checks the container exited successfully. This verifies the launcher can run that isolated calculation. Production worker routing, the live dispatch hold and Echo reader enrollment each remain separate.
 
 ### Adding one project to an existing writer
 

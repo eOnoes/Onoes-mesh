@@ -13,6 +13,26 @@ const taskId = match[1];
 const body = {id:randomUUID(), phase:'work', agentId:'echo', conversationId:'print-fixture'};
 const helper = fileURLToPath(new URL('./isolated_print_worker.py', import.meta.url));
 const filename = 'print-board/tasks.sqlite';
+
+// The test transport acts as the lead handing a limited brief to its worker.
+// Its only input here is the message Workroom actually delivered.
+function workerAssignment(request) {
+  const lines = request.text.split('\n');
+  const value = prefix => {
+    const matches = lines.filter(line => line.startsWith(prefix));
+    assert.equal(matches.length, 1, 'Missing or ambiguous assignment field: '+prefix);
+    return matches[0].slice(prefix.length);
+  };
+  assert.equal(value('Workroom message '), request.id);
+  const task = /^([a-f0-9-]+): /.exec(value('Workroom task '));
+  assert.ok(task);
+  const selected = JSON.parse(value('Spec: '));
+  assert.deepEqual(Object.keys(selected).sort(), ['project','revision','source','spec']);
+  assert.equal(selected.spec, value('Goal: '));
+  assert.ok(selected.source.startsWith('card:'+task[1]+'@'));
+  return {brief:selected, taskId:task[1], sendId:request.id};
+}
+
 let store = openTaskStore(filename);
 try {
   const current = store.workroom.get(taskId);
@@ -20,7 +40,7 @@ try {
   assert.equal(current.title, 'Desk tray');
   assert.equal(brief.project, 'project-A');
   store.workroom.savePlan(taskId, {lead:'echo', workerId:'echo', reviewerId:'nims', state:'locked',
-    spec:brief.spec, workspace:process.cwd(), allowedFiles:'Assigned specification in memory',
+    spec:JSON.stringify(brief), workspace:process.cwd(), allowedFiles:'Assigned specification in memory',
     checks:'Calculate the tray width range', boundaries:'Offline calculation with the selected fields only',
     revision:current.plan?.revision ?? 0, taskRevision:current.revision, briefRevision:current.workroom.revision,
     progressRevision:current.progress.revision});
@@ -33,10 +53,13 @@ try {
     taskMessage:async request => {
       dispatches++;
       assert.equal(request.id, body.id);
-      assert.ok(request.text.includes(brief.spec));
       requestText = request.text;
+      const delivered = workerAssignment(request);
+      assert.deepEqual(delivered.brief, brief);
+      assert.ok(!JSON.stringify(delivered).includes('PRIVATE'));
+      assert.throws(() => workerAssignment({...request, text:request.text.replace('\nSpec: ', '\nMissing spec: ')}));
       const output = execFileSync(process.argv[2], ['-I','-B','-X','utf8',helper], {encoding:'utf8',
-        windowsHide:true, timeout:90000, input:JSON.stringify({brief, taskId, sendId:request.id})});
+        windowsHide:true, timeout:90000, input:JSON.stringify(delivered)});
       update = JSON.parse(output);
     }
   };
