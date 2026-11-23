@@ -1539,3 +1539,11 @@ html[data-theme=light] .workroom-sheet h2{font-family:var(--display);text-transf
 #panel-inference .thermal-6 { --thermal-fill: 270deg; }
 #panel-inference .thermal-7 { --thermal-fill: 315deg; }
 #panel-inference .thermal-8 { --thermal-fill: 360deg; }
+
+.mind-card-link:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  text-underline-offset: .2em;
+}

@@ -1,6 +1,7 @@
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
-export async function canonicalMindFixture(source,{bound=false}={}){
+import {fileURLToPath} from 'node:url';
+export async function canonicalMindFixture(source,{bound=false,workroomEvent}={}){
  if(!source)throw Error('Set MESH_MIND_SOURCE to the canonical Onoes-Mind checkout for this explicit integration test.');
  const code=`import sys,json,tempfile
 from pathlib import Path
@@ -10,7 +11,7 @@ from onoes_mind.recall_http import RecallServer
 from onoes_mind.recall_binding import RecallBinding,BoundRecallLedger,prepare_store_identity,prepare_mesh_principal,issue_mesh_recall_credential
 folder=tempfile.TemporaryDirectory()
 path=(Path(folder.name)/'synthetic-mesh.sqlite').resolve()
-l=Ledger(path)
+l=Ledger(path,environment_id='synthetic')
 for p in ('echo','tripp','operator'): l.create_principal(p); l.issue_credential(p,p+'-synthetic-mesh-token')
 for p,claim in [('echo','meshfixture Echo private'),('tripp','meshfixture HIDDEN Tripp private'),('operator','meshfixture shared <script>not executable</script>')]:
  l.remember(p+'-synthetic-mesh-token',{'event_id':p+'-one','kind':'project_fact','claim':claim,'project_id':'mesh-recall-fixture','requested_visibility':'shared' if p=='operator' else 'private','evidence_refs':[{'type':'fixture','ref':'synthetic-memory.md','content_hash':'sha256:synthetic'}]})
@@ -19,6 +20,18 @@ token='echo-synthetic-mesh-token'
 if sys.argv[2]=='bound':
  store_id=prepare_store_identity(l,environment='synthetic',authority_ref='fixture:owner')
  prepare_mesh_principal(l,scope_id='project/onoes-mind/shared')
+ if sys.argv[3]:
+  sys.path.insert(0,sys.argv[4])
+  from project_events_candidate import EventBinding, ProjectEventsCandidate
+  event=json.loads(sys.argv[3])
+  st=path.stat()
+  writer=ProjectEventsCandidate(l,EventBinding(str(path),st.st_dev,st.st_ino,store_id,'synthetic','fixture:owner'))
+  try:
+   writer.initialize()
+   writer.register_project(event['projectId'],'Printer fixture')
+   writer.submit(writer.enroll([event['projectId']]),event)
+  except Exception:
+   l.close();folder.cleanup();raise
  token=issue_mesh_recall_credential(l,token='service-synthetic-mesh-token')
  st=path.stat()
  binding=RecallBinding(str(path),store_id,'synthetic','fixture:owner','project/onoes-mind/shared',st.st_dev,st.st_ino,'fixture:custodian','fixture:revoke','fixture:review')
@@ -31,10 +44,11 @@ finally:
  if reader is not l: reader.close()
  l.close();folder.cleanup()
 `;
- const child=spawn('C:/Python314/python.exe',['-B','-c',code,source,bound?'bound':'unbound'],{windowsHide:true,stdio:['pipe','pipe','pipe']});const closed=once(child,'close');let output='',errors='';child.stderr.on('data',b=>errors+=b);
+ const writerSource=fileURLToPath(new URL('../integrations/mind-recovery-candidate',import.meta.url));
+ const child=spawn('C:/Python314/python.exe',['-B','-c',code,source,bound?'bound':'unbound',workroomEvent?JSON.stringify(workroomEvent):'',writerSource],{windowsHide:true,stdio:['pipe','pipe','pipe']});const closed=once(child,'close');let output='',errors='';child.stderr.on('data',b=>errors+=b);
  let timer;
  try{
-  const info=await new Promise((resolve,reject)=>{timer=setTimeout(()=>reject(Error('Canonical fixture startup timed out')),5000);child.once('error',reject);child.once('exit',()=>reject(Error('Canonical fixture exited before startup')));child.stdout.on('data',b=>{output+=b;if(output.length>4096)return reject(Error('Fixture output exceeded bound'));const line=output.split('\n').map(line=>line.trim()).find(x=>x.startsWith('{')&&x.endsWith('}'));if(line)resolve(JSON.parse(line));});});
+  const info=await new Promise((resolve,reject)=>{timer=setTimeout(()=>reject(Error('Canonical fixture startup timed out')),5000);child.once('error',reject);child.once('close',()=>reject(Error('Canonical fixture exited before startup: '+errors.slice(-1600))));child.stdout.on('data',b=>{output+=b;if(output.length>4096)return reject(Error('Fixture output exceeded bound'));const line=output.split('\n').map(line=>line.trim()).find(x=>x.startsWith('{')&&x.endsWith('}'));if(line)resolve(JSON.parse(line));});});
   return {...info,pid:child.pid,async close(){child.stdin.end('stop\n');const result=await Promise.race([closed,new Promise(resolve=>setTimeout(()=>resolve(null),4000).unref())]);if(!result){child.kill();await closed;throw Error('Owned fixture did not stop gracefully');}if(result[0]!==0)throw Error('Owned canonical fixture failed');}};
  }catch(error){child.kill();await closed.catch(()=>{});throw error;}finally{clearTimeout(timer);}
 }

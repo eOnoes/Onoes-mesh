@@ -7,7 +7,8 @@ import {readFile} from 'node:fs/promises';
 
 class Element {
   children=[]; events={}; style={}; value=''; hidden=false; disabled=false; textContent='';
-  setAttribute() {} addEventListener(name,fn) {this.events[name]=fn;}
+  attributes={}; setAttribute(name,value) {this.attributes[name]=value;} removeAttribute(name) {delete this.attributes[name];}
+  addEventListener(name,fn) {this.events[name]=fn;}
   append(...nodes) {this.children.push(...nodes);}
   replaceChildren(...nodes) {this.children=nodes;}
   get firstChild() {return this.children[0];}
@@ -116,4 +117,26 @@ test('Workroom recall shows readable shared fields and retains the full claim an
  assert.ok(text(source).includes(claim)); assert.ok(text(source).includes('card-23@2'));
  assert.equal(invalid.children[0].textContent,'{invalid');
  assert.equal(otherSource.children[0].textContent,claim);
+});
+
+test('recall navigation requires a matching source and a card on the current board', async () => {
+ const id = randomUUID(), other = randomUUID();
+ const fact = {source:'workroom', cardId:id, title:'Earlier tray title'};
+ const ref = {type:'workroom', ref:`card:${id}@1/2/3`};
+ const row = {kind:'project_fact', source_class:'workroom', claim:JSON.stringify(fact), provenance:[ref,{...ref,ref:`card:${id}@2/3/4`}]};
+ const records = [row, {...row,provenance:[]}, {...row,provenance:[{...ref,ref:`card:${other}@1/2/3`}]},
+  {...row,provenance:[ref,{...ref,ref:`card:${other}@1/2/3`}]}, {...row,source_class:'operator'}, {...row,provenance:[{...ref,ref:ref.ref+'/extra'}]}];
+ const f = fixture(async route => route.endsWith('/status') ? {configured:true,source:'canonical_ledger'}
+  : {schema:'onoes-mind-recall/v1',source:'canonical_ledger',records});
+ const [,check,,query,read,, ,results] = f.root.children.at(-1).children;
+ await check.events.click(); query.value='tray'; query.events.input(); await read.events.click();
+ const links = results.children.flatMap(article => article.children).filter(n => n.textContent === 'Open current Workroom card');
+ assert.equal(links.length,1);
+ const [link] = links;
+ assert.equal(link.hidden,true); assert.equal(link.attributes.href,undefined);
+ f.mind.setTasks([{id,title:'New tray title'}]);
+ assert.equal(link.hidden,false); assert.equal(link.attributes.href,'#task='+id);
+ f.mind.setTasks([]); assert.equal(link.hidden,true); assert.equal(link.attributes.href,undefined);
+ assert.equal(f.calls.length,2);
+ f.mind.clear(); assert.equal(results.children.length,0);
 });

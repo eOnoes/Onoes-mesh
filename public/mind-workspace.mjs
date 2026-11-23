@@ -72,6 +72,7 @@ export function createMindWorkspace({root, request, openTask, doc = globalThis.d
   return {
     setTasks(value) {
       tasks = Array.isArray(value) ? value.filter(t => typeof t.id === 'string' && typeof t.title === 'string').map(t => ({id:t.id,title:t.title})) : undefined;
+      recall.setTasks(tasks);
       select.replaceChildren(node('option','Choose a task…')); select.firstChild.value = '';
       for (const task of tasks || []) { const option = node('option',task.title); option.value = task.id; select.append(option); }
       select.value = ''; reset(tasks ? (tasks.length ? 'Select a task. Only that record will be retrieved.' : 'No saved Workroom tasks.') : 'Saved task list unavailable. Reconnect and refresh app status.');
@@ -100,7 +101,7 @@ function workroomFact(record) {
  }
 }
 
-function renderRecallRecord(record, node) {
+function renderRecallRecord(record, node, sourceLinks) {
  const card = node('article');
  card.className = 'box section-gap';
  const fact = workroomFact(record);
@@ -113,6 +114,14 @@ function renderRecallRecord(record, node) {
    const body = node('p', fact[key]);
    body.style.whiteSpace = 'pre-wrap';
    card.append(node('strong', label), body);
+  }
+  const refs = (record.provenance || []).filter(item => item?.type === 'workroom');
+  const cardReference = /^card:([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})@\d+\/\d+\/\d+$/;
+  if (refs.length && refs.every(item => cardReference.exec(item.ref)?.[1] === fact.cardId)) {
+   const link = node('a', 'Open current Workroom card');
+   link.className = 'mind-card-link';
+   sourceLinks.set(link, fact.cardId);
+   card.append(link);
   }
  } else {
   card.append(node('p', record.claim));
@@ -136,9 +145,18 @@ export function createMindRecallView({root,request,doc=globalThis.document}){
  const clear=node('button','Clear memory view');clear.type='button';
  const state=node('p','Memory connection not checked. Saved Workroom context above is a separate source.');state.setAttribute('role','status');
  const results=node('div');let available=false,configured=false,busy=false,epoch=0,readerSource='not_configured';
+ const sourceLinks = new Map();
+ let taskIds = new Set();
+ function syncSourceLinks() {
+  for (const [link, id] of sourceLinks) {
+   link.hidden = !available || !taskIds.has(id);
+   if (link.hidden) link.removeAttribute('href');
+   else link.setAttribute('href', '#task=' + id);
+  }
+ }
  section.append(node('h2','Onoes-Mind memory'),check,label,query,read,clear,state,results);root.append(section);
  const controls=()=>{check.disabled=!available||busy;query.disabled=!available||!configured||busy;read.disabled=query.disabled||!query.value.trim();clear.disabled=!available;};
- function reset(message){epoch++;busy=false;results.replaceChildren();state.textContent=message;controls();}
+ function reset(message){epoch++;busy=false;sourceLinks.clear();results.replaceChildren();state.textContent=message;controls();}
  query.addEventListener('input',()=>reset('Query changed. Choose Read matching memories to retrieve a fresh snapshot.'));
  clear.addEventListener('click',()=>{query.value='';reset('Memory view cleared. Source records were not changed.');});
  check.addEventListener('click',async()=>{
@@ -155,11 +173,21 @@ export function createMindRecallView({root,request,doc=globalThis.document}){
    if(snapshot?.schema!=='onoes-mind-recall/v1'||snapshot.source!=='canonical_ledger'||!Array.isArray(snapshot.records))throw Error('Invalid memory response');
    const sourceNote=readerSource==='disposable_fixture'?'Synthetic fixture only; source claims are not independent verification.':'Read-only shared project facts; source claims are not independent verification.';
    results.append(node('p',`Source: Onoes-Mind canonical ledger · read ${snapshot.observedAt} · request ${snapshot.requestId}. ${sourceNote}`));
-   for (const record of snapshot.records) results.append(renderRecallRecord(record, node));
+   for (const record of snapshot.records) results.append(renderRecallRecord(record, node, sourceLinks));
+   syncSourceLinks();
    if(!snapshot.records.length)results.append(node('p','No matching records in the reader’s permitted scopes.'));
    state.textContent='Memory snapshot retrieved. Read again for corrections or deletion updates.';
   }catch{if(turn===epoch)reset('Memory read unavailable or invalid. Previous results cleared.');}
   finally{if(turn===epoch){busy=false;controls();}}
  });
- controls();return {setAvailable(value){available=Boolean(value);if(!available){configured=false;readerSource='not_configured';query.value='';reset('Private memory view cleared. Reconnect and check the reader again.');}else controls();}};
+ controls();return {
+  setTasks(tasks){taskIds = new Set((tasks || []).map(task => task.id));syncSourceLinks();},
+  setAvailable(value){
+   available=Boolean(value);
+   if(!available){
+    taskIds.clear(); configured=false; readerSource='not_configured'; query.value='';
+    reset('Private memory view cleared. Reconnect and check the reader again.');
+   } else { syncSourceLinks(); controls(); }
+  }
+ };
 }

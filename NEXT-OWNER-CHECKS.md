@@ -14,6 +14,8 @@ Tripp’s desktop has an RTX 3060 and an RTX 4080 SUPER. Mesh shows the busiest 
 
 The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
 
+The source checkout also has **Open current Workroom card** in Mind search results. It opens the latest saved card when its ID matches the result's Workroom source reference and a card on your board. The separate phone installation prepared at `4fcb70d` predates this change.
+
 ## November 21 development check for project handoff
 
 The cross-repository handoff now uses events captured by the Workroom card
