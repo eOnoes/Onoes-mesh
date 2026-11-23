@@ -14,7 +14,7 @@ with `Immutable pin: lib/task-store.mjs`. The historical pins and guard remain
 unchanged; a passing current behavioral check is not a passing historical-pin
 check. Do not regenerate those pins merely to obtain a green result.
 
-## Current working preview - updated 2026-11-18
+## Current working preview · updated November 23, 2026
 
 Open https://emitchell.tail8c4a75.ts.net:8453/#workroom for the current work. The active goal is **Finish Onoes-Mesh - all assessed stages**, task c2a77ea9-05bb-4b63-85c7-c2d8e9fb2547. Its ordered backlog, current evidence and blockers are in the installed working copy's local-only `WORKROOM-AB-CHECKPOINT.md` and `data/relay-directory-integration-checkpoint-20261114.json`; these private records are not included in a fresh Git checkout. [MESH-REPO-INDEX.md](MESH-REPO-INDEX.md) identifies the current worktree, database and process receipts.
 
@@ -24,7 +24,7 @@ Current facts: independent review and changes-requested / correction / fresh rev
 
 The Mind workspace can retrieve a selected saved Workroom task with source revisions and recorded review status under MIND-CONTRACT.md. The separately approved canonical Onoes-Mind reader and limited project-sync connection now also exist; their runtime profiles and current checkpoint define the exact scope. This does not authorize sharing every card or chat, and it does not create a second memory authority. Ordinary Relay chat/session/retry/privacy acceptance and the bounded compatibility decision are recorded under RELAY-INTEGRATION.md. Use [remaining owner checks](NEXT-OWNER-CHECKS.md) for confirmed phone checks and the next acceptance gate; use [the quick start](MESH-QUICK-START.md) for card and review instructions. The older foundation records below retain their original addresses and evidence; they are not current startup instructions.
 
-Published source can be ahead of the running app. The November 18 Help and reconnect corrections are tested source candidates; they have not been installed into the live runtime. A Git commit alone is not proof of deployment. Preserve the installed source-profile bindings and use the current checkpoint when preparing a later cutover.
+The installed phone release includes Workroom Help, direct card links, reconnect fixes and the Inference entry for Tripp's rebuilt PC. The Relay maintenance notice in commit `bde5603` passed a phone-width check on a restored copy and awaits installation. The running board continues to hold new agent sends for maintenance. [Current owner checks](NEXT-OWNER-CHECKS.md)
 
 ## Historical foundation and qualification records
 

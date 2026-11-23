@@ -1,18 +1,18 @@
 # Remaining owner checks
 
-## November 21 source qualification
+## Current owner checks · November 23, 2026
 
-The remote telemetry candidate uses the existing private laptop identity and
-strict SSH host-key verification. The approved deployment profile would need
-to opt in with `MESH_TRIPP_HARDWARE=1`. An explicit machine-status refresh can
-then collect RAM, CPU, GPU and available temperature readings for Tripp's PC.
-Model residency requires a separately verified laptop source. A cached online
-flag alone cannot establish that a model is loaded.
+| Where | What you can do |
+| --- | --- |
+| Phone · Workroom | Open the board to create, edit or move a card. The guide and direct card links are installed. The phone checks for dragging, review, reload, rotation and reconnect have passed. [Open Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom) |
+| Phone · Relay | Read conversations and older messages. Mesh maintenance currently pauses outgoing messages. The tested update that explains the pause in the composer is awaiting its Mesh and card-writer reconnect. |
+| At the PC · 3D Print Pilot | When ready to share the pilot, have the saved backup archive password available for the two local prompts. The existing shared Mesh card is connected to Mind. The print pilot is still private to Workroom. |
+| At the PC · supervised work | Arrange a quiet recovery window for the historical job holds. After recovery and route qualification, start one real card from the phone with Echo building and Nims reviewing. Rook activation follows that check. |
+| Inference · other machines | The rebuilt desktop appears as **Tripp's PC**. **Nemotron-boat** is the owner-reported model. Live readings require the rebuilt PC's own verified device name and sensor connection. The old laptop is on hold. The AI box awaits hardware. |
 
-The SSH collector has been exercised locally on Windows. End-to-end qualification
-on Tripp still requires that laptop to be online. Eddie's accepted main-PC phone
-checks are retained. The first MCP reader and composed Workroom update trial use
-disposable projects. Live channel/tool enrollment is pending.
+The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
+
+## November 21 development check for project handoff
 
 The cross-repository handoff now uses events captured by the Workroom card
 store when a shared printing spec changes. Echo's channel and Nims's MCP client
@@ -23,7 +23,7 @@ test dependency, set `PYTHONPATH` to the matching Mind checkout, and run
 `python -m pytest -q test/project-context-handoff-qualification.py` from Mesh.
 It uses temporary agent identities and an in-memory board.
 
-## Current Workroom - 2026-11-18
+## Workroom acceptance record · November 18, 2026
 
 Open [Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom) or
 [Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference).
@@ -55,10 +55,7 @@ Remaining first-release gates: C1 production workflow without operator rescue;
 C4 deployed release/custody and owner acceptance; E2 qualified production team.
 Other machines and broader shared conversation context, skills and MCP tools remain later stages of the full goal.
 
-The tested November 18 Help and board-reconnect source candidates are not yet
-installed into the live runtime. The standalone backup-source confinement fix
-is installed and its real milestone backup passed restore checks without a
-service restart. Keep those deployment states separate.
+At the November 18 check, the backup fix was installed and its restoration test passed. The Help and reconnect changes shipped in the November 23 phone release.
 
 ## Historical 8446 checks - retained for that separate installation
 
@@ -67,11 +64,11 @@ They are not the current Workroom checklist or permission to run a command.
 
 Current source HEAD: `d077f2d83ed9607f21139aa71a86743918a50f74`; accepted recovery merge `64a1d257f638cc390ad0ba2a152849d15bbca6ba`. Private URL: **https://emitchell.tail8c4a75.ts.net:8446/**. Exact mapping: [HOST-CLOSURE.md](HOST-CLOSURE.md). These are deferred checks, not instructions to restart now or execute Eddie's current pending proposal.
 
-## Confirmed; do not repeat the checklist
+### Confirmed checks on the older installation
 
 [Owner feedback, 2026-10-04](.runner/owner-feedback/phone-flow-confirmed-20261004.md) confirms physical phone access/navigation, saved Test for Echo opening and reported Save/Approve/Deny/Cancel traversal. Read-only parent evidence records revision22 and actual cancellation: cancelled=true/cleanupVerified=true, rootExit1/statefailed. Task done does not mean command success. A **separate newer pending proposal** stays unapproved. Every click/denial is not durably reconstructed. Older literal `ownerAcceptance: pending` fields remain historical, qualified by this narrower confirmation.
 
-## Laptop — PENDING OWNER HOME WINDOW
+### Earlier laptop checks · archived
 
 Echo owns the home reminder; no reminder/account/email action is created here. No repeated SSH/ping while parked and no assumption that offline means broken.
 
@@ -82,7 +79,7 @@ Echo owns the home reminder; no reminder/account/email action is created here. N
 
 Single M1 review is paused until laptop-origin success ([ledger](.runner/manager-handled.json), `m1-persist.next`), not completed or an independent ready lane.
 
-## Separate owner windows, unrelated to laptop
+### Other owner windows recorded for the older installation
 
 Arrange narrowly through Echo; do not repeat confirmed basic phone flow.
 
@@ -96,7 +93,7 @@ Arrange narrowly through Echo; do not repeat confirmed basic phone flow.
 | M6 physical standalone | Existing README M6 disposable-store/assigned-port procedure in a separate host window; original M2 version/deny check. | Mode standalone, optional services absent, actual output/denial. Keep regular owner deployment separate. |
 | M0 owner receipts | Read `.runner/m0-smoke/RUN.json`, `.runner/m0-hang/RUN.json`, `.runner/m0-real-import/RUN.json` with parent ledger/review qualifications. | Acknowledge causes/durations; hang was two10s empty-output attempts with dispatcher exit5, not a60s timeout observation. |
 
-## Echo's local disposition
+### Echo's local disposition on the older installation
 
 Review/adopt only these two documents and JOB.md; collect host identity again if source advanced. Owner store is `D:/Dev/Onoes-Mesh/test/app03-manager-m1-disposable`, SQLite AND Relay, despite its name. Tested startup/recovery references and default-store discrepancy are in HOST-CLOSURE.md; do not use bare default startup as owner recovery.
 
