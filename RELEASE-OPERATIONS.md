@@ -1,3 +1,13 @@
+## November 22, 2026 | Combined Workroom and Inference rollout
+
+One proposed update brings the phone fixes and team review fixes through a575300 to the installed bdfaa31 release. The seven files cover saved Workroom progress, unsent drafts, slow shared-memory reads, full-session feedback, Agent task links, the machine display, and interrupted team reviews. The package keeps the existing dispatcher pause and linked card.
+
+On the restored installation, the phone reopened its card after one of 32 occupied sessions signed out. Three reloads reused the session. A recovered team saved one decision and reached Done with no duplicate sends. Rollback matched all 446 original source files. The current private phone URL still served the three original browser files.
+
+The Windows launcher rehearsal passed with Mind offline, connected, and in read-only recovery. A phone-width browser opened the saved card in every mode. The offline update reached Mind with its original receipt when the writer returned. An installation preview matched the running board and original launcher. The combined release awaits installation.
+
+Use one rollout package. Applying this bundle changes the starting point for the earlier three-file update. The separate eight-job maintenance proposal will then need five new source fingerprints and ten updated runtime records. Recheck the board backup and current process identities before installation.
+
 ## November 22, 2026 | Resuming a team after its review arrives
 
 In the updated Workroom source, the independent review, the move to Done and the team's completion status save together. If Mesh stops during that save, reopen the card and inspect its saved report. Resuming the team uses the same report. An interrupted request for changes also keeps its correction tied to the original review.
