@@ -16,7 +16,8 @@ const network = createNodeProbeReader(fixture.options);
 function withBox(view) {
   return {...view, nodes: [...view.nodes, {...view.nodes[1], id:'ai-box', label:'AI box',
     dnsName:'fixture.tail8c4a75.ts.net', tailscaleIp:'100.64.0.23'}],
-    trippDesktop:{source:'lan_ssh',ollamaModels:[],state:'online', ageMs:0, cpuTempC:51, gpuTempC:null, ramPct:31, cpuPct:0, gpuPct:77}};
+    trippDesktop:{source:'lan_ssh',ollamaModels:[],state:'online', ageMs:0, cpuTempC:51, gpuTempC:null, ramPct:31, cpuPct:0, gpuPct:77,
+      gpus:[{index:0,name:'RTX 3060',tempC:null,usagePct:77},{index:1,name:'RTX 4080 SUPER',tempC:null,usagePct:0}]}};
 }
 let boxSensorsAvailable = true;
 const reader = withRemoteHardware({
@@ -65,6 +66,14 @@ try {
   for (const value of ['65%', '24%', '87%', '70 °C', '44 °C']) assert.ok((await boxMeters.innerText()).includes(value));
   await tripp.getByText('Ollama: No models loaded', {exact:true}).waitFor();
   await tripp.getByRole('heading',{name:'TEMP',exact:true}).waitFor();
+  const gpuDetails = tripp.locator('details').filter({hasText:'Individual GPUs'});
+  const firstGpu = gpuDetails.locator('p').filter({hasText:'GPU 0 · RTX 3060'});
+  assert.equal(await firstGpu.isVisible(),false);
+  await gpuDetails.locator('summary').tap();
+  await firstGpu.waitFor();
+  assert.match(await firstGpu.innerText(), /77% used · Temperature unavailable/);
+  const secondGpu = gpuDetails.locator('p').filter({hasText:'GPU 1 · RTX 4080 SUPER'});
+  assert.match(await secondGpu.innerText(), /0% used · Temperature unavailable/);
   await tripp.getByText('51 °C', {exact:true}).waitFor();
   for (const reading of ['31%', '0%', '77%']) await tripp.getByText(reading,{exact:true}).waitFor();
   assert.equal(await tripp.locator('.thermal-gauge').count(),2);
@@ -73,6 +82,8 @@ try {
   await page.clock.fastForward(31000);
   await box.getByText('Hardware readings unavailable').waitFor();
   await tripp.getByText('LAN · Status unavailable').waitFor();
+  assert.equal(await firstGpu.count(),0);
+  assert.equal(await gpuDetails.isVisible(),false);
   assert.doesNotMatch(await tripp.innerText(),/31%|77%|51 °C/);
   assert.equal(await boxMeters.count(),0);
   boxSensorsAvailable = false;

@@ -12,7 +12,7 @@ const fixtureSample = [
   'onoes-tripp onoes','@ram','Mem: 1000 400 200 1 100 600',
   '@cpu','r b us sy id wa st','0 0 0 0 100 0 0','1 0 10 10 70 10 0',
   '@thermal',JSON.stringify({'k10temp-test':{Tdie:{temp2_input:41.5},Tctl:{temp1_input:61.5}},'nvme-test':{Tdie:{temp1_input:90}}}),
-  '@gpu','N/A, 73','34, 0','@ollama','NAME ID SIZE PROCESSOR CONTEXT RUNNER UNTIL','@ollama-ok','@strata-ready','@end',
+  '@gpu','0, NVIDIA GeForce RTX 3060, N/A, 73','1, NVIDIA GeForce RTX 4080 SUPER, 34, 0','@ollama','NAME ID SIZE PROCESSOR CONTEXT RUNNER UNTIL','@ollama-ok','@strata-ready','@end',
 ].join('\n');
 
 test('Tripp reads the pinned LAN alias with no address overrides, forwarding or PTY', async () => {
@@ -24,7 +24,9 @@ test('Tripp reads the pinned LAN alias with no address overrides, forwarding or 
     assert.equal(opts.windowsHide,true);
     return {stdout:fixtureSample};
   });
-  assert.deepEqual(sample,{ramPct:40,cpuPct:20,gpuPct:73,cpuTempC:41.5,gpuTempC:34,ollamaModels:[],strataHealth:'ready'});
+  assert.deepEqual(sample,{ramPct:40,cpuPct:20,gpuPct:73,cpuTempC:41.5,gpuTempC:34,ollamaModels:[],strataHealth:'ready',
+    gpus:[{index:0,name:'NVIDIA GeForce RTX 3060',tempC:null,usagePct:73},
+      {index:1,name:'NVIDIA GeForce RTX 4080 SUPER',tempC:34,usagePct:0}]});
 });
 
 test('missing metrics, wrong account, interrupted replies, and an unavailable model runtime remain distinct', async () => {

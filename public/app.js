@@ -681,7 +681,11 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
         heading.textContent = 'TEMP';
         const gauges = document.createElement('div');
         gauges.className = 'pixel-readings';
-        card.append(heading, document.createElement('p'), gauges);
+        const gpuDetails = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.textContent = 'Individual GPUs';
+        gpuDetails.append(summary, document.createElement('div'));
+        card.append(heading, document.createElement('p'), gauges, gpuDetails);
       } else {
         const details = document.createElement('details');
         const summary = document.createElement('summary');
@@ -698,7 +702,7 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
         desktop.ageMs + elapsed < 30000;
       const online = fresh && desktop.state === 'online';
       const state = online ? 'Online' : fresh && desktop.state === 'offline' ? 'Offline' : 'Status unavailable';
-      const [, model, strata, , location, gauges] = card.children;
+      const [, model, strata, , location, gauges, gpuDetails] = card.children;
       model.textContent = online && Array.isArray(desktop.ollamaModels)
         ? 'Ollama: ' + (desktop.ollamaModels.join(', ') || 'No models loaded') : 'Ollama: Status unavailable';
       strata.textContent = online && desktop.strataHealth === 'ready'
@@ -708,6 +712,23 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       const ramPct = online ? desktop.ramPct : null;
       const cpuPct = online ? desktop.cpuPct : null;
       const gpuPct = online ? desktop.gpuPct : null;
+      const gpus = online && Array.isArray(desktop.gpus) ? desktop.gpus : [];
+      gpuDetails.hidden = gpus.length === 0;
+      const gpuRows = gpuDetails.children[1];
+      const gpuKey = JSON.stringify(gpus);
+      if (gpuRows.getAttribute('data-values') !== gpuKey) {
+        gpuRows.setAttribute('data-values', gpuKey);
+        gpuRows.replaceChildren();
+        for (const device of gpus) {
+          const usage = Number.isFinite(device.usagePct) ? device.usagePct + '% used' : 'Usage unavailable';
+          const temperature = Number.isFinite(device.tempC) ? device.tempC + ' °C' : 'Temperature unavailable';
+          const row = document.createElement('p');
+          const name = document.createElement('strong');
+          name.textContent = `GPU ${device.index} · ${device.name}`;
+          row.append(name, document.createElement('br'), `${usage} · ${temperature}`);
+          gpuRows.append(row);
+        }
+      }
       const withUsage = [ramPct,cpuPct,gpuPct].some(v => Number.isFinite(v) && v >= 0 && v <= 100);
       const key = JSON.stringify([cpu, gpu, ramPct, cpuPct, gpuPct]);
       if (gauges.getAttribute('data-values') !== key) {
