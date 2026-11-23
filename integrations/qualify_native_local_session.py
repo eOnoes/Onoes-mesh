@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+from contextlib import closing
 from pathlib import Path
 import subprocess
 import sys
@@ -94,7 +95,7 @@ def verify(root):
             or not binding['restartedBeforeReadback'] or binding['workspaceStillHeld'] is not (not manifest.get('realNimsReview',False)) or binding['writerQuiescence'] is not True):
         raise RuntimeError('Mesh task/native dispatch binding evidence is incomplete')
     import sqlite3
-    with sqlite3.connect('file:'+(root/'mesh-local-binding.sqlite').as_posix()+'?mode=ro',uri=True) as saved:
+    with closing(sqlite3.connect((root/'mesh-local-binding.sqlite').resolve().as_uri()+'?mode=ro',uri=True)) as saved:
         saved.row_factory=sqlite3.Row
         saved.execute('PRAGMA query_only=ON')
         row=saved.execute('SELECT * FROM workroom_local_sessions WHERE taskId=? AND sendId=?',
@@ -123,12 +124,31 @@ def verify(root):
                     or not any(item.get('sourceReadInOutput') is True and item.get('exitCode')==0 for item in review.get('commands',[]))
                     or any('mcp' in kind.lower() or kind=='fileChange' for kind in review['itemTypes'])):
                 raise RuntimeError('Actual Nims review identity, saved report or unchanged files not established')
-        text=replies[0]['text']
-        if not text.startswith('```workroom-update\n') or not text.endswith('\n```'):
-            raise RuntimeError('Native result is not the expected structured update')
-        update=json.loads(text[len('```workroom-update\n'):-len('\n```')])
-        if update['taskId']!=binding['taskId'] or update['sendId']!=binding['sendId']:
-            raise RuntimeError('Native structured update belongs to another task or dispatch')
+        # Hermes may append a file-change summary after the single structured report.
+        # Reparse the saved reply and compare it with the update actually applied.
+        reply=replies[0]
+        applied=saved.execute('SELECT messageId,hash FROM workroom_update_applications WHERE taskId=? AND sendId=?',
+                              (binding['taskId'],binding['sendId'])).fetchall()
+        module=Path(__file__).resolve().parents[1]/'lib'/'workroom-updates.mjs'
+        check="""import {readFileSync} from 'node:fs';
+const {parseAgentUpdate}=await import(process.argv[1]);
+const {text,taskId,sendId}=JSON.parse(readFileSync(0,'utf8'));
+const report=parseAgentUpdate(text,{taskId,sendId});
+if (!report) process.exit(1);
+process.stdout.write(JSON.stringify(report));"""
+        parsed=subprocess.run(['node','--input-type=module','-e',check,module.as_uri()],
+                              input=json.dumps(dict(reply)),capture_output=True,text=True,timeout=10,
+                              creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        report_data=json.loads(parsed.stdout) if parsed.returncode==0 else None
+        if (not report_data or len(applied)!=1 or applied[0]['messageId']!=reply['messageId']
+                or report_data['hash']!=applied[0]['hash']):
+            raise RuntimeError('Saved worker report does not match the single applied update for this dispatch')
+        progress=saved.execute('SELECT goal,checklist,result,evidence FROM workroom_progress WHERE taskId=?',
+                               (binding['taskId'],)).fetchone()
+        update=report_data['update']
+        if (progress is None or json.loads(progress['checklist'])!=update['checklist']
+                or any(progress[key]!=update[key] for key in ('goal','result','evidence'))):
+            raise RuntimeError('Saved Workroom card does not contain the recovered worker update')
     build=json.loads((root/'workspace'/'local-build-check.json').read_text())
     tool=json.loads(json.loads((root/'build-terminal-receipt.json').read_text())['raw'])
     if (binding.get('buildCheckVerified') is not True or build.get('syntaxExitCode')!=0
@@ -176,7 +196,7 @@ def verify(root):
             or not contract['safe_mode'] or not contract['ignore_user_config'] or contract['follow_profile']
             or contract['max_turns']!=50 or sorted(contract['toolsets'])!=['file','terminal']):
         raise RuntimeError('Qualified frozen profile or native outcome is absent')
-    with sqlite3.connect('file:'+(root/'mesh-local-binding.sqlite').as_posix()+'?mode=ro',uri=True) as final_db:
+    with closing(sqlite3.connect((root/'mesh-local-binding.sqlite').resolve().as_uri()+'?mode=ro',uri=True)) as final_db:
         reviews=final_db.execute("SELECT id,agentId,phase,state,payload FROM workroom_sends WHERE taskId=? AND phase='review'",(binding['taskId'],)).fetchall()
         if (len(reviews)!=1 or reviews[0][0]!=team['reviewerSendId'] or reviews[0][1:4]!=('nims','review','accepted')
                 or 'Read-only tools only' not in reviews[0][4]):

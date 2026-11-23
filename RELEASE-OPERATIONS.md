@@ -2,7 +2,11 @@
 
 Workroom needs an exact submission lookup to verify a builder's tool profile before sending the job and to reconcile its outcome afterward. The Hermes installation used by Echo on this PC advertises an admission receipt, which requires an admission ID. Its canonical methods omit the submission lookup Mesh uses. A successful chat with Echo therefore does not establish Workroom builder readiness.
 
-The updated Mesh bridge checks the local Hermes contract before requesting a gateway connection. A missing or incomplete lookup returns a specific compatibility hold. An offline copy of the current Hermes source accepted the existing Mesh adaptations and returned the saved file-only profile on two read-only lookups for an unsubmitted request. Its copied Windows process tracker held a disposable assignment after the parent exited, observed the child exit naturally, and kept whole-writer clearance separate. The next qualification is a disposable worker run through that copy, including worker retirement and recovery of a lost reply. Keep the live worker hold and the separately prepared phone release in place.
+The Mesh bridge in source checks its local Hermes contract before requesting a gateway connection. A missing or incomplete lookup returns a compatibility hold.
+
+The isolated gateway trial ran against a copy of Echo's installed source with five file changes and a local fixture provider. A Workroom job edited its proof file and ran its build checks. The trial dropped the submission reply after Hermes admitted the job. Workroom reopened its saved board, reconciled the original submission, and applied one result. One session creation and one submission were observed for that job. The saved goal, checklist, result and evidence matched the applied report. The worker's descendants and outstanding write finished before review. The review destination was simulated.
+
+The file rehearsal restored three original files and removed both trial additions from the disposable installation. Before deployment, check the active Hermes environment and file versions again, confirm the gateway is idle, then obtain a shared-gateway maintenance window. After a restart verify a closed file-only worker profile and process tracking. The private board remains on its published phone release. The eight historical holds have their own recovery plan.
 
 ## November 22, 2026 | Combined Workroom and Inference rollout
 
