@@ -313,6 +313,10 @@ Eddie owns Mind's data and recovery keys. Echo and Nims (Codex) operate it.
 This establishes responsibility; exact OS/runtime identity and real initialization,
 credential/grant provisioning and activation remain separate reviewed decisions.
 
+**Echo project-reader compatibility, November 22, 2026.** The MCP client from the Windows environment used by the running Echo gateway discovered the Mind project reader through an isolated Hermes profile. Through the Hermes tool registry, the same client read a synthetic print specification, then its replacement dimensions, CAD filename and matching source reference. The earlier revision, private fact and other project were absent from the updated result.
+
+Withdrawing the test tool grant blocked the next call. Restoring it allowed the same client to read again. Rotating the test reader credential then blocked the next call with the tool grant still present. This qualifies the client and reader together. Live acceptance still requires custody of the dedicated reader credential, confirmed exclusion of delegated workers, and a real Echo response through the intended chat channels.
+
 For future MCP tools, build reusable tools once and make them discoverable through
 a shared team catalog. Mind can retain approved tool/skill descriptions, versions,
 usage guidance and provenance. Actual tools execute through MCP servers with
