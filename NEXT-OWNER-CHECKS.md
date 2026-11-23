@@ -5,12 +5,12 @@
 | Where | What you can do |
 | --- | --- |
 | Phone · Workroom | Open the board to create, edit or move a card. The guide and direct card links are installed. The phone checks for dragging, review, reload, rotation and reconnect have passed. [Open Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom) |
-| Phone · Relay | Read conversations and older messages. Mesh maintenance currently pauses outgoing messages. The tested update that explains the pause in the composer is awaiting its Mesh and card-writer reconnect. |
+| Phone · Relay | Open Echo to read the conversation and load older messages. The installed composer shows the maintenance pause and lets you draft. Send becomes available after maintenance. A crew-folder handoff has no confirmed pickup time. [Open Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay) |
 | At the PC · 3D Print Pilot | When ready to share the pilot, have the saved backup archive password available for the two local prompts. The existing shared Mesh card is connected to Mind. The print pilot is still private to Workroom. |
 | At the PC · supervised work | Arrange a quiet recovery window for the historical job holds. After recovery and route qualification, start one real card from the phone with Echo building and Nims reviewing. Rook activation follows that check. |
-| Inference · other machines | Open **Other machines → Check machine status** to see Tripp’s live LAN usage, temperatures and Ollama’s loaded models. The next display also checks the Strata IK2 service used by Tripp’s Inkling campaign. A healthy endpoint confirms readiness. Its current model name is unverified. |
+| Inference · other machines | Open **Other machines → Check machine status** to see Tripp’s rebuilt desktop, its temperatures and the models Ollama has loaded. In the staged update, Strata IK2 has its own readiness line. Its current model name is unverified. [Open Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference) |
 
-The desktop update also reads RAM, CPU and GPU use over the same SSH connection. CPU use comes from two short samples. RAM use accounts for memory Linux can make available. On a multi-GPU desktop, Mesh shows the highest measured GPU usage and temperature. A missing temperature shows **Temperature unavailable**. Readings expire after 30 seconds.
+Tripp’s desktop has an RTX 3060 and an RTX 4080 SUPER. Mesh shows the busiest GPU’s usage and the hottest GPU’s temperature. These readings can come from different cards. RAM use accounts for memory Linux can make available, and CPU use comes from two short samples. Readings expire after 30 seconds.
 
 The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
 
