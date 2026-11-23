@@ -24,6 +24,8 @@ For Echo-only access, keep the live reader with an independently authenticated E
 
 To repeat the identity observation on Windows, run `integrations/qualify_hermes_worker_identity.py` with the Hermes Python executable and the source checkout used by the gateway. It uses temporary profiles, reports the loaded module hashes, and makes no model requests. The separate tool-catalog check accepts the same source checkout as its optional second argument.
 
+The opt-in worker check in `test/project-context-handoff-qualification.py` exercises a narrower assignment. A disposable Workroom edit changes a tray specification to 95 mm ±0.2 mm. The reader supplies the project ID, revision, card reference and updated specification to a local container over standard input. The worker returns the revised CAD filename and the 94.8–95.2 mm range with the same references. It runs offline as a non-root user with a read-only filesystem, zero host mounts and no Mind credentials. Set `MESH_TEST_WORKER_IMAGE` to the immutable ID of an existing local Node image when running the check on Windows Docker Desktop. This exercises a deterministic worker. Routing a production worker through that boundary and enrolling Echo's reader remain open.
+
 ### Adding one project to an existing writer
 
 The offline owner operation `add_project` takes the complete reviewed list of project IDs and labels and one explicit `addedProjectId`. It requires a separately approved profile, fresh output paths, and exclusive access to the writer. Existing active projects must still match. A revoked credential or a previously registered project cannot be used for this operation.

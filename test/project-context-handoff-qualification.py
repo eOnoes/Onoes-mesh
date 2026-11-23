@@ -2,12 +2,14 @@
 import asyncio
 from contextlib import ExitStack
 import json
+import os
 from pathlib import Path
 import secrets
 import subprocess
 import sys
 
 MESH = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(MESH / "test"))
 sys.path.insert(0, str(MESH / "integrations/mind-recovery-candidate"))
 
 from mcp.shared.memory import create_connected_server_and_client_session
@@ -21,7 +23,7 @@ from onoes_mind.recall_binding import RecallBinding, prepare_mesh_principal, pre
 from project_events_candidate import EventBinding, ProjectEventsCandidate
 
 
-def test_recorded_card_edit_reaches_independent_agent_and_replay_keeps_revision(tmp_path):
+def read_revised_fixture(tmp_path):
     run = subprocess.run(["node", str(MESH / "test/print-card-events.mjs")], cwd=MESH, check=True,
                          capture_output=True, encoding="utf-8", timeout=30,
                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
@@ -89,4 +91,29 @@ def test_recorded_card_edit_reaches_independent_agent_and_replay_keeps_revision(
                 grant.path.unlink()
                 assert (await client.call_tool(TOOL_NAME, query)).isError
                 assert json.loads(echo.read(query))["records"] == [after]
-        asyncio.run(trial())
+                return after
+        return asyncio.run(trial())
+
+
+def test_recorded_card_edit_reaches_independent_agent_and_replay_keeps_revision(tmp_path):
+    read_revised_fixture(tmp_path)
+
+
+def test_offline_worker_can_use_only_the_selected_assignment_brief(tmp_path):
+    import pytest
+    image = os.environ.get("MESH_TEST_WORKER_IMAGE")
+    if not image:
+        pytest.skip("Set MESH_TEST_WORKER_IMAGE to the local Node image digest for this Docker check")
+    from isolated_print_worker import check_assignment
+
+    record = read_revised_fixture(tmp_path)
+    assert record["project_id"] == "project-A"
+    brief = {
+        "project": record["project_id"],
+        "revision": record["revision_id"],
+        "source": record["provenance"][0]["ref"],
+        "spec": json.loads(record["claim"])["goal"],
+    }
+    result = check_assignment(image, brief)
+    assert result == {"project": "project-A", "revision": brief["revision"], "source": brief["source"],
+                      "cad": "tray-v2.step", "minMm": 94.8, "maxMm": 95.2}
