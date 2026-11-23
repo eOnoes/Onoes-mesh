@@ -59,7 +59,7 @@ try {
       assert.ok(!JSON.stringify(delivered).includes('PRIVATE'));
       assert.throws(() => workerAssignment({...request, text:request.text.replace('\nSpec: ', '\nMissing spec: ')}));
       const output = execFileSync(process.argv[2], ['-I','-B','-X','utf8',helper], {encoding:'utf8',
-        windowsHide:true, timeout:90000, input:JSON.stringify(delivered)});
+        windowsHide:true, timeout:process.env.MESH_TEST_PRINT_GGUF ? 165000 : 90000, input:JSON.stringify(delivered)});
       update = JSON.parse(output);
     }
   };
@@ -84,7 +84,7 @@ try {
   const saved = store.workroom.get(taskId).progress;
   assert.equal(store.workroom.get(other.id).progress.result, '');
   process.stdout.write(JSON.stringify({dispatches, result:saved.result, evidence:saved.evidence,
-    decision:saved.decision}));
+    decision:saved.decision, checklist:saved.checklist}));
 } finally {
   store.close();
 }

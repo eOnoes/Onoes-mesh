@@ -1,5 +1,6 @@
 """Opt-in Docker fixture for the synthetic Workroom-to-Mind print assignment."""
 import json
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -57,7 +58,7 @@ def check_assignment(image, assignment):
                           "--mount", f"type=bind,source={marker},target=/parent-only-marker,readonly",
                           "--entrypoint=cat", image, "/parent-only-marker")
         assert readback == contents
-        return run_unmounted(docker, image, metadata, assignment)
+        return run_worker(docker, image, metadata, assignment)
 
 
 def start_with_windows_launcher(checkout, container, assignment):
@@ -101,19 +102,32 @@ def start_with_windows_launcher(checkout, container, assignment):
         scope.dispose()
 
 
-def run_unmounted(docker, image, metadata, assignment):
+def run_worker(docker, image, metadata, assignment):
     label = "mesh.test.print-worker=" + uuid4().hex
     delegate_python = os.environ.get("MESH_TEST_DELEGATE_PYTHON")
     checkout = os.environ.get("MESH_TEST_WINDOWS_HERMES_CHECKOUT")
-    entry = PROGRAM
+    weights = os.environ.get("MESH_TEST_PRINT_GGUF")
+    resources = ["--pids-limit=32", "--memory=128m", "--cpus=0.5"]
+    command = ["--entrypoint=node", image, "-e", PROGRAM]
     if delegate_python:
         if os.name != "nt" or not checkout:
             raise ValueError("The delegation trial requires Windows and MESH_TEST_WINDOWS_HERMES_CHECKOUT")
-        entry = CALCULATOR + Path(__file__).with_name("print-acp-peer.cjs").read_text(encoding="utf-8")
+        command[-1] = CALCULATOR + Path(__file__).with_name("print-acp-peer.cjs").read_text(encoding="utf-8")
+    if weights:
+        if not delegate_python:
+            raise ValueError("The model trial requires the Hermes delegation route")
+        path = Path(weights).resolve(strict=True)
+        with path.open("rb") as file:
+            if hashlib.file_digest(file, "sha256").hexdigest() != "2af3b81862c6be03c769683af18efdadb2c33f60ff32ab6f83e42c043d6c7816":
+                raise ValueError("Select the qualified TinyLlama weights")
+        peer = Path(__file__).resolve().parents[1] / "integrations/print_spec_worker.py"
+        resources = ["--pids-limit=64", "--memory=10g", "--memory-swap=10g", "--cpus=2",
+                     "--tmpfs", "/tmp:size=96m,nosuid,nodev",
+                     "--mount", f"type=bind,source={path},target=/model/weights.gguf,readonly"]
+        command = ["--entrypoint=python3", image, "-B", "-c", peer.read_text(encoding="utf-8")]
     container = docker("create", "--pull=never", "--interactive", "--network=none", "--read-only",
                        "--user=65534:65534", "--cap-drop=ALL", "--security-opt=no-new-privileges",
-                       "--pids-limit=32", "--memory=128m", "--cpus=0.5", "--label", label,
-                       "--entrypoint=node", image, "-e", entry)
+                       *resources, "--label", label, *command)
     assert re.fullmatch("[0-9a-f]{64}", container)
     try:
         actual, = json.loads(docker("inspect", container))
@@ -121,7 +135,14 @@ def run_unmounted(docker, image, metadata, assignment):
         assert actual["Id"] == container and actual["Image"] == image
         assert config["Labels"]["mesh.test.print-worker"] == label.split("=")[1]
         assert host["NetworkMode"] == "none" and host["ReadonlyRootfs"] and not host["Privileged"]
-        assert not actual["Mounts"] and not host.get("Devices") and not host.get("CapAdd")
+        assert not host.get("Devices") and not host.get("DeviceRequests") and not host.get("CapAdd")
+        if weights:
+            binds = [m for m in actual["Mounts"] if m["Type"] == "bind"]
+            assert len(binds) == 1 and binds[0]["Destination"] == "/model/weights.gguf" and not binds[0]["RW"]
+            assert all(m in binds or (m["Type"], m["Destination"]) == ("tmpfs", "/tmp") for m in actual["Mounts"])
+            assert set(host["Tmpfs"]) == {"/tmp"}
+        else:
+            assert not actual["Mounts"]
         assert host["CapDrop"] == ["ALL"] and "no-new-privileges" in host["SecurityOpt"]
         assert config["User"] == "65534:65534" and config["Env"] == metadata["Config"]["Env"]
         if delegate_python:

@@ -1,4 +1,5 @@
 """Disposable Hermes model-provider plugin for the offline print trial."""
+import os
 from agent.acp_client import ACPClient
 from providers import register_provider
 from providers.base import ProviderProfile
@@ -10,7 +11,7 @@ class PrintClient(ACPClient):
     command_env_vars = ("MESH_PRINT_TRIAL_COMMAND",)
     args_env_var = "MESH_PRINT_TRIAL_ARGS"
     marker_base_url = "acp://mesh-print-trial"
-    placeholder_model = "offline-calculator"
+    placeholder_model = "tinyllama-1.1b-cpu" if os.environ.get("MESH_PRINT_TRIAL_MODEL") == "tinyllama" else "offline-calculator"
     label = "Offline print trial"
 
     def _session(self, timeout_seconds, *, allow_file_requests=False):

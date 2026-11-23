@@ -1,8 +1,18 @@
+## November 23, 2026 | Local model trial for print specifications
+
+The print worker extracts a STEP filename, width and symmetric tolerance from the selected card revision. It checks all three against the supplied text before calculating the range with decimal arithmetic. A missing or mismatched field produces a clarification request on the card. The reviewer still decides whether to accept the work.
+
+To reproduce the disposable Windows trial, put the compatible Mind checkout on `PYTHONPATH`, set `MESH_TEST_WINDOWS_HERMES_CHECKOUT` to the Hermes source and `MESH_TEST_DELEGATE_PYTHON` to its Python interpreter. Set `MESH_TEST_PRINT_GGUF` to the TinyLlama file matching the checksum in `integrations/print_spec_worker.py`. Set `MESH_TEST_WORKER_IMAGE` to the immutable Docker image ID. This run used `sha256:8d18563bb9455725d93919ee83cb95b55bd341211f939742ed97abcdd3e5ae8c`, built locally from SGLang Omni `sha256:46235435997d1fa93fc81fb1c2d5b7fd8470d77395a5c348c0176094ffddf95e` with Accelerate 1.11.0 on the Python path.
+
+Run `py -X utf8 -B -m pytest -q test/project-context-handoff-qualification.py test/test_print_spec_worker.py`. The model uses two CPU cores and one read-only weights file. Each model case reopens its disposable board to check the saved result and review state. Live dispatch and enrollment are separate release steps.
+
 ## November 23, 2026 | Remote Windows hardware readings
 
 In Inference, open **Other machines** and select **Check machines**. An enrolled Windows machine can show RAM, GPU and CPU usage, plus temperature where its sensor reports one. Each machine's sample expires after 30 seconds. An unavailable sensor does not clear the other machine's readings. The model name still needs a separate verified source.
 
-Tripp moved from the laptop to a rebuilt PC. Mesh shows his reported model, Nemotron-boat, until the new PC has its own verified connection. The old laptop sensor flag is ignored. To prepare a Windows AI box, first verify its Tailscale DNS name and IP in the version 2 machine roster, its SSH host key and account for the `ai-box-echo` alias, and its Windows computer name. The optional startup setting `MESH_AI_BOX_WINDOWS_SENSOR_HOST` holds that computer name. The reviewed startup profile pins the roster and sensor script. The collector requires the observed network identity and checks the returned computer name. Enable it only after qualifying the actual machine. For a different operating system, qualify its sensor source first.
+Tripp's rebuilt Omarchy desktop has a verified LAN connection and supplies its own hardware readings. During the installed dashboard check, Ollama answered with an empty loaded-model list. The engine serving Eddie's reported Nemotron-boat remains unconfirmed.
+
+To prepare a Windows AI box, first verify its Tailscale DNS name and IP in the version 2 machine roster, its SSH host key and account for the `ai-box-echo` alias, and its Windows computer name. The optional startup setting `MESH_AI_BOX_WINDOWS_SENSOR_HOST` holds that computer name. The reviewed startup profile pins the roster and sensor script. The collector requires the observed network identity and checks the returned computer name. Enable it only after qualifying the actual machine. For a different operating system, qualify its sensor source first.
 
 ## November 23, 2026 | First supervised job after recovery
 

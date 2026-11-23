@@ -22,8 +22,10 @@ from onoes_mind.recall_binding import RecallBinding, prepare_mesh_principal, pre
 from project_events_candidate import EventBinding, ProjectEventsCandidate
 
 
-def read_revised_fixture(tmp_path, *, keep_board=False):
+def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False):
     options = ["--keep-fixture"] if keep_board else []
+    if missing_tolerance:
+        options.append("--missing-tolerance")
     run = subprocess.run(["node", str(MESH / "test/print-card-events.mjs"), *options], cwd=tmp_path,
                          capture_output=True, encoding="utf-8", timeout=30,
                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
@@ -84,7 +86,8 @@ def read_revised_fixture(tmp_path, *, keep_board=False):
                 receipt = writer.submit(writer_token, revised)
                 after = await current()
                 assert before["record_id"] == after["record_id"] and before["revision_id"] != after["revision_id"]
-                assert json.loads(after["claim"])["goal"] == "Tray width 95 mm ±0.2 mm. CAD tray-v2.step"
+                expected_goal = "Tray width 95 mm" + ("" if missing_tolerance else " ±0.2 mm") + ". CAD tray-v2.step"
+                assert json.loads(after["claim"])["goal"] == expected_goal
                 assert after["provenance"] == revised["evidence"]
                 assert after["provenance"][0]["ref"].startswith("card:"+first["cardId"]+"@")
                 assert writer.submit(writer_token, revised) == receipt
@@ -101,11 +104,26 @@ def test_recorded_card_edit_reaches_independent_agent_and_replay_keeps_revision(
 
 
 def test_offline_worker_can_use_only_the_selected_assignment_brief(tmp_path):
+    receipt = run_offline_assignment(tmp_path)
+    assert receipt["result"] == "tray-v2.step: 94.8–95.2 mm"
+    assert [step["status"] for step in receipt["checklist"]] == ["done"]
+
+
+def test_model_leaves_incomplete_spec_pending_on_the_original_card(tmp_path):
+    import pytest
+    if not os.environ.get("MESH_TEST_PRINT_GGUF"):
+        pytest.skip("Requires the qualified local model")
+    receipt = run_offline_assignment(tmp_path, missing_tolerance=True)
+    assert receipt["result"].startswith("Clarification requested")
+    assert [step["status"] for step in receipt["checklist"]] == ["pending"]
+
+
+def run_offline_assignment(tmp_path, *, missing_tolerance=False):
     import pytest
     image = os.environ.get("MESH_TEST_WORKER_IMAGE")
     if not image:
         pytest.skip("Set MESH_TEST_WORKER_IMAGE to the local Node image digest for this Docker check")
-    record = read_revised_fixture(tmp_path, keep_board=True)
+    record = read_revised_fixture(tmp_path, keep_board=True, missing_tolerance=missing_tolerance)
     assert record["project_id"] == "project-A"
     brief = {
         "project": record["project_id"],
@@ -115,9 +133,12 @@ def test_offline_worker_can_use_only_the_selected_assignment_brief(tmp_path):
     }
     run = subprocess.run(["node", str(MESH / "test/print-worker-roundtrip.mjs"), sys.executable],
                          cwd=tmp_path, input=json.dumps(brief), encoding="utf-8",
-                         capture_output=True, timeout=120)
+                         capture_output=True, timeout=195 if os.environ.get("MESH_TEST_PRINT_GGUF") else 120)
     assert run.returncode == 0, run.stderr
     receipt = json.loads(run.stdout)
-    assert receipt["result"] == "tray-v2.step: 94.8–95.2 mm"
-    assert receipt["evidence"] == f'{brief["source"]} / {brief["revision"]}'
+    evidence = f'{brief["source"]} / {brief["revision"]}'
+    if os.environ.get("MESH_TEST_PRINT_GGUF"):
+        evidence += " / TinyLlama 1.1B (CPU)"
+    assert receipt["evidence"] == evidence
     assert receipt["dispatches"] == 1 and receipt["decision"] == "pending"
+    return receipt

@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 
 PROVIDER = "mesh-print-trial"
-MODEL = "offline-calculator"
+MODEL = "tinyllama-1.1b-cpu" if os.environ.get("MESH_PRINT_TRIAL_MODEL") == "tinyllama" else "offline-calculator"
 
 
 def delegate(interpreter, checkout, container, assignment):
@@ -29,9 +29,12 @@ def delegate(interpreter, checkout, container, assignment):
             env[key] = str(directory)
         env.update(PATH=os.pathsep.join([str(docker.parent), str(Path(interpreter).parent),
                                         str(Path(env["SystemRoot"]) / "System32")]), PYTHONUTF8="1")
+        model_trial = bool(os.environ.get("MESH_TEST_PRINT_GGUF"))
+        if model_trial:
+            env["MESH_PRINT_TRIAL_MODEL"] = "tinyllama"
         proc = subprocess.run([interpreter, "-I", "-B", "-X", "utf8", __file__, str(source), str(docker), container],
                               cwd=workspace, env=env, input=json.dumps(assignment), encoding="utf-8",
-                              capture_output=True, timeout=55, creationflags=subprocess.CREATE_NO_WINDOW)
+                              capture_output=True, timeout=125 if model_trial else 55, creationflags=subprocess.CREATE_NO_WINDOW)
         if proc.returncode:
             raise RuntimeError("Disposable delegation failed: " + proc.stderr[-2600:])
         result, = [line[7:] for line in proc.stdout.splitlines() if line.startswith("RESULT ")]

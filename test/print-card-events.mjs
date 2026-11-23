@@ -24,7 +24,7 @@ try {
   function saveSpec(width, revision) {
     const task = store.workroom.get(card.id);
     store.workroom.saveProgress(card.id, {
-      goal:`Tray width ${width} mm ±0.2 mm. CAD tray-v${revision}.step`,
+      goal:`Tray width ${width} mm${revision === 2 && process.argv.includes('--missing-tolerance') ? '' : ' ±0.2 mm'}. CAD tray-v${revision}.step`,
       checklist:[{id:'fit', text:'Calculate the tray width range', status:'pending'}],
       result:'', evidence:'PRIVATE free-form notes', reviewer:'', decision:'pending',
       revision:task.progress.revision, taskRevision:task.revision, briefRevision:task.workroom.revision
