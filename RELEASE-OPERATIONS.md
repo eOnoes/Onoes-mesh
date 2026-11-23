@@ -26,7 +26,7 @@ The November 22 check reached Echo through the normal Workroom connection. For a
 
 Keep Echo running for ordinary use. Its submission lookup passed on the installed version. For a future Hermes upgrade, check the launcher's source and repeat the read-only lookup before deciding whether gateway maintenance is needed. The isolated build and rollback evidence is in [the worker maintenance guide](integrations/NATIVE-WORKER-MAINTENANCE.md).
 
-Workroom dispatch still depends on historical job recovery. Compare the entire current Relay and Hermes retained-record set with the window's reviewed set. An additional started admission with no card or conversation link still needs review. Preserve the hold until the running work and the recovery scope are reconciled. After recovery and the tested phone/team update, verify one fresh job through Echo and the independent Nims reviewer before enabling automatic assignments.
+Workroom dispatch still depends on historical job recovery. Compare the entire current Relay and Hermes retained-record set with the window's reviewed set. At 16:02 Central on November 23 the controller matched all three reviewed records and found no additional admission. It also matched all eight held sends across five cards. Six Echo admissions had terminal receipts and two DSH tasks had completion receipts. The original worker outcomes remain unknown. A fresh comparison at the quiet window must account for any new admission. Preserve the hold until the running work and the recovery scope are reconciled. After recovery and the tested phone/team update, verify one fresh job through Echo and the independent Nims reviewer before enabling automatic assignments.
 
 ## November 22, 2026 | Combined Workroom and Inference rollout
 

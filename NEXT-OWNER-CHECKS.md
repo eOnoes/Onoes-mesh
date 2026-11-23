@@ -14,11 +14,13 @@ Tripp’s desktop has an RTX 3060 and an RTX 4080 SUPER. Mesh shows the busiest 
 
 The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
 
-The source checkout also has **Open current Workroom card** in Mind search results. It opens the latest saved card when its ID matches the result's Workroom source reference and a card on your board. The separate phone installation prepared at `4fcb70d` predates this change.
+The source checkout also has **Open current Workroom card** in Mind search results. It opens the latest saved card when its ID matches the result's Workroom source reference and a card on your board. The combined phone update prepared at `7ff6188` includes the link and the fix for returning to Mind after a reload.
 
-In the updated Inference source, a loaded Ollama model on Tripp's card shows its short name. Tap a shortened name to see the exact tags. A count in parentheses means multiple loaded tags share that name. The phone installation prepared at `4fcb70d` also predates this display change.
+In the updated Inference source, a loaded Ollama model on Tripp's card shows its short name. Tap a shortened name to see the exact tags. A count in parentheses means multiple loaded tags share that name. The same prepared update includes these short names and the individual GPU readings.
 
 ## Before starting the first supervised job
+
+The November 23 read-only check matched the eight held sends to five original cards. All three separately reviewed pending records matched too. The extra admission seen earlier was absent at check time. The receipts leave the original workers' outcomes unknown, so dispatch stays paused.
 
 When you're ready for the quiet window, let agents editing Mesh finish and save. Leave this chat and the app services open, then tell Nims you're ready. The next step is a fresh read-only comparison of the eight held sends, all retained jobs, the service owners and the backup. Wait for the result before opening a recovery launcher.
 
