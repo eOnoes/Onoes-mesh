@@ -757,7 +757,8 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       renderOllamaModels(model, online && Array.isArray(desktop.ollamaModels) ? desktop.ollamaModels : null);
       strata.textContent = online && desktop.strataHealth === 'ready'
         ? 'Strata IK2: Ready · Model unverified' : 'Strata IK2: Status unavailable';
-      location.textContent = 'LAN · ' + state;
+      location.textContent = fresh && desktop.state === 'unknown' && desktop.reason === 'connection_denied'
+        ? 'LAN · Connection denied' : 'LAN · ' + state;
       const cpu = online ? desktop.cpuTempC : null, gpu = online ? desktop.gpuTempC : null;
       const ramPct = online ? desktop.ramPct : null;
       const cpuPct = online ? desktop.cpuPct : null;

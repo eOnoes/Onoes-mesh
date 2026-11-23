@@ -42,6 +42,21 @@ test('missing metrics, wrong account, interrupted replies, and an unavailable mo
   assert.deepEqual((await read(fixtureSample.replace('@ollama-ok','demo:small 0123abcd 1GB GPU 4096 GPU forever\n@ollama-ok'))).ollamaModels,['demo:small']);
 });
 
+test('a denied SSH connection is distinct from a rejected login and expires with its observation', async () => {
+  const fixture = controlledProbe();
+  let stderr = 'ssh: connect to host 10.0.0.1 port 22: Permission denied';
+  const reader = createNodeProbeReader({...fixture.options, observeDesktop:true,
+    sampleDesktop:() => readTrippHardware(async () => { throw Object.assign(Error('SSH failed'), {stderr}); })});
+  const denied = (await reader.refresh()).trippDesktop;
+  assert.deepEqual(denied, {state:'unknown', source:'lan_ssh', reason:'connection_denied', ageMs:0});
+  fixture.advance(30000);
+  assert.deepEqual(reader.snapshot().trippDesktop, {state:'unknown'});
+  for (stderr of ['onoes@sample: Permission denied (publickey).', 'Host key verification failed.']) {
+    const unknown = (await reader.refresh()).trippDesktop;
+    assert.deepEqual(unknown, {state:'unknown', source:'lan_ssh', ageMs:0});
+  }
+});
+
 test('LAN telemetry survives a failed Tailscale discovery and clears after an SSH error',async()=>{
   const fixture=controlledProbe();fixture.fail();
   let calls=0;

@@ -13,11 +13,13 @@ const { chromium } = await import(process.env.M5_NODES_PLAYWRIGHT
 const fixture = controlledProbe();
 const network = createNodeProbeReader(fixture.options);
 let ollamaModels = [];
+let connectionDenied = false;
 // Both remote machines share the fixture's network clock, but have distinct sensors.
 function withBox(view) {
   return {...view, nodes: [...view.nodes, {...view.nodes[1], id:'ai-box', label:'AI box',
     dnsName:'fixture.tail8c4a75.ts.net', tailscaleIp:'100.64.0.23'}],
-    trippDesktop:{source:'lan_ssh',ollamaModels,state:'online', ageMs:0, cpuTempC:51, gpuTempC:null, ramPct:31, cpuPct:0, gpuPct:77,
+    trippDesktop:connectionDenied ? {state:'unknown',source:'lan_ssh',reason:'connection_denied',ageMs:0} :
+      {source:'lan_ssh',ollamaModels,state:'online', ageMs:0, cpuTempC:51, gpuTempC:null, ramPct:31, cpuPct:0, gpuPct:77,
       gpus:[{index:0,name:'RTX 3060',tempC:null,usagePct:77},{index:1,name:'RTX 4080 SUPER',tempC:null,usagePct:0}]}};
 }
 let boxSensorsAvailable = true;
@@ -105,9 +107,14 @@ try {
   assert.equal(await tripp.getByText(ollamaModels[0], {exact:true}).count(), 0);
   assert.doesNotMatch(await tripp.innerText(),/31%|77%|51 °C/);
   assert.equal(await boxMeters.count(),0);
+  connectionDenied = true;
   boxSensorsAvailable = false;
   await Promise.all([page.waitForResponse(origin + '/api/node-probes/refresh'), check.tap()]);
   assert.equal(await boxMeters.count(),0);
+  await tripp.getByText('LAN · Connection denied', {exact:true}).waitFor();
+  await tripp.getByText('Ollama: Status unavailable', {exact:true}).waitFor();
+  assert.doesNotMatch(await tripp.innerText(), /Offline|Qwen|31%|77%/);
+  connectionDenied = false;
   fixture.offline();
   fixture.advance(61000);
   await check.tap();
