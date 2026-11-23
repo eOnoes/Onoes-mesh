@@ -1,5 +1,13 @@
 # Rook / Mesh integration checkpoint
 
+## Paused enrollment after the November 23 phone update
+
+The November 22 installer predates the LAN dashboard for Tripp’s desktop. Its copy of `public/app.js` includes an obsolete laptop display change. For phone release `7ff6188`, retain that release’s Inference code and merge only the Rook report changes into Relay.
+
+On a restored copy, all eight native gateway checks passed with the five merged files. At phone width, the enrolled test board displayed **Rook · paused** in Relay. Expanding it showed that automatic assignments were off, and the response used by the screen confirmed the scheduler was disabled. Workroom card links survived opening, editing and reloading. Reversing the five changes restored all 446 projected phone-release source files byte for byte.
+
+Before live enrollment, bind the three startup profiles to the actual installed release and board and review the resulting change with Eddie. The rehearsal used a disposable enrollment. The live board still needs its own enrollment and recovery window before automatic work can begin.
+
 ## Clarification notices in Relay
 
 A notice shows **Your input needed** and a short saved question when its card is still awaiting clarification at the same flow revision. After the card advances, the notice reads **Earlier clarification**. An older notice with no verifiable revision links to the current card. Long, multiline or credential-like text stays behind **Open card**. Refresh reads the report and card together through the existing board endpoint. The saved report and its delivery receipt keep their original contents.
