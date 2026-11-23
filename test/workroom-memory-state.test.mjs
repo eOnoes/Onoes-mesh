@@ -100,7 +100,14 @@ test('presentation identifies an unlinked card only when the server confirms it'
 test('status rendering uses plain text and clears a previously saved label',()=>{
   const element={hidden:false,textContent:'',title:'',attributes:{},setAttribute(key,value){this.attributes[key]=value;}};
   paintMemoryState(element,{schema,state:'saved'});assert.equal(element.hidden,false);assert.match(element.textContent,/Last update recorded/);
+  for(const state of ['offline','held','uncertain','withdrawn','unavailable']){
+    paintMemoryState(element,{schema,state});
+    assert.ok(element.textContent.endsWith(memoryStatePresentation({schema,state}).description));
+    assert.equal(element.attributes['aria-label'],element.textContent);
+    assert.equal(element.title,'');
+  }
   paintMemoryState(element,{schema,state:'pending'});assert.match(element.textContent,/Pending/);
+  assert.equal(element.textContent,'Mind · Pending');
   paintMemoryState(element,{schema,state:'not_shared'});assert.equal(element.hidden,false);assert.equal(element.textContent,'Mind · Not linked');
   assert.match(element.attributes['aria-label'],/no link to a Mind project/);
   paintMemoryState(element,{schema,state:'off'});assert.equal(element.hidden,true);assert.equal(element.textContent,'');assert.equal(element.title,'');

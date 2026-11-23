@@ -2,10 +2,10 @@ const schema='onoes-workroom-memory-state/v1';
 const labels={
   off:null,
   not_shared:['Not linked','This Workroom card has no link to a Mind project.'],
-  offline:['Mind disconnected','This card is saved on this PC. Shared updates wait for a verified Mind connection.'],
+  offline:['Mind disconnected','Your card is saved on this PC. Shared updates are waiting for Mind.'],
   pending:['Pending','Waiting to record this update in Mind.'],
-  uncertain:['Awaiting receipt','Delivery is uncertain. No saved result has been confirmed.'],
-  held:['Needs attention','Sharing is held for review. Later updates will wait.'],
+  uncertain:['Awaiting receipt','Mesh is waiting for confirmation that Mind saved this update.'],
+  held:['Needs attention','Later updates will wait until the sharing issue is reviewed.'],
   saved:['Last update recorded','The last update was recorded in Mind. This does not approve the work.'],
   withdrawn:['Sharing paused','New updates are not shared. Previously recorded facts may remain.'],
   unavailable:['Unavailable','Memory sync status could not be verified.'],
@@ -22,7 +22,9 @@ export function memoryStatePresentation(value){
 export function paintMemoryState(element,value){
   const state=memoryStatePresentation(value);
   element.hidden=!state;
-  element.textContent=state?`Mind · ${state.label}`:'';
-  element.title=state?.description||'';
-  element.setAttribute('aria-label',state?`${element.textContent}. ${state.description}`:'');
+  const label=state?`Mind · ${state.label}`:'';
+  const explain=state && ['offline','held','uncertain','withdrawn','unavailable'].includes(state.state);
+  element.textContent=explain?`${label}. ${state.description}`:label;
+  element.title=explain?'':state?.description||'';
+  element.setAttribute('aria-label',state?`${label}. ${state.description}`:'');
 }
