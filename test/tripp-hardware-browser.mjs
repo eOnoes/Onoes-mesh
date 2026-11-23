@@ -5,15 +5,30 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 import { startApp } from '../server.mjs';
 import { createNodeProbeReader } from '../lib/node-probes.mjs';
-import { withTrippHardware } from '../lib/tripp-hardware.mjs';
+import { withRemoteHardware } from '../lib/tripp-hardware.mjs';
 import { controlledProbe } from './m5-nodes-fixture.mjs';
 
 const { chromium } = await import(process.env.M5_NODES_PLAYWRIGHT
   ? pathToFileURL(process.env.M5_NODES_PLAYWRIGHT).href : 'playwright');
 const fixture = controlledProbe();
-const reader = withTrippHardware(createNodeProbeReader(fixture.options), {
+const network = createNodeProbeReader(fixture.options);
+// Both remote machines share the fixture's network clock, but have distinct sensors.
+function withBox(view) {
+  return {...view, nodes: [...view.nodes, {...view.nodes[1], id:'ai-box', label:'AI box',
+    dnsName:'fixture.tail8c4a75.ts.net', tailscaleIp:'100.64.0.23'}]};
+}
+let boxSensorsAvailable = true;
+const reader = withRemoteHardware({
+  snapshot: () => withBox(network.snapshot()),
+  refresh: async () => withBox(await network.refresh()),
+}, {
+  laptop: true, aiBoxHost:'PRINT-HOST',
   clock: fixture.options.clock,
-  sample: async () => {
+  sample: async node => {
+    if (node.id === 'ai-box') {
+      if (!boxSensorsAvailable) throw Error('Fixture sensor unavailable');
+      return {ramPct:65, cpuPct:24, gpuPct:87, gpuTempC:70, cpuTempC:44};
+    }
     await delay(3100);
     return { ramPct: 36, cpuPct: 17, gpuPct: 42, gpuTempC: 58, cpuTempC: null };
   },
@@ -43,10 +58,19 @@ try {
   await page.getByText('Other machines', { exact: true }).tap();
   const laptop = page.locator('[data-node-id="laptop"]');
   const meters = laptop.locator('.pixel-readings');
+  const box = page.locator('[data-node-id="ai-box"]');
   await check.tap();
   await meters.waitFor({ state: 'visible' });
   for (const value of ['36%', '17%', '42%']) assert.ok((await meters.innerText()).includes(value));
   assert.match(await laptop.innerText(), /Model loaded: Unknown/);
+  const boxMeters = box.locator('.pixel-readings');
+  for (const value of ['65%', '24%', '87%', '70 °C', '44 °C']) assert.ok((await boxMeters.innerText()).includes(value));
+  assert.match(await box.innerText(), /Model loaded: Unknown/);
+  boxSensorsAvailable = false;
+  await check.tap();
+  await box.getByText('Hardware readings unavailable').waitFor();
+  assert.equal(await boxMeters.count(), 0);
+  assert.ok((await meters.innerText()).includes('42%'));
   await page.clock.fastForward(31000);
   await laptop.getByText('Hardware readings unavailable').waitFor();
   assert.equal(await meters.count(), 0);
@@ -62,12 +86,12 @@ try {
   await page.getByText(/Machine check timed out/).first().waitFor();
   assert.equal(await check.isEnabled(), true);
   assert.equal(await page.locator('#demo-end').isEnabled(), true);
-  assert.equal(requests, 3);
+  assert.equal(requests, 4);
   await menu.tap();
   await page.locator('#tab-workroom').tap();
   await page.getByRole('button', { name: '+ New task', exact: true }).tap();
   await page.locator('#create-title').waitFor({ state: 'visible' });
-  console.log('PASS: slow sample displayed, stale and offline meters cleared, Workroom opened after timeout.');
+  console.log('PASS: distinct remote readings, isolated sensor failure, expiry, offline and Workroom after timeout.');
 } finally {
   await browser?.close();
   await app.close();

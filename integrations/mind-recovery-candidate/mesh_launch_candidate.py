@@ -31,17 +31,19 @@ def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def check_settings(settings):
-    require(type(settings) is dict and set(settings) in (SETTINGS, SETTINGS | {'MESH_TRIPP_HARDWARE'}))
+    require(type(settings) is dict and SETTINGS <= set(settings) <= SETTINGS | {'MESH_TRIPP_HARDWARE','MESH_AI_BOX_WINDOWS_SENSOR_HOST'})
     require(all(type(v) is str and len(v)<=256 and not re.search(r'[\x00-\x1f\x7f]',v) for v in settings.values()))
     require(settings['MESH_PREVIEW_PORT'].isdigit() and 0<=int(settings['MESH_PREVIEW_PORT'])<=65535
         and re.fullmatch(r'data/[A-Za-z0-9_-]+',settings['MESH_DATA_DIR'])
         and settings['MESH_RELAY'] in ('0','1') and settings['MESH_RELAY_MODE'] in ('http','child')
         and all(settings[n] in ('0','1') for n in ('MESH_NIMS','MESH_MODEL_OBSERVATION','MESH_NEMOTRON_CONTROL'))
         and settings.get('MESH_TRIPP_HARDWARE','0') in ('0','1')
+        and ('MESH_AI_BOX_WINDOWS_SENSOR_HOST' not in settings or
+             re.fullmatch('[A-Za-z0-9][A-Za-z0-9-]{0,14}',settings['MESH_AI_BOX_WINDOWS_SENSOR_HOST']))
         and settings['MESH_SIMPLE_FLOW']=='0' and Path(settings['MESH_GATE_KEY_FILE']).is_absolute())
 
 
-def source_paths(*, project=False):
+def source_paths(*, project=False, settings=None):
     paths={Path(__file__).resolve(),ROOT/'package.json',ROOT/'server.mjs',ROOT/'serve.mjs',
            ROOT/'integrations/native-mind-mesh-entry.mjs',
            ROOT/'integrations/mind-recovery-candidate/recall_process_candidate.py',
@@ -54,6 +56,8 @@ def source_paths(*, project=False):
     if project:paths.update(Path(__file__).resolve().parent/name for name in (
         'project_mesh_input_candidate.py','project_service_process_candidate.py','project_operator_process_candidate.py'))
     if project:paths.update((ROOT/'integrations/project-sync-source-setup-candidate.mjs',ROOT/'integrations/mesh_native_recovery.py'))
+    if settings and 'MESH_AI_BOX_WINDOWS_SENSOR_HOST' in settings:
+        paths.update((ROOT/'config/nodes.json',ROOT/'integrations/tripp-hardware.ps1'))
     return paths
 
 
@@ -82,12 +86,12 @@ def rook_frame_fields(profile, profile_sha):
     return {'rookEnrollment': {**record, 'boardPath': str(board), 'approvalRef': profile_sha}}
 
 
-def capture_source_paths(runtime):
+def capture_source_paths(runtime,settings=None):
     # The role helpers supply file permissions/process identity only. No role
     # profile, credential, terminal proof or canonical database is opened.
     import recall_process_candidate as roles
     require(Path(roles.__file__).resolve()==Path(__file__).resolve().parent/'recall_process_candidate.py')
-    return source_paths(project=True)|roles.source_paths(runtime)|{ROOT/'integrations/mesh_launcher_window.py'}
+    return source_paths(project=True,settings=settings)|roles.source_paths(runtime)|{ROOT/'integrations/mesh_launcher_window.py'}
 
 
 def capture_frame(p):
@@ -143,7 +147,7 @@ def inspect_capture(p,path,expected_sha,approval_path):
     pins=p['sourceHashes'];require(type(pins) is dict and source_paths(project=True).issubset({Path(n) for n in pins})
         and all(digest(n)==sha for n,sha in pins.items()))
     sys.path.insert(0,str(Path(runtime['mindSource'])));sys.path.insert(0,str(ROOT/'integrations'))
-    require({Path(n) for n in pins}==capture_source_paths(runtime))
+    require({Path(n) for n in pins}==capture_source_paths(runtime,p['settings']))
     spec=importlib.util.find_spec('onoes_mind');require(spec is not None
         and Path(spec.origin).resolve()==Path(runtime['mindSource'])/'onoes_mind/__init__.py')
     from onoes_mind.enrollment_store import qualify_private_storage
@@ -185,7 +189,7 @@ def inspect_launch(path,expected_sha,approval_path):
     require(Path(p['pythonExecutable']).resolve()==Path(sys.executable).resolve()
         and digest(sys.executable)==p['pythonSha256'])
     node=Path(p['nodeExecutable']);require(node.is_absolute() and node.resolve()==node and digest(node)==p['nodeSha256'])
-    pins=p['sourceHashes'];require(type(pins) is dict and {Path(n) for n in pins}==source_paths(project=project))
+    pins=p['sourceHashes'];require(type(pins) is dict and {Path(n) for n in pins}==source_paths(project=project,settings=p['settings']))
     require(all(digest(n)==s for n,s in pins.items()))
     if project:sys.path.insert(0,str(ROOT/'integrations'))
     reader_path=Path(p['readerProfile']);reader_raw=reader_path.read_bytes()

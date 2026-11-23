@@ -22,7 +22,13 @@ class MeshLaunchRefusalTests(unittest.TestCase):
         launch.check_settings(settings)
         for value in ('0','1'):
             launch.check_settings(dict(settings,MESH_TRIPP_HARDWARE=value))
-        for extra in ({'MESH_TRIPP_HARDWARE':'yes'}, {'MESH_TRIPP_HARDWARE':1}, {'MESH_TRIPP_HOST':'other'}):
+        enrolled=dict(settings,MESH_AI_BOX_WINDOWS_SENSOR_HOST='PRINT-HOST')
+        launch.check_settings(enrolled)
+        launch.check_settings(dict(enrolled,MESH_TRIPP_HARDWARE='1'))
+        self.assertEqual(launch.source_paths(settings=enrolled)-launch.source_paths(),
+                         {launch.ROOT/'config/nodes.json',launch.ROOT/'integrations/tripp-hardware.ps1'})
+        for extra in ({'MESH_TRIPP_HARDWARE':'yes'}, {'MESH_TRIPP_HARDWARE':1}, {'MESH_TRIPP_HOST':'other'},
+                      {'MESH_AI_BOX_WINDOWS_SENSOR_HOST':''}, {'MESH_AI_BOX_WINDOWS_SENSOR_HOST':'not a host'}):
             with self.subTest(extra=extra), self.assertRaises(launch.LaunchError):
                 launch.check_settings(dict(settings,**extra))
         with self.assertRaises(launch.LaunchError):

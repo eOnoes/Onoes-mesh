@@ -698,7 +698,7 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       ? 'Last known connection: ' : 'Connection: ', statusWord);
     readings.append(statusLine);
     if (n.id !== 'pc') paragraph(readings, 'Model loaded: Unknown');
-    if (n.id === 'laptop' && Object.hasOwn(n, 'hardware')) {
+    if (n.id !== 'pc' && Object.hasOwn(n, 'hardware')) {
       const hardwareAge = Date.parse(snapshot.observedAt) - Date.parse(n.hardwareObservedAt) + elapsed;
       const freshHardware = status === 'ready' && n.observationAvailability === 'available' && n.hardware && hardwareAge >= 0 && hardwareAge < 30000;
       if (freshHardware) {
@@ -711,8 +711,8 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       } else {
         paragraph(readings, 'Hardware readings unavailable');
       }
-    } else if (n.id === 'laptop') {
-      paragraph(readings, 'Laptop sensors are off in this Mesh setup.');
+    } else if (n.id !== 'pc') {
+      paragraph(readings, (n.id === 'laptop' ? 'Laptop' : 'AI box') + ' sensors are off in this Mesh setup.');
     }
     paragraph(diagnostics, 'Last probe: ' + (n.lastProbeAt ?? 'never') + ' · Last success (Online=true): ' + (n.lastSuccessAt ?? 'never'));
     paragraph(diagnostics, 'Observation: ' + n.observationAvailability + ' · source: ' + snapshot.source + ' · local probe completion timestamps');

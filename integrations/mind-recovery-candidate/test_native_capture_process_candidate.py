@@ -59,16 +59,22 @@ console.log(JSON.stringify({link,source:{databasePath:realpathSync(file),fileDev
         initialized=json.loads(initialized.stdout)
         with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
         gate=private/'synthetic-gate.txt';gate.write_text('synthetic-offline-fixture-gate',encoding='utf-8')
+        roster_path=workspace/'config/nodes.json'
+        roster=json.loads(roster_path.read_bytes())
+        roster['schemaVersion']='mesh-node-identities/v2'
+        roster['nodes'].append(dict(id='ai-box',label='AI box',dnsName='fixture.tail8c4a75.ts.net',
+                                    tailscaleIp='100.64.0.23'))
+        roster_path.write_text(json.dumps(roster),encoding='utf-8')
         settings={key:'0' for key in launch.SETTINGS};settings.update(MESH_PREVIEW_PORT=str(port),
             MESH_DATA_DIR='data/offline-capture',MESH_RELAY_MODE='http',MESH_GATE_KEY_FILE=str(gate),
-            MESH_TAILSCALE_HOST='synthetic.invalid',MESH_TRIPP_HARDWARE='1')
+            MESH_TAILSCALE_HOST='synthetic.invalid',MESH_TRIPP_HARDWARE='1',MESH_AI_BOX_WINDOWS_SENSOR_HOST='PRINT-HOST')
         import onoes_mind
         runtime=dict(python=sys.executable,pwsh=str(pwsh),mindSource=str(Path(onoes_mind.__file__).resolve().parents[1]))
         profile=private/'capture-profile.json';approval=private/'capture-approval.json'
         p=dict(schema=launch.CAPTURE_SCHEMA,workspace=str(workspace),pythonExecutable=sys.executable,
             nodeExecutable=str(node),pythonSha256=launch.digest(sys.executable),nodeSha256=launch.digest(node),
             runtime=runtime,ownerSid=sid,pwshSha256=launch.digest(pwsh),
-            sourceHashes={str(path):launch.digest(path) for path in launch.capture_source_paths(runtime)},settings=settings,
+            sourceHashes={str(path):launch.digest(path) for path in launch.capture_source_paths(runtime,settings)},settings=settings,
             attemptPath=str(private/'capture-attempt.json'),stdoutPath=str(private/'capture-out.log'),stderrPath=str(private/'capture-err.log'),
             projectCapture=dict(schema='onoes-mesh-native-project-capture/v1',source=initialized['source'],
                 storeId='synthetic-capture-store',links=[initialized['link']]))
@@ -103,10 +109,11 @@ console.log(JSON.stringify({link,source:{databasePath:realpathSync(file),fileDev
                 child,ticks,record=launch.launch_mesh(profile,sha,approval);children.append(child)
                 request=admitted_http(address(child));token=request('/api/trial-session/bootstrap',{})['csrfToken']
                 nodes=request('/api/node-probes',csrf=token,method='GET')['nodes']
-                laptop=next(n for n in nodes if n['id']=='laptop')
-                self.assertIsNone(laptop['hardware'])
-                self.assertIsNone(laptop['hardwareObservedAt'])
-                self.assertIsNone(laptop['lastProbeAt'])
+                self.assertEqual([n['id'] for n in nodes],['pc','laptop','ai-box'])
+                for remote in nodes[1:]:
+                    self.assertIsNone(remote['hardware'])
+                    self.assertIsNone(remote['hardwareObservedAt'])
+                    self.assertIsNone(remote['lastProbeAt'])
                 self.assertTrue(identified_native_attempt(record));self.assertEqual(record['mode'],'capture_only')
                 window.publish_native_owner(child,ticks,profile,sha,previous_sha256=None)
                 card=initialized['link']['cardId']

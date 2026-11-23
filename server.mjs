@@ -28,7 +28,7 @@ import { createTrialSessionManager, createTrialHttpGuard, SESSION_COOKIE_NAME } 
 import { createRelayLink } from './lib/relay-link.mjs';
 import { createRelayHttpLink } from './lib/relay-http.mjs';
 import { createNodeProbeReader } from './lib/node-probes.mjs';
-import { withTrippHardware } from './lib/tripp-hardware.mjs';
+import { withRemoteHardware } from './lib/tripp-hardware.mjs';
 import { createLocalInference, createDisabledLocalAdapter } from './lib/local-inference.mjs';
 import {createRookRuntime, nativeRookOptions} from './lib/workroom-rook.mjs';
 import {writerQuiescenceBlockers} from './lib/workroom-claim-policy.mjs';
@@ -159,8 +159,9 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     status: 'not_configured', source: 'none', scope: 'standalone', nodes: [] });
   const baseNodeProbes = standalone ? { snapshot: absentNodes, refresh: async () => absentNodes() }
     : createNodeProbeReader(nodeProbeTestOptions);
-  const nodeProbes = !standalone && !nodeProbeTestOptions && process.env.MESH_TRIPP_HARDWARE === '1'
-    ? withTrippHardware(baseNodeProbes) : baseNodeProbes;
+  const nodeProbes = standalone || nodeProbeTestOptions ? baseNodeProbes : withRemoteHardware(baseNodeProbes, {
+    laptop: process.env.MESH_TRIPP_HARDWARE === '1', aiBoxHost: process.env.MESH_AI_BOX_WINDOWS_SENSOR_HOST,
+  });
   const fixedInferenceConfig = inferenceConfig === undefined ? undefined : structuredClone(inferenceConfig);
   const directory = await confinedPath(dataDir);
   const release = releaseInfo(ROOT, dataDir);
