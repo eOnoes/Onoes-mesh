@@ -6,7 +6,9 @@ The November 22 installer predates the LAN dashboard for Tripp’s desktop. Its 
 
 On a restored copy, all eight native gateway checks passed with the five merged files. At phone width, the enrolled test board displayed **Rook · paused** in Relay. Expanding it showed that automatic assignments were off, and the response used by the screen confirmed the scheduler was disabled. Workroom card links survived opening, editing and reloading. Reversing the five changes restored all 446 projected phone-release source files byte for byte.
 
-Before live enrollment, bind the three startup profiles to the actual installed release and board and review the resulting change with Eddie. The rehearsal used a disposable enrollment. The live board still needs its own enrollment and recovery window before automatic work can begin.
+The three proposed startup profiles now match the installed Workroom board identity and the projected phone release. A Windows rehearsal used disposable profiles to exercise the normal recovery command. Workroom reopened the card and Relay showed Rook paused during offline capture, after reconnection, and in read-only fallback. Mind recorded the offline edit with its original event ID and receipt. A subsequent recovery check kept the same gateway running.
+
+The private review packet assumes the phone update is installed first and the board still has its single existing project link. Recheck the installed release and board before applying the packet. If another card has been linked, regenerate the profiles for the current links. Eddie's enrollment decision and the historical job recovery are still outstanding.
 
 ## Clarification notices in Relay
 
