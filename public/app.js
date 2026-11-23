@@ -1153,7 +1153,10 @@ window.meshWorkroom = Object.freeze({
     if (!admitted || !proofAvailable()) return;
     handledTaskLink=linkedTaskId();
     if (task) selectTask(task, true);
-    activate($('tab-workroom'));
+    activate($('tab-workroom'), false, !task);
+  },
+  dismissTaskLink(id){
+    if (id && id === handledTaskLink && id === linkedTaskId()) activate($('tab-workroom'));
   },
   onClear: listener => { clearWorkroom = listener; }
 });

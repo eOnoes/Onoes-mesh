@@ -52,7 +52,10 @@ def check_card_links():
                 expect(sheet).to_be_visible()
                 expect(sheet).to_contain_text('Build checklist fixture')
                 expect(page.locator('#inspection-heading')).to_contain_text('Build checklist fixture')
-                expect(page).to_have_url(base + '/#workroom')
+                expect(page).to_have_url(base + '/#task=' + first)
+                page.reload()
+                expect(sheet).to_be_visible()
+                expect(sheet).to_contain_text('Build checklist fixture')
                 sheet.get_by_role('button', name='Edit card', exact=True).tap()
                 goal = sheet.get_by_label('Goal', exact=True)
                 goal.fill('Unsaved phone draft')
@@ -61,8 +64,12 @@ def check_card_links():
                 expect(page).to_have_url(base + '/#task=' + second)
                 sheet.get_by_role('button', name='Close card', exact=True).tap()
                 expect(sheet).to_contain_text('Second saved card')
-                expect(page).to_have_url(base + '/#workroom')
+                expect(page).to_have_url(base + '/#task=' + second)
                 sheet.get_by_role('button', name='Close card', exact=True).tap()
+                expect(page).to_have_url(base + '/#workroom')
+                page.reload()
+                expect(page.locator('.workroom-card')).to_have_count(2)
+                expect(sheet).to_have_count(0)
                 missing = '00000000-0000-4000-a000-000000000000'
                 page.evaluate('(id)=>{location.hash="task="+id}', missing)
                 expect(page.get_by_text('This card is unavailable. Choose another card from the board.', exact=True)).to_be_visible()
@@ -81,7 +88,7 @@ def check_card_links():
                 writes = [(m, p) for m, p in calls if m in ('PATCH', 'PUT', 'DELETE') or (m == 'POST' and any((t in p for t in ('dispatch', 'claim', 'assign', 'send', 'approve'))))]
                 assert not writes, writes
                 browser.close()
-                print('PASS: locked link, exact sheet and inspector after admission, in-page link, preserved draft, missing card, dismissal with unavailable history, no work dispatched.')
+                print('PASS: admission, open-card reload, dismissed-card reload, second link during editing, missing card and unavailable history. No work dispatched.')
         finally:
             proc.stdin.close()
             try:

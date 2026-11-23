@@ -56,7 +56,13 @@ if(root){
   const dragHelp=el('p','Drag anywhere on a card with your mouse. On your phone, hold briefly, then drag. Tap once for details; swipe without holding to scroll.');
   const details=el('dialog');details.className='workroom-sheet';details.setAttribute('aria-label','Task details');
   let returnFocus=null;
-  function closeDetails(){viewEpoch++;paintCardPolicy=null;clearTimeout(followTimer);const id=selected?.id;details.close();selected=null;pending=null;(Array.from(board.querySelectorAll('[data-task-id]')).find(node=>node.dataset.taskId===id)||returnFocus)?.focus();}
+  function closeDetails(){
+    viewEpoch++;paintCardPolicy=null;clearTimeout(followTimer);
+    const id=selected?.id;
+    window.meshWorkroom.dismissTaskLink?.(id);
+    details.close();selected=null;pending=null;
+    (Array.from(board.querySelectorAll('[data-task-id]')).find(node=>node.dataset.taskId===id)||returnFocus)?.focus();
+  }
   details.addEventListener('cancel',event=>{if(busy){event.preventDefault();return;}event.preventDefault();closeDetails();});
   root.append(heading,description,refresh,projectFilter,dragHelp,maintenanceNotice,status,board,details);
   // Keep the existing admission control visible when the board is locked.
