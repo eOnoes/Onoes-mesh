@@ -9,7 +9,6 @@ import subprocess
 import sys
 
 MESH = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(MESH / "test"))
 sys.path.insert(0, str(MESH / "integrations/mind-recovery-candidate"))
 
 from mcp.shared.memory import create_connected_server_and_client_session
@@ -23,10 +22,12 @@ from onoes_mind.recall_binding import RecallBinding, prepare_mesh_principal, pre
 from project_events_candidate import EventBinding, ProjectEventsCandidate
 
 
-def read_revised_fixture(tmp_path):
-    run = subprocess.run(["node", str(MESH / "test/print-card-events.mjs")], cwd=MESH, check=True,
+def read_revised_fixture(tmp_path, *, keep_board=False):
+    options = ["--keep-fixture"] if keep_board else []
+    run = subprocess.run(["node", str(MESH / "test/print-card-events.mjs"), *options], cwd=tmp_path,
                          capture_output=True, encoding="utf-8", timeout=30,
                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    assert run.returncode == 0, run.stderr
     first, revised = json.loads(run.stdout)
     assert [first["kind"], revised["kind"]] == ["created", "progress"]
     assert "PRIVATE" not in run.stdout
@@ -104,9 +105,7 @@ def test_offline_worker_can_use_only_the_selected_assignment_brief(tmp_path):
     image = os.environ.get("MESH_TEST_WORKER_IMAGE")
     if not image:
         pytest.skip("Set MESH_TEST_WORKER_IMAGE to the local Node image digest for this Docker check")
-    from isolated_print_worker import check_assignment
-
-    record = read_revised_fixture(tmp_path)
+    record = read_revised_fixture(tmp_path, keep_board=True)
     assert record["project_id"] == "project-A"
     brief = {
         "project": record["project_id"],
@@ -114,6 +113,11 @@ def test_offline_worker_can_use_only_the_selected_assignment_brief(tmp_path):
         "source": record["provenance"][0]["ref"],
         "spec": json.loads(record["claim"])["goal"],
     }
-    result = check_assignment(image, brief)
-    assert result == {"project": "project-A", "revision": brief["revision"], "source": brief["source"],
-                      "cad": "tray-v2.step", "minMm": 94.8, "maxMm": 95.2}
+    run = subprocess.run(["node", str(MESH / "test/print-worker-roundtrip.mjs"), sys.executable],
+                         cwd=tmp_path, input=json.dumps(brief), encoding="utf-8",
+                         capture_output=True, timeout=120)
+    assert run.returncode == 0, run.stderr
+    receipt = json.loads(run.stdout)
+    assert receipt["result"] == "tray-v2.step: 94.8–95.2 mm"
+    assert receipt["evidence"] == f'{brief["source"]} / {brief["revision"]}'
+    assert receipt["dispatches"] == 1 and receipt["decision"] == "pending"
