@@ -37,3 +37,33 @@ test('refresh shares the SSH read, clears stale values, and skips offline or amb
   assert.equal(calls,2);
   assert.deepEqual(reader.snapshot().nodes[0],{id:'pc'});
 });
+
+test('a pending refresh preserves a fresh sample with its original expiry', async () => {
+  let time = 1000, sample = async () => ({cpuPct:25});
+  let online = true, failDiscovery = false;
+  const view = () => ({nodes:[{id:'laptop', status:'ready', tailscaleOnline:online, observationAvailability:'available'}]});
+  const reader = withTrippHardware({
+    snapshot:view,
+    async refresh() { if (failDiscovery) throw Error('discovery failed'); return view(); }
+  }, {clock:() => time, sample:() => sample()});
+  const first = (await reader.refresh()).nodes[0];
+  let finish;
+  sample = () => new Promise(resolve => { finish = resolve; });
+  time += 100;
+  const pending = reader.refresh();
+  await Promise.resolve();
+  assert.deepEqual(reader.snapshot().nodes[0], first);
+  time += 29900;
+  assert.equal(reader.snapshot().nodes[0].hardware, null);
+  finish({cpuPct:40});
+  assert.equal((await pending).nodes[0].hardware.cpuPct, 40);
+  online = false;
+  await reader.refresh();
+  online = true;
+  assert.equal(reader.snapshot().nodes[0].hardware, null);
+  sample = async () => ({cpuPct:50});
+  await reader.refresh();
+  failDiscovery = true;
+  await assert.rejects(reader.refresh(), /discovery failed/);
+  assert.equal(reader.snapshot().nodes[0].hardware, null);
+});
