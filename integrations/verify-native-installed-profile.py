@@ -62,7 +62,7 @@ async def read_gateway(home, intent):
             or origin.username is not None or origin.password is not None):
         raise RuntimeError('Expected existing loopback gateway before authentication')
     ticket = await asyncio.to_thread(_session_ticket, home, discovery.endpoint,
-                                    purpose='interactive')
+                                    purpose='interactive', refuse_restart_wait=True)
     url, protocols = gateway_ws_target(discovery.endpoint, ticket)
     parsed = urlsplit(url)
     if (parsed.scheme != 'ws' or parsed.hostname not in ('127.0.0.1', '::1', 'localhost')
@@ -71,9 +71,12 @@ async def read_gateway(home, intent):
     async with asyncio.timeout(20):
         async with ClientSession() as client:
             async with client.ws_connect(url, protocols=protocols, max_msg_size=65536) as ws:
+                if not protocols or ws.protocol != protocols[0]:
+                    raise RuntimeError('Native protocol was not accepted')
                 await ws.send_json({'jsonrpc': '2.0', 'id': 1, 'method': 'prompt.lookup',
                                     'params': {'session_id': intent['sessionId'],
-                                               'submission_id': 'codex-never-submitted'}})
+                                               'submission_id': 'codex-never-submitted',
+                                               'include_result': False}})
                 while True:
                     reply = await ws.receive_json()
                     if reply.get('id') != 1:

@@ -2,11 +2,16 @@
 
 ## Current managed Echo installation
 
-The shared gateway serves Echo in Relay and Telegram. The Windows launcher and
-the package manager's selected Python environment together determine which
-worker code actually runs. The current chat gateway lacks the exact-submission
-lookup that Workroom needs to recover a lost reply. Check the selected
-environment before relying on an earlier process-tracking result.
+The shared gateway serves Echo in Relay and Telegram. Its Windows launcher puts
+the Hermes source checkout first on the Python search path. The package manager
+also provides a separate snapshot and dependencies. Checking the snapshot alone
+gave an incorrect answer about the running gateway.
+
+On November 22, the Workroom transport used the launcher's checkout and queried
+the existing gateway for the exact never-submitted test session. The response
+matched the saved closed profile and reported process tracking. The session had
+zero admissions before and after the lookup. The installed gateway already
+supports this check. No gateway replacement or restart is needed for it.
 
 The five-file update and its original version both passed offline builds using
 the installed dependency lock, pinned tools and all 16 selected extras. The
@@ -17,10 +22,10 @@ confirmed both added modules were absent. Ordinary package repair replays the
 previous source snapshot. Rebuilding from the mutable checkout could include
 other local changes.
 
-The open deployment check is selecting the candidate through the ordinary
-Windows startup path and switching back to the original through that same path.
-Run this on a disposable installation first. Recheck the shared gateway's active
-work immediately before an approved live switch.
+For future upgrades, verify the running gateway through the same Workroom
+transport after checking the launcher's source root. The current result proves
+lookup capability. Historical job holds and production worker enrollment have
+their own checks.
 
 ## Earlier three-file installation
 

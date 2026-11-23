@@ -66,7 +66,7 @@ class InstalledReadinessTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(changes=changes), self.assertRaises(RuntimeError):
                 verifier.validate({**snapshot, **changes}, intent)
 
-    async def observe(self, origin, target='ws://127.0.0.1:9120/ws'):
+    async def observe(self, origin, target='ws://127.0.0.1:9120/ws', negotiated='synthetic-protocol'):
         intent, snapshot = self.snapshot()
         calls = []
         modules = {name: ModuleType(name) for name in ('hermes_cli', 'hermes_cli.gateway_client', 'hermes_cli.gateway_runtime', 'aiohttp')}
@@ -74,11 +74,13 @@ class InstalledReadinessTests(unittest.IsolatedAsyncioTestCase):
         endpoint = SimpleNamespace(api_origin=origin)
         modules['hermes_cli.gateway_runtime'].discover_gateway_endpoint = lambda *a, **kw: SimpleNamespace(state='ready', endpoint=endpoint)
         def ticket(*a, **kw):
+            self.assertIs(kw.get('refuse_restart_wait'), True)
             calls.append('ticket')
             return 'synthetic-only-ticket'
         modules['hermes_cli.gateway_client']._session_ticket = ticket
         modules['hermes_cli.gateway_client'].gateway_ws_target = lambda *a: (target, ['synthetic-protocol'])
         class Socket:
+            protocol = negotiated
             async def __aenter__(self): return self
             async def __aexit__(self, *args): pass
             async def send_json(self, request): calls.append(request)
@@ -108,8 +110,14 @@ class InstalledReadinessTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(calls[0], 'ticket')
         self.assertEqual(calls[1]['method'], 'prompt.lookup')
         self.assertEqual(calls[1]['params']['submission_id'], 'codex-never-submitted')
+        self.assertIs(calls[1]['params']['include_result'], False)
         self.assertEqual(len(calls), 2)
         calls, result = await self.observe('http://127.0.0.1:8642', 'ws://example.com/ws')
+        self.assertEqual(calls, ['ticket'])
+        self.assertIsNone(result)
+
+    async def test_protocol_mismatch_stops_before_lookup(self):
+        calls, result = await self.observe('http://127.0.0.1:8642', negotiated=None)
         self.assertEqual(calls, ['ticket'])
         self.assertIsNone(result)
 
