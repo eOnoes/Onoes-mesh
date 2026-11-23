@@ -6,15 +6,16 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from uuid import uuid4
 
 
-PROGRAM = r"""
+CALCULATOR = r"""
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
-const {brief, taskId, sendId} = JSON.parse(fs.readFileSync(0, 'utf8'));
+function calculate({brief, taskId, sendId}) {
 assert.deepEqual(Object.keys(brief).sort(), ['project', 'revision', 'source', 'spec']);
 assert.equal(process.getuid(), 65534);
 assert.equal(process.getgid(), 65534);
@@ -22,11 +23,13 @@ const spec = /^Tray width (\d+) mm ±([\d.]+) mm\. CAD ([\w.-]+)$/.exec(brief.sp
 assert.ok(spec);
 const width = Number(spec[1]), tolerance = Number(spec[2]);
 assert.throws(() => fs.readFileSync('/parent-only-marker'), {code:'ENOENT'});
-process.stdout.write(JSON.stringify({schema:'workroom-update/v1', taskId, sendId, goal:brief.spec,
+return {schema:'workroom-update/v1', taskId, sendId, goal:brief.spec,
     checklist:[{id:'fit', text:'Calculate the tray width range', status:'done'}],
     result:spec[3]+': '+(width-tolerance)+'–'+(width+tolerance)+' mm',
-    evidence:brief.source+' / '+brief.revision}));
+    evidence:brief.source+' / '+brief.revision};
+}
 """
+PROGRAM = CALCULATOR + "process.stdout.write(JSON.stringify(calculate(JSON.parse(fs.readFileSync(0,'utf8')))));"
 
 
 def check_assignment(image, assignment):
@@ -86,8 +89,13 @@ def start_with_windows_launcher(checkout, container, assignment):
             if child.returncode:
                 raise RuntimeError(f"Scoped container start failed: {stderr.decode('utf-8', 'replace')}")
         observed = scope.retire()
+        # Docker's CLI may exit just before Windows reports its last descendant gone.
+        deadline = time.monotonic() + 5
+        while observed["state"] == "held" and time.monotonic() < deadline:
+            time.sleep(0.05)
+            observed = scope.observe()
         assert observed["admissionId"] == admission and observed["sessionId"] == assignment["sendId"]
-        assert observed["processTreeEnded"] and observed["assignmentLaunchSealed"]
+        assert observed["processTreeEnded"] and observed["assignmentLaunchSealed"], observed["state"]
         return stdout.decode("utf-8")
     finally:
         scope.dispose()
@@ -95,10 +103,17 @@ def start_with_windows_launcher(checkout, container, assignment):
 
 def run_unmounted(docker, image, metadata, assignment):
     label = "mesh.test.print-worker=" + uuid4().hex
+    delegate_python = os.environ.get("MESH_TEST_DELEGATE_PYTHON")
+    checkout = os.environ.get("MESH_TEST_WINDOWS_HERMES_CHECKOUT")
+    entry = PROGRAM
+    if delegate_python:
+        if os.name != "nt" or not checkout:
+            raise ValueError("The delegation trial requires Windows and MESH_TEST_WINDOWS_HERMES_CHECKOUT")
+        entry = CALCULATOR + Path(__file__).with_name("print-acp-peer.cjs").read_text(encoding="utf-8")
     container = docker("create", "--pull=never", "--interactive", "--network=none", "--read-only",
                        "--user=65534:65534", "--cap-drop=ALL", "--security-opt=no-new-privileges",
                        "--pids-limit=32", "--memory=128m", "--cpus=0.5", "--label", label,
-                       "--entrypoint=node", image, "-e", PROGRAM)
+                       "--entrypoint=node", image, "-e", entry)
     assert re.fullmatch("[0-9a-f]{64}", container)
     try:
         actual, = json.loads(docker("inspect", container))
@@ -109,8 +124,11 @@ def run_unmounted(docker, image, metadata, assignment):
         assert not actual["Mounts"] and not host.get("Devices") and not host.get("CapAdd")
         assert host["CapDrop"] == ["ALL"] and "no-new-privileges" in host["SecurityOpt"]
         assert config["User"] == "65534:65534" and config["Env"] == metadata["Config"]["Env"]
-        checkout = os.environ.get("MESH_TEST_WINDOWS_HERMES_CHECKOUT")
-        if checkout:
+        if delegate_python:
+            from hermes_print_delegation import delegate
+            output = delegate(delegate_python, checkout, container, assignment)
+            assert docker("wait", container) == "0"
+        elif checkout:
             output = start_with_windows_launcher(checkout, container, assignment)
         else:
             output = docker("start", "--attach", "--interactive", container, stdin=json.dumps(assignment))
@@ -123,4 +141,6 @@ def run_unmounted(docker, image, metadata, assignment):
 
 
 if __name__ == "__main__":
+    # The cross-repository test invokes Python in isolated mode.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
     print(json.dumps(check_assignment(os.environ["MESH_TEST_WORKER_IMAGE"], json.load(sys.stdin))))

@@ -38,6 +38,16 @@ The print handoff fixture locks the selected project, source, revision and spec 
 
 On Windows, setting `MESH_TEST_WINDOWS_HERMES_CHECKOUT` in the existing Docker test exercises the installed Hermes assignment launcher with a disposable admission. The test checks the Windows client process has ended and separately checks the container exited successfully. This verifies the launcher can run that isolated calculation. Production worker routing, the live dispatch hold and Echo reader enrollment each remain separate.
 
+The same cross-project check can exercise Hermes' public `delegate_task` entry.
+Set `MESH_TEST_DELEGATE_PYTHON` to the installed Hermes interpreter alongside
+the Windows checkout and local image settings above. The test creates a temporary
+Hermes profile, starts a child agent and routes that child's prompt to the
+offline calculator over ACP. The calculator returns its result only after its
+ordinary read request for a disposable workspace file is refused. Its provider
+discards host tool definitions and rejects tool-call output. The original card
+must retain the result after reopening. This tests delegation and delivery.
+The model-backed route and Echo's production profile still require qualification.
+
 ### Adding one project to an existing writer
 
 The offline owner operation `add_project` takes the complete reviewed list of project IDs and labels and one explicit `addedProjectId`. It requires a separately approved profile, fresh output paths, and exclusive access to the writer. Existing active projects must still match. A revoked credential or a previously registered project cannot be used for this operation.
