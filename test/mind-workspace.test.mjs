@@ -92,3 +92,28 @@ test('an unknown configured memory source cannot enable a read in the actual vie
  // Query edits can replace the status text, but cannot make the unverified source readable.
  assert.equal(query.disabled,true);
 });
+
+test('Workroom recall shows readable shared fields and retains the full claim and provenance', async () => {
+ const fact = {source:'workroom', cardId:'card-23', title:'<b>Printer clearance</b>', stage:'ready',
+  owner:'nims', goal:'Check the hinges.', result:'First line.\n\nSecond line.', blocker:'', futureField:'kept'};
+ const claim = JSON.stringify(fact);
+ const record = {kind:'project_fact', source_class:'workroom', claim, record_id:'record-23', provenance:[{type:'workroom',ref:'card-23@2',content_hash:'ref-hash'}]};
+ const records = [record, {...record,claim:'{invalid'}, {...record,source_class:'operator'}];
+ const doc = {createElement:tag => Object.assign(new Element(), {tag})};
+ const root = new Element();
+ const view = createMindRecallView({root,doc,request:async route => route.endsWith('/status')
+  ? {configured:true,source:'canonical_ledger'} : {schema:'onoes-mind-recall/v1',source:'canonical_ledger',records}});
+ view.setAvailable(true);
+ const [,check,,query,read,,,results] = root.children[0].children;
+ await check.events.click(); query.value='clearance'; query.events.input(); await read.events.click();
+ const [,card,invalid,otherSource] = results.children;
+ const source = card.children.at(-1);
+ assert.equal(card.children[0].tag,'h3');
+ assert.equal(card.children[0].textContent,fact.title);
+ assert.deepEqual(card.children.filter(n=>n.tag==='strong').map(n=>n.textContent),['Stage','Owner','Goal','Result']);
+ assert.equal(card.children.find(n=>n.textContent===fact.result).style.whiteSpace,'pre-wrap');
+ assert.equal(source.tag,'details'); assert.equal(source.children[0].tag,'summary');
+ assert.ok(text(source).includes(claim)); assert.ok(text(source).includes('card-23@2'));
+ assert.equal(invalid.children[0].textContent,'{invalid');
+ assert.equal(otherSource.children[0].textContent,claim);
+});

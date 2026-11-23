@@ -88,6 +88,44 @@ export function recallConnection(status){
  return {configured:false,source:'not_configured',message:status?.configured===true?'Memory reader source could not be verified. No records were read.':'Onoes-Mind reader is not connected. Saved Workroom context remains available.'};
 }
 
+function workroomFact(record) {
+ if (record.kind !== 'project_fact' || record.source_class !== 'workroom' || typeof record.claim !== 'string') return null;
+ try {
+  const fact = JSON.parse(record.claim);
+  if (fact?.source !== 'workroom' || typeof fact.cardId !== 'string' || !fact.cardId.trim() ||
+      typeof fact.title !== 'string' || !fact.title.trim()) return null;
+  return fact;
+ } catch {
+  return null;
+ }
+}
+
+function renderRecallRecord(record, node) {
+ const card = node('article');
+ card.className = 'box section-gap';
+ const fact = workroomFact(record);
+ if (fact) {
+  const title = node('h3', fact.title);
+  title.style.overflowWrap = 'anywhere';
+  card.append(title);
+  for (const [key, label] of [['stage','Stage'], ['owner','Owner'], ['goal','Goal'], ['blocker','Blocker'], ['result','Result']]) {
+   if (typeof fact[key] !== 'string' || !fact[key].trim()) continue;
+   const body = node('p', fact[key]);
+   body.style.whiteSpace = 'pre-wrap';
+   card.append(node('strong', label), body);
+  }
+ } else {
+  card.append(node('p', record.claim));
+ }
+ const source = node('details');
+ source.append(node('summary','Source details'), node('p',`Record ${record.record_id} · project ${record.project_id} · scope ${record.scope_id}`),
+  node('p',`Source class ${record.source_class} · observed ${record.observed_at || 'not recorded'} · hash ${record.payload_hash}`));
+ for (const item of record.provenance || []) source.append(node('p', `${item.type}: ${item.ref} · ${item.content_hash}`));
+ if (fact) source.append(node('p', record.claim));
+ card.append(source);
+ return card;
+}
+
 export function createMindRecallView({root,request,doc=globalThis.document}){
  const node=(tag,text='')=>{const n=doc.createElement(tag);n.textContent=text;if(tag==='p')n.style.overflowWrap='anywhere';return n;};
  const section=node('section');section.className='box section-gap';
@@ -117,7 +155,7 @@ export function createMindRecallView({root,request,doc=globalThis.document}){
    if(snapshot?.schema!=='onoes-mind-recall/v1'||snapshot.source!=='canonical_ledger'||!Array.isArray(snapshot.records))throw Error('Invalid memory response');
    const sourceNote=readerSource==='disposable_fixture'?'Synthetic fixture only; source claims are not independent verification.':'Read-only shared project facts; source claims are not independent verification.';
    results.append(node('p',`Source: Onoes-Mind canonical ledger · read ${snapshot.observedAt} · request ${snapshot.requestId}. ${sourceNote}`));
-   for(const record of snapshot.records){const card=node('article');card.className='box section-gap';card.append(node('p',`Record ${record.record_id} · project ${record.project_id} · scope ${record.scope_id}`),node('p',record.claim),node('p',`Source class ${record.source_class} · observed ${record.observed_at||'not recorded'} · hash ${record.payload_hash}`));for(const p of record.provenance||[])card.append(node('p',`${p.type}: ${p.ref} · ${p.content_hash}`));results.append(card);}
+   for (const record of snapshot.records) results.append(renderRecallRecord(record, node));
    if(!snapshot.records.length)results.append(node('p','No matching records in the reader’s permitted scopes.'));
    state.textContent='Memory snapshot retrieved. Read again for corrections or deletion updates.';
   }catch{if(turn===epoch)reset('Memory read unavailable or invalid. Previous results cleared.');}
