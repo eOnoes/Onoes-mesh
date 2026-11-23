@@ -100,6 +100,42 @@ test('opening and reading an older database never creates recovery tables', asyn
   } finally { f.close(); }
 });
 
+test('a new managed team accepts verified historical closures and refuses a changed original on resume', async () => {
+  const f = await fixture();
+  const previous = process.env.MESH_SIMPLE_FLOW;
+  try {
+    await f.store.workroom.legacyRecovery.commit(await issueLegacyRecoveryPermit(f.options()));
+    f.resumeDispatch();
+    process.env.MESH_SIMPLE_FLOW = '1';
+    const room = f.store.workroom;
+    let t = room.get(f.next.id);
+    t = room.save(t.id, {project:'Recovery', criteria:'Verify one file', owner:'echo',
+      team:'local_build', stage:'ready', revision:t.workroom.revision});
+    t = room.saveProgress(t.id, {goal:'Check one file', checklist:[{id:'check',text:'Compare contents',status:'pending'}],
+      result:'', evidence:'', reviewer:'', decision:'pending', revision:t.progress.revision, taskRevision:t.revision, briefRevision:t.workroom.revision});
+    t = room.savePlan(t.id, {lead:'echo', spec:'Compare contents', workspace:f.dir, allowedFiles:'check.txt',
+      checks:'Read the file', boundaries:'Only the fixture file', workerId:'echo', reviewerId:'nims', state:'locked',
+      revision:0, taskRevision:t.revision, briefRevision:t.workroom.revision, progressRevision:t.progress.revision}).task;
+    const agents = [{id:'echo',backend:'hermes',conversation_id:'builder'}, {id:'nims',backend:'codex',conversation_id:'reviewer'}];
+    function action(kind) {
+      return room.automation.action(t.id, {action:kind, revision:t.automation?.revision ?? 0,
+        planRevision:t.plan.revision, taskRevision:t.revision, briefRevision:t.workroom.revision,
+        progressRevision:t.progress.revision}, agents, f.dir).task;
+    }
+    t = action('start');
+    assert.equal(t.automation.state,'active');
+    t = action('pause');
+    f.db.prepare("UPDATE workroom_sends SET text=text || ' changed' WHERE id=?").run(f.ids[0]);
+    assert.throws(() => action('resume'), /Resolve the worker/);
+    assert.equal(room.get(t.id).automation.state,'paused');
+    assert.equal(room.get(t.id).messages.length,0);
+  } finally {
+    if (previous === undefined) delete process.env.MESH_SIMPLE_FLOW;
+    else process.env.MESH_SIMPLE_FLOW = previous;
+    f.close();
+  }
+});
+
 test('pending intake already present at baseline cannot be blessed by a fresh recovery plan', async () => {
   const f = await fixture();
   try {

@@ -8,7 +8,18 @@ function fixture({changes=0,blocked=false}={}){const store=openTaskStore(join(mk
  const runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,simpleFlow:true});
  return {store,runner,sends,async run(t,ticks=8){store.workroom.automation.action(t.id,{action:'start',revision:t.automation?.revision??0,planRevision:t.plan.revision,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision},agents,process.cwd());for(let i=0;i<ticks;i++)await runner.tick();return store.workroom.get(t.id);},async close(){await runner.close();store.close();}};
 }
-test('independent approved review moves managed work into Done without accepting it for Eddie',async()=>{const f=fixture();try{const t=await f.run(ready(f.store));assert.equal(t.workroom.stage,'done');assert.equal(t.progress.decision,'approved');assert.equal(t.automation.state,'completed');assert.notEqual(t.flow?.ownerDecision,'accepted');assert.equal(f.sends.length,2);}finally{await f.close();}});
+test('independent approved review moves managed work into Done without accepting it for Eddie',async()=>{
+  const f=fixture();
+  try {
+    const t=await f.run(ready(f.store));
+    assert.equal(t.workroom.stage,'done');
+    assert.equal(t.progress.decision,'approved');
+    assert.equal(t.automation.state,'completed');
+    assert.equal(t.history.at(-1).kind,'team_completed');
+    assert.notEqual(t.flow?.ownerDecision,'accepted');
+    assert.equal(f.sends.length,2);
+  } finally { await f.close(); }
+});
 test('managed correction retains scope, uses fresh sends and completes after fresh review',async()=>{const f=fixture({changes:1});try{const t=await f.run(ready(f.store),16);assert.equal(t.workroom.stage,'done');assert.equal(f.sends.length,4);assert.equal(new Set(f.sends.map(s=>s.id)).size,4);assert.ok(t.automation.operations<=8);}finally{await f.close();}});
 test('repeated reviewer findings stop after three passes with a dated question',async()=>{const f=fixture({changes:9});try{const t=await f.run(ready(f.store),24);assert.notEqual(t.workroom.stage,'done');assert.equal(t.flow.state,'clarification');assert.ok(t.flow.askedAt);assert.equal(f.sends.length,6);assert.equal(t.automation.state,'paused');}finally{await f.close();}});
 test('blocked worker publishes its actual clarification without starting a reviewer',async()=>{const f=fixture({blocked:true});try{const t=await f.run(ready(f.store));assert.equal(t.flow.question,'Which output format should this request produce?');assert.equal(f.sends.length,1);assert.notEqual(t.workroom.stage,'done');}finally{await f.close();}});

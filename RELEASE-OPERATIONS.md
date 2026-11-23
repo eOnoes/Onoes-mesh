@@ -1,3 +1,11 @@
+## November 22, 2026 | Starting a new team after recovery
+
+The installed team-start check could refuse a fresh card even after the same historical sends passed the recovery check at dispatch. The source fix checks each earlier send against its verified recovery record when starting or resuming a different card. A changed historical send still blocks the team. The original job outcome stays unknown.
+
+On a recovered board copy in managed mode, a local builder stand-in wrote one file and a separate reviewer stand-in checked the saved contents. The new card reached Done, recorded team completion, and reopened by direct link at phone width. All 15 pre-existing cards and eight recovery receipts matched their original state. Manual-review mode now records the team as awaiting review. New paused runs still record a pause.
+
+Before a real post-recovery run, verify this fix is installed and the dispatcher has been deliberately resumed. Keep the frozen maintenance plan bound to its reviewed source version. This rehearsal used local stand-ins and did not run production agents.
+
 ## November 22, 2026 | Installed phone release
 
 The running Workroom now opens a saved card from its direct link and includes the seven-step board guide. The 15-file update comes from `bdfaa31`. A 390 px touch browser opened every saved card, advanced through the guide, and returned to the board after visiting all seven Mesh tabs over the private connection.

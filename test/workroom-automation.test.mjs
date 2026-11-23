@@ -41,6 +41,7 @@ test('automatic cycle dispatches one builder and one independent reviewer, then 
   let t=ready(store);store.workroom.automation.action(t.id,action(t),agents,process.cwd());
   for(let i=0;i<4;i++)await runner.tick();t=store.workroom.get(t.id);
   assert.equal(relay.sends.length,2);assert.equal(t.automation.state,'needs_review');assert.equal(t.progress.decision,'pending');assert.equal(t.status,'open');assert.equal(t.agentReviews.length,1);assert.equal(t.agentReviews[0].applied,false);
+  assert.equal(t.history.at(-1).kind,'team_needs_review');
   await runner.tick();assert.equal(relay.sends.length,2);
  }finally{await runner.close();store.close();}
 });
