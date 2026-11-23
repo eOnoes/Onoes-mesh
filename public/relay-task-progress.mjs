@@ -5,7 +5,15 @@ export function relayProgressSummary(task){
     if(typeof step.text!=='string'||!['pending','working','done','blocked'].includes(step.status))throw Error('Saved task checklist is invalid.');
     return {text:step.text,status:step.status};
   });
-  return {id:task.id,title:task.title,goal:task.progress.goal,steps,done:steps.filter(step=>step.status==='done').length,
+  let notice = null;
+  if (task.workroom?.stage !== 'done' && task.status !== 'done') {
+    if (task.flow?.state === 'clarification') {
+      notice = {heading:'Clarification requested', text:task.flow.question};
+    } else if (task.automation?.state === 'paused') {
+      notice = {heading:'Team paused', text:task.automation.reason};
+    }
+  }
+  return {notice,id:task.id,title:task.title,goal:task.progress.goal,steps,done:steps.filter(step=>step.status==='done').length,
     total:steps.length,review:String(task.progress.decision||'pending')};
 }
 export function createRelayTaskProgress({root,button,request,document,timeoutMs=8000}){
@@ -23,9 +31,27 @@ export function createRelayTaskProgress({root,button,request,document,timeoutMs=
   function controls(){button.disabled=!available||paused;picker.disabled=!available||paused||reading;refresh.disabled=picker.disabled;}
   function empty(){const option=el('option','Choose a task…');option.value='';picker.replaceChildren(option);picker.value='';}
   function paint(){
-    body.replaceChildren();button.textContent=model?(model.total?`Task · ${model.done}/${model.total}`:'Task · no steps'):'Task progress';
-    if(!model)return;
-    body.append(el('h3',model.title),el('h4','Goal'),el('p',model.goal||'No goal saved yet.'),el('p',`${model.done} of ${model.total} saved steps done · Review: ${model.review}`));
+    body.replaceChildren();
+    if (!model) {
+      button.textContent = 'Task progress';
+      return;
+    }
+    const progressLabel = model.total ? model.done+'/'+model.total : 'no steps';
+    button.textContent = 'Task · '+(model.notice ? model.notice.heading : progressLabel);
+    body.append(el('h3',model.title));
+    if (model.notice) {
+      body.append(el('h4',model.notice.heading));
+      if (typeof model.notice.text === 'string' && model.notice.text.trim()) body.append(el('p',model.notice.text));
+    }
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(model.id)) {
+      const cardLink = el('a','Open card in Workroom');
+      cardLink.addEventListener('click', event => {
+        if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) root.close();
+      });
+      cardLink.setAttribute('href','#task='+model.id);
+      body.append(cardLink);
+    }
+    body.append(el('h4','Goal'),el('p',model.goal||'No goal saved yet.'),el('p',`${model.done} of ${model.total} saved steps done · Review: ${model.review}`));
     const list=el('ul');
     for(const step of model.steps){const symbol={pending:'○',working:'→',done:'✓',blocked:'!'}[step.status];list.append(el('li',`${symbol} ${step.status}: ${step.text}`));}
     body.append(list);if(!model.total)body.append(el('p','No checklist saved yet. Add steps in Workroom.'));

@@ -40,3 +40,29 @@ test('timed out read recovers single-flight and cannot overwrite a fresh result 
  await new Promise(resolve=>setTimeout(resolve,25));assert.ok(p.text().includes('may be stale'));
  stalled=false;await refresh(ui);assert.equal(reads,2);assert.equal(p.open.textContent,'Task · 1/2');release({task:source});await flush();assert.equal(p.open.textContent,'Task · 1/2');clear(ui);
 });
+
+test('Relay shows the current Workroom question and clears it when work resumes', async () => {
+  const current = {...task(), id:'a1234567-1234-4321-8123-0123456789ab', workroom:{stage:'working'},
+    flow:{state:'clarification',question:'Which input should Echo use?'}, automation:{state:'paused',reason:'Earlier team pause'}};
+  const ui = await harness(async route => route==='/api/workroom' ? {tasks:[current]} : {task:current});
+  enable(ui);
+  const view=parts(ui);
+  view.open.events.click(); await flush();
+  view.picker.value=current.id; view.picker.events.change(); await flush();
+  assert.equal(view.open.textContent,'Task · Clarification requested');
+  assert.ok(view.text().includes(current.flow.question));
+  assert.ok(!view.text().includes(current.automation.reason));
+  const link=walk(view.root).find(n=>n.textContent==='Open card in Workroom');
+  assert.equal(link.attrs.href,'#task='+current.id);
+  current.flow.state='working';
+  await refresh(ui);
+  assert.equal(view.open.textContent,'Task · Team paused');
+  assert.ok(!view.text().includes(current.flow.question));
+  assert.ok(view.text().includes(current.automation.reason));
+  current.workroom.stage='done';
+  await refresh(ui);
+  assert.ok(!view.text().includes(current.automation.reason));
+  assert.equal(view.open.textContent,'Task · 0/2');
+  clear(ui);
+  assert.ok(!view.text().includes('Open card in Workroom'));
+});

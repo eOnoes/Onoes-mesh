@@ -114,6 +114,11 @@ keyboard/background/rotation acceptance. No real message was sent.
 Relay now has a Task progress action. Choose a saved Workroom card to view its
 goal, checklist counts/statuses and recorded review. The selected record follows
 saved updates on the existing visible Relay poll; no task is selected automatically.
+
+When the selected task needs clarification, Relay shows the saved question. A
+paused team shows its saved reason. Open card in Workroom takes you to that
+specific card, where you can respond. Returning to Relay uses the phone's Back
+action. Simply opening the card reads its saved state.
 This view does not bind a card to a conversation, assign work or send context.
 Completed checklist steps never imply approved review. Selection/body remain in
 RAM and clear with the existing session/privacy lifecycle. The sheet's Done
