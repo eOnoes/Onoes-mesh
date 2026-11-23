@@ -92,6 +92,7 @@ function denied(result, status, clearsCookie = false) {
   assert.equal(result.status, status);
   assert.equal(result.text, '');
   assert.equal(result.headers['cache-control'], 'no-store');
+  if (status !== 503) assert.equal(result.headers['retry-after'], undefined);
   if (clearsCookie) assert.deepEqual(result.headers['set-cookie'], [`${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`]);
   else assert.equal(result.headers['set-cookie'], undefined);
 }
@@ -253,12 +254,32 @@ test('actual boundary limits JSON, methods and body claims without response payl
   denied(await f.request({ method: 'POST', cookie, csrf, body: deep }), 400);
 });
 
+test('session retry timing follows the earliest remaining expiry and rounds up', async t => {
+  const f = await fixture(t, { maxSessions: 2, ttlMs: 5000 });
+  const first = await f.bootstrap(); // expires at 6000
+  f.tick(2000);
+  await f.bootstrap(); // expires at 7000
+  f.tick(3999);
+  const attempt = () => f.request({ path: '/bootstrap', method: 'POST' });
+  const full = await attempt();
+  denied(full, 503);
+  assert.equal(full.headers['retry-after'], '3');
+  f.tick(5999);
+  assert.equal((await attempt()).headers['retry-after'], '1');
+  assert.equal((await f.request({cookie: first.cookie})).status, 200);
+  f.tick(6000);
+  const next = await attempt();
+  assert.equal(next.status, 201);
+  assert.equal(next.headers['retry-after'], undefined);
+});
+
 test('HTTP capacity rejects pressure, expiry frees space, logout and restart fail closed', async t => {
   const f = await fixture(t, { maxSessions: 1 });
   const first = await f.bootstrap();
   const log = t.mock.method(console, 'log', () => {});
   const refused = await f.request({ path: '/bootstrap', method: 'POST' });
   denied(refused, 503);
+  assert.equal(refused.headers['retry-after'], '1');
   assert.equal(log.mock.callCount(), 1);
   const event = JSON.parse(log.mock.calls[0].arguments[0]);
   assert.equal(event.status, refused.status);

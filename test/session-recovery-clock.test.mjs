@@ -3,6 +3,19 @@ import assert from 'node:assert/strict';
 import {mockUI,response,flush,bodyFor} from './app-ui-fixture.mjs';
 
 const token='r'.repeat(43),csrf='s'.repeat(43);
+test('sign-in uses the server wait hint in phone time and falls back when unavailable', async () => {
+  const now = Date.UTC(2026, 10, 23, 6, 0);
+  class PhoneDate extends Date { static now() { return now; } }
+  const expected = new Date(now + 7200 * 1000).toLocaleString(undefined, {weekday: 'short', hour: 'numeric', minute: '2-digit'});
+  for (const [hint, when] of [['7200', 'around ' + expected], ['5', 'in about a minute'], [null, 'later'], ['0', 'later'], ['86401', 'later'], ['invalid', 'later']]) {
+    const ui = mockUI({DateImpl: PhoneDate, responder: route => route === '/api/trial-session/bootstrap'
+      ? {...response(503, {}), headers: new Headers(hint ? {'Retry-After': hint} : {})}
+      : response(200, bodyFor(route))});
+    await ui.ids.get('demo-start').events.click();
+    assert.ok(ui.ids.get('message').textContent.endsWith('try connecting again ' + when + '.'));
+    assert.equal(ui.requests.filter(r => r.route.includes('/bootstrap')).length, 1);
+  }
+});
 for(const skew of [-90000,0,90000])test(`recovery accepts a server-issued challenge with phone clock offset ${skew}ms`,async()=>{
  const serverNow=Date.now();class PhoneDate extends Date {static now(){return serverNow+skew;}}
  const ui=mockUI({DateImpl:PhoneDate,responder:route=>{

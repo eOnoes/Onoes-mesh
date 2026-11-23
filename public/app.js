@@ -273,7 +273,16 @@ async function api(route, options = {}) {
     }
     if (!response.ok) {
       if (response.status === 409 && bootstrap) throw new Error('Local session already active. Start a fresh local session after clearing this tab.');
-      if (response.status === 503 && bootstrap) throw new Error('Mesh could not open a new session. Use an already connected Mesh tab, or try connecting again later.');
+      if (response.status === 503 && bootstrap) {
+        const hint = response.headers?.get('Retry-After');
+        let when = 'later';
+        if (/^[1-9]\d{0,4}$/.test(hint) && Number(hint) <= 86400) {
+          const seconds = Number(hint);
+          when = seconds < 60 ? 'in about a minute' : 'around ' + new Date(Date.now() + seconds * 1000)
+            .toLocaleString(undefined, {weekday: 'short', hour: 'numeric', minute: '2-digit'});
+        }
+        throw new Error('Mesh could not open a new session. Use an already connected Mesh tab, or try connecting again ' + when + '.');
+      }
       const rawError = await response.text(); checkRequest();
       if (response.status === 409 && route.startsWith('/api/tasks/')) { staleSelection = true; controls(); }
       let errorBody;
