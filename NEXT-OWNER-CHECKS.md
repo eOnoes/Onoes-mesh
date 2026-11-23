@@ -10,7 +10,7 @@
 | At the PC · supervised work | Arrange a quiet recovery window for the historical job holds. After recovery and route qualification, start one real card from the phone with Echo building and Nims reviewing. Rook activation follows that check. |
 | Inference · other machines | The installed release lists **Tripp's PC** and its reported model, **Nemotron-boat**. The TEMP update identifies the rebuilt Linux desktop as **omarchy**. Mesh observed it offline. After rollout and its next connection, use **Other machines → Check machine status** to verify its CPU and GPU temperatures. |
 
-Each TEMP gauge shows the highest supported reading for that component. A missing sensor shows **Temperature unavailable**. Readings expire after 30 seconds. Mesh uses the desktop’s existing trusted SSH login.
+The desktop update also reads RAM, CPU and GPU use over the same SSH connection. CPU use comes from two short samples. RAM use accounts for memory Linux can make available. On a multi-GPU desktop, Mesh shows the highest measured GPU usage and temperature. A missing temperature shows **Temperature unavailable**. Readings expire after 30 seconds.
 
 The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
 

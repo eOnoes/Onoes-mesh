@@ -13,11 +13,12 @@ test('only the uniquely identified online Omarchy Linux desktop can supply tempe
   const peer = {HostName:'omarchy', DNSName:dns+'.', OS:'linux', Online:true, TailscaleIPs:['100.64.0.9']};
   let calls = 0;
   const check = (...peers) => observeOmarchy(JSON.stringify({BackendState:'Running',Peer:{...peers}}),
-    'main.example.test', async target => {
-      assert.equal(target,dns); calls++; return {cpuTempC:49,gpuTempC:null};
+    'main.example.test', async (target,address) => {
+      assert.equal(target,dns); assert.equal(address,'100.64.0.9'); calls++; return {cpuTempC:49,gpuTempC:null};
     });
   for (const peers of [[], [peer,peer], [{...peer,OS:'windows'}], [{...peer,TailscaleIPs:['127.0.0.1']}],
-      [{...peer,DNSName:'laptop.example.test.'}], [{...peer,HostName:'old-laptop'}]]) {
+      [{...peer,DNSName:'laptop.example.test.'}], [{...peer,HostName:'old-laptop'}],
+      [peer,{...peer,HostName:'other',DNSName:'other.example.test.'}], [{...peer,TailscaleIPs:['100.64.0.9','100.64.0.10']}]]) {
     assert.deepEqual(await check(...peers),{state:'unknown'});
   }
   assert.deepEqual(await check({...peer,Online:false}),{state:'offline'});
@@ -39,6 +40,17 @@ test('Omarchy temperatures accept only labelled in-range measurements returned b
 });
 
 const box = {id:'ai-box',label:'AI box',dnsName:'fixture.tail8c4a75.ts.net',tailscaleIp:'100.64.0.23'};
+
+test('desktop SSH uses the observed private address for the existing host key', async () => {
+  await readOmarchyHardware('omarchy.example.test',async (_exe,args) => {
+    assert.ok(args.includes('Hostname=100.64.0.9'));
+    assert.ok(args.includes('StrictHostKeyChecking=yes'));
+    assert.ok(args.includes('UpdateHostKeys=no'));
+    assert.equal(args.at(-2),'omarchy.example.test');
+    return {stdout:'host omarchy'};
+  },'100.64.0.9');
+  await assert.rejects(readOmarchyHardware('omarchy.example.test',assert.fail,'127.0.0.1'),/Unexpected desktop address/);
+});
 
 test('Omarchy uses measured percentages, keeps zero, and rejects missing or invalid readings independently', async () => {
   const read = lines => readOmarchyHardware('omarchy.example.test',async()=>({stdout:['host omarchy',...lines].join('\n')}));
