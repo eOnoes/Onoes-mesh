@@ -131,8 +131,8 @@ test('the rebuilt PC never inherits the former laptop identity, connection or se
   for (const elapsed of [0, 30001]) {
     const card = view.render(snapshot,elapsed)[1].card;
     assert.equal(card.getAttribute('data-node-id'),'tripp-pc');
-    assert.match(card.textContent,/Reported model: Nemotron-boat/);
-    assert.match(card.textContent,/TEMP.*Omarchy · Status unavailable/);
+    assert.match(card.textContent,/Ollama: Status unavailable/);
+    assert.match(card.textContent,/TEMP.*LAN · Status unavailable/);
     assert.match(card.textContent,/Temperature unavailable/);
     for (const old of [laptop.dnsName,laptop.tailscaleIp,'Online','Offline','39 °C','ChatGPT','Claude'])
       assert.ok(!card.textContent.includes(old));
@@ -141,12 +141,15 @@ test('the rebuilt PC never inherits the former laptop identity, connection or se
 
 test('TEMP shows independent CPU and GPU readings only while the desktop observation is fresh', async () => {
   const {snapshot} = await ready(), view = ui();
-  snapshot.trippDesktop = {state:'online',ageMs:1000,cpuTempC:51,gpuTempC:null};
+  snapshot.trippDesktop = {source:'lan_ssh',state:'online',ageMs:1000,cpuTempC:51,gpuTempC:null,ollamaModels:['demo:small']};
   const card = () => view.render(snapshot)[1].card;
-  assert.match(card().textContent,/Omarchy · OnlineCPU51 °CGPUTemperature unavailable/);
-  assert.doesNotMatch(view.render(snapshot,29000)[1].card.textContent,/51 °C/);
-  snapshot.trippDesktop = {state:'offline',ageMs:0,cpuTempC:51};
-  assert.match(card().textContent,/Omarchy · OfflineCPUTemperature unavailable/);
+  assert.match(card().textContent,/LAN · OnlineCPU51 °CGPUTemperature unavailable/);
+  assert.match(card().textContent,/Ollama: demo:small/);
+  assert.doesNotMatch(view.render(snapshot,29000)[1].card.textContent,/51 °C|demo:small/);
+  delete snapshot.trippDesktop.source;
+  assert.doesNotMatch(card().textContent,/51 °C|demo:small/);
+  snapshot.trippDesktop = {source:'lan_ssh',state:'offline',ageMs:0,cpuTempC:51};
+  assert.match(card().textContent,/LAN · OfflineCPUTemperature unavailable/);
 });
 
 test('three-machine view keeps Echo and Tripp visible when the AI box is unavailable', async () => {
@@ -156,7 +159,7 @@ test('three-machine view keeps Echo and Tripp visible when the AI box is unavail
   const rows = view.render({...snapshot,nodes:[...snapshot.nodes,box]});
   assert.deepEqual(rows.map(row => row.card.children[0].textContent), ["Echo's PC","Tripp's PC",'AI box']);
   check(rows[0],'Online','online'); check(rows[2],'Unavailable','neutral');
-  assert.match(rows[1].card.textContent,/Reported model: Nemotron-boat/);
+  assert.match(rows[1].card.textContent,/Ollama: Status unavailable/);
   assert.match(rows[2].card.textContent,/Local model: Unknown/);
   for (const other of [rows[0],rows[2]]) assert.doesNotMatch(other.card.textContent,/Hermes|ChatGPT|Claude/);
   assert.doesNotMatch(rows[2].card.textContent,/Tripp|Echo/);

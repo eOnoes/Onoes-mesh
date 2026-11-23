@@ -1,91 +1,56 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdir, mkdtempDisposable, readFile, writeFile} from 'node:fs/promises';
-import {execFileSync} from 'node:child_process';
+import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
-import {tmpdir} from 'node:os';
-import {existsSync} from 'node:fs';
+import {homedir} from 'node:os';
+import {controlledProbe} from './m5-nodes-fixture.mjs';
 import {encodeTrippProbe, normalizeTrippSample, readWindowsHardware, withRemoteHardware, withTrippHardware} from '../lib/tripp-hardware.mjs';
-import {NODE_IDENTITIES, observeOmarchy, readOmarchyHardware, readOmarchyTemperatures} from '../lib/node-probes.mjs';
-
-test('only the uniquely identified online Omarchy Linux desktop can supply temperatures', async () => {
-  const dns = 'omarchy.example.test';
-  const peer = {HostName:'omarchy', DNSName:dns+'.', OS:'linux', Online:true, TailscaleIPs:['100.64.0.9']};
-  let calls = 0;
-  const check = (...peers) => observeOmarchy(JSON.stringify({BackendState:'Running',Peer:{...peers}}),
-    'main.example.test', async (target,address) => {
-      assert.equal(target,dns); assert.equal(address,'100.64.0.9'); calls++; return {cpuTempC:49,gpuTempC:null};
-    });
-  for (const peers of [[], [peer,peer], [{...peer,OS:'windows'}], [{...peer,TailscaleIPs:['127.0.0.1']}],
-      [{...peer,DNSName:'laptop.example.test.'}], [{...peer,HostName:'old-laptop'}],
-      [peer,{...peer,HostName:'other',DNSName:'other.example.test.'}], [{...peer,TailscaleIPs:['100.64.0.9','100.64.0.10']}]]) {
-    assert.deepEqual(await check(...peers),{state:'unknown'});
-  }
-  assert.deepEqual(await check({...peer,Online:false}),{state:'offline'});
-  assert.equal(calls,0);
-  assert.deepEqual(await check(peer),{state:'online',cpuTempC:49,gpuTempC:null});
-  assert.equal(calls,1);
-});
-
-test('Omarchy temperatures accept only labelled in-range measurements returned by the expected host', async () => {
-  const run = output => async (_exe,args,opts) => {
-    assert.ok(args.includes('StrictHostKeyChecking=yes')); assert.equal(opts.windowsHide,true);
-    return {stdout:output};
-  };
-  assert.deepEqual(await readOmarchyTemperatures('omarchy.example.test',run('host omarchy\ncpuMilli 52300\ngpuC 45\ngpuMilli 61000\ngpuC 999')),
-    {cpuTempC:52.3,gpuTempC:61});
-  assert.deepEqual(await readOmarchyTemperatures('omarchy.example.test',run('host omarchy\ngpuC N/A')),
-    {cpuTempC:null,gpuTempC:null});
-  await assert.rejects(readOmarchyTemperatures('omarchy.example.test',run('host laptop\ngpuC 60')),/Unexpected sensor host/);
-});
+import {NODE_IDENTITIES,createNodeProbeReader,readTrippHardware} from '../lib/node-probes.mjs';
 
 const box = {id:'ai-box',label:'AI box',dnsName:'fixture.tail8c4a75.ts.net',tailscaleIp:'100.64.0.23'};
+const fixtureSample = [
+  'onoes-tripp onoes','@ram','Mem: 1000 400 200 1 100 600',
+  '@cpu','r b us sy id wa st','0 0 0 0 100 0 0','1 0 10 10 70 10 0',
+  '@thermal',JSON.stringify({'k10temp-test':{Tdie:{temp2_input:41.5},Tctl:{temp1_input:61.5}},'nvme-test':{Tdie:{temp1_input:90}}}),
+  '@gpu','N/A, 73','34, 0','@ollama','NAME ID SIZE PROCESSOR CONTEXT RUNNER UNTIL','@ollama-ok','@end',
+].join('\n');
 
-test('desktop SSH uses the observed private address for the existing host key', async () => {
-  await readOmarchyHardware('omarchy.example.test',async (_exe,args) => {
-    assert.ok(args.includes('Hostname=100.64.0.9'));
-    assert.ok(args.includes('StrictHostKeyChecking=yes'));
-    assert.ok(args.includes('UpdateHostKeys=no'));
-    assert.equal(args.at(-2),'omarchy.example.test');
-    return {stdout:'host omarchy'};
-  },'100.64.0.9');
-  await assert.rejects(readOmarchyHardware('omarchy.example.test',assert.fail,'127.0.0.1'),/Unexpected desktop address/);
+test('Tripp reads the pinned LAN alias with no address overrides, forwarding or PTY', async () => {
+  const sample = await readTrippHardware(async (exe,args,opts) => {
+    assert.equal(exe,'C:/Windows/System32/OpenSSH/ssh.exe');
+    assert.deepEqual(args.slice(0,2),['-F',join(homedir(),'.ssh','keys','echo-tripp-temp-management','ssh_config')]);
+    assert.equal(args.at(-2),'tripp-inference-temp');
+    for (const option of ['BatchMode=yes','UpdateHostKeys=no','ForwardAgent=no','ClearAllForwardings=yes','IdentitiesOnly=yes','StrictHostKeyChecking=yes','-T']) assert.ok(args.includes(option));
+    assert.equal(opts.windowsHide,true);
+    return {stdout:fixtureSample};
+  });
+  assert.deepEqual(sample,{ramPct:40,cpuPct:20,gpuPct:73,cpuTempC:41.5,gpuTempC:34,ollamaModels:[]});
 });
 
-test('Omarchy uses measured percentages, keeps zero, and rejects missing or invalid readings independently', async () => {
-  const read = lines => readOmarchyHardware('omarchy.example.test',async()=>({stdout:['host omarchy',...lines].join('\n')}));
-  assert.deepEqual(await read(['cpuPct 0','ramPct 37','gpuPct 55','gpuPct 8','gpuC 51','gpuPct 120']),
-    {cpuPct:0,ramPct:37,gpuPct:55,cpuTempC:null,gpuTempC:51});
-  assert.deepEqual(await read(['ramPct -1','gpuPct N/A','cpuPct 101','cpuMilli 54000']),
-    {cpuPct:null,ramPct:null,gpuPct:null,cpuTempC:54,gpuTempC:null});
+test('missing metrics, wrong account, interrupted replies, and an unavailable model runtime remain distinct', async () => {
+  const read = stdout => readTrippHardware(async()=>({stdout}));
+  for (const bad of [fixtureSample.replace('onoes-tripp','omarchy'),fixtureSample.replace(' onoes\n',' guest\n'),fixtureSample.replace('@end','')])
+    await assert.rejects(read(bad),/Incomplete Tripp/);
+  const empty = await read('onoes-tripp onoes\n@end');
+  assert.ok(Object.values(empty).every(x=>x===null));
+  assert.equal((await read(fixtureSample.replace('@ollama-ok',''))).ollamaModels,null);
+  assert.deepEqual((await read(fixtureSample.replace('@ollama-ok','demo:small 0123abcd 1GB GPU 4096 GPU forever\n@ollama-ok'))).ollamaModels,['demo:small']);
 });
 
-const shell = process.platform === 'win32' ? join(process.env.ProgramFiles,'Git','bin','sh.exe') : '/bin/sh';
-test('the Linux reader computes CPU deltas, available RAM and independent GPU metrics', {skip:!existsSync(shell)}, async () => {
-  await using fixture = await mkdtempDisposable(join(tmpdir(),'mesh-omarchy-'));
-  const put = (name, data) => writeFile(join(fixture.path,name), data);
-  await put('hostname','omarchy\n');
-  await put('meminfo','MemTotal: 10000 kB\nMemAvailable: 6200 kB\n');
-  // Guest time is already included in user time. Large counters exercise awk precision.
-  await put('stat','cpu  9000000000 0 10 1000 30 0 0 0 50 0\n');
-  await put('second','cpu  9000000015 0 15 1070 40 0 0 0 55 0\n');
-  await mkdir(join(fixture.path,'drm','card0','device'),{recursive:true});
-  await put('drm/card0/device/gpu_busy_percent','64\n');
-  await writeFile(join(fixture.path,'nvidia-smi'),"#!/bin/sh\nprintf '51, 35\\n'\n",{mode:0o755});
-  const run = async (_exe,args) => {
-    const script = args.at(-1).replace('/proc/sys/kernel/hostname','hostname')
-      .replace('/proc/meminfo','meminfo').replace('/proc/stat','stat')
-      .replace('/sys/class/drm','./drm').replace('/sys/class/hwmon','./hwmon');
-    const setup = 'sleep() { cp second stat; }\n';
-    const stdout = execFileSync(shell,[],{cwd:fixture.path, windowsHide:true,
-      env:{...process.env,PATH:'.:/usr/bin:/bin'},input:setup+script,encoding:'utf8'});
-    return {stdout};
-  };
-  const sample = await readOmarchyHardware('omarchy.example.test',run);
-  assert.equal(sample.cpuPct,20);
-  assert.equal(sample.ramPct,38);
-  assert.equal(sample.gpuPct,64);
-  assert.equal(sample.gpuTempC,51);
+test('LAN telemetry survives a failed Tailscale discovery and clears after an SSH error',async()=>{
+  const fixture=controlledProbe();fixture.fail();
+  let calls=0;
+  const reader=createNodeProbeReader({...fixture.options,observeDesktop:true,sampleDesktop:async()=>{
+    if (++calls>1) throw Error('Unavailable');
+    return {gpuPct:0};
+  }});
+  const [a,b]=await Promise.all([reader.refresh(),reader.refresh()]);
+  assert.equal(calls,1);assert.deepEqual(a.trippDesktop,b.trippDesktop);
+  assert.equal(a.trippDesktop.source,'lan_ssh');assert.equal(a.trippDesktop.gpuPct,0);
+  assert.ok(a.nodes.every(n=>n.observationAvailability==='unavailable'));
+  fixture.advance(30001);assert.equal(reader.snapshot().trippDesktop.state,'unknown');
+  const next=await reader.refresh();assert.equal(next.trippDesktop.state,'unknown');
+  assert.equal(next.trippDesktop.gpuPct,undefined);
 });
 
 test('the Windows collector uses the selected machine and verifies its returned name', async () => {
