@@ -629,9 +629,10 @@ $('local-inference-chat-form').addEventListener('submit', event => {
 export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
   if (snapshot !== nodeProbeSnapshot) nodeProbeReceivedAt = receivedAt;
   nodeProbeSnapshot = snapshot;
-  const box = $('tailnet-nodes'); box.replaceChildren();
+  const box = $('tailnet-nodes');
   if (snapshot?.schemaVersion === 'mesh-node-probes/v1' && snapshot.status === 'not_configured' &&
       snapshot.source === 'none' && Array.isArray(snapshot.nodes) && snapshot.nodes.length === 0) {
+    box.replaceChildren();
     paragraph(box, 'Node observation is not configured in standalone mode. No tailnet probes run.'); return;
   }
   const valid = snapshot?.schemaVersion === 'mesh-node-probes/v1' &&
@@ -639,15 +640,35 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
     Array.isArray(snapshot.nodes) && (snapshot.nodes.length === 2 ||
       snapshot.nodes.length === 3 && snapshot.nodes[2]?.id === 'ai-box') &&
     snapshot.nodes[0]?.id === 'pc' && snapshot.nodes[1]?.id === 'laptop';
-  if (!valid) { paragraph(box, 'Node observation unavailable. No online or offline result established.'); return; }
+  if (!valid) {
+    box.replaceChildren();
+    paragraph(box, 'Node observation unavailable. No online or offline result established.');
+    return;
+  }
   const elapsed = Math.max(0, probeTick() - nodeProbeReceivedAt);
-  for (const n of snapshot.nodes) {
-    const card = document.createElement('article'); card.className = 'node-observation';
-    card.setAttribute('data-node-id', n.id);
-    const title = document.createElement('h3');
-    title.textContent = {pc: "Echo's PC", laptop: "Tripp's PC", 'ai-box': 'AI box'}[n.id];
-    card.append(title);
-    paragraph(card, n.dnsName + ' · ' + n.tailscaleIp);
+  if (box.firstElementChild?.tagName !== 'ARTICLE') box.replaceChildren();
+  for (const [i, n] of snapshot.nodes.entries()) {
+    let card = box.children[i];
+    if (card?.getAttribute('data-node-id') !== n.id) {
+      const previous = card;
+      card = document.createElement('article');
+      card.className = 'node-observation';
+      card.setAttribute('data-node-id', n.id);
+      const title = document.createElement('h3');
+      title.textContent = {pc: "Echo's PC", laptop: "Tripp's PC", 'ai-box': 'AI box'}[n.id];
+      const details = document.createElement('details');
+      const summary = document.createElement('summary');
+      summary.textContent = 'Connection details';
+      details.append(summary, document.createElement('div'));
+      card.append(title, document.createElement('div'), details);
+      if (previous) previous.replaceWith(card);
+      else box.append(card);
+    }
+    // Keep the disclosure and its keyboard focus in place as the readings age.
+    const readings = card.children[1], diagnostics = card.children[2].children[1];
+    readings.replaceChildren();
+    diagnostics.replaceChildren();
+    paragraph(diagnostics, n.dnsName + ' · ' + n.tailscaleIp);
     // Local aging never refreshes the CLI or advances last-success timestamps.
     const successAge = n.lastSuccessAt === null ? Infinity :
       Math.max(0, Date.parse(snapshot.observedAt) - Date.parse(n.lastSuccessAt)) + elapsed;
@@ -665,34 +686,32 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
     statusWord.className = 'node-status node-status--' +
       (n.observationAvailability === 'available' ? presentation[1] : 'neutral');
     statusLine.append(hasObservation && n.observationAvailability === 'unavailable'
-      ? 'Observation unavailable · cached status: ' : 'Status: ', statusWord,
-      !hasObservation ? ' · no machine status result available' : n.observationAvailability === 'unavailable'
-      ? ' · offline not established by this read' : ' · cached Tailscale Online: ' + n.tailscaleOnline);
-    card.append(statusLine);
+      ? 'Last known connection: ' : 'Connection: ', statusWord);
+    readings.append(statusLine);
+    if (n.id !== 'pc') paragraph(readings, 'Model loaded: Unknown');
     if (n.id === 'laptop' && Object.hasOwn(n, 'hardware')) {
       const hardwareAge = Date.parse(snapshot.observedAt) - Date.parse(n.hardwareObservedAt) + elapsed;
-      const freshHardware = status === 'ready' && n.hardware && hardwareAge >= 0 && hardwareAge < 30000;
+      const freshHardware = status === 'ready' && n.observationAvailability === 'available' && n.hardware && hardwareAge >= 0 && hardwareAge < 30000;
       if (freshHardware) {
         const meters = document.createElement('div');
         meters.className = 'pixel-readings';
         meters.append(pixelReading('ram', 'RAM', n.hardware.ramPct, null, document),
           pixelReading('gpu', 'GPU', n.hardware.gpuPct, n.hardware.gpuTempC, document),
           pixelReading('cpu', 'CPU', n.hardware.cpuPct, n.hardware.cpuTempC, document));
-        card.append(meters);
+        readings.append(meters);
       } else {
-        paragraph(card, 'Hardware readings unavailable');
+        paragraph(readings, 'Hardware readings unavailable');
       }
     } else if (n.id === 'laptop') {
-      paragraph(card, 'Laptop sensors are off in this Mesh setup.');
+      paragraph(readings, 'Laptop sensors are off in this Mesh setup.');
     }
-    if (n.id !== 'pc') paragraph(card, 'Model loaded: Unknown');
-    paragraph(card, 'Last probe: ' + (n.lastProbeAt ?? 'never') + ' · Last success (Online=true): ' + (n.lastSuccessAt ?? 'never'));
-    paragraph(card, 'Observation: ' + n.observationAvailability + ' · source: ' + snapshot.source + ' · local probe completion timestamps');
-    paragraph(card, 'Packet reachability: unknown · Inference readiness: unknown · Model readiness: unknown');
-    paragraph(card, 'Errors at last probe: ' + (n.errors.map(e => e.code).join(', ') || 'none') + (hasObservation && status !== n.status ? ' · observation_expired' : ''));
-    if (snapshot.source === 'disposable_transport') paragraph(card, 'TEST ONLY: controlled transport; no native tailnet claim.');
-    box.append(card);
+    paragraph(diagnostics, 'Last probe: ' + (n.lastProbeAt ?? 'never') + ' · Last success (Online=true): ' + (n.lastSuccessAt ?? 'never'));
+    paragraph(diagnostics, 'Observation: ' + n.observationAvailability + ' · source: ' + snapshot.source + ' · local probe completion timestamps');
+    paragraph(diagnostics, 'Packet reachability: unknown · Inference readiness: unknown · Model readiness: unknown');
+    paragraph(diagnostics, 'Errors at last probe: ' + (n.errors.map(e => e.code).join(', ') || 'none') + (hasObservation && status !== n.status ? ' · observation_expired' : ''));
+    if (snapshot.source === 'disposable_transport') paragraph(readings, 'TEST ONLY: controlled transport; no native tailnet claim.');
   }
+  while (box.children.length > snapshot.nodes.length) box.removeChild(box.lastElementChild);
   if (snapshot.configurationIssue === 'ai_box_identity_invalid')
     paragraph(box, 'Check the AI box name and address in the Mesh machine configuration.');
 }

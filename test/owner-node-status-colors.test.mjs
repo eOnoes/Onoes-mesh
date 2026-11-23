@@ -11,9 +11,13 @@ const renderer = source.slice(source.indexOf('function renderNodeProbes('),
   source.indexOf('\nasync function refreshNodeProbes(')).trim();
 assert.ok(renderer.endsWith('}'), 'load exactly the production renderer');
 class Element {
-  constructor(tag) { this.tagName = tag; this.children = []; this.className = ''; this.attributes = {}; }
+  constructor(tag) { this.tagName = tag.toUpperCase(); this.children = []; this.className = ''; this.attributes = {}; }
   append(...children) { this.children.push(...children); }
   replaceChildren(...children) { this.children = children; }
+  removeChild(child) { this.children.splice(this.children.indexOf(child), 1); }
+  get firstElementChild() { return this.children[0]; }
+  get lastElementChild() { return this.children.at(-1); }
+  getAttribute(key) { return this.attributes[key]; }
   setAttribute(key, value) { this.attributes[key] = value; }
   set textContent(text) { this.children = [text]; }
   get textContent() { return this.children.map(c => typeof c === 'string' ? c : c.textContent).join(''); }
@@ -30,7 +34,7 @@ function ui() {
   return { box, context, render(snapshot, elapsed = 0) {
     context.snapshot = snapshot; context.tick = elapsed;
     vm.runInContext('renderNodeProbes(snapshot, 0)', context);
-    return box.children.map(card => ({ card, line: card.children[2], word: card.children[2]?.children[1] }));
+    return box.children.map(card => ({ card, line: card.children[1]?.children[0], word: card.children[1]?.children[0]?.children[1] }));
   } };
 }
 async function ready() {
@@ -43,7 +47,7 @@ test('never checked and unsuccessful first observation never imply Offline',asyn
   const initial=reader.snapshot(),before=JSON.stringify(initial);
   view.render(initial).forEach(row=>{
     check(row,'Not checked','neutral');
-    assert.match(row.line.textContent,/no machine status result available/);
+    assert.match(row.line.textContent,/^Connection: Not checked$/);
     assert.doesNotMatch(row.card.textContent,/Offline|observation_expired/);
   });
   view.render(initial,initial.limits.staleGraceMs*10).forEach(row=>check(row,'Not checked','neutral'));
@@ -56,7 +60,7 @@ test('never checked and unsuccessful first observation never imply Offline',asyn
   });
 });
 function check(row, label, state) {
-  assert.equal(row.word.tagName, 'span');
+  assert.equal(row.word.tagName, 'SPAN');
   assert.equal(row.word.textContent, label);
   assert.equal(row.word.className, 'node-status node-status--' + state);
   assert.equal(row.line.className, '', 'color applies to the status word only');
@@ -68,7 +72,7 @@ test('fresh ready is Online; cached Online and global UI busy cannot make stale/
   view.render(snapshot).forEach(row => check(row, 'Online', 'online'));
   view.render(snapshot, snapshot.limits.freshMs).forEach(row => {
     check(row, 'Stale', 'stale');
-    assert.match(row.line.textContent, /cached Tailscale Online: true/);
+    assert.match(row.line.textContent, /^Connection: Stale$/);
     assert.match(row.card.textContent, /observation_expired/);
   });
   view.render(snapshot, snapshot.limits.staleGraceMs).forEach(row => check(row, 'Check expired', 'stale'));
@@ -82,14 +86,14 @@ test('real controlled offline versus unavailable reads retain distinct wording a
   tx.fail();
   view.render(await reader.refresh()).forEach(row => {
     check(row, 'Offline', 'neutral');
-    assert.equal(row.line.textContent, 'Observation unavailable · cached status: Offline · offline not established by this read');
+    assert.equal(row.line.textContent, 'Last known connection: Offline');
   });
   for (const status of ['ready', 'stale', 'offline', 'busy', 'unavailable', 'unknown', 'not_configured']) {
     const cached = structuredClone(snapshot);
     cached.nodes.forEach(n => { n.status = status; n.observationAvailability = 'unavailable'; });
     view.render(cached).forEach(row => {
       assert.equal(row.word.className, 'node-status node-status--neutral');
-      assert.match(row.line.textContent, /Observation unavailable · cached status: .* · offline not established by this read/);
+      assert.match(row.line.textContent, /^Last known connection: /);
     });
   }
 });
@@ -129,6 +133,11 @@ test('Tripp hardware expires on screen and is never confused with main-PC or mod
   assert.match(remote.card.textContent, /Tripp's PC/);
   assert.match(remote.card.textContent, /GPU5%39 °CCPU0%Temperature unavailable/);
   assert.match(remote.card.textContent, /Model loaded: Unknown/);
+  const unavailable = structuredClone(snapshot);
+  unavailable.nodes[1].observationAvailability = 'unavailable';
+  const cached = view.render(unavailable)[1];
+  assert.match(cached.card.textContent, /Hardware readings unavailable/);
+  assert.doesNotMatch(cached.card.textContent, /39 °C/);
   const aged = view.render(snapshot,30001)[1];
   assert.match(aged.card.textContent, /Hardware readings unavailable/);
   assert.doesNotMatch(aged.card.textContent, /39 °C/);
@@ -147,4 +156,21 @@ test('three-machine view keeps Echo and Tripp visible when the AI box is unavail
   assert.doesNotMatch(rows[2].card.textContent,/Tripp|Echo/);
   view.render({...snapshot,configurationIssue:'ai_box_identity_invalid'});
   assert.match(view.box.textContent,/Check the AI box name and address/);
+});
+
+test('refresh keeps each machine disclosure intact and updates its readings', async () => {
+  const {snapshot} = await ready(), view = ui();
+  const card = view.render(snapshot)[1].card;
+  const [title, readings, details] = card.children;
+  assert.equal(title.textContent, "Tripp's PC");
+  assert.equal(details.tagName, 'DETAILS');
+  assert.equal(details.children[0].textContent, 'Connection details');
+  assert.match(details.textContent, /Last probe:/);
+  assert.doesNotMatch(readings.textContent, /Last probe:|reachability|tail8c4a75/);
+  details.open = true;
+  const updated = view.render(snapshot, snapshot.limits.freshMs)[1].card;
+  assert.equal(updated.children[2], details);
+  assert.equal(details.open, true);
+  assert.match(readings.textContent, /Connection: Stale/);
+  assert.match(details.textContent, /observation_expired/);
 });
