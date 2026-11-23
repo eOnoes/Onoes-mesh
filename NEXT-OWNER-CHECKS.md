@@ -8,7 +8,7 @@
 | Phone · Relay | Read conversations and older messages. Mesh maintenance currently pauses outgoing messages. The tested update that explains the pause in the composer is awaiting its Mesh and card-writer reconnect. |
 | At the PC · 3D Print Pilot | When ready to share the pilot, have the saved backup archive password available for the two local prompts. The existing shared Mesh card is connected to Mind. The print pilot is still private to Workroom. |
 | At the PC · supervised work | Arrange a quiet recovery window for the historical job holds. After recovery and route qualification, start one real card from the phone with Echo building and Nims reviewing. Rook activation follows that check. |
-| Inference · other machines | The installed release lists **Tripp's PC**. The LAN reader has verified the rebuilt desktop through its existing SSH profile. After rollout, open **Other machines → Check machine status** for usage, temperatures and Ollama's current loaded-model list. |
+| Inference · other machines | Open **Other machines → Check machine status** to see Tripp’s live LAN usage, temperatures and Ollama’s loaded models. The next display also checks the Strata IK2 service used by Tripp’s Inkling campaign. A healthy endpoint confirms readiness. Its current model name is unverified. |
 
 The desktop update also reads RAM, CPU and GPU use over the same SSH connection. CPU use comes from two short samples. RAM use accounts for memory Linux can make available. On a multi-GPU desktop, Mesh shows the highest measured GPU usage and temperature. A missing temperature shows **Temperature unavailable**. Readings expire after 30 seconds.
 

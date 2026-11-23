@@ -141,10 +141,12 @@ test('the rebuilt PC never inherits the former laptop identity, connection or se
 
 test('TEMP shows independent CPU and GPU readings only while the desktop observation is fresh', async () => {
   const {snapshot} = await ready(), view = ui();
-  snapshot.trippDesktop = {source:'lan_ssh',state:'online',ageMs:1000,cpuTempC:51,gpuTempC:null,ollamaModels:['demo:small']};
+  snapshot.trippDesktop = {source:'lan_ssh',state:'online',ageMs:1000,cpuTempC:51,gpuTempC:null,ollamaModels:['demo:small'],strataHealth:'ready'};
   const card = () => view.render(snapshot)[1].card;
   assert.match(card().textContent,/LAN · OnlineCPU51 °CGPUTemperature unavailable/);
   assert.match(card().textContent,/Ollama: demo:small/);
+  assert.match(card().textContent,/Strata IK2: Ready · Model unverified/);
+  assert.match(view.render(snapshot,29000)[1].card.textContent,/Strata IK2: Status unavailable/);
   assert.doesNotMatch(view.render(snapshot,29000)[1].card.textContent,/51 °C|demo:small/);
   delete snapshot.trippDesktop.source;
   assert.doesNotMatch(card().textContent,/51 °C|demo:small/);

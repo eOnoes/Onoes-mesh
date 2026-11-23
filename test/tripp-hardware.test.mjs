@@ -12,7 +12,7 @@ const fixtureSample = [
   'onoes-tripp onoes','@ram','Mem: 1000 400 200 1 100 600',
   '@cpu','r b us sy id wa st','0 0 0 0 100 0 0','1 0 10 10 70 10 0',
   '@thermal',JSON.stringify({'k10temp-test':{Tdie:{temp2_input:41.5},Tctl:{temp1_input:61.5}},'nvme-test':{Tdie:{temp1_input:90}}}),
-  '@gpu','N/A, 73','34, 0','@ollama','NAME ID SIZE PROCESSOR CONTEXT RUNNER UNTIL','@ollama-ok','@end',
+  '@gpu','N/A, 73','34, 0','@ollama','NAME ID SIZE PROCESSOR CONTEXT RUNNER UNTIL','@ollama-ok','@strata-ready','@end',
 ].join('\n');
 
 test('Tripp reads the pinned LAN alias with no address overrides, forwarding or PTY', async () => {
@@ -24,7 +24,7 @@ test('Tripp reads the pinned LAN alias with no address overrides, forwarding or 
     assert.equal(opts.windowsHide,true);
     return {stdout:fixtureSample};
   });
-  assert.deepEqual(sample,{ramPct:40,cpuPct:20,gpuPct:73,cpuTempC:41.5,gpuTempC:34,ollamaModels:[]});
+  assert.deepEqual(sample,{ramPct:40,cpuPct:20,gpuPct:73,cpuTempC:41.5,gpuTempC:34,ollamaModels:[],strataHealth:'ready'});
 });
 
 test('missing metrics, wrong account, interrupted replies, and an unavailable model runtime remain distinct', async () => {
@@ -33,6 +33,9 @@ test('missing metrics, wrong account, interrupted replies, and an unavailable mo
     await assert.rejects(read(bad),/Incomplete Tripp/);
   const empty = await read('onoes-tripp onoes\n@end');
   assert.ok(Object.values(empty).every(x=>x===null));
+  const withoutStrata = await read(fixtureSample.replace('@strata-ready',''));
+  assert.equal(withoutStrata.strataHealth,null);
+  assert.deepEqual(withoutStrata.ollamaModels,[]);
   assert.equal((await read(fixtureSample.replace('@ollama-ok',''))).ollamaModels,null);
   assert.deepEqual((await read(fixtureSample.replace('@ollama-ok','demo:small 0123abcd 1GB GPU 4096 GPU forever\n@ollama-ok'))).ollamaModels,['demo:small']);
 });

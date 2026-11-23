@@ -676,6 +676,7 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       if (n.id === 'tripp-pc') {
         card.append(title);
         paragraph(card, 'Ollama: Status unavailable');
+        paragraph(card, 'Strata IK2: Status unavailable');
         const heading = document.createElement('h4');
         heading.textContent = 'TEMP';
         const gauges = document.createElement('div');
@@ -697,9 +698,11 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
         desktop.ageMs + elapsed < 30000;
       const online = fresh && desktop.state === 'online';
       const state = online ? 'Online' : fresh && desktop.state === 'offline' ? 'Offline' : 'Status unavailable';
-      const [, model, , location, gauges] = card.children;
+      const [, model, strata, , location, gauges] = card.children;
       model.textContent = online && Array.isArray(desktop.ollamaModels)
         ? 'Ollama: ' + (desktop.ollamaModels.join(', ') || 'No models loaded') : 'Ollama: Status unavailable';
+      strata.textContent = online && desktop.strataHealth === 'ready'
+        ? 'Strata IK2: Ready · Model unverified' : 'Strata IK2: Status unavailable';
       location.textContent = 'LAN · ' + state;
       const cpu = online ? desktop.cpuTempC : null, gpu = online ? desktop.gpuTempC : null;
       const ramPct = online ? desktop.ramPct : null;
