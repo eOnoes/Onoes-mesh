@@ -8,11 +8,11 @@ Inference shows the two configured machines. The optional laptop sensor launcher
 
 ### Workroom phone follow-up awaiting rollout
 
-The two-file update at `0f61813` lets **Check progress** read a saved card during a Relay outage. It also keeps an unsent message in the card while dispatch is paused. The installed release is still `bdfaa31`.
+The staged update combines the Workroom changes from `0f61813` and the Mind reply timeout from `1d38863`. **Check progress** can read a saved card during a Relay outage, and a card retains an unsent message while dispatch is paused. A slow Mind read can finish while the phone session stays open. The installed release is still `bdfaa31`.
 
-On a disposable Windows board, a 390 px touch browser reopened the card during local capture while Mind was unavailable, normal operation after reconnection, and read-only fallback after the writer stopped. Each mode served the updated Workroom module and stylesheet. The offline edit reached Mind with its original event ID, and the next startup check kept the running gateway. A separate rollback restored all 446 original source files.
+On a disposable Windows board, a 390 px touch browser reopened the card during local capture while Mind was unavailable, normal operation after reconnection, and read-only fallback after the writer stopped. Each mode served all three staged files. The offline edit reached Mind with its original event ID, and the next startup check kept the running gateway. A separate rollback restored all 446 original source files.
 
-Before rollout, recheck the installed release and its three startup profiles. The pending Rook update also changes those profiles. If either update lands first, prepare the other against the new installation.
+Before rollout, recheck the installed release, its three startup profiles and the saved board against the verified backup. A gateway restart can change its process ID while all files still match. Match the current connected owner record and Windows creation time under the launcher lock. The pending Rook update also changes those profiles. If either update lands first, prepare the other against the new installation.
 
 ## Current-boot recovery candidate and accepted phone cutover - November 16, 2026
 
