@@ -1,8 +1,32 @@
 # Mesh native worker maintenance
 
-Status: installed under Eddie's explicit idle-only maintenance approval. The new
-gateway is ready and the never-submitted read-only probe confirms process tracking.
-No new agent trial, production worker enrollment, Rook or Mind activation occurred.
+## Current managed Echo installation
+
+The shared gateway serves Echo in Relay and Telegram. The Windows launcher and
+the package manager's selected Python environment together determine which
+worker code actually runs. The current chat gateway lacks the exact-submission
+lookup that Workroom needs to recover a lost reply. Check the selected
+environment before relying on an earlier process-tracking result.
+
+The five-file update and its original version both passed offline builds using
+the installed dependency lock, pinned tools and all 16 selected extras. The
+candidate started from the 2,921-file installed source snapshot (excluding Python
+bytecode), changed three files and added two. Independent interpreters imported
+the expected modules from their own build trees. The original interpreter also
+confirmed both added modules were absent. Ordinary package repair replays the
+previous source snapshot. Rebuilding from the mutable checkout could include
+other local changes.
+
+The open deployment check is selecting the candidate through the ordinary
+Windows startup path and switching back to the original through that same path.
+Run this on a disposable installation first. Recheck the shared gateway's active
+work immediately before an approved live switch.
+
+## Earlier three-file installation
+
+The steps below describe the prior gateway version. Eddie approved its idle-only
+installation, and its never-submitted probe confirmed process tracking for that
+version.
 
 ## Supported owner arrangement
 
