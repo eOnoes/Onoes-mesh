@@ -1,3 +1,9 @@
+## November 22, 2026 | Resuming a team after its review arrives
+
+In the updated Workroom source, the independent review, the move to Done and the team's completion status save together. If Mesh stops during that save, reopen the card and inspect its saved report. Resuming the team uses the same report. An interrupted request for changes also keeps its correction tied to the original review.
+
+A phone-width check on a recovered board copy opened the finished card by direct link after reload. The test used a local builder and reviewer. Installing the change and resuming live workers remain separate steps.
+
 ## November 22, 2026 | Starting a new team after recovery
 
 The installed team-start check could refuse a fresh card even after the same historical sends passed the recovery check at dispatch. The source fix checks each earlier send against its verified recovery record when starting or resuming a different card. A changed historical send still blocks the team. The original job outcome stays unknown.

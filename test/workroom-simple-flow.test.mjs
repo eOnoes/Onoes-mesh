@@ -1,9 +1,10 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {mkdtempSync} from 'node:fs';import {join} from 'node:path';import {tmpdir} from 'node:os';import {randomUUID} from 'node:crypto';
 import {openTaskStore} from '../lib/task-store.mjs';import {createTeamRunner} from '../lib/workroom-automation.mjs';
+import {DatabaseSync} from 'node:sqlite';
 const agents=[{id:'echo',backend:'hermes',conversation_id:'e',status:'idle'},{id:'nims',backend:'codex',conversation_id:'mesh-nims',status:'idle'}];
 function ready(store){let t=store.create({title:'Managed fixture',description:'One explicit file only',owner:'nims'});t=store.workroom.save(t.id,{project:'Fixture',criteria:'Independent checks pass',owner:'nims',team:'local_build',stage:'ready',revision:1});t=store.workroom.saveProgress(t.id,{goal:'Build the scoped fixture',checklist:[{id:'build',text:'Implement and verify the request',status:'pending'}],result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision});return store.workroom.savePlan(t.id,{lead:'nims',spec:'One scoped file',workspace:process.cwd(),allowedFiles:'public/fixture.mjs',checks:'node --check public/fixture.mjs',boundaries:'Only this fixture',workerId:'echo',reviewerId:'nims',state:'locked',revision:0,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision}).task;}
-function fixture({changes=0,blocked=false}={}){const store=openTaskStore(join(mkdtempSync(join(tmpdir(),'mesh-simple-')),'tasks.sqlite'));const sends=[];let reviewCount=0;const reports=new Map();
+function fixture({changes=0,blocked=false,filename=join(mkdtempSync(join(tmpdir(),'mesh-simple-')),'tasks.sqlite')}={}){const store=openTaskStore(filename);const sends=[];let reviewCount=0;const reports=new Map();
  const relay={agents:async()=>agents,taskMessage:async b=>{sends.push(b);const t=store.workroom.get(/Workroom task ([a-f0-9-]+):/.exec(b.text)[1]);const work=b.text.includes('Phase: work\n');reports.set(b.id,work?{schema:'workroom-update/v1',taskId:t.id,sendId:b.id,goal:t.progress.goal,checklist:t.progress.checklist.map(x=>({...x,status:blocked?'blocked':'done'})),result:blocked?'Which output format should this request produce?':'Scoped result',evidence:'Fixture evidence'}:{schema:'workroom-review/v1',taskId:t.id,sendId:b.id,verdict:++reviewCount<=changes?'changes_requested':'approved',summary:'Check the required output',evidence:'Independent fixture check'});},nativeRead:async p=>p.includes('capabilities')?{taskSessionBinding:1}:{messages:sends.flatMap(s=>[{id:s.id,k:'you',t:s.text},{id:s.id+'-reply',k:'ag',t:'```'+(reports.get(s.id).schema.includes('review')?'workroom-review':'workroom-update')+'\n'+JSON.stringify(reports.get(s.id))+'\n```'}])}};
  const runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,simpleFlow:true});
  return {store,runner,sends,async run(t,ticks=8){store.workroom.automation.action(t.id,{action:'start',revision:t.automation?.revision??0,planRevision:t.plan.revision,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision},agents,process.cwd());for(let i=0;i<ticks;i++)await runner.tick();return store.workroom.get(t.id);},async close(){await runner.close();store.close();}};
@@ -20,7 +21,64 @@ test('independent approved review moves managed work into Done without accepting
     assert.equal(f.sends.length,2);
   } finally { await f.close(); }
 });
+test('interrupted final team write keeps the review available and resumes without another send',async()=>{
+  const filename=join(mkdtempSync(join(tmpdir(),'mesh-review-commit-')),'tasks.sqlite');
+  let f=fixture({filename});
+  const db=new DatabaseSync(filename);
+  try {
+    const task=ready(f.store);
+    db.exec(`CREATE TRIGGER stop_final_write BEFORE UPDATE OF state ON workroom_automation
+      WHEN NEW.state='completed' BEGIN SELECT RAISE(ABORT,'fixture interruption'); END`);
+    const paused=await f.run(task);
+    assert.equal(paused.automation.state,'paused');
+    assert.equal(paused.status,'open');
+    assert.equal(paused.progress.decision,'pending');
+    assert.equal(paused.agentReviews.length,1);
+    assert.equal(paused.agentReviews[0].applied,false);
+    assert.equal(f.sends.length,2);
+    await f.close();
+    f=fixture({filename});
+    db.exec('DROP TRIGGER stop_final_write');
+    // Completion can consume the last permitted operation without starting another send.
+    db.prepare('UPDATE workroom_automation SET operations=49 WHERE taskId=?').run(task.id);
+    const t=f.store.workroom.get(task.id);
+    f.store.workroom.automation.action(t.id,{action:'resume',revision:t.automation.revision,planRevision:t.plan.revision,
+      taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision},agents,process.cwd());
+    await f.runner.tick();
+    const done=f.store.workroom.get(t.id);
+    assert.equal(done.automation.state,'completed');
+    assert.equal(done.automation.operations,50);
+    assert.equal(done.workroom.stage,'done');
+    assert.equal(done.progress.decision,'approved');
+    assert.equal(done.history.filter(e=>e.kind==='agent_review_recorded').length,1);
+    assert.equal(done.history.filter(e=>e.kind==='team_completed').length,1);
+    assert.equal(f.sends.length,0);
+  } finally {db.close();await f.close();}
+});
 test('managed correction retains scope, uses fresh sends and completes after fresh review',async()=>{const f=fixture({changes:1});try{const t=await f.run(ready(f.store),16);assert.equal(t.workroom.stage,'done');assert.equal(f.sends.length,4);assert.equal(new Set(f.sends.map(s=>s.id)).size,4);assert.ok(t.automation.operations<=8);}finally{await f.close();}});
+test('interrupted correction scheduling also rolls back the review decision',async()=>{
+  const filename=join(mkdtempSync(join(tmpdir(),'mesh-correction-commit-')),'tasks.sqlite');
+  const f=fixture({changes:1,filename});
+  const db=new DatabaseSync(filename);
+  try {
+    db.exec(`CREATE TRIGGER stop_correction BEFORE UPDATE OF phase ON workroom_automation
+      WHEN OLD.phase='reviewer' AND NEW.phase='worker' BEGIN SELECT RAISE(ABORT,'fixture interruption'); END`);
+    const t=await f.run(ready(f.store));
+    assert.equal(t.automation.state,'paused');
+    assert.equal(t.agentReviews[0].review.verdict,'changes_requested');
+    assert.equal(t.agentReviews[0].applied,false);
+    assert.equal(t.progress.decision,'pending');
+    assert.equal(f.sends.length,2);
+    db.exec('DROP TRIGGER stop_correction');
+    f.store.workroom.automation.action(t.id,{action:'resume',revision:t.automation.revision,planRevision:t.plan.revision,
+      taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision},agents,process.cwd());
+    for(let i=0;i<8;i++) await f.runner.tick();
+    const done=f.store.workroom.get(t.id);
+    assert.equal(done.automation.state,'completed');
+    assert.equal(done.history.filter(e=>e.kind==='team_correction').length,1);
+    assert.equal(f.sends.length,4);
+  } finally {db.close();await f.close();}
+});
 test('repeated reviewer findings stop after three passes with a dated question',async()=>{const f=fixture({changes:9});try{const t=await f.run(ready(f.store),24);assert.notEqual(t.workroom.stage,'done');assert.equal(t.flow.state,'clarification');assert.ok(t.flow.askedAt);assert.equal(f.sends.length,6);assert.equal(t.automation.state,'paused');}finally{await f.close();}});
 test('blocked worker publishes its actual clarification without starting a reviewer',async()=>{const f=fixture({blocked:true});try{const t=await f.run(ready(f.store));assert.equal(t.flow.question,'Which output format should this request produce?');assert.equal(f.sends.length,1);assert.notEqual(t.workroom.stage,'done');}finally{await f.close();}});
 test('owner accepts a completed revision separately; stale/empty requests cannot alter it',async()=>{const f=fixture();try{let t=await f.run(ready(f.store));const body={decision:'accepted',note:'',revision:t.flow?.revision??0,taskRevision:t.revision,briefRevision:t.workroom.revision,progressRevision:t.progress.revision};t=f.store.workroom.ownerReview(t.id,body).task;assert.equal(t.flow.ownerDecision,'accepted');assert.equal(t.workroom.stage,'done');assert.throws(()=>f.store.workroom.ownerReview(t.id,body),/changed/);}finally{await f.close();}});
