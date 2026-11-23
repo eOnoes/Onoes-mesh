@@ -86,9 +86,10 @@ test('fixture seam refuses production mode and production data directories',asyn
   }finally{if(old===undefined)delete process.env.MESH_STANDALONE;else process.env.MESH_STANDALONE=old;}
 });
 
-test('presentation is compact, hides disabled/unlinked state and never approves work',()=>{
+test('presentation identifies an unlinked card only when the server confirms it',()=>{
   assert.equal(memoryStatePresentation(undefined),null);
-  for(const state of ['off','not_shared'])assert.equal(memoryStatePresentation({schema,state}),null);
+  assert.equal(memoryStatePresentation({schema,state:'off'}),null);
+  assert.equal(memoryStatePresentation({schema,state:'not_shared'}).label,'Not linked');
   for(const state of ['pending','uncertain','held','saved','withdrawn','unavailable']){
     const result=memoryStatePresentation({schema,state});assert.equal(result.state,state);assert.ok(result.label.length<30);
   }
@@ -100,5 +101,7 @@ test('status rendering uses plain text and clears a previously saved label',()=>
   const element={hidden:false,textContent:'',title:'',attributes:{},setAttribute(key,value){this.attributes[key]=value;}};
   paintMemoryState(element,{schema,state:'saved'});assert.equal(element.hidden,false);assert.match(element.textContent,/Last update recorded/);
   paintMemoryState(element,{schema,state:'pending'});assert.match(element.textContent,/Pending/);
+  paintMemoryState(element,{schema,state:'not_shared'});assert.equal(element.hidden,false);assert.equal(element.textContent,'Mind · Not linked');
+  assert.match(element.attributes['aria-label'],/no link to a Mind project/);
   paintMemoryState(element,{schema,state:'off'});assert.equal(element.hidden,true);assert.equal(element.textContent,'');assert.equal(element.title,'');
 });
