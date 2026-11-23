@@ -87,9 +87,11 @@ try {
   const sheet = page.getByRole('dialog', {name: 'Task details'});
   await sourceLink.tap();
   await sheet.getByText(card.title,{exact:true}).first().waitFor();
-  await sheet.getByRole('button',{name:'Close card',exact:true}).tap();
+  await page.reload();
+  await sheet.getByText(card.title,{exact:true}).first().waitFor();
   await page.goBack();
   await page.waitForURL(url => url.hash === '#mind');
+  await sheet.waitFor({state:'hidden'});
   await query.waitFor({state:'visible'});
   await readShared();
   reachable = false;

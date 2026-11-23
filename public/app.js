@@ -35,20 +35,34 @@ for (const tab of tabs) {
 }
 // Workspace links select a panel only; they never admit a session or dispatch work.
 let handledTaskLink;
+let deferredWorkspaceHash;
 function linkedTaskId() {
   return /^#task=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(window.location?.hash ?? '')?.[1];
 }
 function activateLinkedWorkspace() {
   handledTaskLink = undefined;
+  deferredWorkspaceHash = undefined;
   if (linkedTaskId()) {
     activate($('tab-workroom'), false, false);
     return;
   }
   const name = /^#(overview|relay|inference|workroom|agent|mind|control)$/.exec(window.location?.hash ?? '')?.[1];
-  if (name) activate($('tab-' + name));
+  if (!name) return;
+  const dialog = $('panel-workroom')?.querySelector?.('dialog[open]');
+  if (dialog) {
+    dialog.dispatchEvent(new Event('mesh-leave-workroom'));
+    if (dialog.open) {
+      deferredWorkspaceHash = window.location.hash;
+      return;
+    }
+  }
+  activate($('tab-' + name));
 }
 activateLinkedWorkspace();
 window.addEventListener('hashchange', activateLinkedWorkspace);
+window.addEventListener('close', () => {
+  if (deferredWorkspaceHash && deferredWorkspaceHash === window.location.hash) activateLinkedWorkspace();
+}, true);
 const menuMedia = typeof window.matchMedia === 'function'
   ? window.matchMedia('(max-width: 760px)')
   : { matches: false, addEventListener() {} };

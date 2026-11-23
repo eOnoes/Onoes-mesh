@@ -55,6 +55,12 @@ if(root){
   }});
   const dragHelp=el('p','Drag anywhere on a card with your mouse. On your phone, hold briefly, then drag. Tap once for details; swipe without holding to scroll.');
   const details=el('dialog');details.className='workroom-sheet';details.setAttribute('aria-label','Task details');
+  let preserveDraft=false;
+  details.addEventListener('input',()=>{preserveDraft=true;});
+  details.addEventListener('change',()=>{preserveDraft=true;});
+  details.addEventListener('mesh-leave-workroom',()=>{
+    if(!busy && !pending && !preserveDraft)closeDetails();
+  });
   let returnFocus=null;
   function closeDetails(){
     viewEpoch++;paintCardPolicy=null;clearTimeout(followTimer);
@@ -201,7 +207,8 @@ if(root){
   async function open(id){
     const epoch=++viewEpoch;clearTimeout(followTimer);
     const opened=await request('/api/workroom/'+id);
-    if(epoch!==viewEpoch)return;
+    if(epoch!==viewEpoch || document.getElementById('panel-workroom')?.hidden)return;
+    preserveDraft=false;
     paintCardPolicy=null;selected=opened.task;teamPolicy=opened.teamPolicy||null;paintMaintenance();
     // Never carry an uncertain message into another task.
     pending=null;details.replaceChildren();details.classList.add('workroom-task-sheet');details.classList.toggle('workroom-simple-flow',Boolean(teamPolicy?.simpleFlow));
@@ -343,6 +350,7 @@ if(root){
     const reviewStatus=el('p',`Review: ${selected.progress.decision==='stale'?'Needs a new review because the brief changed':selected.progress.decision}. Checking every step does not finish the task.`);
     progressForm.append(reviewStatus);
     function beginEdit(task){
+      preserveDraft=true;
       if(selected.revision===task.revision&&selected.workroom.revision===task.workroom.revision&&selected.progress.revision===task.progress.revision)return;
       selected=task;
       project.value=task.workroom.project;criteria.value=task.workroom.criteria;stage.value=task.workroom.stage;
