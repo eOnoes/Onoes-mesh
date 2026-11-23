@@ -1372,6 +1372,8 @@ html body{font-size:var(--terminal-font);line-height:var(--terminal-line);color:
 .preview-banner strong{color:var(--ink);letter-spacing:.08em}.preview-banner .edition{margin-left:auto;color:var(--accent-text)}
 .content-layout{background:var(--bg);padding:24px;scroll-padding-top:18px}
 .content-layout>[role=tabpanel]{max-width:1280px;margin:0 auto}
+#panel-agent { overflow-wrap: anywhere; }
+#agent-workspace button { max-width: 100%; white-space: normal; }
 .content-layout h1,#workroom-board>h1{font:700 28px/1.15 var(--mono);letter-spacing:-.05em;color:var(--ink);margin:8px 0 14px}
 .content-layout h2{color:var(--ink);font-size:12px;letter-spacing:.05em}
 .content-layout p{font-size:var(--terminal-font);line-height:1.6}
