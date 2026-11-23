@@ -160,7 +160,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const baseNodeProbes = standalone ? { snapshot: absentNodes, refresh: async () => absentNodes() }
     : createNodeProbeReader(nodeProbeTestOptions);
   const nodeProbes = standalone || nodeProbeTestOptions ? baseNodeProbes : withRemoteHardware(baseNodeProbes, {
-    laptop: process.env.MESH_TRIPP_HARDWARE === '1', aiBoxHost: process.env.MESH_AI_BOX_WINDOWS_SENSOR_HOST,
+    aiBoxHost: process.env.MESH_AI_BOX_WINDOWS_SENSOR_HOST,
   });
   const fixedInferenceConfig = inferenceConfig === undefined ? undefined : structuredClone(inferenceConfig);
   const directory = await confinedPath(dataDir);

@@ -110,10 +110,12 @@ console.log(JSON.stringify({link,source:{databasePath:realpathSync(file),fileDev
                 request=admitted_http(address(child));token=request('/api/trial-session/bootstrap',{})['csrfToken']
                 nodes=request('/api/node-probes',csrf=token,method='GET')['nodes']
                 self.assertEqual([n['id'] for n in nodes],['pc','laptop','ai-box'])
-                for remote in nodes[1:]:
-                    self.assertIsNone(remote['hardware'])
-                    self.assertIsNone(remote['hardwareObservedAt'])
-                    self.assertIsNone(remote['lastProbeAt'])
+                # Even an old profile with MESH_TRIPP_HARDWARE=1 cannot enable the retired laptop.
+                self.assertNotIn('hardware',nodes[1])
+                self.assertNotIn('hardwareObservedAt',nodes[1])
+                self.assertIsNone(nodes[2]['hardware'])
+                self.assertIsNone(nodes[2]['hardwareObservedAt'])
+                self.assertTrue(all(n['lastProbeAt'] is None for n in nodes[1:]))
                 self.assertTrue(identified_native_attempt(record));self.assertEqual(record['mode'],'capture_only')
                 window.publish_native_owner(child,ticks,profile,sha,previous_sha256=None)
                 card=initialized['link']['cardId']
@@ -140,7 +142,7 @@ console.log(JSON.stringify({link,source:{databasePath:realpathSync(file),fileDev
                 self.assertEqual(events(),saved);request('/api/trial-session/logout',{},token)
                 again.terminate();again.wait(timeout=30)
         proof=dict(schema='onoes-mesh-synthetic-native-capture-proof/v1',syntheticOnly=True,liveChanged=False,
-            coldStartWithoutMemoryRoleAccess=True,optionalLaptopSensorsPresentBeforeFirstProbe=True,
+            coldStartWithoutMemoryRoleAccess=True,oldLaptopSensorsDisabled=True,optionalAiBoxSensorsPresentBeforeFirstProbe=True,
             ownedPublicationAndRetirement=True,duplicateLaunchRefused=True,
             editAndReopenPassed=True,originalPendingEventsUnchanged=True,noCredentialsInFrame=True,
             sourceHashes=p['sourceHashes'],pendingEventCount=2,profileSha256=sha)

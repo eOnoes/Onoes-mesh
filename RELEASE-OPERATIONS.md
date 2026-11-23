@@ -2,7 +2,7 @@
 
 In Inference, open **Other machines** and select **Check machines**. An enrolled Windows machine can show RAM, GPU and CPU usage, plus temperature where its sensor reports one. Each machine's sample expires after 30 seconds. An unavailable sensor does not clear the other machine's readings. The model name still needs a separate verified source.
 
-Tripp uses the existing `MESH_TRIPP_HARDWARE` setting. To prepare a Windows AI box, first verify its Tailscale DNS name and IP in the version 2 machine roster, its SSH host key and account for the `ai-box-echo` alias, and its Windows computer name. The optional startup setting `MESH_AI_BOX_WINDOWS_SENSOR_HOST` holds that computer name. The reviewed startup profile pins the roster and sensor script. The collector requires the observed network identity and checks the returned computer name. Enable it only after qualifying the actual machine. For a different operating system, qualify its sensor source first.
+Tripp moved from the laptop to a rebuilt PC. Mesh shows his reported model, Nemotron-boat, until the new PC has its own verified connection. The old laptop sensor flag is ignored. To prepare a Windows AI box, first verify its Tailscale DNS name and IP in the version 2 machine roster, its SSH host key and account for the `ai-box-echo` alias, and its Windows computer name. The optional startup setting `MESH_AI_BOX_WINDOWS_SENSOR_HOST` holds that computer name. The reviewed startup profile pins the roster and sensor script. The collector requires the observed network identity and checks the returned computer name. Enable it only after qualifying the actual machine. For a different operating system, qualify its sensor source first.
 
 ## November 23, 2026 | First supervised job after recovery
 

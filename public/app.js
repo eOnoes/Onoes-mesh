@@ -510,10 +510,11 @@ export function renderInference(snapshot) {
   const box = $('inference-nodes'); box.replaceChildren();
   for (const el of document.querySelectorAll('.inference-state')) el.textContent = valid ? 'Inference status at observation: ' + snapshot.status + ' · observed at ' + snapshot.observedAt + ' · ' + age(snapshot.observedAt) : 'Inference unavailable. Previous measurements cleared.';
   for (const el of document.querySelectorAll('.inference-errors')) el.textContent = valid ? 'Errors: ' + (snapshot.errors.map(e=>e.code + (e.nodeId === null ? '' : ' (' + e.nodeId + ')')).join(', ') || 'none') : 'Errors: observation_unavailable';
-  if (!valid || snapshot.nodes.length === 0) { paragraph(box, 'No configured node observations available. Hardware and model residency unknown.'); return; }
-  for (const n of snapshot.nodes) {
+  const nodes = valid ? snapshot.nodes.filter(n => n.id !== 'laptop') : [];
+  if (nodes.length === 0) { paragraph(box, 'No configured node observations available. Hardware and model residency unknown.'); return; }
+  for (const n of nodes) {
     const card = document.createElement('article'); card.className = 'node-observation';
-    const title = document.createElement('h3'); title.textContent = n.id === 'laptop' ? "Tripp's PC" : "Echo's PC"; card.append(title);
+    const title = document.createElement('h3'); title.textContent = "Echo's PC"; card.append(title);
     paragraph(card, 'Status at observation: ' + n.status + ' · source: ' + n.source + ' · ' + age(n.observedAt));
     paragraph(card, 'Observed at: ' + (n.observedAt ?? 'unknown') + ' · observation capability: ' + n.capabilities.observation + ' · load/unload: unavailable');
     paragraph(card, 'Expected hardware: ' + details(n.hardware.expected));
@@ -656,7 +657,9 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
   }
   const elapsed = Math.max(0, probeTick() - nodeProbeReceivedAt);
   if (box.firstElementChild?.tagName !== 'ARTICLE') box.replaceChildren();
-  for (const [i, n] of snapshot.nodes.entries()) {
+  // Existing rosters contain the retired laptop. Keep its measurements out of the rebuilt PC's slot.
+  const machines = [snapshot.nodes[0], {id: 'tripp-pc'}, ...snapshot.nodes.slice(2)];
+  for (const [i, n] of machines.entries()) {
     let card = box.children[i];
     if (card?.getAttribute('data-node-id') !== n.id) {
       const previous = card;
@@ -664,15 +667,22 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       card.className = 'node-observation';
       card.setAttribute('data-node-id', n.id);
       const title = document.createElement('h3');
-      title.textContent = {pc: "Echo's PC", laptop: "Tripp's PC", 'ai-box': 'AI box'}[n.id];
-      const details = document.createElement('details');
-      const summary = document.createElement('summary');
-      summary.textContent = 'Connection details';
-      details.append(summary, document.createElement('div'));
-      card.append(title, document.createElement('div'), details);
+      title.textContent = {pc: "Echo's PC", 'tripp-pc': "Tripp's PC", 'ai-box': 'AI box'}[n.id];
+      if (n.id === 'tripp-pc') {
+        card.append(title);
+        paragraph(card, 'Reported model: Nemotron-boat');
+        paragraph(card, 'Live readings: Not connected');
+      } else {
+        const details = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.textContent = 'Connection details';
+        details.append(summary, document.createElement('div'));
+        card.append(title, document.createElement('div'), details);
+      }
       if (previous) previous.replaceWith(card);
       else box.append(card);
     }
+    if (n.id === 'tripp-pc') continue;
     // Keep the disclosure and its keyboard focus in place as the readings age.
     const readings = card.children[1], diagnostics = card.children[2].children[1];
     readings.replaceChildren();
@@ -697,10 +707,6 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
     statusLine.append(hasObservation && n.observationAvailability === 'unavailable'
       ? 'Last known connection: ' : 'Connection: ', statusWord);
     readings.append(statusLine);
-    if (n.id === 'laptop') {
-      paragraph(readings, 'Usual agent: Hermes');
-      paragraph(diagnostics, 'Usual services: ChatGPT or Claude (reported by Eddie). Current service: Unknown.');
-    }
     if (n.id !== 'pc') paragraph(readings, 'Local model: Unknown');
     if (n.id !== 'pc' && Object.hasOwn(n, 'hardware')) {
       const hardwareAge = Date.parse(snapshot.observedAt) - Date.parse(n.hardwareObservedAt) + elapsed;
@@ -716,7 +722,7 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
         paragraph(readings, 'Hardware readings unavailable');
       }
     } else if (n.id !== 'pc') {
-      paragraph(readings, (n.id === 'laptop' ? 'Laptop' : 'AI box') + ' sensors are off in this Mesh setup.');
+      paragraph(readings, 'AI box sensors are off in this Mesh setup.');
     }
     paragraph(diagnostics, 'Last probe: ' + (n.lastProbeAt ?? 'never') + ' · Last success (Online=true): ' + (n.lastSuccessAt ?? 'never'));
     paragraph(diagnostics, 'Observation: ' + n.observationAvailability + ' · source: ' + snapshot.source + ' · local probe completion timestamps');

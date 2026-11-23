@@ -31,10 +31,10 @@ function ui() {
       const el = document.createElement('p'); el.textContent = text; parent.append(el); return el;
     }
     ${renderer}`, context);
-  return { box, context, render(snapshot, elapsed = 0) {
+  return { box, context, probes(...args) { return this.render(...args).filter(row => row.card.getAttribute('data-node-id') !== 'tripp-pc'); }, render(snapshot, elapsed = 0) {
     context.snapshot = snapshot; context.tick = elapsed;
     vm.runInContext('renderNodeProbes(snapshot, 0)', context);
-    return box.children.map(card => ({ card, line: card.children[1]?.children[0], word: card.children[1]?.children[0]?.children[1] }));
+    return box.children.map(card => ({ card, line: card.children[1]?.children[0], word: card.children[1]?.children[0]?.children?.[1] }));
   } };
 }
 async function ready() {
@@ -45,16 +45,16 @@ async function ready() {
 test('never checked and unsuccessful first observation never imply Offline',async()=>{
   const tx=controlledProbe(),reader=createNodeProbeReader(tx.options),view=ui();
   const initial=reader.snapshot(),before=JSON.stringify(initial);
-  view.render(initial).forEach(row=>{
+  view.probes(initial).forEach(row=>{
     check(row,'Not checked','neutral');
     assert.match(row.line.textContent,/^Connection: Not checked$/);
     assert.doesNotMatch(row.card.textContent,/Offline|observation_expired/);
   });
-  view.render(initial,initial.limits.staleGraceMs*10).forEach(row=>check(row,'Not checked','neutral'));
+  view.probes(initial,initial.limits.staleGraceMs*10).forEach(row=>check(row,'Not checked','neutral'));
   assert.equal(tx.calls.length,0);assert.equal(JSON.stringify(initial),before);
   tx.fail();const failed=await reader.refresh();
   assert.ok(failed.nodes.every(n=>n.tailscaleOnline===null));
-  view.render(failed).forEach(row=>{
+  view.probes(failed).forEach(row=>{
     check(row,'Unavailable','neutral');
     assert.doesNotMatch(row.line.textContent,/cached status|Offline/);
   });
@@ -69,29 +69,29 @@ function check(row, label, state) {
 
 test('fresh ready is Online; cached Online and global UI busy cannot make stale/offline green or Busy', async () => {
   const { snapshot } = await ready(), view = ui(), original = JSON.stringify(snapshot);
-  view.render(snapshot).forEach(row => check(row, 'Online', 'online'));
-  view.render(snapshot, snapshot.limits.freshMs).forEach(row => {
+  view.probes(snapshot).forEach(row => check(row, 'Online', 'online'));
+  view.probes(snapshot, snapshot.limits.freshMs).forEach(row => {
     check(row, 'Stale', 'stale');
     assert.match(row.line.textContent, /^Connection: Stale$/);
     assert.match(row.card.textContent, /observation_expired/);
   });
-  view.render(snapshot, snapshot.limits.staleGraceMs).forEach(row => check(row, 'Check expired', 'stale'));
+  view.probes(snapshot, snapshot.limits.staleGraceMs).forEach(row => check(row, 'Check expired', 'stale'));
   assert.equal(JSON.stringify(snapshot), original, 'renderer never changes cached fields, timestamps or provenance');
 });
 
 test('real controlled offline versus unavailable reads retain distinct wording and neutral cached status', async () => {
   const { tx, reader, snapshot } = await ready(), view = ui();
   tx.offline(); tx.advance(snapshot.limits.staleGraceMs);
-  view.render(await reader.refresh()).forEach(row => check(row, 'Offline', 'offline'));
+  view.probes(await reader.refresh()).forEach(row => check(row, 'Offline', 'offline'));
   tx.fail();
-  view.render(await reader.refresh()).forEach(row => {
+  view.probes(await reader.refresh()).forEach(row => {
     check(row, 'Offline', 'neutral');
     assert.equal(row.line.textContent, 'Last known connection: Offline');
   });
   for (const status of ['ready', 'stale', 'offline', 'busy', 'unavailable', 'unknown', 'not_configured']) {
     const cached = structuredClone(snapshot);
     cached.nodes.forEach(n => { n.status = status; n.observationAvailability = 'unavailable'; });
-    view.render(cached).forEach(row => {
+    view.probes(cached).forEach(row => {
       assert.equal(row.word.className, 'node-status node-status--neutral');
       assert.match(row.line.textContent, /^Last known connection: /);
     });
@@ -106,7 +106,7 @@ test('explicit Busy presentation only; unknown/unavailable/not_configured stay n
     ['<img src=x onerror=alert(1)>', '<img src=x onerror=alert(1)>', 'neutral']]) {
     const supplied = structuredClone(snapshot);
     supplied.nodes.forEach(n => { n.status = status; });
-    view.render(supplied).forEach(row => check(row, label, state));
+    view.probes(supplied).forEach(row => check(row, label, state));
   }
   // Synthetic explicit busy above tests the mapping; v1 currently supplies no workload telemetry.
   assert.ok(snapshot.nodes.every(n => n.status === 'ready'));
@@ -124,23 +124,18 @@ test('status CSS uses scoped theme tokens without changing the global palette', 
   assert.ok(!/\.node-status--neutral\s*\{[^}]*color:/i.test(css), 'neutral status inherits the existing paragraph color');
 });
 
-test('Tripp hardware expires on screen and is never confused with main-PC or model telemetry', async () => {
+test('the rebuilt PC never inherits the former laptop identity, connection or sensors', async () => {
   const {snapshot} = await ready(), view = ui(), laptop = snapshot.nodes[1];
   laptop.hardwareObservedAt = snapshot.observedAt;
   laptop.hardware = {ramPct:22,cpuPct:0,gpuPct:5,gpuTempC:39,cpuTempC:null};
-  const [pc,remote] = view.render(snapshot);
-  assert.doesNotMatch(pc.card.textContent, /39 °C/);
-  assert.match(remote.card.textContent, /Tripp's PC/);
-  assert.match(remote.card.textContent, /GPU5%39 °CCPU0%Temperature unavailable/);
-  assert.match(remote.card.textContent, /Local model: Unknown/);
-  const unavailable = structuredClone(snapshot);
-  unavailable.nodes[1].observationAvailability = 'unavailable';
-  const cached = view.render(unavailable)[1];
-  assert.match(cached.card.textContent, /Hardware readings unavailable/);
-  assert.doesNotMatch(cached.card.textContent, /39 °C/);
-  const aged = view.render(snapshot,30001)[1];
-  assert.match(aged.card.textContent, /Hardware readings unavailable/);
-  assert.doesNotMatch(aged.card.textContent, /39 °C/);
+  for (const elapsed of [0, 30001]) {
+    const card = view.render(snapshot,elapsed)[1].card;
+    assert.equal(card.getAttribute('data-node-id'),'tripp-pc');
+    assert.match(card.textContent,/Reported model: Nemotron-boat/);
+    assert.match(card.textContent,/Live readings: Not connected/);
+    for (const old of [laptop.dnsName,laptop.tailscaleIp,'Online','Offline','39 °C','ChatGPT','Claude'])
+      assert.ok(!card.textContent.includes(old));
+  }
 });
 
 test('three-machine view keeps Echo and Tripp visible when the AI box is unavailable', async () => {
@@ -149,11 +144,8 @@ test('three-machine view keeps Echo and Tripp visible when the AI box is unavail
     tailscaleIp:'100.64.0.23',observationAvailability:'unavailable',tailscaleOnline:null,lastSuccessAt:null};
   const rows = view.render({...snapshot,nodes:[...snapshot.nodes,box]});
   assert.deepEqual(rows.map(row => row.card.children[0].textContent), ["Echo's PC","Tripp's PC",'AI box']);
-  check(rows[0],'Online','online'); check(rows[1],'Online','online'); check(rows[2],'Unavailable','neutral');
-  assert.match(rows[1].card.textContent,/Laptop sensors are off in this Mesh setup/);
-  assert.match(rows[1].card.children[1].textContent,/Usual agent: Hermes/);
-  assert.match(rows[1].card.children[2].textContent,/Usual services: ChatGPT or Claude .*Current service: Unknown/);
-  assert.match(rows[1].card.textContent,/Local model: Unknown/);
+  check(rows[0],'Online','online'); check(rows[2],'Unavailable','neutral');
+  assert.match(rows[1].card.textContent,/Reported model: Nemotron-boat/);
   assert.match(rows[2].card.textContent,/Local model: Unknown/);
   for (const other of [rows[0],rows[2]]) assert.doesNotMatch(other.card.textContent,/Hermes|ChatGPT|Claude/);
   assert.doesNotMatch(rows[2].card.textContent,/Tripp|Echo/);
@@ -163,15 +155,15 @@ test('three-machine view keeps Echo and Tripp visible when the AI box is unavail
 
 test('refresh keeps each machine disclosure intact and updates its readings', async () => {
   const {snapshot} = await ready(), view = ui();
-  const card = view.render(snapshot)[1].card;
+  const card = view.render(snapshot)[0].card;
   const [title, readings, details] = card.children;
-  assert.equal(title.textContent, "Tripp's PC");
+  assert.equal(title.textContent, "Echo's PC");
   assert.equal(details.tagName, 'DETAILS');
   assert.equal(details.children[0].textContent, 'Connection details');
   assert.match(details.textContent, /Last probe:/);
   assert.doesNotMatch(readings.textContent, /Last probe:|reachability|tail8c4a75/);
   details.open = true;
-  const updated = view.render(snapshot, snapshot.limits.freshMs)[1].card;
+  const updated = view.render(snapshot, snapshot.limits.freshMs)[0].card;
   assert.equal(updated.children[2], details);
   assert.equal(details.open, true);
   assert.match(readings.textContent, /Connection: Stale/);
