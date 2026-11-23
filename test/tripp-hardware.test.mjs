@@ -12,7 +12,7 @@ const fixtureSample = [
   'onoes-tripp onoes','@ram','Mem: 1000 400 200 1 100 600',
   '@cpu','r b us sy id wa st','0 0 0 0 100 0 0','1 0 10 10 70 10 0',
   '@thermal',JSON.stringify({'k10temp-test':{Tdie:{temp2_input:41.5},Tctl:{temp1_input:61.5}},'nvme-test':{Tdie:{temp1_input:90}}}),
-  '@gpu','0, NVIDIA GeForce RTX 3060, N/A, 73','1, NVIDIA GeForce RTX 4080 SUPER, 34, 0','@ollama','NAME ID SIZE PROCESSOR CONTEXT RUNNER UNTIL','@ollama-ok','@strata-ready','@end',
+  '@gpu','0, NVIDIA GeForce RTX 3060, N/A, 73','1, NVIDIA GeForce RTX 4080 SUPER, 34, 0','@ollama','NAME ID SIZE PROCESSOR CONTEXT RUNNER UNTIL','@ollama-ok','@strata','{"service":"strata","status":"ok","loaded":true,"model":"inkling"}','@end',
 ].join('\n');
 
 test('Tripp reads the pinned LAN alias with no address overrides, forwarding or PTY', async () => {
@@ -24,7 +24,7 @@ test('Tripp reads the pinned LAN alias with no address overrides, forwarding or 
     assert.equal(opts.windowsHide,true);
     return {stdout:fixtureSample};
   });
-  assert.deepEqual(sample,{ramPct:40,cpuPct:20,gpuPct:73,cpuTempC:41.5,gpuTempC:34,ollamaModels:[],strataHealth:'ready',
+  assert.deepEqual(sample,{ramPct:40,cpuPct:20,gpuPct:73,cpuTempC:41.5,gpuTempC:34,ollamaModels:[],strataHealth:'ready',strataLoaded:true,strataModel:'inkling',
     gpus:[{index:0,name:'NVIDIA GeForce RTX 3060',tempC:null,usagePct:73},
       {index:1,name:'NVIDIA GeForce RTX 4080 SUPER',tempC:34,usagePct:0}]});
 });
@@ -35,11 +35,30 @@ test('missing metrics, wrong account, interrupted replies, and an unavailable mo
     await assert.rejects(read(bad),/Incomplete Tripp/);
   const empty = await read('onoes-tripp onoes\n@end');
   assert.ok(Object.values(empty).every(x=>x===null));
-  const withoutStrata = await read(fixtureSample.replace('@strata-ready',''));
+  const withoutStrata = await read(fixtureSample.replace('@strata\n',''));
   assert.equal(withoutStrata.strataHealth,null);
   assert.deepEqual(withoutStrata.ollamaModels,[]);
   assert.equal((await read(fixtureSample.replace('@ollama-ok',''))).ollamaModels,null);
   assert.deepEqual((await read(fixtureSample.replace('@ollama-ok','demo:small 0123abcd 1GB GPU 4096 GPU forever\n@ollama-ok'))).ollamaModels,['demo:small']);
+});
+
+test('Strata distinguishes an unloaded model, incomplete evidence and another service', async () => {
+  for (const [response,ready,loaded] of [
+    [{service:'strata',status:'ok',loaded:false,model:'old'},'ready',false],
+    [{service:'strata',status:'ok',loaded:'true',model:'example'},'ready',undefined],
+    [{service:'strata',status:'ok',loaded:true,model:'bad\nname'},'ready',true],
+    [{service:'another',status:'ok',loaded:true,model:'old'},null,undefined],
+    [{service:'strata',status:'loading',loaded:true,model:'old'},null,undefined],
+    ['malformed',null,undefined],
+  ]) {
+    const stdout = fixtureSample.replace(/^\{"service":"strata".*$/m,
+      typeof response === 'string' ? response : JSON.stringify(response));
+    const sample = await readTrippHardware(async()=>({stdout}));
+    assert.equal(sample.strataHealth,ready);
+    assert.equal(sample.strataLoaded,loaded);
+    assert.equal(sample.strataModel,undefined);
+    assert.equal(sample.cpuPct,20);
+  }
 });
 
 test('a denied SSH connection is distinct from a rejected login and expires with its observation', async () => {

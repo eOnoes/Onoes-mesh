@@ -755,8 +755,13 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       const state = online ? 'Online' : fresh && desktop.state === 'offline' ? 'Offline' : 'Status unavailable';
       const [, model, strata, , location, gauges, gpuDetails] = card.children;
       renderOllamaModels(model, online && Array.isArray(desktop.ollamaModels) ? desktop.ollamaModels : null);
-      strata.textContent = online && desktop.strataHealth === 'ready'
-        ? 'Strata IK2: Ready · Model unverified' : 'Strata IK2: Status unavailable';
+      let strataStatus = 'Status unavailable';
+      if (online && desktop.strataHealth === 'ready') {
+        strataStatus = 'Ready · Model unverified';
+        if (desktop.strataLoaded === false) strataStatus = 'No model loaded';
+        if (desktop.strataLoaded === true) strataStatus = 'Model loaded · ' + (desktop.strataModel || 'Name unavailable');
+      }
+      strata.textContent = 'Strata IK2: ' + strataStatus;
       location.textContent = fresh && desktop.state === 'unknown' && desktop.reason === 'connection_denied'
         ? 'LAN · Connection denied' : 'LAN · ' + state;
       const cpu = online ? desktop.cpuTempC : null, gpu = online ? desktop.gpuTempC : null;
