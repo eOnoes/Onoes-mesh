@@ -1,6 +1,6 @@
 """Check Hermes worker tool visibility with disposable profiles and two harmless MCP tools.
 
-Run on Windows with: python qualify_hermes_reader_delegation.py PATH_TO_HERMES_PYTHON
+Run on Windows with: python qualify_hermes_reader_delegation.py PATH_TO_HERMES_PYTHON [HERMES_SOURCE]
 The check starts local standard-I/O tool servers. It never opens a model session.
 """
 
@@ -31,8 +31,10 @@ def serve():
     server.run(transport="stdio")
 
 
-def check(case):
+def check(case, source=None):
     import faulthandler
+    if source is not None:
+        sys.path.insert(0, str(source))
     import yaml
     from hermes_constants import get_hermes_home
 
@@ -52,6 +54,10 @@ def check(case):
     from tools.mcp_tool_lifecycle import shutdown_mcp_servers
     from tools.delegate_tool_toolsets import _resolve_child_toolsets
     from model_tools import get_tool_definitions, get_toolset_for_tool
+    if source is not None:
+        for name in ("model_tools", "tools.delegate_tool_toolsets", "tools.mcp_tool_discovery"):
+            path = Path(sys.modules[name].__file__).resolve()
+            assert path == source / Path(*name.split(".")).with_suffix(".py"), name
 
     def catalog(enabled, disabled):
         schemas = get_tool_definitions(enabled, disabled, quiet_mode=True,
@@ -87,7 +93,7 @@ def check(case):
         faulthandler.cancel_dump_traceback_later()
 
 
-def qualify(interpreter):
+def qualify(interpreter, source=None):
     results = {}
     with tempfile.TemporaryDirectory(prefix="mesh-worker-tools-") as temp:
         for case in ("default", "explicit", "worker-profile"):
@@ -103,7 +109,10 @@ def qualify(interpreter):
             env["PATH"] = os.pathsep.join([str(interpreter.parent), str(Path(env["SystemRoot"]) / "System32")])
             with (root / "diagnostic.log").open("w+", encoding="utf-8") as log:
                 try:
-                    proc = subprocess.run([str(interpreter), "-I", str(SCRIPT), "--check", case],
+                    command = [str(interpreter), "-IB", str(SCRIPT), "--check", case]
+                    if source is not None:
+                        command.append(str(source))
+                    proc = subprocess.run(command,
                                           cwd=root, env=env, stdout=subprocess.PIPE, stderr=log,
                                           text=True, errors="replace", timeout=90,
                                           creationflags=subprocess.CREATE_NO_WINDOW)
@@ -123,9 +132,10 @@ def qualify(interpreter):
 if __name__ == "__main__":
     if sys.argv[1:] == ["--serve"]:
         serve()
-    elif len(sys.argv) == 3 and sys.argv[1] == "--check":
-        check(sys.argv[2])
-    elif len(sys.argv) == 2:
-        qualify(Path(sys.argv[1]).resolve(strict=True))
+    elif len(sys.argv) in (3, 4) and sys.argv[1] == "--check":
+        check(sys.argv[2], Path(sys.argv[3]).resolve(strict=True) if len(sys.argv) == 4 else None)
+    elif len(sys.argv) in (2, 3):
+        qualify(Path(sys.argv[1]).resolve(strict=True),
+                Path(sys.argv[2]).resolve(strict=True) if len(sys.argv) == 3 else None)
     else:
         raise SystemExit(__doc__)

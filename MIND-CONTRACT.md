@@ -14,6 +14,16 @@ For the print pilot, look up `project:3d-print-pilot/AGENT-HANDOFF.md` through t
 
 Two disposable readers with independent grants found the same handoff. After replacement, the old copy failed verification. Withdrawing one reader's tool grant ended its lookup while the other could still read. Withdrawing the guide itself removed the remaining reader's result.
 
+### Echo's reader and delegated workers
+
+The first Echo reader is scoped to the shared 3D Print Pilot. It has yet to be enrolled. A worker profile can narrow the tools listed to a worker. On Windows, file access also depends on the security identity that runs the worker.
+
+On November 23 a disposable test called the installed Hermes delegation entry with a local marker in place of a model conversation. Both an ordinary child and a child routed to a separate profile ran on another thread in the parent process. Both used the parent's Windows process token. The routed child selected the requested worker profile during its turn. Moving the entire gateway to a dedicated account would still give an in-process child that account's permissions.
+
+For Echo-only access, keep the live reader with an independently authenticated Echo process and run ordinary workers outside that identity. Include both Hermes delegation and Workroom's native worker route when checking the deployment. The acceptance check is a project read from Echo's Relay and Telegram conversations, denied access for a disposable worker, and withdrawal of Echo's access. The same project ID and current Workroom revision should be visible in both conversations. Use synthetic project facts to qualify the arrangement before issuing the live reader credential.
+
+To repeat the identity observation on Windows, run `integrations/qualify_hermes_worker_identity.py` with the Hermes Python executable and the source checkout used by the gateway. It uses temporary profiles, reports the loaded module hashes, and makes no model requests. The separate tool-catalog check accepts the same source checkout as its optional second argument.
+
 ### Adding one project to an existing writer
 
 The offline owner operation `add_project` takes the complete reviewed list of project IDs and labels and one explicit `addedProjectId`. It requires a separately approved profile, fresh output paths, and exclusive access to the writer. Existing active projects must still match. A revoked credential or a previously registered project cannot be used for this operation.
