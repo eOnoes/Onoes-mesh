@@ -56,6 +56,8 @@ The operation verifies Windows-protected storage for a fresh credential before c
 
 For the print pilot, the intended pair is `onoes-mesh` and `3d-print-pilot`. Once the grant commits, the previous credential expires. In a disposable rehearsal, the old startup configuration was refused. Workroom saved edits to both cards locally and reopened them while offline. With the replacement writer connected, all four events matched Mind receipts. Reopening a second time preserved those receipts and both current titles.
 
+For the print pilot, a private result or evidence edit can advance the Workroom revision visible in Mind. Only the selected title, stage and goal carry card content. The event format keeps empty values for unselected snapshot fields. In the cross-repository handoff test, both readers see the same new revision and unchanged spec. Replaying the event preserves its original receipt.
+
 ### Linking a card on an existing board
 
 Prepare the complete target list of card links. Keep the original projection and field approval for each existing link. For the new card, review its current revision, fields and projected content. `inspectProjectSourceAddition` previews one named addition. `prepareProjectSourceAddition` requires that card ID, the full plan hash and the `approve_exact_mesh_project_source_addition` decision. It appends one baseline in a transaction. If the acknowledgement is lost, `inspectProjectSource` can read back the completed plan and its original event IDs.

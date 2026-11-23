@@ -34,6 +34,15 @@ try {
   controller.link({cardId:card.id, projectId:'project-A', approvalRef:'fixture:owner-reviewed',
                    fields:['title','stage','goal']});
   saveSpec(95, 2);
+  if (process.argv.includes('--private-edit')) {
+    const task = store.workroom.get(card.id);
+    const {goal, checklist, reviewer, decision, revision} = task.progress;
+    store.workroom.saveProgress(card.id, {
+      goal, checklist, reviewer, decision, revision, taskRevision:task.revision, briefRevision:task.workroom.revision,
+      result:'PRIVATE fit result', evidence:'PRIVATE measurement notes',
+    });
+    if (store.workroom.get(card.id).progress.result !== 'PRIVATE fit result') throw Error('Private edit was not saved');
+  }
   const rows = database.prepare('SELECT payload FROM mind_project_outbox WHERE cardId=? ORDER BY sequence').all(card.id);
   process.stdout.write(JSON.stringify(rows.map(row => JSON.parse(row.payload))));
 } finally {

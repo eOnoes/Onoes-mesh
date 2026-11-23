@@ -23,14 +23,15 @@ from project_events_candidate import EventBinding, ProjectEventsCandidate
 
 
 def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False):
-    options = ["--keep-fixture"] if keep_board else []
+    options = ["--keep-fixture"] if keep_board else ["--private-edit"]
     if missing_tolerance:
         options.append("--missing-tolerance")
     run = subprocess.run(["node", str(MESH / "test/print-card-events.mjs"), *options], cwd=tmp_path,
                          capture_output=True, encoding="utf-8", timeout=30,
                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     assert run.returncode == 0, run.stderr
-    first, revised = json.loads(run.stdout)
+    first, revised, *private_edits = json.loads(run.stdout)
+    assert len(private_edits) == (0 if keep_board else 1)
     assert [first["kind"], revised["kind"]] == ["created", "progress"]
     assert "PRIVATE" not in run.stdout
     path = tmp_path / "canonical.sqlite"
@@ -92,6 +93,20 @@ def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False)
                 assert after["provenance"][0]["ref"].startswith("card:"+first["cardId"]+"@")
                 assert writer.submit(writer_token, revised) == receipt
                 assert await current() == after
+                if private_edits:
+                    private_edit, = private_edits
+                    assert private_edit["kind"] == "progress"
+                    assert private_edit["revisions"]["progress"] == revised["revisions"]["progress"] + 1
+                    assert private_edit["snapshot"] == revised["snapshot"]
+                    assert private_edit["snapshot"]["result"] == ""
+                    private_receipt = writer.submit(writer_token, private_edit)
+                    last = await current()
+                    assert last["record_id"] == after["record_id"] and last["revision_id"] != after["revision_id"]
+                    assert last["provenance"] == private_edit["evidence"] and "PRIVATE" not in json.dumps(last)
+                    assert json.loads(last["claim"])["goal"] == expected_goal
+                    assert writer.submit(writer_token, private_edit) == private_receipt
+                    assert await current() == last
+                    after = last
                 grant.path.unlink()
                 assert (await client.call_tool(TOOL_NAME, query)).isError
                 assert json.loads(echo.read(query))["records"] == [after]
