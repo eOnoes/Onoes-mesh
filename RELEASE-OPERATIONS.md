@@ -1,3 +1,8 @@
+## Service ownership before a launch or change
+
+Check the shared service register named in the private Workroom checkpoint and the current listeners on the target host. Match the network namespace, bind address, port, launcher, workspace and data location. Check the external proxy mapping separately. When a socket owner, bot poller or scheduler is uncertain, coordinate with the maintainer before changing it. After an approved change, verify the actual binding and update the same record with the evidence and rollback reference.
+
+Workroom's Rook timer, the Windows Mesh recovery task and Tripp's OpenClaw jobs have distinct responsibilities. A Telegram bot needs one transport owner across hosts. Give background checks their own sessions and qualified accounts. Keep bot credentials and service management outside build workers. The private staging register remains the working copy until the supported Mind interface admits that register and its exact version is read back.
 ## November 23, 2026 | Local model trial for print specifications
 
 The print worker extracts a STEP filename, width and symmetric tolerance from the selected card revision. It checks all three against the supplied text before calculating the range with decimal arithmetic. A missing or mismatched field produces a clarification request on the card. The reviewer still decides whether to accept the work.

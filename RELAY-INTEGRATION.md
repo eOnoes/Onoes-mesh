@@ -6,6 +6,12 @@ history and may retain its existing cache. Mesh Workroom's existing SQLite store
 owns tasks, plans, handoffs, task-linked replies and review decisions.
 There is no new scheduler, duplicate conversation store or imported sandbox tree.
 
+## Direct peer questions
+
+Relay and Hermes A2A are separate routes. A folder handoff records a request. Its presence alone cannot confirm pickup. An A2A Agent Card confirms discovery. A completed reply with the intended peer identity and conversation context confirms an exchange.
+
+Run `python test/echo_a2a_coordination.py <Hermes checkout>` to check the installed adapter with a temporary profile and deterministic answers. It verifies two HTTP messages in one context using an ephemeral credential for Nims. The test never contacts Echo. Production communication requires its own enrollment and an approved execution policy for incoming questions.
+
 ## Compact directory - November15,2026
 
 Agent discovery now uses admitted GET /api/relay/native/api/agents. Mesh requests
