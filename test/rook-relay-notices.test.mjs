@@ -5,8 +5,10 @@ import {mockUI, response, flush, bodyFor} from './app-ui-fixture.mjs';
 const walk = node => [node, ...(node.children ?? []).flatMap(walk)];
 const text = ui => walk(ui.ids.get('rook-reports')).map(n => n.textContent).join('\n');
 const id = '11111111-1111-4111-8111-111111111111';
-const notice = {connection: {status: 'running'}, reports: [{createdAt: '2026-11-08T20:00:00Z',
-  payload: {kind: 'needs_input', taskId: id, title: '<img src=x onerror=bad()>', summary: 'Which folder should this use?'}}]};
+const notice = {connection: {status: 'running'},
+  cards: [{taskId: id, flow: {state:'clarification', revision:3, question:'Which folder should this use?'}}],
+  reports: [{createdAt: '2026-11-08T20:00:00Z',
+  payload: {kind: 'needs_input', taskId: id, title: '<img src=x onerror=bad()>', questionRevision:3, summary: 'Open the card for clarification.'}}]};
 async function admittedUi(rook = notice) {
   const ui = mockUI({responder: (route) => response(route === '/api/trial-session/bootstrap' ? 201 : 200,
     route === '/api/trial-session/bootstrap' ? {csrfToken: 'a'.repeat(43), expiresAt: Date.now() + 100000}
@@ -23,6 +25,34 @@ test('Relay Rook notices use admitted GET only and render untrusted titles as te
   const calls = ui.requests.filter(r => r.route === '/api/workroom/rook');
   assert.equal(calls.length, 1); assert.equal(calls[0].options.method ?? 'GET', 'GET');
   assert.ok(!JSON.stringify([...ui.storage]).includes('Which folder'));
+});
+
+test('Relay shows only the current saved question and keeps answered notices in history', async () => {
+  const current = await admittedUi();
+  assert.ok(text(current).includes('Which folder should this use?'));
+  for (const flow of [
+    {state:'clarification', revision:4, question:'Different question'},
+    {state:'working', revision:4, question:''},
+  ]) {
+    const ui = await admittedUi({...notice, cards:[{taskId:id,flow}]});
+    assert.ok(text(ui).includes('Earlier clarification'));
+    assert.doesNotMatch(text(ui), /Your input needed|Which folder|Different question|Open the card for clarification/);
+  }
+  for (const cards of [[], [{taskId:'another-card',flow:notice.cards[0].flow}]]) {
+    const ui = await admittedUi({...notice, cards});
+    assert.ok(text(ui).includes('Clarification requested'));
+    assert.doesNotMatch(text(ui), /Your input needed|Which folder/);
+  }
+  const legacy = await admittedUi({...notice, reports:[{payload:{
+    kind:'needs_input', taskId:id, title:'Old notice', summary:'An unversioned question'
+  }}]});
+  assert.ok(text(legacy).includes('Clarification requested'));
+  assert.doesNotMatch(text(legacy), /Your input needed|Which folder|An unversioned question/);
+  const privateContent = await admittedUi({...notice,cards:[{taskId:id,flow:{
+    state:'clarification',revision:3,question:'Use token=fixture-secret for the build?'
+  }}]});
+  assert.ok(text(privateContent).includes('Your input needed'));
+  assert.doesNotMatch(text(privateContent), /fixture-secret/);
 });
 
 test('unconfigured watcher stays visibly unconnected; unknown report kinds are ignored', async () => {

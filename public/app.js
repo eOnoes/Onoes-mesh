@@ -892,8 +892,28 @@ function renderRookReports(snapshot) {
     const payload = report?.payload;
     if (!payload || !Object.hasOwn(labels, payload.kind)) continue;
     const article = document.createElement('article'); article.className = 'box section-gap';
-    const heading = document.createElement('h3'); heading.textContent = labels[payload.kind]; article.append(heading);
-    for (const value of [payload.title, payload.summary]) {
+    let label = labels[payload.kind];
+    let summary = payload.summary;
+    if (payload.kind === 'needs_input') {
+      const flow = Array.isArray(snapshot.cards)
+        ? snapshot.cards.find(card => card?.taskId === payload.taskId)?.flow : null;
+      const comparable = Number.isSafeInteger(payload.questionRevision) && payload.questionRevision >= 0 &&
+        Number.isSafeInteger(flow?.revision) && flow.revision >= payload.questionRevision;
+      label = 'Clarification requested';
+      summary = 'Open the card for its current status.';
+      if (comparable && flow.state === 'clarification' && flow.revision === payload.questionRevision) {
+        label = 'Your input needed';
+        const question = typeof flow.question === 'string' ? flow.question.trim() : '';
+        const canPreview = question.length > 0 && question.length <= 500 &&
+          !/[\r\n]|bearer\s|password|secret|api[_ -]?key|token/i.test(question);
+        summary = canPreview
+          ? question : 'Open the card to read the saved question.';
+      } else if (comparable) {
+        label = 'Earlier clarification';
+      }
+    }
+    const heading = document.createElement('h3'); heading.textContent = label; article.append(heading);
+    for (const value of [payload.title, summary]) {
       if (typeof value !== 'string' || !value) continue;
       const text = document.createElement('p'); text.textContent = value.slice(0, 500); article.append(text);
     }

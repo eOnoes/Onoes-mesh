@@ -1,5 +1,9 @@
 # Rook / Mesh integration checkpoint
 
+## Clarification notices in Relay
+
+A notice shows **Your input needed** and a short saved question when its card is still awaiting clarification at the same flow revision. After the card advances, the notice reads **Earlier clarification**. An older notice with no verifiable revision links to the current card. Long, multiline or credential-like text stays behind **Open card**. Refresh reads the report and card together through the existing board endpoint. The saved report and its delivery receipt keep their original contents.
+
 ## Paused native enrollment
 
 The existing owner-reviewed Mesh launch profile can include a `rookEnrollment` record for principal `rook`, destination `mesh_relay_inbox`, mode `paused`, and the selected board's `boardIdentity` from `databaseFileIdentity`. The owner approval must cover the resulting profile hash. The launcher derives the path from the profile's existing data directory and checks the file before launch. The node process checks the same file around board opening and when reporting the connection. A detected replacement invalidates enrollment for that process.
