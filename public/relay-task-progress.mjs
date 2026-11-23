@@ -5,15 +5,17 @@ export function relayProgressSummary(task){
     if(typeof step.text!=='string'||!['pending','working','done','blocked'].includes(step.status))throw Error('Saved task checklist is invalid.');
     return {text:step.text,status:step.status};
   });
+  const completed = (task.workroom?.stage ?? task.status) === 'done';
+  const ownerAccepted = completed && task.flow?.ownerDecision === 'accepted';
   let notice = null;
-  if (task.workroom?.stage !== 'done' && task.status !== 'done') {
+  if (!completed) {
     if (task.flow?.state === 'clarification') {
       notice = {heading:'Clarification requested', text:task.flow.question};
     } else if (task.automation?.state === 'paused') {
       notice = {heading:'Team paused', text:task.automation.reason};
     }
   }
-  return {notice,id:task.id,title:task.title,goal:task.progress.goal,steps,done:steps.filter(step=>step.status==='done').length,
+  return {completed,ownerAccepted,notice,id:task.id,title:task.title,goal:task.progress.goal,steps,done:steps.filter(step=>step.status==='done').length,
     total:steps.length,review:String(task.progress.decision||'pending')};
 }
 export function createRelayTaskProgress({root,button,request,document,timeoutMs=8000}){
@@ -37,8 +39,10 @@ export function createRelayTaskProgress({root,button,request,document,timeoutMs=
       return;
     }
     const progressLabel = model.total ? model.done+'/'+model.total : 'no steps';
-    button.textContent = 'Task · '+(model.notice ? model.notice.heading : progressLabel);
+    const status = model.completed ? 'Done' : model.notice?.heading;
+    button.textContent = 'Task · '+(status || progressLabel);
     body.append(el('h3',model.title));
+    if (model.completed) body.append(el('p',model.ownerAccepted ? 'Done · Accepted by Eddie' : 'Done'));
     if (model.notice) {
       body.append(el('h4',model.notice.heading));
       if (typeof model.notice.text === 'string' && model.notice.text.trim()) body.append(el('p',model.notice.text));

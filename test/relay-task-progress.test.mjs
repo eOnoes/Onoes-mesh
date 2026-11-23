@@ -62,7 +62,29 @@ test('Relay shows the current Workroom question and clears it when work resumes'
   current.workroom.stage='done';
   await refresh(ui);
   assert.ok(!view.text().includes(current.automation.reason));
-  assert.equal(view.open.textContent,'Task · 0/2');
+  assert.equal(view.open.textContent,'Task · Done');
+  assert.ok(view.text().includes('0 of 2 saved steps done'));
+  assert.ok(!view.text().includes('Accepted by Eddie'));
+  current.flow.ownerDecision='accepted';
+  await refresh(ui);
+  assert.ok(view.text().includes('Accepted by Eddie'));
+  current.workroom.stage='working';
+  current.status='done'; // A reopened card's board lane is authoritative.
+  await refresh(ui);
+  assert.equal(view.open.textContent,'Task · Team paused');
+  assert.ok(!view.text().includes('Accepted by Eddie'));
   clear(ui);
   assert.ok(!view.text().includes('Open card in Workroom'));
+});
+
+test('an older completed task shows Done independently of checklist and review', () => {
+  const saved = {...task(), status:'done'};
+  const model = relayProgressSummary(saved);
+  assert.equal(model.completed, true);
+  assert.equal(model.ownerAccepted, false);
+  assert.equal(model.review, 'pending');
+  assert.equal(model.done, 0);
+  const checklistOnly = task();
+  checklistOnly.progress.checklist.forEach(step => { step.status = 'done'; });
+  assert.equal(relayProgressSummary(checklistOnly).completed, false);
 });
