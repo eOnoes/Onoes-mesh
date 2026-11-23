@@ -2,7 +2,7 @@
 
 Open the current private Workroom at https://emitchell.tail8c4a75.ts.net:8453/#workroom. Use port 8453 for this Workroom; the older 8446 installation and its data are separate. Workroom is a private release candidate, not whole-app production acceptance.
 
-For build progress, tap **Finish Onoes-Mesh — all assessed stages**. Its checklist tracks the milestones, and the result summary explains what works on your phone and what still needs attention.
+Open the [running Mesh checklist](https://emitchell.tail8c4a75.ts.net:8453/#task=c2a77ea9-05bb-4b63-85c7-c2d8e9fb2547) to see each milestone and what still needs attention. From the board, tap **Finish Onoes-Mesh — all assessed stages** to open the same card.
 
 ## Make and shape a task
 

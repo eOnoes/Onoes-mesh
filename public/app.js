@@ -233,7 +233,9 @@ async function api(route, options = {}) {
   const controller = new AbortController();
   const machineCheck = route === '/api/node-probes/refresh';
   // The explicit machine check runs up to 2s of discovery then up to 8s of SSH.
-  const timeoutMs = machineCheck ? 15000 :
+  // The Mind reader gets 4s server-side. Let Mesh report a reader failure
+  // before the browser treats the request as a lost Mesh connection.
+  const timeoutMs = machineCheck ? 15000 : route === '/api/mind/recall' ? 6500 :
     route === '/api/inference/chat' ? 18000 : /^\/api\/workroom\/.+\/(message|sync|handoff|approval)$/.test(route) ? 15000 : route === '/api/inference/approve' ? 8000 : 2500;
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
