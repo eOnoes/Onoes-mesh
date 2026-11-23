@@ -273,6 +273,7 @@ async function api(route, options = {}) {
     }
     if (!response.ok) {
       if (response.status === 409 && bootstrap) throw new Error('Local session already active. Start a fresh local session after clearing this tab.');
+      if (response.status === 503 && bootstrap) throw new Error('Mesh could not open a new session. Use an already connected Mesh tab, or try connecting again later.');
       const rawError = await response.text(); checkRequest();
       if (response.status === 409 && route.startsWith('/api/tasks/')) { staleSelection = true; controls(); }
       let errorBody;

@@ -256,8 +256,16 @@ test('actual boundary limits JSON, methods and body claims without response payl
 test('HTTP capacity rejects pressure, expiry frees space, logout and restart fail closed', async t => {
   const f = await fixture(t, { maxSessions: 1 });
   const first = await f.bootstrap();
-  denied(await f.request({ path: '/bootstrap', method: 'POST' }), 503);
+  const log = t.mock.method(console, 'log', () => {});
+  const refused = await f.request({ path: '/bootstrap', method: 'POST' });
+  denied(refused, 503);
+  assert.equal(log.mock.callCount(), 1);
+  const event = JSON.parse(log.mock.calls[0].arguments[0]);
+  assert.equal(event.status, refused.status);
+  assert.equal(event.reason, 'session-capacity');
+  log.mock.restore();
   assert.equal(f.manager.size(), 1);
+  assert.equal((await f.request({ cookie: first.cookie })).status, 200);
   f.tick(1100);
   const second = await f.bootstrap();
   const logout = await f.request({ path: '/logout', method: 'POST', cookie: second.cookie, csrf: second.csrf });
