@@ -1,3 +1,9 @@
+## November 22, 2026 | Hermes worker compatibility
+
+Workroom needs an exact submission lookup to verify a builder's tool profile before sending the job and to reconcile its outcome afterward. The Hermes installation used by Echo on this PC advertises an admission receipt, which requires an admission ID. Its canonical methods omit the submission lookup Mesh uses. A successful chat with Echo therefore does not establish Workroom builder readiness.
+
+The updated Mesh bridge checks the local Hermes contract before requesting a gateway connection. A missing or incomplete lookup returns a specific compatibility hold. An offline copy of the current Hermes source accepted the existing Mesh adaptations and returned the saved file-only profile on two read-only lookups for an unsubmitted request. Its copied Windows process tracker held a disposable assignment after the parent exited, observed the child exit naturally, and kept whole-writer clearance separate. The next qualification is a disposable worker run through that copy, including worker retirement and recovery of a lost reply. Keep the live worker hold and the separately prepared phone release in place.
+
 ## November 22, 2026 | Combined Workroom and Inference rollout
 
 One proposed update brings the phone fixes and team review fixes through a575300 to the installed bdfaa31 release. The seven files cover saved Workroom progress, unsent drafts, slow shared-memory reads, full-session feedback, Agent task links, the machine display, and interrupted team reviews. The package keeps the existing dispatcher pause and linked card.

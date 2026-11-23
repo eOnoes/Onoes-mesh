@@ -12,6 +12,24 @@ LIMIT = 1024 * 1024
 METHODS = frozenset(('session.create', 'prompt.submit', 'prompt.lookup'))
 
 
+class WorkerReceiptUnavailable(RuntimeError):
+    pass
+
+
+def require_worker_receipt(methods):
+    """Check the local client contract before seeking a ticket or creating a session."""
+    lookup = methods.get('prompt.lookup')
+    for model, required in (
+        (getattr(lookup, 'params', None), {'session_id', 'submission_id', 'include_result'}),
+        (getattr(lookup, 'result', None), {'found', 'session_id', 'submission_id', 'profile_contract',
+                                            'receipt', 'outcome', 'process_scope'}),
+    ):
+        fields = {name for base in getattr(model, '__mro__', ())
+                  for name in getattr(base, '__annotations__', {})}
+        if not required.issubset(fields):
+            raise WorkerReceiptUnavailable()
+
+
 def validate_frame(line, last_id):
     if len(line) > LIMIT:
         raise ValueError('Oversized frame')
@@ -86,6 +104,13 @@ async def main(native_root, home):
     sys.path.insert(0, str(native_root))
     # Keep incidental import output away from the private RPC protocol.
     with contextlib.redirect_stdout(sys.stderr):
+        try:
+            from tui_gateway.contracts import registry
+        except ImportError as exc:
+            raise WorkerReceiptUnavailable() from exc
+        if not Path(registry.__file__).resolve().is_relative_to(native_root.resolve()):
+            raise WorkerReceiptUnavailable()
+        require_worker_receipt(getattr(registry, 'CANONICAL_METHODS', {}))
         from aiohttp import ClientSession
         from hermes_cli.gateway_client import _session_ticket, gateway_ws_target
         from hermes_cli.gateway_runtime import discover_gateway_endpoint
@@ -126,6 +151,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     try:
         asyncio.run(main(args.native_root, args.home))
+    except WorkerReceiptUnavailable:
+        emit({'type': 'fatal', 'code': 'worker_receipt_unavailable'})
+        sys.exit(1)
     except Exception:
         # No native exception, private-control reply, ticket, URL or prompt in errors.
         emit({'type': 'fatal', 'error': 'Native gateway connection unavailable.'})

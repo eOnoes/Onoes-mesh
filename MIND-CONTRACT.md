@@ -319,7 +319,7 @@ Withdrawing the test tool grant blocked the next call. Restoring it allowed the 
 
 **Worker access to Echo’s project reader.** In Echo’s installed Hermes version, an ordinary delegated worker received a parent’s sample MCP reader even when its assignment requested only the worker utility. Turning off MCP inheritance excluded the reader for that explicit assignment. A worker with no tool list still inherited the reader.
 
-For the print pilot, route workers through a separate process with its own profile containing only the tools intended for those workers. A fresh process with that setup kept the utility and excluded the reader in both assignment modes. The qualification checked the tool list supplied to the model using local sample servers. The remaining live checks are that Mesh actually uses this route and that its worker account cannot read Echo’s reader credential.
+For the print pilot, route workers through a separate process with its own profile containing only the tools intended for those workers. A fresh process with that setup kept the utility and excluded the reader in both assignment modes. The installed Workroom native binding selects the Echo builder and independent Nims reviewer from the locked plan. Its native builder requests a fixed file-only or file-and-terminal profile with user configuration disabled. The Mesh and Echo gateway processes currently run under the same Windows account. Tool selection alone provides no evidence of separate credential custody. Verify that custody before enrolling Echo’s live reader.
 
 For future MCP tools, build reusable tools once and make them discoverable through
 a shared team catalog. Mind can retain approved tool/skill descriptions, versions,

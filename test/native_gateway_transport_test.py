@@ -3,14 +3,24 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 
-from integrations.native_gateway_transport import require_loopback, validate_frame
+from integrations.native_gateway_transport import WorkerReceiptUnavailable, require_loopback, require_worker_receipt, validate_frame
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_receipt_by_admission_or_without_retirement_cannot_replace_exact_lookup(self):
+        params = type('Params', (), {'__annotations__': dict.fromkeys(['session_id', 'submission_id', 'include_result'])})
+        result = type('Result', (), {'__annotations__': dict.fromkeys(['found', 'session_id', 'submission_id',
+                                                                      'profile_contract', 'receipt', 'outcome'])})
+        lookup = SimpleNamespace(params=params, result=result)
+        for catalog in ({'prompt.receipt': lookup}, {'prompt.lookup': lookup}):
+            with self.assertRaises(WorkerReceiptUnavailable):
+                require_worker_receipt(catalog)
+
     def test_only_bounded_monotonic_allowed_requests(self):
         valid = {'id': 1, 'method': 'prompt.lookup', 'params': {}}
         self.assertEqual(validate_frame(json.dumps(valid), 0), valid)
@@ -40,8 +50,26 @@ def prepare_runtime(root, origin):
     home.mkdir()
     (home / 'origin').write_text(origin)
     (package / '__init__.py').write_text('')
+    contracts = native / 'tui_gateway' / 'contracts'
+    contracts.mkdir(parents=True)
+    for directory in (contracts.parent, contracts):
+        (directory / '__init__.py').write_text('')
+    (contracts / 'registry.py').write_text('''from types import SimpleNamespace
+class Request:
+    session_id: str
+    submission_id: str
+    include_result: bool
+class Response(Request):
+    found: bool
+    profile_contract: dict
+    receipt: dict
+    outcome: str
+    process_scope: dict
+CANONICAL_METHODS = {'prompt.lookup': SimpleNamespace(params=Request, result=Response)}
+''')
     (package / 'gateway_runtime.py').write_text('''from types import SimpleNamespace
 def discover_gateway_endpoint(home, timeout=5):
+    (home/'discovery-requested').touch()
     return SimpleNamespace(state='ready',endpoint=SimpleNamespace(api_origin=(home/'origin').read_text()))
 ''')
     (package / 'gateway_client.py').write_text('''def _session_ticket(home, endpoint, **kwargs):
@@ -54,6 +82,26 @@ def gateway_ws_target(endpoint, ticket):
 
 
 class ProcessTests(unittest.IsolatedAsyncioTestCase):
+    async def test_missing_receipt_holds_node_transport_before_discovery(self):
+        with tempfile.TemporaryDirectory(prefix='mesh-native-version-') as directory:
+            native, home = prepare_runtime(Path(directory), 'http://127.0.0.1:1')
+            (native / 'tui_gateway/contracts/registry.py').write_text('CANONICAL_METHODS = {}')
+            module = (ROOT / 'lib/native-gateway-transport.mjs').as_uri()
+            script = f"""import assert from 'node:assert/strict';
+import {{createNativeGatewayTransport}} from {json.dumps(module)};
+const t=createNativeGatewayTransport({{nativeRoot:process.argv[1],home:process.argv[2],pythonExecutable:process.argv[3]}});
+try {{
+  const receiptHold = e => e.status === 409 && /compatible Hermes worker receipt/.test(e.message);
+  await assert.rejects(t.rpc('session.create', {{request_id:'fixture'}}), receiptHold);
+  await assert.rejects(t.rpc('prompt.submit', {{submission_id:'fixture'}}), receiptHold);
+}} finally {{ await t.close(); }}"""
+            process = await asyncio.create_subprocess_exec('node', '--input-type=module', '-e', script,
+                str(native), str(home), sys.executable, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            _, stderr = await asyncio.wait_for(process.communicate(), 12)
+            self.assertEqual(process.returncode, 0, stderr.decode(errors='replace'))
+            self.assertFalse((home / 'discovery-requested').exists())
+            self.assertFalse((home / 'ticket-requested').exists())
+
     async def test_real_node_python_websocket_roundtrip_and_uncertain_disconnect(self):
         from aiohttp import web
         calls, connections = [], []
