@@ -641,6 +641,43 @@ $('local-inference-chat-form').addEventListener('submit', event => {
   });
 });
 
+function shortOllamaName(tag) {
+  const leaf = tag.split('/').pop();
+  const [name, variant] = leaf.split(':');
+  // Only trim packaging labels. Sizes, versions and named variants identify the model.
+  const base = name.replace(/[-.]gguf$/i, '').replace(/[-.]I?Q\d+(?:_[A-Z0-9]+)*$/i, '') || name;
+  return variant && !/^(?:latest|I?Q\d+(?:_[A-Z0-9]+)*)$/i.test(variant)
+    ? base + ':' + variant : base;
+}
+
+function renderOllamaModels(container, tags) {
+  const key = JSON.stringify(tags);
+  if (container.getAttribute('data-values') === key) return;
+  container.setAttribute('data-values', key);
+  const wasOpen = container.firstElementChild?.open === true;
+  container.replaceChildren();
+  if (!tags?.length) {
+    paragraph(container, tags ? 'Ollama: No models loaded' : 'Ollama: Status unavailable');
+    return;
+  }
+  const labels = tags.map(shortOllamaName);
+  const counts = new Map();
+  for (const name of labels) counts.set(name, (counts.get(name) || 0) + 1);
+  const line = 'Ollama: ' + Array.from(counts, ([name, count]) => count > 1 ? name + ' (' + count + ')' : name).join(', ');
+  if (tags.every((tag, i) => tag === labels[i])) {
+    paragraph(container, line);
+    return;
+  }
+  const details = document.createElement('details');
+  const summary = document.createElement('summary');
+  summary.textContent = line;
+  summary.title = 'Show full Ollama model tags';
+  details.append(summary);
+  for (const tag of tags) paragraph(details, tag);
+  details.open = wasOpen;
+  container.append(details);
+}
+
 export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
   if (snapshot !== nodeProbeSnapshot) nodeProbeReceivedAt = receivedAt;
   nodeProbeSnapshot = snapshot;
@@ -674,8 +711,8 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       const title = document.createElement('h3');
       title.textContent = {pc: "Echo's PC", 'tripp-pc': "Tripp's PC", 'ai-box': 'AI box'}[n.id];
       if (n.id === 'tripp-pc') {
-        card.append(title);
-        paragraph(card, 'Ollama: Status unavailable');
+        const models = document.createElement('div');
+        card.append(title, models);
         paragraph(card, 'Strata IK2: Status unavailable');
         const heading = document.createElement('h4');
         heading.textContent = 'TEMP';
@@ -703,8 +740,7 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       const online = fresh && desktop.state === 'online';
       const state = online ? 'Online' : fresh && desktop.state === 'offline' ? 'Offline' : 'Status unavailable';
       const [, model, strata, , location, gauges, gpuDetails] = card.children;
-      model.textContent = online && Array.isArray(desktop.ollamaModels)
-        ? 'Ollama: ' + (desktop.ollamaModels.join(', ') || 'No models loaded') : 'Ollama: Status unavailable';
+      renderOllamaModels(model, online && Array.isArray(desktop.ollamaModels) ? desktop.ollamaModels : null);
       strata.textContent = online && desktop.strataHealth === 'ready'
         ? 'Strata IK2: Ready · Model unverified' : 'Strata IK2: Status unavailable';
       location.textContent = 'LAN · ' + state;

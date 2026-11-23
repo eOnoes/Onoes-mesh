@@ -7,8 +7,8 @@ import { controlledProbe } from './m5-nodes-fixture.mjs';
 import { createNodeProbeReader } from '../lib/node-probes.mjs';
 
 const source = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
-const renderer = source.slice(source.indexOf('function renderNodeProbes('),
-  source.indexOf('\nasync function refreshNodeProbes(')).trim();
+const renderer = source.slice(source.indexOf('function shortOllamaName('),
+  source.indexOf('\nasync function refreshNodeProbes(')).replace('export function renderNodeProbes(', 'function renderNodeProbes(').trim();
 assert.ok(renderer.endsWith('}'), 'load exactly the production renderer');
 class Element {
   constructor(tag) { this.tagName = tag.toUpperCase(); this.children = []; this.className = ''; this.attributes = {}; }

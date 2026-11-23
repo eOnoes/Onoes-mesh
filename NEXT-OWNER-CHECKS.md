@@ -16,6 +16,8 @@ The main-PC Nemotron load, chat and unload check already passed from the phone. 
 
 The source checkout also has **Open current Workroom card** in Mind search results. It opens the latest saved card when its ID matches the result's Workroom source reference and a card on your board. The separate phone installation prepared at `4fcb70d` predates this change.
 
+In the updated Inference source, a loaded Ollama model on Tripp's card shows its short name. Tap a shortened name to see the exact tags. A count in parentheses means multiple loaded tags share that name. The phone installation prepared at `4fcb70d` also predates this display change.
+
 ## Before starting the first supervised job
 
 When you're ready for the quiet window, let agents editing Mesh finish and save. Leave this chat and the app services open, then tell Nims you're ready. The next step is a fresh read-only comparison of the eight held sends, all retained jobs, the service owners and the backup. Wait for the result before opening a recovery launcher.

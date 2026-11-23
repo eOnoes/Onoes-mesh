@@ -12,11 +12,12 @@ const { chromium } = await import(process.env.M5_NODES_PLAYWRIGHT
   ? pathToFileURL(process.env.M5_NODES_PLAYWRIGHT).href : 'playwright');
 const fixture = controlledProbe();
 const network = createNodeProbeReader(fixture.options);
+let ollamaModels = [];
 // Both remote machines share the fixture's network clock, but have distinct sensors.
 function withBox(view) {
   return {...view, nodes: [...view.nodes, {...view.nodes[1], id:'ai-box', label:'AI box',
     dnsName:'fixture.tail8c4a75.ts.net', tailscaleIp:'100.64.0.23'}],
-    trippDesktop:{source:'lan_ssh',ollamaModels:[],state:'online', ageMs:0, cpuTempC:51, gpuTempC:null, ramPct:31, cpuPct:0, gpuPct:77,
+    trippDesktop:{source:'lan_ssh',ollamaModels,state:'online', ageMs:0, cpuTempC:51, gpuTempC:null, ramPct:31, cpuPct:0, gpuPct:77,
       gpus:[{index:0,name:'RTX 3060',tempC:null,usagePct:77},{index:1,name:'RTX 4080 SUPER',tempC:null,usagePct:0}]}};
 }
 let boxSensorsAvailable = true;
@@ -79,11 +80,29 @@ try {
   assert.equal(await tripp.locator('.thermal-gauge').count(),2);
   assert.equal(await page.locator('[data-node-id="laptop"]').count(),0);
   assert.doesNotMatch(await tripp.innerText(), /Hermes|ChatGPT|Claude|42%|58 °C/);
+  ollamaModels = [
+    'hf.co/example/Qwen3.8-Flash-Next-GGUF:IQ3_S',
+    'local/Qwen3.8-Flash-Next-Q4_K_M.gguf:latest',
+    'registry.ollama.ai/library/gemma3:12b',
+  ];
+  await check.tap();
+  const modelSummary = tripp.locator('summary').filter({hasText:'Ollama:'});
+  await modelSummary.waitFor();
+  assert.equal(await modelSummary.innerText(), 'Ollama: Qwen3.8-Flash-Next (2), gemma3:12b');
+  assert.equal(await tripp.getByText(ollamaModels[0], {exact:true}).isVisible(), false);
+  await modelSummary.tap();
+  for (const tag of ollamaModels) await tripp.getByText(tag, {exact:true}).waitFor();
+  await page.clock.fastForward(2000);
+  assert.equal(await tripp.getByText(ollamaModels[0], {exact:true}).isVisible(), true);
+  await page.setViewportSize({width:320, height:640});
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true);
+  await page.setViewportSize({width:390, height:844});
   await page.clock.fastForward(31000);
   await box.getByText('Hardware readings unavailable').waitFor();
   await tripp.getByText('LAN · Status unavailable').waitFor();
   assert.equal(await firstGpu.count(),0);
   assert.equal(await gpuDetails.isVisible(),false);
+  assert.equal(await tripp.getByText(ollamaModels[0], {exact:true}).count(), 0);
   assert.doesNotMatch(await tripp.innerText(),/31%|77%|51 °C/);
   assert.equal(await boxMeters.count(),0);
   boxSensorsAvailable = false;
@@ -101,7 +120,7 @@ try {
   await page.getByText(/Machine check timed out/).first().waitFor();
   assert.equal(await check.isEnabled(), true);
   assert.equal(await page.locator('#demo-end').isEnabled(), true);
-  assert.equal(requests, 4);
+  assert.equal(requests, 5);
   await menu.tap();
   await page.locator('#tab-workroom').tap();
   await page.getByRole('button', { name: '+ New task', exact: true }).tap();
