@@ -27,7 +27,21 @@ of the current DSH listener, a new hidden disposable server, real HTTP readback,
 duplicate suppression, cleanup using only the retained owned fixture process,
 and unchanged protected DSH process start time. The installed Startup shortcut
 was then invoked and produced a fresh `port-already-listening` receipt. The
-next real Windows sign-in remains untested; no logout or reboot was performed.
+November 22 readback found the shortcut still present after a later boot, but
+both launcher files were missing. The private route returned HTTP 502. Restoring
+the two files from the installed Mesh copy and matching their hashes to the
+original installation receipt brought the listener back. A second invocation of
+the actual shortcut kept the same process. The private route then returned the
+expected DSH authentication challenge. Automatic startup at a subsequent
+sign-in still needs direct observation.
+
+If the private route returns 502, check for `start-hidden.vbs` and
+`start-dsh-web.ps1` in the shortcut's working directory. Match both against the original
+installation receipt before restoring a missing copy. Run the existing shortcut
+once and check `last-start.json` for `listener-ready` or `port-already-listening`.
+Verify the listener belongs to DSH and accepts connections on loopback. An
+unauthenticated request to the private route should receive the DSH sign-in
+challenge.
 
 To disable: turn off **Onoes DeepSeek Harness Web** in Windows Startup apps, or
 remove only its named shortcut from the current user's Startup folder. This
