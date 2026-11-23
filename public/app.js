@@ -955,8 +955,8 @@ $('relay-reconnect').addEventListener('click', () => action(async () => {
   renderRelay(await api('/api/relay/reconnect', { method: 'POST', body: '{}' }));
   message(relaySnapshot?.status === 'fresh' ? 'Relay reconnected; saved task references recovered.' : $('relay-state').textContent, relaySnapshot?.status !== 'fresh');
 }));
-function startSession() { return action(async () => {
-  const startGeneration = generation;
+async function admitTab(startGeneration) {
+  if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
   let session = await admissionPeers?.request();
   if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
   if (!session) session = await api('/api/trial-session/bootstrap', { method: 'POST', body: '{}' });
@@ -980,7 +980,18 @@ function startSession() { return action(async () => {
   sessionRecoveryError = '';
   $('demo-state').textContent = automaticAccess?'Workspace connected through authorized Tailscale access. Agent actions still require an explicit send.':'Local task access verified by server. No human identity or execution approval.';
   automaticEntry?.verified(demo.expiresAt);
-  await refresh();
+  return true;
+}
+
+function startSession() { return action(async () => {
+  const startGeneration = generation;
+  const admit = () => admitTab(startGeneration);
+  // The session cookie is shared by tabs. Let a sibling finish verifying its
+  // session before asking it for proof or starting a new one.
+  const connected = navigator.locks && admissionPeers
+    ? await navigator.locks.request('mesh.session-entry.v1', admit)
+    : await admit();
+  if (connected && startGeneration === generation && admitted) await refresh();
 }); }
 for (const id of ['demo-start', 'workroom-session-start', 'relay-session-start']) $(id).addEventListener('click', () => { workspaceLocked=false;try{sessionStorage.removeItem('mesh.workspace.locked.v1');}catch{} automaticEntry?.retry(); return startSession(); });
 $('demo-end').addEventListener('click', () => { workspaceLocked=true;try{sessionStorage.setItem('mesh.workspace.locked.v1','1');}catch{} automaticEntry?.pause(); return action(async () => {
