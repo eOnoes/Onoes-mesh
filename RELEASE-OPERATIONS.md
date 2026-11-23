@@ -1,3 +1,9 @@
+## November 23, 2026 | First supervised job after recovery
+
+If historical job recovery runs first, keep dispatch paused through recovery and startup restoration. Verify the recovery records, saved cards and linked Mind records on the restored installation. Use that recovered state as the baseline for the phone and team update. Refresh the package's backup and comparisons before installation. A pre-recovery backup predates the recorded outcomes.
+
+In the restored-board rehearsal, the original app still held a fresh team job after historical recovery. The seven-file candidate let a local builder complete one file and an independent reviewer verify it. The completed card opened from Done and from its direct link after a phone-width reload. The existing cards, recovery records, Mind links and sync history matched their pre-job contents. Rolling the application files back restored the original hold on a fresh copy. Production qualification still requires a phone-started job through the deployed Echo and Nims routes.
+
 ## November 22, 2026 | Hermes worker compatibility
 
 Workroom needs an exact submission lookup to verify a builder's tool profile before sending the job and to reconcile its outcome afterward. The Hermes installation used by Echo on this PC advertises an admission receipt, which requires an admission ID. Its canonical methods omit the submission lookup Mesh uses. A successful chat with Echo therefore does not establish Workroom builder readiness.
