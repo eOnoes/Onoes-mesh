@@ -697,7 +697,11 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
     statusLine.append(hasObservation && n.observationAvailability === 'unavailable'
       ? 'Last known connection: ' : 'Connection: ', statusWord);
     readings.append(statusLine);
-    if (n.id !== 'pc') paragraph(readings, 'Model loaded: Unknown');
+    if (n.id === 'laptop') {
+      paragraph(readings, 'Usual agent: Hermes');
+      paragraph(diagnostics, 'Usual services: ChatGPT or Claude (reported by Eddie). Current service: Unknown.');
+    }
+    if (n.id !== 'pc') paragraph(readings, 'Local model: Unknown');
     if (n.id !== 'pc' && Object.hasOwn(n, 'hardware')) {
       const hardwareAge = Date.parse(snapshot.observedAt) - Date.parse(n.hardwareObservedAt) + elapsed;
       const freshHardware = status === 'ready' && n.observationAvailability === 'available' && n.hardware && hardwareAge >= 0 && hardwareAge < 30000;

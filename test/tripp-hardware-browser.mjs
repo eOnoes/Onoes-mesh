@@ -62,10 +62,15 @@ try {
   await check.tap();
   await meters.waitFor({ state: 'visible' });
   for (const value of ['36%', '17%', '42%']) assert.ok((await meters.innerText()).includes(value));
-  assert.match(await laptop.innerText(), /Model loaded: Unknown/);
+  await laptop.getByText('Usual agent: Hermes', {exact:true}).waitFor();
+  assert.match(await laptop.innerText(), /Local model: Unknown/);
+  const disclosure = laptop.getByText('Connection details', {exact:true});
+  await disclosure.tap();
+  await laptop.getByText(/Usual services: ChatGPT or Claude .*Current service: Unknown/).waitFor();
+  await disclosure.tap();
   const boxMeters = box.locator('.pixel-readings');
   for (const value of ['65%', '24%', '87%', '70 °C', '44 °C']) assert.ok((await boxMeters.innerText()).includes(value));
-  assert.match(await box.innerText(), /Model loaded: Unknown/);
+  assert.match(await box.innerText(), /Local model: Unknown/);
   boxSensorsAvailable = false;
   await check.tap();
   await box.getByText('Hardware readings unavailable').waitFor();

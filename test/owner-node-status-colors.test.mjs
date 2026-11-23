@@ -132,7 +132,7 @@ test('Tripp hardware expires on screen and is never confused with main-PC or mod
   assert.doesNotMatch(pc.card.textContent, /39 °C/);
   assert.match(remote.card.textContent, /Tripp's PC/);
   assert.match(remote.card.textContent, /GPU5%39 °CCPU0%Temperature unavailable/);
-  assert.match(remote.card.textContent, /Model loaded: Unknown/);
+  assert.match(remote.card.textContent, /Local model: Unknown/);
   const unavailable = structuredClone(snapshot);
   unavailable.nodes[1].observationAvailability = 'unavailable';
   const cached = view.render(unavailable)[1];
@@ -151,8 +151,11 @@ test('three-machine view keeps Echo and Tripp visible when the AI box is unavail
   assert.deepEqual(rows.map(row => row.card.children[0].textContent), ["Echo's PC","Tripp's PC",'AI box']);
   check(rows[0],'Online','online'); check(rows[1],'Online','online'); check(rows[2],'Unavailable','neutral');
   assert.match(rows[1].card.textContent,/Laptop sensors are off in this Mesh setup/);
-  assert.match(rows[1].card.textContent,/Model loaded: Unknown/);
-  assert.match(rows[2].card.textContent,/Model loaded: Unknown/);
+  assert.match(rows[1].card.children[1].textContent,/Usual agent: Hermes/);
+  assert.match(rows[1].card.children[2].textContent,/Usual services: ChatGPT or Claude .*Current service: Unknown/);
+  assert.match(rows[1].card.textContent,/Local model: Unknown/);
+  assert.match(rows[2].card.textContent,/Local model: Unknown/);
+  for (const other of [rows[0],rows[2]]) assert.doesNotMatch(other.card.textContent,/Hermes|ChatGPT|Claude/);
   assert.doesNotMatch(rows[2].card.textContent,/Tripp|Echo/);
   view.render({...snapshot,configurationIssue:'ai_box_identity_invalid'});
   assert.match(view.box.textContent,/Check the AI box name and address/);
