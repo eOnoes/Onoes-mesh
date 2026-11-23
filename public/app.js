@@ -294,6 +294,11 @@ async function api(route, options = {}) {
     checkRequest();
     if (raw.length > 262144) throw new Error('Response too large.');
     let body; try { body = JSON.parse(raw); } catch { throw new Error('Local app returned an invalid response.'); }
+    if (route.startsWith('/relay/api/') && body && typeof body === 'object' && !Array.isArray(body)) {
+      const dispatchState = response.headers?.get?.('X-Mesh-Dispatch-State');
+      if (dispatchState) body.meshDispatchState = dispatchState;
+      else delete body.meshDispatchState;
+    }
     return body;
   } catch (e) {
     if (machineCheck && controller.signal.aborted) {

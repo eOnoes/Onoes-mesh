@@ -212,6 +212,13 @@ test('actual Relay proxy drains sends, preserves GET access and remains paused a
     app=await preview(env);
     const request=(method)=>fetch(app.url+'/relay/api/fixture',{method,headers:{Authorization:'Bearer '+token,Origin:app.url,'Content-Type':'application/json'},
       ...(method==='POST'?{body:'{}'}:{}),signal:AbortSignal.timeout(10000)});
+    async function observedState(path) {
+      const response = await fetch(app.url + path);
+      assert.equal(response.status, 200);
+      return response.headers.get('X-Mesh-Dispatch-State');
+    }
+    const historyPath = '/relay/api/agents/echo/sessions/fixture/messages?limit=10';
+    assert.equal(await observedState(historyPath), 'open');
     const first=request('POST');let arrivalTimer;
     try {
       await Promise.race([incoming, first.then(response=>{throw Error('Mock upstream not reached: HTTP '+response.status);}),
@@ -221,10 +228,13 @@ test('actual Relay proxy drains sends, preserves GET access and remains paused a
     assert.equal((await request('POST')).status,503);assert.equal(sent,1);
     release();assert.equal((await first).status,200);
     const held=gate.hold();assert.equal((await request('GET')).status,200);
+    assert.equal(await observedState('/relay/api/mesh-capabilities'), 'paused');
+    assert.equal(await observedState(historyPath), 'paused');
     await stop(app.child);app=await preview(env);
     assert.equal((await request('POST')).status,503);assert.equal(sent,1);
     assert.equal(assertDispatchHold(held,binding(join(dir,'tasks.sqlite'))).dispatchPaused,true);
     held.release();gate.resume(paused.generation);
+    assert.equal(await observedState(historyPath), 'open');
     assert.equal((await request('POST')).status,200);assert.equal(sent,2);
     assert.deepEqual(db.prepare('SELECT * FROM tasks WHERE id=?').get(task.id),before);
   } finally {

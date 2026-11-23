@@ -36,6 +36,13 @@ Private evidence: data/relay-history-pages-qualification-20261114.json.
 
 ## Ordinary conversation
 
+During Mesh recovery maintenance, Relay shows the conversation and keeps the
+composer editable. The gateway includes its local dispatch state with history
+and send-capability reads. The phone disables Send while the pause is visible
+and checks again before recording a new send attempt. Refreshing after
+maintenance makes the saved draft available for an explicit Send. An earlier
+unconfirmed attempt keeps its original receipt.
+
 The Relay tab has one composer and one submit handler. It sends ordinary text to
 the explicitly displayed agent and pinned conversation. It does not create a
 Workroom task. Agent disappearance never selects another agent. Native session

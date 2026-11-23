@@ -192,3 +192,53 @@ test('Late older history cannot repaint after privacy clearance; failure retains
  release({messages:[{id:20,t:'Late private'}],oldest_id:20,newest_id:20,has_more:false});await loading;
  assert.deepEqual(f.core.state().messages,[]);assert.equal(f.core.state().hasOlder,false);assert.equal(f.core.state().loadingOlder,false);
 });
+test('Maintenance keeps history and drafts usable and reopening never sends by itself', async () => {
+  const f = fixture();
+  f.setHistory({messages:[{id:1,k:'ag',t:'Earlier reply'}],meshDispatchState:'paused'});
+  await f.ready();
+  f.core.setDraft('Finish this later');
+  assert.equal(f.core.state().messages[0].t, 'Earlier reply');
+  assert.equal(f.core.state().canSend, false);
+  assert.match(f.core.state().note, /paused for Mesh maintenance/);
+  await f.core.send();
+  assert.equal(f.storage.size, 0);
+  f.setHistory({messages:[{id:1,k:'ag',t:'Earlier reply'}],meshDispatchState:'open'});
+  await f.core.refresh();
+  assert.equal(f.core.state().canSend, true);
+  assert.equal(f.core.state().draft, 'Finish this later');
+  assert.equal(f.calls.filter(call => call.options?.method === 'POST').length, 0);
+  await f.core.send();
+  assert.equal(f.receipts.size, 1);
+});
+
+test('Pause between history and Send leaves a new draft without a retry receipt', async () => {
+  const f = fixture({intercept:route => route.endsWith('/mesh-capabilities')
+    ? {taskSessionBinding:1,meshDispatchState:'paused'} : undefined});
+  await f.ready();
+  f.core.setDraft('Keep my words');
+  await f.core.send();
+  assert.equal(f.core.state().draft, 'Keep my words');
+  assert.equal(f.core.state().canSend, false);
+  assert.equal(f.core.state().pending, null);
+  assert.equal(f.storage.size, 0);
+  assert.equal(f.calls.filter(call => call.options?.method === 'POST').length, 0);
+});
+
+test('A maintenance pause preserves an earlier uncertain message and its original ID', async () => {
+  let paused = false;
+  const f = fixture({intercept:(route, options) => {
+    if (options?.method === 'POST') throw Error('Acknowledgement lost');
+    if (route.endsWith('/mesh-capabilities') && paused) return {taskSessionBinding:1, meshDispatchState:'paused'};
+  }});
+  await f.ready();
+  f.core.setDraft('Already attempted');
+  await f.core.send();
+  const receipt = f.storage.get(RECEIPT_KEY);
+  assert.ok(receipt);
+  paused = true;
+  await f.core.send();
+  assert.equal(f.storage.get(RECEIPT_KEY), receipt);
+  assert.equal(f.core.state().draft, 'Already attempted');
+  assert.match(f.core.state().note, /earlier receipt is saved/);
+  assert.equal(f.calls.filter(call => call.options?.method === 'POST').length, 1);
+});

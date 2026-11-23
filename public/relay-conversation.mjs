@@ -12,6 +12,11 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
   let available=false,blocked=false,initializing=false,sending=false,live=false,epoch=0,reads=0;
   let agents=[],destination=null,messages=[],observedAt=null,pending=null,note='Connect to choose a Relay agent.';
   let refreshFlight=null;
+  let sendHold = '';
+  function observeDispatch(reply) {
+    sendHold = reply.meshDispatchState === 'paused' ? 'Sending is paused for Mesh maintenance.'
+      : reply.meshDispatchState === 'unavailable' ? 'Mesh could not check whether sending is available.' : '';
+  }
   let hasOlder=false,loadingOlder=false,oldest=null,newest=null;
   const cursor=n=>Number.isSafeInteger(Number(n))&&Number(n)>0?Number(n):null;
   const normalizeMessage=m=>({id:String(m.id??''),k:m.k==='you'?'you':'ag',t:String(m.t??''),at:String(m.created_at??''),
@@ -20,9 +25,9 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
   const drafts=new Map();
   function state() {
     return {available,initializing,sending,live,agents:[...agents],destination:destination && {...destination},
-      messages:[...messages],observedAt,pending:pending && {...pending},note,hasOlder,loadingOlder,
+      messages:[...messages],observedAt,pending:pending && {...pending},note:sendHold ? `${sendHold} ${note}` : note,hasOlder,loadingOlder,
       draft:destination ? drafts.get(key(destination)) || '' : '',
-      canSend:available&&!initializing&&!sending&&!blocked&&Boolean(destination)&&agents.some(peer=>peer.id===destination.agentId)&&(!pending||Boolean(same(pending,destination)))&&(live||Boolean(same(pending,destination)))};
+      canSend:available&&!sendHold&&!initializing&&!sending&&!blocked&&Boolean(destination)&&agents.some(peer=>peer.id===destination.agentId)&&(!pending||Boolean(same(pending,destination)))&&(live||Boolean(same(pending,destination)))};
   }
   const publish=()=>onChange(state());
   const current=turn=>available&&turn===epoch;
@@ -80,6 +85,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
         if(!Array.isArray(result?.messages))throw Error('Conversation history unavailable.');
         catchingUp=true;
       }
+      observeDispatch(result);
       const page=result.messages.map(normalizeMessage);
       if(cursor(result.oldest_id)&&page.length){
         const first=cursor(result.oldest_id);
@@ -90,7 +96,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
         newest=cursor(result.newest_id)||newest;
       }else if(!catchingUp){messages=page;hasOlder=false;oldest=null;newest=null;}
       live=peer.sessionId===destination.sessionId;observedAt=new Date().toISOString();
-      note=live ? (pending?'Uncertain send: retry requires its exact original text and destination.':'Conversation checked. Sending requires an explicit Send.') : 'Native conversation changed. This is the selected historical session. Use current conversation explicitly; an uncertain retry stays bound to its original session.';
+      note=live ? (pending?'Uncertain send: retry requires its exact original text and destination.':(sendHold ? 'You can read history and edit your draft.' : 'Conversation checked. Sending requires an explicit Send.')) : 'Native conversation changed. This is the selected historical session. Use current conversation explicitly; an uncertain retry stays bound to its original session.';
       if(catchingUp&&result.has_more)note+=' Catching up on newer messages; Refresh continues from this page.';
       publish();
     }catch(error){if(current(turn)&&read===reads){live=false;note=`History unavailable; last displayed record is stale. ${error.message}`;publish();}}
@@ -130,6 +136,11 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
       if(pending&&(!same(pending,target)||pending.hash!==hash))throw Error('An earlier send is uncertain. Retry its exact original text and destination; a new send is paused.');
       const capabilities=await request('/relay/api/mesh-capabilities');if(!current(turn))return;
       if(capabilities?.taskSessionBinding!==1)throw Error('Relay session binding is unavailable. Nothing was sent.');
+      observeDispatch(capabilities);
+      if (sendHold) {
+        note = pending ? 'Your earlier receipt is saved. Refresh before retrying.' : 'Your draft is ready for later.';
+        return;
+      }
       const list=await request('/api/relay/native/api/agents');if(!current(turn))return;
       const peer=Array.isArray(list)&&list.find(a=>a.id===target.agentId);
       if(!peer||(!pending&&peer.conversation_id!==target.sessionId)){live=false;throw Error('Selected destination changed. Nothing was sent; explicitly select the current conversation.');}
@@ -151,7 +162,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
       value=Boolean(value);if(value===available)return;
       epoch++;reads++;available=value;live=false;
       hasOlder=false;loadingOlder=false;oldest=null;newest=null;
-      if(!value){agents=[];destination=null;messages=[];observedAt=null;drafts.clear();pending=null;blocked=false;initializing=false;sending=false;note='Private chat cleared. Reconnect to choose an agent.';publish();return;}
+      if(!value){sendHold='';agents=[];destination=null;messages=[];observedAt=null;drafts.clear();pending=null;blocked=false;initializing=false;sending=false;note='Private chat cleared. Reconnect to choose an agent.';publish();return;}
       initializing=true;const turn=epoch;publish();
       try{await restore(turn);}catch(error){if(current(turn)){blocked=true;note=error.message;}}
       if(current(turn)){initializing=false;publish();if(!blocked)await refresh();}
