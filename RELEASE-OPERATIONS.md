@@ -10,15 +10,13 @@ If historical job recovery runs first, keep dispatch paused through recovery and
 
 In the restored-board rehearsal, the original app still held a fresh team job after historical recovery. The seven-file candidate let a local builder complete one file and an independent reviewer verify it. The completed card opened from Done and from its direct link after a phone-width reload. The existing cards, recovery records, Mind links and sync history matched their pre-job contents. Rolling the application files back restored the original hold on a fresh copy. Production qualification still requires a phone-started job through the deployed Echo and Nims routes.
 
-## November 22, 2026 | Hermes worker compatibility
+## First supervised job | Echo gateway compatibility
 
-Workroom needs an exact submission lookup to verify a builder's tool profile before sending the job and to reconcile its outcome afterward. The Hermes installation used by Echo on this PC advertises an admission receipt, which requires an admission ID. Its canonical methods omit the submission lookup Mesh uses. A successful chat with Echo therefore does not establish Workroom builder readiness.
+The November 22 check reached Echo through the normal Workroom connection. For an exact session that had never received a job, the running gateway confirmed the expected restricted tool profile and worker process tracking. Two recorded checks found zero submissions and sent zero prompts. The Windows launcher selects the Hermes checkout ahead of the package snapshot. The snapshot alone gave the wrong answer about the running gateway.
 
-The Mesh bridge in source checks its local Hermes contract before requesting a gateway connection. A missing or incomplete lookup returns a compatibility hold.
+Keep Echo running for ordinary use. Its submission lookup passed on the installed version. For a future Hermes upgrade, check the launcher's source and repeat the read-only lookup before deciding whether gateway maintenance is needed. The isolated build and rollback evidence is in [the worker maintenance guide](integrations/NATIVE-WORKER-MAINTENANCE.md).
 
-The isolated gateway trial ran against a copy of Echo's installed source with five file changes and a local fixture provider. A Workroom job edited its proof file and ran its build checks. The trial dropped the submission reply after Hermes admitted the job. Workroom reopened its saved board, reconciled the original submission, and applied one result. One session creation and one submission were observed for that job. The saved goal, checklist, result and evidence matched the applied report. The worker's descendants and outstanding write finished before review. The review destination was simulated.
-
-The file rehearsal restored three original files and removed both trial additions from the disposable installation. Before deployment, check the active Hermes environment and file versions again, confirm the gateway is idle, then obtain a shared-gateway maintenance window. After a restart verify a closed file-only worker profile and process tracking. The private board remains on its published phone release. The eight historical holds have their own recovery plan.
+Workroom dispatch still depends on historical job recovery. Compare the entire current Relay and Hermes retained-record set with the window's reviewed set. An additional started admission with no card or conversation link still needs review. Preserve the hold until the running work and the recovery scope are reconciled. After recovery and the tested phone/team update, verify one fresh job through Echo and the independent Nims reviewer before enabling automatic assignments.
 
 ## November 22, 2026 | Combined Workroom and Inference rollout
 
