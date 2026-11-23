@@ -15,7 +15,8 @@ const network = createNodeProbeReader(fixture.options);
 // Both remote machines share the fixture's network clock, but have distinct sensors.
 function withBox(view) {
   return {...view, nodes: [...view.nodes, {...view.nodes[1], id:'ai-box', label:'AI box',
-    dnsName:'fixture.tail8c4a75.ts.net', tailscaleIp:'100.64.0.23'}]};
+    dnsName:'fixture.tail8c4a75.ts.net', tailscaleIp:'100.64.0.23'}],
+    trippDesktop:{state:'online', ageMs:0, cpuTempC:51, gpuTempC:null}};
 }
 let boxSensorsAvailable = true;
 const reader = withRemoteHardware({
@@ -63,12 +64,14 @@ try {
   await boxMeters.waitFor({state:'visible'});
   for (const value of ['65%', '24%', '87%', '70 °C', '44 °C']) assert.ok((await boxMeters.innerText()).includes(value));
   await tripp.getByText('Reported model: Nemotron-boat', {exact:true}).waitFor();
-  await tripp.getByText('Live readings: Not connected', {exact:true}).waitFor();
-  assert.equal(await tripp.locator('.pixel-readings').count(),0);
+  await tripp.getByRole('heading',{name:'TEMP',exact:true}).waitFor();
+  await tripp.getByText('51 °C', {exact:true}).waitFor();
+  assert.equal(await tripp.locator('.thermal-gauge').count(),2);
   assert.equal(await page.locator('[data-node-id="laptop"]').count(),0);
-  assert.doesNotMatch(await tripp.innerText(), /Online|Offline|Hermes|ChatGPT|Claude|42%/);
+  assert.doesNotMatch(await tripp.innerText(), /Hermes|ChatGPT|Claude|42%|58 °C/);
   await page.clock.fastForward(31000);
   await box.getByText('Hardware readings unavailable').waitFor();
+  await tripp.getByText('Omarchy · Status unavailable').waitFor();
   assert.equal(await boxMeters.count(),0);
   boxSensorsAvailable = false;
   await Promise.all([page.waitForResponse(origin + '/api/node-probes/refresh'), check.tap()]);

@@ -132,10 +132,21 @@ test('the rebuilt PC never inherits the former laptop identity, connection or se
     const card = view.render(snapshot,elapsed)[1].card;
     assert.equal(card.getAttribute('data-node-id'),'tripp-pc');
     assert.match(card.textContent,/Reported model: Nemotron-boat/);
-    assert.match(card.textContent,/Live readings: Not connected/);
+    assert.match(card.textContent,/TEMP.*Omarchy · Status unavailable/);
+    assert.match(card.textContent,/Temperature unavailable/);
     for (const old of [laptop.dnsName,laptop.tailscaleIp,'Online','Offline','39 °C','ChatGPT','Claude'])
       assert.ok(!card.textContent.includes(old));
   }
+});
+
+test('TEMP shows independent CPU and GPU readings only while the desktop observation is fresh', async () => {
+  const {snapshot} = await ready(), view = ui();
+  snapshot.trippDesktop = {state:'online',ageMs:1000,cpuTempC:51,gpuTempC:null};
+  const card = () => view.render(snapshot)[1].card;
+  assert.match(card().textContent,/Omarchy · OnlineCPU51 °CGPUTemperature unavailable/);
+  assert.doesNotMatch(view.render(snapshot,29000)[1].card.textContent,/51 °C/);
+  snapshot.trippDesktop = {state:'offline',ageMs:0,cpuTempC:51};
+  assert.match(card().textContent,/Omarchy · OfflineCPUTemperature unavailable/);
 });
 
 test('three-machine view keeps Echo and Tripp visible when the AI box is unavailable', async () => {

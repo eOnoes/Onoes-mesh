@@ -8,7 +8,9 @@
 | Phone · Relay | Read conversations and older messages. Mesh maintenance currently pauses outgoing messages. The tested update that explains the pause in the composer is awaiting its Mesh and card-writer reconnect. |
 | At the PC · 3D Print Pilot | When ready to share the pilot, have the saved backup archive password available for the two local prompts. The existing shared Mesh card is connected to Mind. The print pilot is still private to Workroom. |
 | At the PC · supervised work | Arrange a quiet recovery window for the historical job holds. After recovery and route qualification, start one real card from the phone with Echo building and Nims reviewing. Rook activation follows that check. |
-| Inference · other machines | The rebuilt desktop appears as **Tripp's PC**. **Nemotron-boat** is the owner-reported model. Live readings require the rebuilt PC's own verified device name and sensor connection. The old laptop is on hold. The AI box awaits hardware. |
+| Inference · other machines | The installed release lists **Tripp's PC** and its reported model, **Nemotron-boat**. The TEMP update identifies the rebuilt Linux desktop as **omarchy**. Mesh observed it offline. After rollout and its next connection, use **Other machines → Check machine status** to verify its CPU and GPU temperatures. |
+
+Each TEMP gauge shows the highest supported reading for that component. A missing sensor shows **Temperature unavailable**. Readings expire after 30 seconds. Mesh uses the desktop’s existing trusted SSH login.
 
 The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
 

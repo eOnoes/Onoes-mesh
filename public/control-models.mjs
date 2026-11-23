@@ -36,7 +36,7 @@ export function supervisorControlView(snapshot,now=Date.now()){
   };
 }
 
-export function pixelReading(kind,label,pct,tempC = null, dom = document) {
+export function pixelReading(kind,label,pct,tempC = null, dom = document, temperatureOnly = false) {
   function el(tag, className, text) {
     const node = dom.createElement(tag);
     if (className) node.className = className;
@@ -61,8 +61,11 @@ export function pixelReading(kind,label,pct,tempC = null, dom = document) {
       visual.title = 'Temperature scale 0–100 °C';
     }
     visual.append(icon);
-    copy.append(head, bar, el('small', 'thermal-caption',
-      measured ? Math.round(tempC) + ' °C' : 'Temperature unavailable'));
+    const temperature = measured ? Math.round(tempC) + ' °C' : 'Temperature unavailable';
+    if (temperatureOnly) {
+      head.replaceChildren(el('span',null,label), el('strong',null,temperature));
+      copy.append(head);
+    } else copy.append(head, bar, el('small', 'thermal-caption', temperature));
   } else {
     copy.append(head, bar);
   }

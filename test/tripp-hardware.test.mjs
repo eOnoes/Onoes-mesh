@@ -2,7 +2,37 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {encodeTrippProbe, normalizeTrippSample, readWindowsHardware, withRemoteHardware, withTrippHardware} from '../lib/tripp-hardware.mjs';
-import {NODE_IDENTITIES} from '../lib/node-probes.mjs';
+import {NODE_IDENTITIES, observeOmarchy, readOmarchyTemperatures} from '../lib/node-probes.mjs';
+
+test('only the uniquely identified online Omarchy Linux desktop can supply temperatures', async () => {
+  const dns = 'omarchy.example.test';
+  const peer = {HostName:'omarchy', DNSName:dns+'.', OS:'linux', Online:true, TailscaleIPs:['100.64.0.9']};
+  let calls = 0;
+  const check = (...peers) => observeOmarchy(JSON.stringify({BackendState:'Running',Peer:{...peers}}),
+    'main.example.test', async target => {
+      assert.equal(target,dns); calls++; return {cpuTempC:49,gpuTempC:null};
+    });
+  for (const peers of [[], [peer,peer], [{...peer,OS:'windows'}], [{...peer,TailscaleIPs:['127.0.0.1']}],
+      [{...peer,DNSName:'laptop.example.test.'}], [{...peer,HostName:'old-laptop'}]]) {
+    assert.deepEqual(await check(...peers),{state:'unknown'});
+  }
+  assert.deepEqual(await check({...peer,Online:false}),{state:'offline'});
+  assert.equal(calls,0);
+  assert.deepEqual(await check(peer),{state:'online',cpuTempC:49,gpuTempC:null});
+  assert.equal(calls,1);
+});
+
+test('Omarchy temperatures accept only labelled in-range measurements returned by the expected host', async () => {
+  const run = output => async (_exe,args,opts) => {
+    assert.ok(args.includes('StrictHostKeyChecking=yes')); assert.equal(opts.windowsHide,true);
+    return {stdout:output};
+  };
+  assert.deepEqual(await readOmarchyTemperatures('omarchy.example.test',run('host omarchy\ncpuMilli 52300\ngpuC 45\ngpuMilli 61000\ngpuC 999')),
+    {cpuTempC:52.3,gpuTempC:61});
+  assert.deepEqual(await readOmarchyTemperatures('omarchy.example.test',run('host omarchy\ngpuC N/A')),
+    {cpuTempC:null,gpuTempC:null});
+  await assert.rejects(readOmarchyTemperatures('omarchy.example.test',run('host laptop\ngpuC 60')),/Unexpected sensor host/);
+});
 
 const box = {id:'ai-box',label:'AI box',dnsName:'fixture.tail8c4a75.ts.net',tailscaleIp:'100.64.0.23'};
 

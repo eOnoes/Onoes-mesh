@@ -676,7 +676,11 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       if (n.id === 'tripp-pc') {
         card.append(title);
         paragraph(card, 'Reported model: Nemotron-boat');
-        paragraph(card, 'Live readings: Not connected');
+        const heading = document.createElement('h4');
+        heading.textContent = 'TEMP';
+        const gauges = document.createElement('div');
+        gauges.className = 'pixel-readings';
+        card.append(heading, document.createElement('p'), gauges);
       } else {
         const details = document.createElement('details');
         const summary = document.createElement('summary');
@@ -687,7 +691,23 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
       if (previous) previous.replaceWith(card);
       else box.append(card);
     }
-    if (n.id === 'tripp-pc') continue;
+    if (n.id === 'tripp-pc') {
+      const desktop = snapshot.trippDesktop;
+      const fresh = Number.isFinite(desktop?.ageMs) && desktop.ageMs >= 0 &&
+        desktop.ageMs + elapsed < 30000;
+      const online = fresh && desktop.state === 'online';
+      const state = online ? 'Online' : fresh && desktop.state === 'offline' ? 'Offline' : 'Status unavailable';
+      const [, , , location, gauges] = card.children;
+      location.textContent = 'Omarchy · ' + state;
+      const cpu = online ? desktop.cpuTempC : null, gpu = online ? desktop.gpuTempC : null;
+      const key = JSON.stringify([cpu ?? null, gpu ?? null]);
+      if (gauges.getAttribute('data-values') !== key) {
+        gauges.setAttribute('data-values', key);
+        gauges.replaceChildren(pixelReading('cpu','CPU',null,cpu,document,true),
+          pixelReading('gpu','GPU',null,gpu,document,true));
+      }
+      continue;
+    }
     // Keep the disclosure and its keyboard focus in place as the readings age.
     const readings = card.children[1], diagnostics = card.children[2].children[1];
     readings.replaceChildren();
