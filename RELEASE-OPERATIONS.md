@@ -6,6 +6,14 @@ During installation, Workroom served its local board before the shared-card writ
 
 Inference shows the two configured machines. The optional laptop sensor launcher in `83816bb` awaits its own rollout and real hardware check. The print pilot remains private to Workroom. Historical job recovery requires fresh inputs for this installed version and an attended window.
 
+### Workroom phone follow-up awaiting rollout
+
+The two-file update at `0f61813` lets **Check progress** read a saved card during a Relay outage. It also keeps an unsent message in the card while dispatch is paused. The installed release is still `bdfaa31`.
+
+On a disposable Windows board, a 390 px touch browser reopened the card during local capture while Mind was unavailable, normal operation after reconnection, and read-only fallback after the writer stopped. Each mode served the updated Workroom module and stylesheet. The offline edit reached Mind with its original event ID, and the next startup check kept the running gateway. A separate rollback restored all 446 original source files.
+
+Before rollout, recheck the installed release and its three startup profiles. The pending Rook update also changes those profiles. If either update lands first, prepare the other against the new installation.
+
 ## Current-boot recovery candidate and accepted phone cutover - November 16, 2026
 
 Eddie accepted both the deployed Workroom and Mind screens on his phone after

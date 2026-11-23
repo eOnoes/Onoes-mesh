@@ -10,6 +10,10 @@ A disposable integration check compared two publication paths. Publishing two or
 
 The print pilot still needs explicit writer scope for its project and a read-only connection reserved for Echo. The channel checks used test credentials. Live Echo enrollment and cross-channel retrieval on Eddie's PC are pending.
 
+For the print pilot, look up `project:3d-print-pilot/AGENT-HANDOFF.md` through the project reader. Search returns the reviewed reference. When using a copy of the guide, verify its exact bytes against the single current, operator-reviewed record. If the reference is missing, two revisions are current, or the copy differs, pause and obtain the current reviewed guide. Look up the changing dimensions and CAD filename in the linked specification.
+
+Two disposable readers with independent grants found the same handoff. After replacement, the old copy failed verification. Withdrawing one reader's tool grant ended its lookup while the other could still read. Withdrawing the guide itself removed the remaining reader's result.
+
 ### Adding one project to an existing writer
 
 The offline owner operation `add_project` takes the complete reviewed list of project IDs and labels and one explicit `addedProjectId`. It requires a separately approved profile, fresh output paths, and exclusive access to the writer. Existing active projects must still match. A revoked credential or a previously registered project cannot be used for this operation.
