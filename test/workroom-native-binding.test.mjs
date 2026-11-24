@@ -120,7 +120,10 @@ test('actual admitted server team start uses the native binding and holds a mism
     app=await startApp({dataDir,relayEnabled:true,nativeWorkerOptions:{profile:{...profile(),workspace},authorized:()=>allowed,
       rpc:async(method,params)=>{requests.push({method,params});
         if(method==='session.create')return {session_id:'local-'+'a'.repeat(64)};
-        if(method==='prompt.lookup')return {found:false,profile_contract:{closed:false}};
+        if(method==='prompt.lookup')return {found:false,session_id:params.session_id,submission_id:params.submission_id,
+          process_scope_supported:true,profile_contract:{closed:true,provider:'openai-codex',base_url:null,
+            api_key_configured:false,model:profile().model,workspace,toolsets:['file'],safe_mode:true,
+            ignore_user_config:true,follow_profile:false,source:'tool',max_turns:50,terminal_backend:'docker'}};
         throw Error('Unexpected native call');},close:()=>{disconnects++;}}});
     const headers={Origin:app.url,'Content-Type':'application/json'};
     const boot=await fetch(app.url+'/api/trial-session/bootstrap',{method:'POST',headers,body:'{}'});

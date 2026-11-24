@@ -1,3 +1,4 @@
+import json
 import unittest
 import threading
 import sqlite3
@@ -200,6 +201,22 @@ class CodexFrozenProfileTests(unittest.TestCase):
         p=self.policy({'api_key':'NEVER_EXPORT_CODEX_KEY'});c=describe_profile(p);self.assertIs(c['api_key_configured'],True);self.assertNotIn('NEVER_EXPORT_CODEX_KEY',str(c))
     def test_private_key_presence_without_owner_context_is_unproved(self):
         p=self.policy({'api_key':'NEVER_EXPORT_PRIVATE_KEY'});p.config_secret_ref='private-config';self.assertIsNone(describe_profile(p)['api_key_configured']);c=describe_profile(p,object());self.assertIs(c['api_key_configured'],True);self.assertNotIn('NEVER_EXPORT_PRIVATE_KEY',str(c))
+
+    def test_reports_the_frozen_native_terminal_backend(self):
+        policy = self.policy()
+        for backend in ('local', 'docker', 'ssh'):
+            with self.subTest(backend=backend):
+                policy.terminal_json = json.dumps({
+                    'TERMINAL_ENV': backend,
+                    'backend': 'local',
+                    'TERMINAL_SSH_KEY': 'NEVER_EXPORT_PRIVATE_KEY',
+                })
+                contract = describe_profile(policy)
+                self.assertEqual(contract['terminal_backend'], backend)
+                self.assertIs(contract['closed'], backend == 'local')
+                self.assertNotIn('NEVER_EXPORT_PRIVATE_KEY', str(contract))
+        policy.terminal_json = '{"TERMINAL_ENV": null}'
+        self.assertIsNone(describe_profile(policy))
 
 
 if __name__ == '__main__':

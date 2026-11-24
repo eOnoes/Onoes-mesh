@@ -383,7 +383,7 @@
 +            await asyncio.to_thread(assignment_scope.retire)
 --- /dev/null
 +++ b/gateway/mesh_assignment_process.py
-@@ -0,0 +1,190 @@
+@@ -0,0 +1,194 @@
 +"""Assignment-owned process observation; never a whole-writer clearance receipt."""
 +import asyncio
 +import json
@@ -554,16 +554,20 @@
 +        if url.username or url.password or url.query or url.fragment:
 +            return None
 +        terminal=json.loads(policy.terminal_json)
++        # Match the frozen scope consumed by Hermes's terminal and file tools.
++        backend=terminal.get('TERMINAL_ENV',terminal.get('backend','local'))
++        if not isinstance(backend,str) or not re.fullmatch(r'[a-z][a-z0-9_-]{0,31}',backend):
++            return None
 +        tools=list(policy.toolsets)
 +        closed=(policy.safe_mode is True and policy.ignore_user_config is True
 +            and read('follows_profile') is False and policy.source=='tool'
 +            and not policy.editor_mcp_json and not policy.kanban_json and not policy.client_env_remote
 +            and not policy.skills_prompt and set(tools) in ({'file'},{'file','terminal'})
-+            and terminal.get('backend','local')=='local')
++            and backend=='local')
 +        out=dict(model=policy.model,provider=read('provider'),base_url=base,workspace=policy.cwd,
 +            toolsets=tools,safe_mode=policy.safe_mode,ignore_user_config=policy.ignore_user_config,
 +            follow_profile=read('follows_profile'),source=policy.source,max_turns=read('max_turns'),
-+            terminal_backend=terminal.get('backend','local'),closed=closed)
++            terminal_backend=backend,closed=closed)
 +        if out['provider']=='openai-codex':
 +            # Report presence only. Private values never leave the native owner.
 +            if getattr(policy,'config_secret_ref',None) and authority is None:
