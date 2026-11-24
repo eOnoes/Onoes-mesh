@@ -9,3 +9,68 @@
     $issued -le $now -and $expires -gt $now -and $expires -gt $issued -and ($expires-$issued).TotalHours -le 24 -and
     [DateTimeOffset]::Parse($plan.preparedAt) -ge $issued)
   }catch{return $false}
+@@ -59,6 +59,32 @@
+ }
+ Require ($base.StartsWith((Join-Path $workspace 'data')+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase) -and
+  ([IO.Path]::GetFileName($base) -cmatch '^current-boot-window-[a-f0-9]{32}$')) 'Use a fresh owned current-boot window folder under Mesh data.'
++function Check-StartupOnlyBoundary([string]$base,[string]$workspace,[string]$boot,[string]$windowId){
++ foreach($name in @('handoff-inflight.json','cancel-startup-inflight.json','CANCEL-STARTUP-COMPLETE.json','approved-window.json')){
++  Require (!(Test-Path -LiteralPath (Join-Path $base $name))) 'Recovery or restoration may have run. Preserve its receipts.'
++ }
++ $planPath=Join-Path $base 'prepared-current-boot-plan.json'
++ $readyPath=Join-Path $base 'ready-recovery.json'
++ if(!(Test-Path -LiteralPath $planPath)){
++  Require (!(Test-Path -LiteralPath $readyPath)) 'A ready receipt without its plan must be resolved first.'
++  return
++ }
++ $plan=Read-Json $planPath
++ Require ($plan.schema -ceq 'mesh/legacy-recovery-plan/v3' -and $plan.workspace -ceq $workspace -and
++  $plan.baselineBoot -ceq $boot -and $plan.planHash -cmatch '^[a-f0-9]{64}$' -and $plan.targets.Count -eq 8) 'An unexpected plan must be reviewed before startup restoration.'
++ if(Test-Path -LiteralPath $readyPath){
++  $ready=Read-Json $readyPath
++  Require ($ready.schema -ceq 'mesh/current-boot-handoff-ready/v1' -and $ready.windowId -ceq $windowId -and
++    $ready.plan.path -ceq $planPath) 'The ready receipt differs from this window.'
++  Check-Pin $ready.plan
++ }
++ $receipts=Join-Path $workspace 'data\maintenance-console'
++ if(Test-Path -LiteralPath $receipts){
++  $folder=Get-Item -LiteralPath $receipts
++  Require ($folder.PSIsContainer -and !($folder.Attributes -band [IO.FileAttributes]::ReparsePoint)) 'Expected the existing plain recovery receipts folder.'
++  Require (@(Get-ChildItem -LiteralPath $receipts -Filter ($plan.planHash+'*') -Force).Count -eq 0) 'An existing recovery attempt must be reviewed first.'
++ }
++}
+ if($Action -eq 'CancelStartup'){
+  $stagePath=Join-Path $base 'stageA-elevation-binding.json';$stage=Read-Json $stagePath
+  Require ($stage.syntheticOnly -ne $true) 'Synthetic preparation cannot cancel real startup settings.'
+@@ -69,7 +95,7 @@
+  Require ($stage.ownerSid -ceq $sid -and $stage.bootedAt -ceq $boot) 'Original owner and current boot required.'
+  $parentPath=Join-Path $base 'stageA-owner-approval.json';Check-Pin ([pscustomobject]@{path=$parentPath;sha256=$ParentAuthoritySha256});$parent=Read-Json $parentPath
+  Require (Parent-Window-Allowed $parent $boot $stage.windowId $sid ([Environment]::MachineName) (File-Hash $stagePath) ([DateTimeOffset]::UtcNow)) 'Full approved window and original startup restoration permission required.'
+- foreach($name in @('ready-recovery.json','prepared-current-boot-plan.json','handoff-inflight.json','cancel-startup-inflight.json','CANCEL-STARTUP-COMPLETE.json','approved-window.json')){Require (!(Test-Path -LiteralPath (Join-Path $base $name))) 'Preparation or recovery may already have started. Preserve evidence; this early cancellation path is unavailable.'}
++ Check-StartupOnlyBoundary $base $workspace $boot $stage.windowId
+  $manifestPath=Join-Path $base 'startup-restore-manifest.json';Check-Pin ([pscustomobject]@{path=$manifestPath;sha256=$stage.manifestSha256})
+  $resultPath=Join-Path $base 'stageA-result.json';$result=Read-Json $resultPath
+  Require ($result.schema -ceq 'mesh/startup-stageA-result/v1' -and $result.status -ceq 'startup_suspended' -and $result.changedTaskCount -eq 4 -and $result.parkedShortcutCount -eq 3 -and $result.guardianRemainsDisabled -eq $true) 'Complete startup-suspension receipt required.'
+@@ -77,8 +103,9 @@
+  $mutex=[Threading.Mutex]::new($false,('Local\MeshMaintenance-'+$stage.windowId));$held=$false
+  try{
+   try{$held=$mutex.WaitOne(0)}catch [Threading.AbandonedMutexException]{throw 'Interrupted handoff: preserve evidence instead of cancelling again.'};Require $held 'Another maintenance handoff is running.'
+-  foreach($name in @('ready-recovery.json','prepared-current-boot-plan.json','handoff-inflight.json','cancel-startup-inflight.json','CANCEL-STARTUP-COMPLETE.json','approved-window.json')){Require (!(Test-Path -LiteralPath (Join-Path $base $name))) 'A concurrent handoff changed the early cancellation boundary.'}
+-  Require ((Read-Host 'Type RESTORE STARTUP to cancel before recovery preparation; original triggers may resume apps, and all eight old job holds stay unchanged') -ceq 'RESTORE STARTUP') 'Startup cancellation declined.'
++  Check-StartupOnlyBoundary $base $workspace $boot $stage.windowId
++  Require ((Read-Host 'Type RESTORE STARTUP to cancel before recovery; original triggers may resume apps, and all eight old job holds stay unchanged') -ceq 'RESTORE STARTUP') 'Startup cancellation declined.'
++  Check-StartupOnlyBoundary $base $workspace $boot $stage.windowId
+   $rbPath=Join-Path $base 'restore-preparation-binding.json';$receiptHash=File-Hash $resultPath
+   if(!(Test-Path -LiteralPath $rbPath)){Save-New $rbPath @{schema='mesh/current-boot-restore-binding/v1';workspace=$workspace;windowId=$stage.windowId;ownerSid=$sid;bootedAt=$boot;manifestSha256=$stage.manifestSha256;restoreHelperSha256=$stage.restoreHelperSha256;stageAResultSha256=$receiptHash}}
+   $rb=Read-Json $rbPath
+--- a/current-boot-recovery-menu-CANDIDATE.ps1
++++ b/current-boot-recovery-menu-CANDIDATE.ps1
+@@ -26,7 +26,7 @@
+  $action=$null
+  if($pick -ceq '1'){$action='Prepare'}
+  elseif($pick -ceq '2'){$action='Recover'}
+- elseif($pick -ceq '3'){if(Test-Path -LiteralPath (Join-Path $base 'ready-recovery.json')){$action='Restore'}else{$action='CancelStartup'}}
++ elseif($pick -ceq '3'){if((Test-Path -LiteralPath (Join-Path $base 'ready-recovery.json')) -and (Test-Path -LiteralPath (Join-Path $base 'approved-window.json'))){$action='Restore'}else{$action='CancelStartup'}}
+  else{Write-Host 'Choose one of the four numbers.';continue}
+  if($action -cin @('Prepare','Recover','Restore') -and !(Test-Path -LiteralPath (Join-Path $base 'current-boot-preparation.json'))){Write-Host 'Final preparation is not bound yet. Nims must finish it, or choose 3 to back out before a plan exists.';continue}
+  if($action -ceq 'Recover' -and !(Test-Path -LiteralPath (Join-Path $base 'ready-recovery.json'))){Write-Host 'Use step 1 first. There is no fresh ready plan.';continue}

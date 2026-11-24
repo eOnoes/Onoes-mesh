@@ -44,7 +44,7 @@ The post-install check matched all eight held sends to five original cards, with
 
 The November 23 quiet window verified the same eight holds and three unrelated records. The standalone controller wrote a v3 plan with `baselineBoot`. The Windows handoff looked for `bootedAt` and refused the final plan check before applying recovery. The restore-only path returned the original four startup tasks and three login shortcuts. Preserve that plan as evidence.
 
-Build a fresh window with the [handoff correction](integrations/current-boot-handoff-plan.patch). The regression test checks the v3 plan shape against the corrected handoff in Windows PowerShell and PowerShell 7. It also accepts an optional pair of captured plan and approval files for read-only qualification. Recheck running jobs, the original launchers and the exact held and retained records before any new downtime. [Plan contract test](test/current-boot-handoff-plan.test.ps1)
+The fresh window uses the corrected handoff and a startup-only cancellation option for a prepared plan that has never been applied. The handoff checks for an existing recovery attempt before restoring startup. The regression test checks that boundary and the v3 plan shape in Windows PowerShell and PowerShell 7. It can also verify a captured plan and approval. Recheck running jobs, the original launchers and the exact held and retained records before any new downtime. [Handoff patch](integrations/current-boot-handoff-plan.patch) · [Plan contract test](test/current-boot-handoff-plan.test.ps1)
 
 The live Relay service confirmed it can bind a request to the selected conversation. Workroom listed Echo with a current conversation and Nims as a connected read-only reviewer. Production dispatch remains paused pending recovery.
 

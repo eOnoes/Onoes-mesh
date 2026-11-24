@@ -19,7 +19,7 @@ def json_file(path):
     return json.loads(path.read_bytes())
 
 
-def verify(baseline, release_zip, backup, source_root):
+def verify(baseline, release_zip, backup, source_root, *, static_followup=None):
     prior = json_file(baseline)
     require(prior.get("schema") == "mesh/installed-recovery-file-readback/v1", "Unknown prior readback")
     root = source_root.resolve(strict=True)
@@ -55,6 +55,14 @@ def verify(baseline, release_zip, backup, source_root):
                 "Release source records disagree")
         changes = {row["relativePath"]: row for row in files}
         require(len(changes) == len(files), "Duplicate release source")
+        if static_followup is not None:
+            asset = "public/app.js"
+            require(isinstance(static_followup, dict) and static_followup.get("path") == asset and
+                    asset in changes and asset not in sources,
+                    "Static follow-up must be the unpinned browser entry")
+            require(static_followup.get("before") == changes[asset]["afterSha256"] and
+                    static_followup.get("after") != static_followup["before"],
+                    "Static follow-up does not extend the reviewed release")
         changed_sources = []
         for rel in sorted(sources.keys() | changes.keys()):
             path = (root / rel).resolve(strict=True)
@@ -67,6 +75,8 @@ def verify(baseline, release_zip, backup, source_root):
                 expected = row["afterSha256"]
             else:
                 expected = sources[rel]
+            if static_followup is not None and rel == asset:
+                expected = static_followup["after"]
             require(digest(path.read_bytes()) == expected == digest(snapshot.read(rel)),
                     f"Installed source, release or backup mismatch: {rel}")
             if rel in sources:
@@ -121,6 +131,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("baseline", "reviewed_release_zip", "installed_backup_directory", "source_root"):
         parser.add_argument(name, type=Path)
+    parser.add_argument("--static-followup", type=Path,
+                        help="Reviewed browser-only delta installed after the main release")
     args = parser.parse_args()
     print(json.dumps(verify(args.baseline, args.reviewed_release_zip, args.installed_backup_directory,
-                            args.source_root), indent=2))
+                            args.source_root, static_followup=json_file(args.static_followup)
+                            if args.static_followup else None), indent=2))
