@@ -14,6 +14,8 @@ Tripp’s desktop has an RTX 3060 and an RTX 4080 SUPER. The overview shows the 
 
 The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
 
+The next phone update adds a refresh hint when Tripp’s 30-second LAN check expires. A phone-width browser verified that the old model and temperature disappear, and that tapping **Check machine status** shows the new sample.
+
 The combined phone release is installed. A phone-width browser on the private route opened the existing shared card from Mind, reloaded it, and returned to Mind with Back. The release-copy checks also covered Agent links, saving the brief and progress together, and displaying clarification questions on cards. In Inference, tap a shortened Ollama name to see its exact tags. A count in parentheses means multiple tags share that name.
 
 The design check caught a missing default for the temperature rings in `shared/tokens.css`. The installer now requires an exact match on that existing stylesheet. Both complete and interrupted rollback restored all 446 original files on the release copy. The installation preserved all 22 checked board tables and the same Mind reader. The post-install backup restored successfully and included all 104 app files named by the active startup profile.
@@ -28,7 +30,7 @@ On a copy of the board, editing the pilot kept its Workroom card and Mind record
 
 ## Before starting the first supervised job
 
-The post-install check matched all eight held sends to five original cards, with no additional held Workroom sends. Three previously reviewed queue records still matched exactly. Hermes also had one more record marked started, with no recorded direct card or shared-conversation link. The recovery check refused the changed queue. The original workers’ outcomes remain unknown.
+The post-install check matched all eight held sends to five original cards, with no additional held Workroom sends. The recovery check initially refused a fourth Hermes queue record. On the next read, only the three reviewed records remained, and the strict check passed. All four main-PC model endpoints reported idle at that time. The original workers’ outcomes remain unknown, and recovery still requires a quiet window.
 
 The unsigned preparation now matches the installed phone release. Seven service owners, 115 source files and 14 runtime records were verified. The Windows launcher preview stopped at the running model supervisor. When a quiet window is convenient, leave services open and tell Nims. Nims will check current model activity, startup, service owners and queue records before requesting downtime. If the extra record is still present, it needs separate reconciliation before recovery can proceed.
 

@@ -146,10 +146,13 @@ test('TEMP shows independent CPU and GPU readings only while the desktop observa
   assert.match(card().textContent,/LAN · OnlineCPU51 °CGPUTemperature unavailable/);
   assert.match(card().textContent,/Ollama: demo:small/);
   assert.match(card().textContent,/Strata IK2: Ready · Model unverified/);
-  assert.match(view.render(snapshot,29000)[1].card.textContent,/Strata IK2: Status unavailable/);
-  assert.doesNotMatch(view.render(snapshot,29000)[1].card.textContent,/51 °C|demo:small/);
+  assert.match(view.render(snapshot,28999)[1].card.textContent,/LAN · Online/);
+  const expired = view.render(snapshot,29000)[1].card.textContent;
+  assert.match(expired,/LAN · Check expired\. Tap Check machine status to refresh\./);
+  assert.match(expired,/Strata IK2: Status unavailable/);
+  assert.doesNotMatch(expired,/51 °C|demo:small/);
   delete snapshot.trippDesktop.source;
-  assert.doesNotMatch(card().textContent,/51 °C|demo:small/);
+  assert.doesNotMatch(card().textContent,/Check expired|51 °C|demo:small/);
   snapshot.trippDesktop = {source:'lan_ssh',state:'offline',ageMs:0,cpuTempC:51};
   assert.match(card().textContent,/LAN · OfflineCPUTemperature unavailable/);
 });
