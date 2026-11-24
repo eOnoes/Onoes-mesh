@@ -370,7 +370,9 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if (!store || executionPersistenceFailed) throw new TaskError(503, 'Workroom unavailable.');
         const id=workroomRoute[1];
         if(req.method==='GET' && !workroomRoute[2]) {
-          const teamPolicy={...automationPolicy(ROOT),dispatch:{state:store.workroom.dispatch.status().state},...(process.env.MESH_SIMPLE_FLOW==='1'?{simpleFlow:true}:{})};
+          const teamPolicy={...automationPolicy(ROOT,nativeWorker),dispatch:{state:store.workroom.dispatch.status().state},
+            ...(nativeWorker?{nativeWorker:nativeWorker.enrollmentStatus()}:{}),
+            ...(process.env.MESH_SIMPLE_FLOW==='1'?{simpleFlow:true}:{})};
           return send(200,id?{task:store.workroom.get(id),teamPolicy,memorySync:store.projectSyncState(id)}:{tasks:store.workroom.list(),teamPolicy});
         }
         if(!id) throw new TaskError(405,'Method not allowed.');
@@ -379,7 +381,14 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if(workroomRoute[2]==='claim'&&req.method==='POST'){if(process.env.MESH_SIMPLE_FLOW!=='1')throw new TaskError(409,'Managed claims unavailable.');return send(200,{flow:store.workroom.flow.claim(id,context.body)});}
         if(workroomRoute[2]==='intake'&&req.method==='POST'){if(process.env.MESH_SIMPLE_FLOW!=='1')throw new TaskError(409,'Managed intake unavailable.');if(JSON.stringify(context.body)!=='{}')throw new TaskError(400,'No intake overrides allowed.');return send(200,{flow:store.workroom.flow.enqueue(id)});}
         if(workroomRoute[2]==='apply-assignment'&&req.method==='POST')return send(200,store.workroom.applyAssignment(id,context.body));
-        if(workroomRoute[2]==='automation'&&req.method==='POST'){if(!teamRunner)throw new TaskError(503,'Connected team runner unavailable.');const agents=['pause','close'].includes(context.body?.action)?[]:await relay.agents();if(!current())return;return send(200,teamRunner.action(id,context.body,agents));}
+        if(workroomRoute[2]==='automation'&&req.method==='POST'){
+          if(!teamRunner)throw new TaskError(503,'Connected team runner unavailable.');
+          const requestsWork=['start','resume'].includes(context.body?.action);
+          if(requestsWork) store.workroom.dispatch.assertOpen();
+          const agents=requestsWork?await relay.agents():[];
+          if(!current())return;
+          return send(200,teamRunner.action(id,context.body,agents));
+        }
         if(workroomRoute[2]==='plan' && req.method==='PATCH'){
           if(context.body?.state==='locked'){
             const agents=await relay.agents();

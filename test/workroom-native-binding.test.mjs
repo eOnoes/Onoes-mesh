@@ -8,6 +8,7 @@ import {randomUUID} from 'node:crypto';
 import {createNativeWorkerBinding} from '../lib/workroom-native-binding.mjs';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {startApp,ROOT} from '../server.mjs';
+import {scopedTeamStatus} from '../public/workroom-plan.mjs';
 
 const profile = () => ({profileRef:'test-echo',identityRef:'test-principal',
   provider:'openai-codex',model:'synthetic-native-model',workspace:ROOT});
@@ -81,25 +82,34 @@ test('actual admitted server team start uses the native binding and holds a mism
   writeFileSync(tokenPath,token);
   const agents=[{id:'echo',backend:'hermes',status:'idle',conversation_id:'fixture-echo'},
     {id:'nims',backend:'codex',status:'idle',conversation_id:'fixture-nims'}];
-  let posts=0,disconnects=0,app;const requests=[];
+  let posts=0,directoryReads=0,disconnects=0,allowed=true,pauseOnRoster=false,app;const requests=[];
   const peer=http.createServer((req,res)=>{
     res.setHeader('Content-Type','application/json');
     if(req.method!=='GET')posts++;
     if(req.headers.authorization!=='Bearer '+token){res.writeHead(401);res.end('{}');return;}
-    if(req.url==='/api/agents?view=directory'){res.end(JSON.stringify(agents));return;}
+    if(req.url==='/api/agents?view=directory'){
+      directoryReads++;
+      if(pauseOnRoster){pauseOnRoster=false;app.dispatch.pause();}
+      res.end(JSON.stringify(agents));return;
+    }
     if(req.url==='/api/mesh-capabilities'){res.end('{"taskSessionBinding":1}');return;}
     res.writeHead(503);res.end('{}');
   });
   const dataDir='data/native-binding-http-'+randomUUID();mkdirSync(join(ROOT,dataDir));
-  const store=openTaskStore(join(ROOT,dataDir,'tasks.sqlite'));let task;
-  try {
-    task=store.create({title:'Synthetic binding test',description:'Do not dispatch real work',owner:'echo'});
+  const workspace=join(ROOT,dataDir,'worker');mkdirSync(workspace);
+  const store=openTaskStore(join(ROOT,dataDir,'tasks.sqlite'));let task,other;
+  function card(reviewerId) {
+    let task=store.create({title:'Synthetic binding test',description:'Do not dispatch real work',owner:'echo'});
     task=store.workroom.save(task.id,{project:'Fixture',criteria:'No real work',owner:'echo',team:'local_build',stage:'ready',revision:1});
     task=store.workroom.saveProgress(task.id,{goal:'Exercise native routing only',checklist:[{id:'one',text:'Fixture',status:'pending'}],
       result:'',evidence:'',reviewer:'',decision:'pending',revision:0,taskRevision:task.revision,briefRevision:task.workroom.revision});
-    task=store.workroom.savePlan(task.id,{lead:'echo',spec:'Synthetic only',workspace:ROOT,allowedFiles:'data/never-written.md',
-      checks:'No real work',boundaries:'No model calls',workerId:'echo',reviewerId:'nims',state:'locked',revision:0,
+    return store.workroom.savePlan(task.id,{lead:'echo',spec:'Synthetic only',workspace,allowedFiles:'never-written.md',
+      checks:'No real work',boundaries:'No model calls',workerId:'echo',reviewerId,state:'locked',revision:0,
       taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision}).task;
+  }
+  try {
+    task=card('nims');
+    other=card('dsh');
   } finally {store.close();}
   try {
     await new Promise(resolve=>peer.listen(0,'127.0.0.1',resolve));
@@ -107,7 +117,7 @@ test('actual admitted server team start uses the native binding and holds a mism
     process.env.MESH_RELAY_TOKEN_FILE=tokenPath;process.env.MESH_STANDALONE='0';process.env.MESH_NIMS='0';
     process.env.MESH_NEMOTRON_CONTROL='0';process.env.MESH_MODEL_OBSERVATION='0';process.env.MESH_SIMPLE_FLOW='0';
     process.env.MESH_DSH_APPROVAL_ORIGIN=process.env.MESH_RELAY_URL;process.env.MESH_DSH_TOKEN_FILE=tokenPath;
-    app=await startApp({dataDir,relayEnabled:true,nativeWorkerOptions:{profile:profile(),authorized:()=>true,
+    app=await startApp({dataDir,relayEnabled:true,nativeWorkerOptions:{profile:{...profile(),workspace},authorized:()=>allowed,
       rpc:async(method,params)=>{requests.push({method,params});
         if(method==='session.create')return {session_id:'local-'+'a'.repeat(64)};
         if(method==='prompt.lookup')return {found:false,profile_contract:{closed:false}};
@@ -116,9 +126,45 @@ test('actual admitted server team start uses the native binding and holds a mism
     const boot=await fetch(app.url+'/api/trial-session/bootstrap',{method:'POST',headers,body:'{}'});
     assert.equal(boot.status,201);const session=await boot.json();
     headers.Cookie=boot.headers.get('set-cookie').split(';')[0];headers['X-Trial-CSRF']=session.csrfToken;
-    const response=await fetch(app.url+'/api/workroom/'+task.id+'/automation',{method:'POST',headers,
-      body:JSON.stringify({action:'start',revision:0,planRevision:task.plan.revision,taskRevision:task.revision,
-        briefRevision:task.workroom.revision,progressRevision:task.progress.revision})});
+    const act=(task,action='start')=>fetch(app.url+'/api/workroom/'+task.id+'/automation',{method:'POST',headers,
+      body:JSON.stringify({action,revision:task.automation?.revision??0,planRevision:task.plan.revision,
+        taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision})});
+    const read=async id=>{
+      const response=await fetch(app.url+'/api/workroom'+(id?'/'+id:''),{headers});
+      assert.equal(response.status,200);
+      return response.json();
+    };
+    const policy=(await read()).teamPolicy;
+    assert.equal(policy.workspace.toLowerCase(),workspace.toLowerCase());
+    assert.deepEqual(policy.reviewerIds,['nims']);
+    assert.equal(policy.nativeWorker,'configured');
+    assert.equal(scopedTeamStatus(task.plan,policy,agents).matches,true);
+    assert.equal(scopedTeamStatus(other.plan,policy,agents).matches,false);
+    assert.equal(requests.length,0);
+
+    const pause=app.dispatch.pause();
+    const originalReads=directoryReads;
+    assert.equal((await act(task)).status,503);
+    assert.equal(directoryReads,originalReads);
+    assert.equal((await read(task.id)).task.automation,undefined);
+    app.dispatch.resume(pause.generation);
+
+    pauseOnRoster=true;
+    assert.equal((await act(task)).status,503);
+    assert.equal((await read(task.id)).task.automation,undefined);
+    app.dispatch.resume(app.dispatch.status().generation);
+
+    assert.equal((await act(other)).status,409);
+    assert.equal((await read(other.id)).task.automation,undefined);
+    allowed=false;
+    const held=(await read(task.id)).teamPolicy;
+    assert.equal(held.nativeWorker,'held');
+    assert.equal(scopedTeamStatus(task.plan,held,agents).matches,false);
+    assert.equal((await act(task)).status,403);
+    assert.equal((await read(task.id)).task.automation,undefined);
+    assert.equal(requests.length,0);
+    allowed=true;
+    const response=await act(task);
     assert.equal(response.status,200);
     const deadline=Date.now()+12000;let saved;
     do {
@@ -134,6 +180,9 @@ test('actual admitted server team start uses the native binding and holds a mism
     assert.equal(requests[0].params.provider,'openai-codex');assert.equal(requests[0].params.max_turns,50);
     assert.deepEqual(requests[0].params.toolsets,['file']);assert.equal(requests[0].params.safe_mode,true);
     assert.equal(posts,0);assert.equal(saved.messages.length,1);assert.equal(saved.messages[0].nativeLocal.teamBound,1);
+    allowed=false;
+    assert.equal((await act(saved,'resume')).status,403);
+    assert.deepEqual((await read(saved.id)).task.automation,saved.automation);
     await app.close();app=null;assert.equal(disconnects,1);
   } finally {
     await app?.close();peer.closeAllConnections();await new Promise(resolve=>peer.close(resolve));

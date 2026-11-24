@@ -42,6 +42,7 @@ export function teamRequestNotice(policy){
 export function scopedTeamStatus(plan,policy,peers){
   const notice=teamRequestNotice(policy);if(notice)return {matches:false,message:notice};
   if(policy?.schema!=='mesh-team-policy/v1'||typeof policy.workspace!=='string'||!policy.workspace||!Array.isArray(policy.builderIds)||!Array.isArray(policy.reviewerIds)||policy.actionLimit!==50)return {matches:false,message:'Automatic team policy unavailable. Refresh before starting or resuming.'};
+  if(policy.nativeWorker==='held')return {matches:false,recheck:true,message:'The native worker connection is held. Check connections before starting or resuming.'};
   const same=typeof plan?.workspace==='string'&&plan.workspace.replace(/\\/g,'/').replace(/\/+$/,'').toLowerCase()===policy.workspace.replace(/\\/g,'/').replace(/\/+$/,'').toLowerCase();
   const roles=policy.builderIds.includes(plan?.workerId)&&policy.reviewerIds.includes(plan?.reviewerId)&&plan?.workerId!==plan?.reviewerId;
   if(!same)return {matches:false,message:`This scope names a different workspace. Automatic teams use ${policy.workspace}.`};
