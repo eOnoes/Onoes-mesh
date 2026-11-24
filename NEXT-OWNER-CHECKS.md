@@ -34,7 +34,9 @@ The post-install check matched all eight held sends to five original cards, with
 
 The unsigned preparation now matches the installed phone release. Seven service owners, 115 source files and 14 runtime records were verified. The Windows launcher preview stopped at the running model supervisor. When a quiet window is convenient, leave services open and tell Nims. Nims will check current model activity, startup, service owners and queue records before requesting downtime. If the extra record is still present, it needs separate reconciliation before recovery can proceed.
 
-The team fix is already installed. Once the old jobs are accounted for and the live worker route qualifies, the current manual setting leaves an independent review on the card. Tap **Record this review**, then **Move to Done**. Automatic movement after review passed on a separate managed-flow copy and still awaits production qualification.
+The live Relay service confirmed it can bind a request to the selected conversation. Workroom listed Echo with a current conversation and Nims as a connected read-only reviewer. Production dispatch remains paused pending recovery.
+
+For the first supervised run, open the card to see Echo’s result. Tap **Read review** for Nims’s verdict and evidence, then **Record this review**. An approved verdict enables **Move to Done**. If Nims requested changes, the card stays open with the correction visible after reload. Both paths passed in a phone-sized browser on a copy of the installed app using simulated workers. Recording either verdict sent zero additional jobs. The live team still needs its first supervised run.
 
 The combined release matched its E: backup and reviewed package. Compared with `420a233`, nine of 115 recovery source files and ten of 14 startup records changed. The historical job holds still require their own recovery window. Repeat the file check after each installation using the prior private readback, the reviewed release ZIP, the installed backup directory and the live checkout. [Recovery file checker](integrations/check_installed_recovery_files.py)
 
