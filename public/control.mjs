@@ -5,7 +5,7 @@
 //
 // Thresholds (chosen, not inherited): utilisation meters go amber at 70% and red at 90%;
 // temperature goes amber at 70 C and red at 85 C.
-import {supervisorControlView, pixelReading} from './control-models.mjs';
+import {supervisorControlView, pixelReading, shortOllamaName} from './control-models.mjs';
 const root = document.getElementById('ctl-root');
 const inferenceHost = document.getElementById('inference-host-telemetry');
 const loading = document.getElementById('ctl-loading');
@@ -31,11 +31,27 @@ export function hostTelemetryState(snapshot, now = Date.now()) {
 }
 
 export function inferenceModelLabel(snapshot, now = Date.now()) {
-  if(hostTelemetryState(snapshot,now)!=='fresh')return 'Unknown';
-  const engine=supervisorControlView(snapshot?.modelObservation,now).engine;
-  if(engine.loaded===false)return 'No';
-  if(engine.loaded!==true)return 'Unknown';
-  return ({'qwen3.8-flash-next-iq3-s':'Qwen3.8-Flash-Next','qwen3.6-35b-a3b-ud-q6_k_xl':'Qwen3.6-35B','qwen3.8-27b':'Qwen3.8-27B','nemotron-3.5-bolt-74b-a9b':'Nemotron3.5-Bolt'})[engine.modelAlias]||'Unknown';
+  if (hostTelemetryState(snapshot, now) !== 'fresh') return 'Unknown';
+  const {engine} = supervisorControlView(snapshot.modelObservation, now);
+  const services = Array.isArray(snapshot.services) ? snapshot.services : [];
+  const ollama = services.find(row => row?.id === 'ollama');
+  const ollamaKnown = ollama?.reachable === true && ollama.residencyKnown === true &&
+    Array.isArray(ollama.models) && ollama.loadedCount === ollama.models.length &&
+    ollama.models.every(model => model?.residency === 'reported_loaded');
+  const ollamaCount = ollamaKnown ? ollama.models.length : 0;
+  const count = Number(engine.loaded === true) + ollamaCount;
+  if (count > 1) return `${count} models`;
+  if (engine.loaded === true) {
+    return ({'qwen3.8-flash-next-iq3-s':'Qwen3.8-Flash-Next','qwen3.6-35b-a3b-ud-q6_k_xl':'Qwen3.6-35B','qwen3.8-27b':'Qwen3.8-27B','nemotron-3.5-bolt-74b-a9b':'Nemotron3.5-Bolt'})[engine.modelAlias] || '1 model';
+  }
+  if (ollamaCount === 1) {
+    const {name} = ollama.models[0];
+    return (typeof name === 'string' && shortOllamaName(name.trim()).slice(0, 100)) || '1 model';
+  }
+  // A reachable runtime with no verified residency cannot contribute an empty reading.
+  const lmStudio = services.find(row => row?.id === 'lmstudio');
+  if ((ollama?.reachable === true && !ollamaKnown) || lmStudio?.reachable === true) return 'Unknown';
+  return engine.loaded === false ? 'No' : 'Unknown';
 }
 function renderInferenceHost() {
   if (!inferenceHost) return;

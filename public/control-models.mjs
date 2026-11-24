@@ -36,6 +36,15 @@ export function supervisorControlView(snapshot,now=Date.now()){
   };
 }
 
+export function shortOllamaName(tag) {
+  const leaf = tag.split('/').pop();
+  const [name, variant] = leaf.split(':');
+  // Only trim packaging labels. Sizes, versions and named variants identify the model.
+  const base = name.replace(/[-.]gguf$/i, '').replace(/[-.]I?Q\d+(?:_[A-Z0-9]+)*$/i, '') || name;
+  return variant && !/^(?:latest|I?Q\d+(?:_[A-Z0-9]+)*)$/i.test(variant)
+    ? base + ':' + variant : base;
+}
+
 export function pixelReading(kind,label,pct,tempC = null, dom = document, temperatureOnly = false) {
   function el(tag, className, text) {
     const node = dom.createElement(tag);

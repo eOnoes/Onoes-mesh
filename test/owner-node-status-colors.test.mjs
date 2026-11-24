@@ -1,4 +1,4 @@
-import {pixelReading} from '../public/control-models.mjs';
+import {pixelReading, shortOllamaName} from '../public/control-models.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -7,7 +7,7 @@ import { controlledProbe } from './m5-nodes-fixture.mjs';
 import { createNodeProbeReader } from '../lib/node-probes.mjs';
 
 const source = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
-const renderer = source.slice(source.indexOf('function shortOllamaName('),
+const renderer = source.slice(source.indexOf('function renderOllamaModels('),
   source.indexOf('\nasync function refreshNodeProbes(')).replace('export function renderNodeProbes(', 'function renderNodeProbes(').trim();
 assert.ok(renderer.endsWith('}'), 'load exactly the production renderer');
 class Element {
@@ -24,7 +24,7 @@ class Element {
 }
 function ui() {
   const box = new Element('div');
-  const context = vm.createContext({ pixelReading, document: { createElement: tag => new Element(tag) },
+  const context = vm.createContext({ pixelReading, shortOllamaName, document: { createElement: tag => new Element(tag) },
     $: () => box, tick: 0, busy: true, nodeProbeSnapshot: null, nodeProbeReceivedAt: 0 });
   vm.runInContext(`const probeTick = () => tick;
     function paragraph(parent, text) {

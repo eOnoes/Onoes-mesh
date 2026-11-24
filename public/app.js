@@ -1,4 +1,4 @@
-import {pixelReading} from './control-models.mjs';
+import {pixelReading, shortOllamaName} from './control-models.mjs';
 import {createAdmissionPeers} from './session-entry.mjs';
 import { renderAgentWorkspace } from './agent-workspace.mjs';
 import { createMindWorkspace } from './mind-workspace.mjs';
@@ -655,15 +655,6 @@ $('local-inference-chat-form').addEventListener('submit', event => {
     } catch (error) { renderLocalInference(undefined); throw error; }
   });
 });
-
-function shortOllamaName(tag) {
-  const leaf = tag.split('/').pop();
-  const [name, variant] = leaf.split(':');
-  // Only trim packaging labels. Sizes, versions and named variants identify the model.
-  const base = name.replace(/[-.]gguf$/i, '').replace(/[-.]I?Q\d+(?:_[A-Z0-9]+)*$/i, '') || name;
-  return variant && !/^(?:latest|I?Q\d+(?:_[A-Z0-9]+)*)$/i.test(variant)
-    ? base + ':' + variant : base;
-}
 
 function renderOllamaModels(container, tags) {
   const key = JSON.stringify(tags);

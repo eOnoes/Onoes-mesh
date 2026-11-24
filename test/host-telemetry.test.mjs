@@ -46,8 +46,19 @@ test('shared host readings age, clear on failure and never invoke model controls
     assert.equal(summary.textContent,'Model loaded: Unknown');assert.equal(location.textContent,'Test PC');
     const modelReading={...sample,modelObservation:{schemaVersion:'mesh-supervisor-observation/v1',source:'local_supervisor',expiresAt:Date.now()+5000,models:['qwen3.8-flash-next-iq3-s','qwen3.6-35b-a3b-ud-q6_k_xl','qwen3.8-27b','nemotron-3.5-bolt-74b-a9b'].map(id=>({id,state:'ready',loaded:false}))}};
     assert.equal(inferenceModelLabel(modelReading),'No');
+    const ollama={id:'ollama',reachable:true,residencyKnown:true,loadedCount:1,
+      models:[{name:'local/Qwen3.8-Flash-Next-Q4_K_M.gguf:latest',residency:'reported_loaded'}]};
+    const otherRuntimes={...modelReading,services:[ollama]};
+    assert.equal(inferenceModelLabel(otherRuntimes),'Qwen3.8-Flash-Next');
+    assert.equal(inferenceModelLabel({...otherRuntimes,modelObservation:undefined}),'Qwen3.8-Flash-Next');
+    assert.equal(inferenceModelLabel({...otherRuntimes,generatedAt:new Date(now-15001).toISOString()},now),'Unknown');
+    assert.equal(inferenceModelLabel({...modelReading,services:[{...ollama,residencyKnown:false}]}),'Unknown');
+    const onlyListed={id:'lmstudio',reachable:true,residencyKnown:false,loadedCount:1,
+      models:[{name:'directory entry',residency:'listed'}]};
+    assert.equal(inferenceModelLabel({...modelReading,services:[onlyListed]}),'Unknown');
     modelReading.modelObservation.models[0].state='reported_loaded';modelReading.modelObservation.models[0].loaded=true;
     assert.equal(inferenceModelLabel(modelReading),'Qwen3.8-Flash-Next');
+    assert.equal(inferenceModelLabel(otherRuntimes),'2 models');
     modelReading.modelObservation.models[1].state='reported_loaded';modelReading.modelObservation.models[1].loaded=true;
     assert.equal(inferenceModelLabel(modelReading),'Unknown');
     modelReading.modelObservation.expiresAt=Date.now()-1;assert.equal(inferenceModelLabel(modelReading),'Unknown');
