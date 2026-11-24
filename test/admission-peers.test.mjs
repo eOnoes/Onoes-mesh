@@ -20,14 +20,34 @@ test('unsolicited, malformed and mismatched candidate responses cannot resolve a
  const fresh=createAdmissionPeers({Channel,timeoutMs:10});try{assert.equal(await fresh.request(),null);}finally{rogue.close();fresh.close();}
 });
 
-import {mockUI,flush} from './app-ui-fixture.mjs';
-for(const accepted of [true,false])test('client verifies peer candidate with server before admission: '+accepted,async()=>{
+import {mockUI,flush,response,bodyFor} from './app-ui-fixture.mjs';
+for(const status of [200,401,403,500])test('client checks peer proof before admission: '+status,async()=>{
  const proof={csrfToken:'p'.repeat(43),expiresAt:Date.now()+60000};
+ const replacement={csrfToken:'q'.repeat(43),expiresAt:Date.now()+60000};
+ const storedAtHealth=[];
  class CandidateChannel{postMessage(message){if(message.type==='request')queueMicrotask(()=>this.onmessage?.({data:{type:'candidate',requestId:message.requestId,proof}}));}close(){}}
- const ui=mockUI({BroadcastChannelImpl:CandidateChannel,responder:async route=>({status:route==='/api/health'&&!accepted?403:200,ok:route!=='/api/health'||accepted,text:async()=>JSON.stringify(route==='/api/health'?{state:'ok',persistence:'sqlite',activity:{source:'none'}}:route==='/api/tasks'?{tasks:[]}:route==='/api/commands'?{commands:[]}:route==='/api/worker-activity'?{state:'not_configured',workers:[]}:{})})});
+ const ui=mockUI({BroadcastChannelImpl:CandidateChannel,responder:(route,options)=>{
+  if(route==='/api/trial-session/bootstrap') return response(201,replacement);
+  if(route==='/api/health'){
+   storedAtHealth.push(ui.storage.has('mesh.synthetic-demo.proof.v1'));
+   if(options.headers['X-Trial-CSRF']===proof.csrfToken&&status!==200)return response(status,{});
+  }
+  return response(200,bodyFor(route));
+ }});
  await flush();await ui.ids.get('demo-start').events.click();await flush();
- assert.equal(ui.requests.some(r=>r.route.includes('/bootstrap')||r.route.includes('/recovery-')),false);
- const verify=ui.requests.find(r=>r.route==='/api/health');assert.equal(verify.options.headers['X-Trial-CSRF'],proof.csrfToken);
- if(accepted)assert.equal(JSON.parse(ui.storage.get('mesh.synthetic-demo.proof.v1')).csrfToken,proof.csrfToken);
- else{assert.equal(ui.storage.has('mesh.synthetic-demo.proof.v1'),false);assert.equal(ui.ids.get('demo-end').disabled,true);}
+ const verification=ui.requests.filter(r=>r.route==='/api/health'||r.route.includes('/trial-session/'));
+ assert.equal(verification[0].options.headers['X-Trial-CSRF'],proof.csrfToken);
+ if(status===500){
+  assert.equal(verification.length,1);
+  assert.equal(ui.storage.has('mesh.synthetic-demo.proof.v1'),false);
+  assert.equal(ui.ids.get('demo-end').disabled,true);
+  assert.equal(ui.requests.some(r=>r.route==='/api/tasks'),false);
+  return;
+ }
+ assert.deepEqual(verification.map(r=>r.route),status===200?['/api/health','/api/health']:['/api/health','/api/trial-session/bootstrap','/api/health','/api/health']);
+ assert.deepEqual(storedAtHealth,status===200?[false,true]:[false,false,true]);
+ const expected=status===200?proof:replacement;
+ assert.equal(JSON.parse(ui.storage.get('mesh.synthetic-demo.proof.v1')).csrfToken,expected.csrfToken);
+ assert.equal(ui.ids.get('demo-end').disabled,false);
+ assert.ok(ui.requests.some(r=>r.route==='/api/tasks'&&r.options.headers['X-Trial-CSRF']===expected.csrfToken));
 });

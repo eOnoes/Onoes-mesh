@@ -235,6 +235,8 @@ function message(text, error = false) {
     else $('message').focus();
   }
 }
+class SessionAuthorizationError extends Error {}
+
 async function api(route, options = {}) {
   const bootstrap = route === '/api/trial-session/bootstrap';
   const admission = bootstrap || route === '/api/trial-session/recovery-challenge' || route === '/api/trial-session/recovery-complete';
@@ -284,7 +286,7 @@ async function api(route, options = {}) {
     if (bootstrap && response.status === 403) return { recoveryRequired: true };
     if (response.status === 401 || response.status === 403) {
       clearPrivate('Session rejected or expired. Private data cleared. Start a local session again.');
-      throw new Error('Local task session authorization rejected.');
+      throw new SessionAuthorizationError('Local task session authorization rejected.');
     }
     if (!response.ok) {
       if (response.status === 409 && bootstrap) throw new Error('Local session already active. Start a fresh local session after clearing this tab.');
@@ -1097,32 +1099,53 @@ $('relay-reconnect').addEventListener('click', () => action(async () => {
   renderRelay(await api('/api/relay/reconnect', { method: 'POST', body: '{}' }));
   message(relaySnapshot?.status === 'fresh' ? 'Relay reconnected; saved task references recovered.' : $('relay-state').textContent, relaySnapshot?.status !== 'fresh');
 }));
+function canAdmit(expectedGeneration) {
+  return expectedGeneration === generation && !lifecycleSuspended && !workspaceLocked && navigator.onLine;
+}
+
 async function admitTab(startGeneration) {
-  if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
-  let session = await admissionPeers?.request();
-  if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
-  if (!session) session = await api('/api/trial-session/bootstrap', { method: 'POST', body: '{}' });
-  if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
+  if (!canAdmit(startGeneration)) return;
+  const peer = await admissionPeers?.request();
+  if (!canAdmit(startGeneration)) return;
+  if (peer && peer.expiresAt > Date.now()) {
+    try { return await verifyAdmission(peer, startGeneration); }
+    catch (error) {
+      // The rejected proof has been cleared. Retry only that denial, and only
+      // while no other lifecycle change has invalidated this admission attempt.
+      if (!(error instanceof SessionAuthorizationError) || !canAdmit(startGeneration + 1)) throw error;
+      startGeneration = generation;
+    }
+  }
+  let session = await api('/api/trial-session/bootstrap', { method: 'POST', body: '{}' });
+  if (!canAdmit(startGeneration)) return;
   if (session?.recoveryRequired === true) {
     const fresh = await api('/api/trial-session/recovery-challenge', { method: 'POST', body: '{}' });
-    if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
+    if (!canAdmit(startGeneration)) return;
     // This deadline uses the server clock, which may differ from the phone clock.
     // Completion enforces the server's short lifetime, cookie binding and one-use nonce.
     if (typeof fresh?.challenge !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(fresh.challenge) || !Number.isSafeInteger(fresh.expiresAt) || fresh.expiresAt <= 0) throw new Error('Invalid local recovery challenge.');
     session = await api('/api/trial-session/recovery-complete', { method: 'POST', body: '{}', headers: { 'X-Trial-CSRF': fresh.challenge } });
-    if (startGeneration !== generation || lifecycleSuspended || !navigator.onLine) return;
+    if (!canAdmit(startGeneration)) return;
   }
+  return verifyAdmission(session, startGeneration);
+}
+
+async function verifyAdmission(session, startGeneration) {
   if (typeof session?.csrfToken !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(session.csrfToken) || !Number.isSafeInteger(session.expiresAt) || session.expiresAt <= Date.now() || session.expiresAt > Date.now() + 86400000) throw new Error('Invalid local task session admission response.');
   demo = { csrfToken: session.csrfToken, expiresAt: session.expiresAt };
+  const admissionDemo = demo;
+  try { await api('/api/health'); }
+  catch (error) {
+    if (generation === startGeneration && demo === admissionDemo) demo = undefined;
+    throw error;
+  }
+  if (!canAdmit(startGeneration) || !currentDemo(admissionDemo, startGeneration)) return;
   try { sessionStorage.setItem(nonceKey, JSON.stringify(demo)); } catch { /* RAM only if storage is unavailable. */ }
-  const admissionDemo = demo; const admissionGeneration = generation;
-  await api('/api/health');
-  if (!currentDemo(admissionDemo, admissionGeneration)) return;
   admitted = true; try { $('demo-start').classList.add('ok'); } catch { }
   sessionRecoveryError = '';
   $('demo-state').textContent = automaticAccess?'Workspace connected through authorized Tailscale access. Agent actions still require an explicit send.':'Local task access verified by server. No human identity or execution approval.';
   automaticEntry?.verified(demo.expiresAt);
-  return true;
+  return startGeneration;
 }
 
 function startSession() { return action(async () => {
@@ -1130,10 +1153,10 @@ function startSession() { return action(async () => {
   const admit = () => admitTab(startGeneration);
   // The session cookie is shared by tabs. Let a sibling finish verifying its
   // session before asking it for proof or starting a new one.
-  const connected = navigator.locks && admissionPeers
+  const connectedGeneration = navigator.locks && admissionPeers
     ? await navigator.locks.request('mesh.session-entry.v1', admit)
     : await admit();
-  if (connected && startGeneration === generation && admitted) await refresh();
+  if (connectedGeneration === generation && admitted) await refresh();
 }); }
 for (const id of ['demo-start', 'workroom-session-start', 'relay-session-start']) $(id).addEventListener('click', () => { workspaceLocked=false;try{sessionStorage.removeItem('mesh.workspace.locked.v1');}catch{} automaticEntry?.retry(); return startSession(); });
 $('demo-end').addEventListener('click', () => { workspaceLocked=true;try{sessionStorage.setItem('mesh.workspace.locked.v1','1');}catch{} automaticEntry?.pause(); return action(async () => {
