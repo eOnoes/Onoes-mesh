@@ -736,7 +736,9 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
         const gpuDetails = document.createElement('details');
         const summary = document.createElement('summary');
         summary.textContent = 'Individual GPUs';
-        gpuDetails.append(summary, document.createElement('div'));
+        const gpuReadings = document.createElement('div');
+        gpuReadings.className = 'pixel-readings';
+        gpuDetails.append(summary, gpuReadings);
         card.append(heading, document.createElement('p'), gauges, gpuDetails);
       } else {
         const details = document.createElement('details');
@@ -782,23 +784,19 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
         gpuRows.setAttribute('data-values', gpuKey);
         gpuRows.replaceChildren();
         for (const device of gpus) {
-          const usage = Number.isFinite(device.usagePct) ? device.usagePct + '% used' : 'Usage unavailable';
-          const temperature = Number.isFinite(device.tempC) ? device.tempC + ' °C' : 'Temperature unavailable';
-          const row = document.createElement('p');
-          const name = document.createElement('strong');
-          name.textContent = `GPU ${device.index} · ${device.name}`;
-          row.append(name, document.createElement('br'), `${usage} · ${temperature}`);
-          gpuRows.append(row);
+          gpuRows.append(pixelReading('gpu', `GPU ${device.index} · ${device.name}`,
+            device.usagePct, device.tempC, document));
         }
       }
       const withUsage = [ramPct,cpuPct,gpuPct].some(v => Number.isFinite(v) && v >= 0 && v <= 100);
-      const key = JSON.stringify([cpu, gpu, ramPct, cpuPct, gpuPct]);
+      const gpuLabel = gpus.length > 1 ? 'GPU peaks' : 'GPU';
+      const key = JSON.stringify([cpu, gpu, ramPct, cpuPct, gpuPct, gpuLabel]);
       if (gauges.getAttribute('data-values') !== key) {
         gauges.setAttribute('data-values', key);
         gauges.replaceChildren();
         if (withUsage) gauges.append(pixelReading('ram','RAM',ramPct,null,document));
         gauges.append(pixelReading('cpu','CPU',cpuPct,cpu,document,!withUsage),
-          pixelReading('gpu','GPU',gpuPct,gpu,document,!withUsage));
+          pixelReading('gpu',gpuLabel,gpuPct,gpu,document,!withUsage));
       }
       continue;
     }

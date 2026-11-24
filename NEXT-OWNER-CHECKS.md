@@ -14,7 +14,7 @@ Tripp’s desktop has an RTX 3060 and an RTX 4080 SUPER. The overview shows the 
 
 The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
 
-The next phone update adds a refresh hint when Tripp’s 30-second LAN check expires. A phone-width browser verified that the old model and temperature disappear, and that tapping **Check machine status** shows the new sample.
+The staged phone update adds a refresh hint when Tripp’s 30-second LAN check expires. **Individual GPUs** gives each card its own usage meter and eight-segment temperature ring. **GPU peaks** in the overview names the maximum usage and temperature across the cards. The exact staged app file passed phone-width browser checks in both themes, including a missing temperature, a zero usage reading and expiry. Tap **Check machine status** for a fresh sample.
 
 The combined phone release is installed. A phone-width browser on the private route opened the existing shared card from Mind, reloaded it, and returned to Mind with Back. The release-copy checks also covered Agent links, saving the brief and progress together, and displaying clarification questions on cards. In Inference, tap a shortened Ollama name to see its exact tags. A count in parentheses means multiple tags share that name.
 
