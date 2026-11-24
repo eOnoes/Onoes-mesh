@@ -32,7 +32,9 @@ The installed Windows Hermes client also discovered the packaged Mind reader and
 
 The same two disposable profiles also passed guide discovery with Onoes-Mind commit `14bf885`. The catalog exposes reviewed source and review references, checksums and revision IDs for one project. Search, checksum verification and catalog discovery each have their own permission. Removing the catalog grant took effect immediately in both rehearsals. This capability is available in Mind source for a future reviewed enrollment.
 
-To rerun this check on Windows, put the canonical Mind checkout and its `tests` directory on `PYTHONPATH`. Set `MESH_TEST_HERMES_PYTHON` to the installed Hermes Python executable. From Mesh, run `python -B -m pytest -q test/echo-project-reader.py` with a fresh writable pytest temporary directory. The test uses synthetic records and runs without a model.
+With Mind commit `2db1cf5`, the installed Hermes client used both disposable profiles to run the fit checker on a revised Workroom spec. Both reported the same STEP filename, width range and card revision. An older revision was refused. Removing the fit-check permission stopped that tool immediately while project search and the other reviewed tools remained available.
+
+To rerun the two-channel project search on Windows, put the Mind checkout and its `tests` directory on `PYTHONPATH`. Set `MESH_TEST_HERMES_PYTHON` to the installed Hermes Python executable. From Mesh, run `python -B -m pytest -q test/echo-project-reader.py` with a fresh writable pytest temporary directory. The test uses synthetic records and runs without a model.
 
 Previewing a new reader against Echo's current Hermes configuration showed default tool availability on all 25 recognized surfaces, including background jobs and A2A. Explicit selections limited the reader to Relay's API server and Telegram while preserving the existing tool sets on all 25 surfaces. Availability in this comparison describes tool selection even for surfaces whose transports are off. Recheck the exact candidate after any gateway or configuration change.
 
@@ -41,6 +43,8 @@ The same gateway process serves both chats and can run delegated turns. It curre
 The packaged reader and isolated worker also passed a combined rehearsal. The installed Hermes client read the same drawing reference from both disposable profiles. The offline worker received the resulting project ID, revision, source and specification through the Hermes delegation adapter. Its container had no network connection or host mounts and could not open the parent test file. It returned the expected fit range and matching source reference. A separate Workroom trial reopened the saved result with review still pending. This checks the offline calculator and the test route. Live worker routing remains open.
 
 ## Before starting the first supervised job
+
+At the PC, use the current no-reboot recovery launcher that Nims supplies after checking the quiet window. Keep its window open until it reports completion or a stop. If it stops, copy the final message here so the saved recovery record can be checked before another attempt.
 
 The post-install check matched all eight held sends to five original cards, with no additional held Workroom sends. The recovery check initially refused a fourth Hermes queue record. On the next read, only the three reviewed records remained, and the strict check passed. All four main-PC model endpoints reported idle at that time. The original workers’ outcomes remain unknown, and recovery still requires a quiet window.
 
@@ -54,7 +58,7 @@ The next connected Windows launch profile can carry the worker record and its SH
 
 After the eight-job recovery, verify the exact recovery receipts and new Workroom backup while dispatch is paused. Prepare the combined update against that installed version with fresh capture, connected and fallback launch profiles. Their approvals and the hidden startup wrapper must reference the matching profiles. Then qualify the deployed Echo builder and independent Nims reviewer for one supervised phone job.
 
-The 15-file candidate passed disposable Windows startup in offline capture, connected sync and read-only fallback. A phone-sized browser reopened the saved card in each mode. The offline edit reached Mind with its original event ID, existing receipts were preserved, and the healthy startup check kept the same processes.
+The combined 18-file candidate passed disposable Windows startup in offline capture, connected sync and read-only fallback. A phone-sized browser reopened the saved card in each mode and Rook stayed paused. The offline edit reached Mind with its original event ID, existing receipts were preserved, and the healthy startup check kept the same processes.
 
 For the first supervised run, open the card to see Echo’s result. Tap **Read review** for Nims’s verdict and evidence, then **Record this review**. An approved verdict enables **Move to Done**. If Nims requested changes, the card stays open with the correction visible after reload. Both paths passed in a phone-sized browser on a copy of the installed app using simulated workers. Recording either verdict sent zero additional jobs. The live team still needs its first supervised run.
 
