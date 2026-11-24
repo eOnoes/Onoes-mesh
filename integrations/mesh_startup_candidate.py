@@ -77,10 +77,11 @@ def checked_startup(path,sha):
 
 
 def profiles(handoff):
+    from mesh_native_recovery import connected_settings_match
     result={mode:read(handoff[mode]['profilePath'],handoff[mode]['profileSha256']) for mode in ('capture','connected')}
     c,n=result['capture'],result['connected']
     require(c['schema']=='onoes-mesh-native-capture-launch/v1' and n['schema']=='onoes-mesh-native-launch/v2'
-        and c['workspace']==n['workspace']==str(ROOT) and c['settings']==n['settings']
+        and c['workspace']==n['workspace']==str(ROOT) and connected_settings_match(c['settings'],n['settings'])
         and c['nodeExecutable']==n['nodeExecutable'] and c['nodeSha256']==n['nodeSha256']
         and c['projectCapture']['source']==n['projectSync']['source'] and c['projectCapture']['links']==n['projectSync']['links'])
     port=int(c['settings']['MESH_PREVIEW_PORT']);require(0<port<65536)
@@ -89,6 +90,8 @@ def profiles(handoff):
         protected.update(p['sourceHashes']);protected.update(handoff[mode][name] for name in handoff[mode] if name.endswith('Path'))
         protected.add(p['settings']['MESH_GATE_KEY_FILE'])
     protected.update((n['readerProfile'],n['projectSync']['serviceProfile'],n['projectSync']['approvalPath']))
+    if 'MESH_NATIVE_WORKER_RECORD' in n['settings']:
+        protected.add(n['settings']['MESH_NATIVE_WORKER_RECORD'])
     for mode,p in result.items():
         root=Path(handoff[mode]['profilePath']).parent
         require(not root.is_relative_to(ROOT) and not ROOT.is_relative_to(root))

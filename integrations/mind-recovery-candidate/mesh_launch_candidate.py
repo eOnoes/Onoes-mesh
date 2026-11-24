@@ -18,6 +18,7 @@ ROOT=Path(__file__).resolve().parents[2]
 SETTINGS={'MESH_PREVIEW_PORT','MESH_DATA_DIR','MESH_RELAY','MESH_RELAY_MODE','MESH_NIMS',
           'MESH_MODEL_OBSERVATION','MESH_SIMPLE_FLOW','MESH_NEMOTRON_CONTROL',
           'MESH_TAILSCALE_LOGIN','MESH_TAILSCALE_HOST','MESH_GATE_KEY_FILE'}
+NATIVE_WORKER_SETTINGS={'MESH_NATIVE_WORKER_RECORD','MESH_NATIVE_WORKER_RECORD_SHA256'}
 
 
 class LaunchError(RuntimeError):pass
@@ -30,8 +31,11 @@ def require(ok):
 def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def check_settings(settings):
-    require(type(settings) is dict and SETTINGS <= set(settings) <= SETTINGS | {'MESH_TRIPP_HARDWARE','MESH_AI_BOX_WINDOWS_SENSOR_HOST'})
+def check_settings(settings, *, allow_native_worker=False):
+    allowed=SETTINGS | {'MESH_TRIPP_HARDWARE','MESH_AI_BOX_WINDOWS_SENSOR_HOST'}
+    if allow_native_worker:
+        allowed |= NATIVE_WORKER_SETTINGS
+    require(type(settings) is dict and SETTINGS <= set(settings) <= allowed)
     require(all(type(v) is str and len(v)<=256 and not re.search(r'[\x00-\x1f\x7f]',v) for v in settings.values()))
     require(settings['MESH_PREVIEW_PORT'].isdigit() and 0<=int(settings['MESH_PREVIEW_PORT'])<=65535
         and re.fullmatch(r'data/[A-Za-z0-9_-]+',settings['MESH_DATA_DIR'])
@@ -41,6 +45,11 @@ def check_settings(settings):
         and ('MESH_AI_BOX_WINDOWS_SENSOR_HOST' not in settings or
              re.fullmatch('[A-Za-z0-9][A-Za-z0-9-]{0,14}',settings['MESH_AI_BOX_WINDOWS_SENSOR_HOST']))
         and settings['MESH_SIMPLE_FLOW']=='0' and Path(settings['MESH_GATE_KEY_FILE']).is_absolute())
+    if set(settings) & NATIVE_WORKER_SETTINGS:
+        require(NATIVE_WORKER_SETTINGS <= set(settings)
+            and settings['MESH_RELAY']=='1' and settings['MESH_RELAY_MODE']=='http'
+            and settings['MESH_NIMS']=='1' and Path(settings['MESH_NATIVE_WORKER_RECORD']).is_absolute()
+            and re.fullmatch('[0-9a-f]{64}',settings['MESH_NATIVE_WORKER_RECORD_SHA256']))
 
 
 def source_paths(*, project=False, settings=None):
@@ -58,6 +67,8 @@ def source_paths(*, project=False, settings=None):
     if project:paths.update((ROOT/'integrations/project-sync-source-setup-candidate.mjs',ROOT/'integrations/mesh_native_recovery.py'))
     if settings and 'MESH_AI_BOX_WINDOWS_SENSOR_HOST' in settings:
         paths.update((ROOT/'config/nodes.json',ROOT/'integrations/tripp-hardware.ps1'))
+    if settings and NATIVE_WORKER_SETTINGS <= set(settings):
+        paths.add(ROOT/'integrations/native_gateway_transport.py')
     return paths
 
 
@@ -135,6 +146,34 @@ def capture_frame(p):
     return dict(schema='onoes-mesh-native-capture-input/v1',projectCaptureOptions=value)
 
 
+def approved_environment(settings):
+    # All Mesh settings come from the approved profile. Drop inherited preloads.
+    env={k:v for k,v in os.environ.items() if not k.upper().startswith('MESH_')
+         and k.upper() not in ('NODE_OPTIONS','NODE_PATH')}
+    env.update(settings)
+    return env
+
+
+def check_native_worker(profile, qualify_private_storage):
+    settings=profile['settings']
+    if not NATIVE_WORKER_SETTINGS <= set(settings):
+        return
+    qualify_private_storage(Path(settings['MESH_NATIVE_WORKER_RECORD']),kind='file')
+    # Reuse the actual Node binding and workspace checks. The transport is lazy
+    # and no bridge runs until the server receives an authorized request.
+    check="""
+import {mainboardNativeConnection} from './lib/native-mainboard.mjs';
+import {confinedPath, ROOT} from './server.mjs';
+const native = mainboardNativeConnection({root: ROOT});
+if (native.state !== 'configured') process.exit(1);
+await confinedPath(native.options.profile.workspace);
+"""
+    result=subprocess.run([profile['nodeExecutable'],'--input-type=module','-e',check],
+        cwd=ROOT,env=approved_environment(settings),capture_output=True,timeout=15,
+        creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+    require(result.returncode==0)
+
+
 def inspect_capture(p,path,expected_sha,approval_path):
     require(os.name=='nt' and set(p)-{'rookEnrollment'}=={'schema','workspace','pythonExecutable','nodeExecutable','pythonSha256','nodeSha256',
         'sourceHashes','settings','attemptPath','stdoutPath','stderrPath','runtime','ownerSid','pwshSha256','projectCapture'})
@@ -189,6 +228,8 @@ def inspect_launch(path,expected_sha,approval_path):
     require(Path(p['pythonExecutable']).resolve()==Path(sys.executable).resolve()
         and digest(sys.executable)==p['pythonSha256'])
     node=Path(p['nodeExecutable']);require(node.is_absolute() and node.resolve()==node and digest(node)==p['nodeSha256'])
+    settings=p['settings']
+    check_settings(settings,allow_native_worker=project)
     pins=p['sourceHashes'];require(type(pins) is dict and {Path(n) for n in pins}==source_paths(project=project,settings=p['settings']))
     require(all(digest(n)==s for n,s in pins.items()))
     if project:sys.path.insert(0,str(ROOT/'integrations'))
@@ -203,8 +244,10 @@ def inspect_launch(path,expected_sha,approval_path):
     reader,binding=roles.approved_profile(p['readerProfile'],p['readerProfileSha256'],approval_path)
     require(reader['role']=='reader' and Path(p['readerProfile']).parent==root)
     approval=roles.plain_json(approval_path);require(expected_sha in approval['profiles'])
-    settings=p['settings']
-    check_settings(settings)
+    check_native_worker(p,qualify_private_storage)
+    if 'MESH_NATIVE_WORKER_RECORD' in settings:
+        require(settings['MESH_NATIVE_WORKER_RECORD'] not in
+                (p['attemptPath'],p['stdoutPath'],p['stderrPath'],settings['MESH_GATE_KEY_FILE']))
     require(Path(p['attemptPath']).is_absolute() and Path(p['attemptPath']).parent==root)
     for name in ('stdoutPath','stderrPath'):
         target=Path(p[name]);require(target.is_absolute() and target.parent==root)
@@ -266,10 +309,7 @@ def launch_mesh(path,expected_sha,approval_path):
             peers=None
             if p.get('schema')=='onoes-mesh-native-launch/v2':
                 peers=native_peers(p,roles,approval_path,options)
-            # Do not inherit a preload or ambient Mesh enrollment override.
-            env={k:v for k,v in os.environ.items() if not k.upper().startswith('MESH_')
-                 and k.upper() not in ('NODE_OPTIONS','NODE_PATH')}
-            env.update(p['settings'])
+            env=approved_environment(p['settings'])
             with open(p['stdoutPath'],'ab') as out,open(p['stderrPath'],'ab') as err:
                 child=subprocess.Popen([p['nodeExecutable'],str(ROOT/'serve.mjs'),'--native-mind'],
                     cwd=ROOT,env=env,stdin=subprocess.PIPE,stdout=out,stderr=err,

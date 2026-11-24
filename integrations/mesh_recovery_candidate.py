@@ -339,7 +339,7 @@ def handoff_capture_to_connected(window,*,launch,service,roles,approval_path,app
     The caller retains a CaptureHandoffUnknown exception and its pair on failure.
     """
     from mesh_native_pair import MeshNativePair
-    from mesh_native_recovery import identified_native_attempt
+    from mesh_native_recovery import connected_settings_match,identified_native_attempt
     window.assert_held();require(window.workspace==ROOT)
     approved=checked_handoff_approval(approval_path,approval_sha)
     c,n=approved['capture'],approved['connected']
@@ -347,7 +347,7 @@ def handoff_capture_to_connected(window,*,launch,service,roles,approval_path,app
     np,nr=launch.checked_launch(n['profilePath'],n['profileSha256'],n['approvalPath'])
     require(cr is roles and nr is roles and cp['schema']==launch.CAPTURE_SCHEMA
         and np['schema']=='onoes-mesh-native-launch/v2' and cp['ownerSid']==approved['ownerSid']
-        and cp['settings']==np['settings'] and cp['nodeExecutable']==np['nodeExecutable']
+        and connected_settings_match(cp['settings'],np['settings']) and cp['nodeExecutable']==np['nodeExecutable']
         and cp['nodeSha256']==np['nodeSha256'] and cp['workspace']==np['workspace']==str(ROOT))
     from onoes_mind.enrollment_store import qualify_private_storage
     qualify_private_storage(Path(approval_path),kind='file')
@@ -361,7 +361,8 @@ def handoff_capture_to_connected(window,*,launch,service,roles,approval_path,app
     frame=None;connected=None
     paths=[cp[name] for name in ('attemptPath','stdoutPath','stderrPath')]+[np[name] for name in ('attemptPath','stdoutPath','stderrPath')]
     require(len(set(paths))==6 and all(path not in paths for path in
-        (str(approval_path),c['profilePath'],c['approvalPath'],n['profilePath'],n['approvalPath'],n['projectApprovalPath'])))
+        (str(approval_path),c['profilePath'],c['approvalPath'],n['profilePath'],n['approvalPath'],n['projectApprovalPath'],
+         np['settings'].get('MESH_NATIVE_WORKER_RECORD'))))
     qualify_private_storage(Path(cp['attemptPath']),kind='file')
     capture=bounded_json(cp['attemptPath'])
     require(identified_native_attempt(capture) and capture['schema']=='onoes-mesh-native-child/v3'

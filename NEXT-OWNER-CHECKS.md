@@ -50,6 +50,8 @@ The fresh window uses the corrected handoff and a startup-only cancellation opti
 
 The live Relay service confirmed it can bind a request to the selected conversation. Workroom listed Echo with a current conversation and Nims as a connected read-only reviewer. Production dispatch remains paused pending recovery.
 
+The next connected Windows launch profile can carry the worker record and its SHA-256 through `MESH_NATIVE_WORKER_RECORD` and `MESH_NATIVE_WORKER_RECORD_SHA256`. The preview checks their exact match, private storage and the worker workspace, and the profile pins the bridge script. Offline capture and read-only fallback continue without worker enrollment. The live launch profiles still need a separate, reviewed enrollment after recovery.
+
 For the first supervised run, open the card to see Echo’s result. Tap **Read review** for Nims’s verdict and evidence, then **Record this review**. An approved verdict enables **Move to Done**. If Nims requested changes, the card stays open with the correction visible after reload. Both paths passed in a phone-sized browser on a copy of the installed app using simulated workers. Recording either verdict sent zero additional jobs. The live team still needs its first supervised run.
 
 The combined release matched its E: backup and reviewed package. Compared with `420a233`, nine of 115 recovery source files and ten of 14 startup records changed. The historical job holds still require their own recovery window. Repeat the file check after each installation using the prior private readback, the reviewed release ZIP, the installed backup directory and the live checkout. [Recovery file checker](integrations/check_installed_recovery_files.py)

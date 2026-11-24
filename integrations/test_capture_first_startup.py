@@ -95,6 +95,30 @@ class StartupTests(unittest.TestCase):
         bad.write_text(json.dumps(self.cp));self.handoff['capture']['profileSha256']=startup.digest(bad)
         with self.assertRaises(startup.StartupHold):startup.profiles(self.handoff)
 
+    def test_only_connected_mode_can_add_the_two_worker_fields(self):
+        record_key='MESH_NATIVE_WORKER_RECORD'
+        sha_key='MESH_NATIVE_WORKER_RECORD_SHA256'
+        record=str(self.private/'worker-record')
+        connected={**self.np['settings'],record_key:record,sha_key:'e'*64}
+
+        def change(mode, **fields):
+            profile={**self.selected[mode],**fields}
+            path=Path(self.handoff[mode]['profilePath'])
+            path.write_text(json.dumps(profile))
+            self.handoff[mode]['profileSha256']=startup.digest(path)
+
+        change('connected',settings=connected)
+        self.assertEqual(startup.profiles(self.handoff)['connected']['settings'],connected)
+        for drift in ({key:value for key,value in connected.items() if key!=sha_key},
+                      {**connected,'MESH_PREVIEW_PORT':'23456'}, {**connected,record_key:'relative'}):
+            change('connected',settings=drift)
+            with self.assertRaises(startup.StartupHold):startup.profiles(self.handoff)
+        change('connected',settings=connected,stdoutPath=record)
+        with self.assertRaises(startup.StartupHold):startup.profiles(self.handoff)
+        change('connected',settings=connected)
+        change('capture',settings=connected)
+        with self.assertRaises(startup.StartupHold):startup.profiles(self.handoff)
+
     def test_exact_retired_attempt_and_logs_are_preserved_without_memory_access(self):
         self.storage();record=self.record('connected');self.files('connected',record);receipt=self.receipt('connected',record)
         observed=startup.owner_record(self.window,self.handoff,self.selected,self.roles);self.assertFalse(observed['live'])

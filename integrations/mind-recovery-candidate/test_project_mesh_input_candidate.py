@@ -279,6 +279,32 @@ console.log(JSON.stringify({link,links,source,boardIdentity:databaseFileIdentity
                 a=json.loads(approval_path.read_text());a['profiles']=list(dict.fromkeys(a['profiles']+[sha]));approval_path.write_text(json.dumps(a))
             return sha
         sha=write(p)
+        if not (with_rook or with_pilot):
+            worker_record=self.root/'worker-enrollment.json'
+            unexecutable=self.root/'worker-bridge-disabled'
+            roles.private_new_json(unexecutable,{'mustNotExecute':True})
+            worker={'schema':'mesh-native-worker-enrollment/v1',
+                    'profile':{'profileRef':'synthetic-build','identityRef':'synthetic-echo',
+                               'provider':'openai-codex','model':'gpt-6-luna','workspace':str(launch.ROOT)},
+                    'runtime':{'home':str(self.root),'nativeRoot':str(self.root),'pythonExecutable':str(unexecutable)}}
+            roles.private_new_json(worker_record,worker)
+            connected=copy.deepcopy(p)
+            connected['settings'].update(MESH_RELAY='1',MESH_NIMS='1',MESH_NATIVE_WORKER_RECORD=str(worker_record),
+                MESH_NATIVE_WORKER_RECORD_SHA256=launch.digest(worker_record))
+            connected['sourceHashes']={str(n):launch.digest(n) for n in
+                launch.source_paths(project=True,settings=connected['settings'])}
+            worker_sha=write(connected)
+            command=[sys.executable,str(Path(launch.__file__)),'--profile',str(profile),'--sha256',worker_sha,
+                     '--approval',str(self.reader.approval)]
+            preview=subprocess.run(command,cwd=launch.ROOT,capture_output=True,text=True,timeout=150,
+                                   creationflags=subprocess.CREATE_NO_WINDOW)
+            self.assertEqual(preview.returncode,0,preview.stdout+preview.stderr)
+            self.assertTrue(json.loads(preview.stdout)['createsNothing'])
+            worker_record.write_text(json.dumps(worker,indent=2),encoding='utf-8')
+            with self.assertRaises(launch.LaunchError):
+                launch.inspect_launch(profile,worker_sha,self.reader.approval)
+            self.assertFalse(any(Path(p[key]).exists() for key in ('attemptPath','stdoutPath','stderrPath')))
+            sha=write(p)
         if with_rook:
             p['rookEnrollment']=dict(id='rook',mode='paused',destination='mesh_relay_inbox',
                                      boardIdentity=initialized['boardIdentity'])

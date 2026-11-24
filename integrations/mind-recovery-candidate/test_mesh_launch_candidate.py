@@ -34,6 +34,58 @@ class MeshLaunchRefusalTests(unittest.TestCase):
         with self.assertRaises(launch.LaunchError):
             launch.check_settings({k:v for k,v in settings.items() if k!='MESH_SIMPLE_FLOW'})
 
+    def test_connected_worker_profile_requires_both_settings_and_the_pinned_bridge(self):
+        settings={k:'0' for k in launch.SETTINGS}
+        settings.update(MESH_DATA_DIR='data/cards',MESH_RELAY='1',MESH_RELAY_MODE='http',
+                        MESH_NIMS='1',MESH_GATE_KEY_FILE=str(launch.ROOT/'gate'))
+        record='MESH_NATIVE_WORKER_RECORD'
+        sha='MESH_NATIVE_WORKER_RECORD_SHA256'
+        approved={**settings,record:str(launch.ROOT/'worker-record.json'),sha:'a'*64}
+        launch.check_settings(approved,allow_native_worker=True)
+        self.assertEqual(launch.source_paths(project=True,settings=approved)-launch.source_paths(project=True),
+                         {launch.ROOT/'integrations/native_gateway_transport.py'})
+        with self.assertRaises(launch.LaunchError):
+            launch.check_settings(approved)
+        for changed in ({record:'relative.json'}, {sha:'A'*64}, {'MESH_RELAY':'0'},
+                        {'MESH_RELAY_MODE':'child'}, {'MESH_SIMPLE_FLOW':'1'}, {'MESH_NIMS':'0'}):
+            with self.subTest(changed=changed), self.assertRaises(launch.LaunchError):
+                launch.check_settings({**approved,**changed},allow_native_worker=True)
+        for key in (record,sha):
+            with self.subTest(missing=key), self.assertRaises(launch.LaunchError):
+                launch.check_settings({k:v for k,v in approved.items() if k!=key},allow_native_worker=True)
+
+    def test_worker_preflight_reads_the_exact_record_without_starting_the_bridge(self):
+        with tempfile.TemporaryDirectory(prefix='mesh-worker-launch-') as directory:
+            runtime=Path(directory).resolve()
+            record=runtime/'record.json'
+            python=runtime/'unexecutable-python-fixture'
+            python.write_bytes(b'The transport must not execute this file.')
+            data={'schema':'mesh-native-worker-enrollment/v1',
+                  'profile':{'profileRef':'fixture','identityRef':'fixture-echo','provider':'openai-codex',
+                             'model':'gpt-6-luna','workspace':str(launch.ROOT),'toolProfile':'build-check-v1'},
+                  'runtime':{'home':str(runtime),'nativeRoot':str(runtime),'pythonExecutable':str(python)}}
+            record.write_text(json.dumps(data),encoding='utf-8')
+            settings={'MESH_RELAY':'1','MESH_RELAY_MODE':'http','MESH_SIMPLE_FLOW':'0',
+                      'MESH_NATIVE_WORKER_RECORD':str(record),'MESH_NATIVE_WORKER_RECORD_SHA256':launch.digest(record)}
+            profile={'settings':settings,'nodeExecutable':shutil.which('node')}
+            checks=[]
+            def qualify(path, *, kind):
+                checks.append((path,kind))
+            with patch.dict(os.environ,{'MESH_STANDALONE':'1','MESH_NATIVE_WORKER_RECORD':'ambient-value',
+                                        'NODE_OPTIONS':'--require=unavailable-module'}):
+                launch.check_native_worker(profile,qualify)
+            self.assertEqual(checks,[(record,'file')])
+            outside=runtime/'outside-workspace'
+            outside.mkdir()
+            data['profile']['workspace']=str(outside)
+            record.write_text(json.dumps(data),encoding='utf-8')
+            with self.assertRaises(launch.LaunchError):
+                launch.check_native_worker(profile,qualify)
+            settings['MESH_NATIVE_WORKER_RECORD_SHA256']=launch.digest(record)
+            with self.assertRaises(launch.LaunchError):
+                launch.check_native_worker(profile,qualify)
+            self.assertEqual(launch.approved_environment({'MESH_RELAY':'1'})['MESH_RELAY'],'1')
+
     def test_preflight_authentication_failure_refuses_before_stop_without_echoing_details(self):
         with tempfile.TemporaryDirectory(prefix='mesh-preflight-auth-') as directory:
             root=Path(directory)

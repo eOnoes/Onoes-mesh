@@ -13,6 +13,23 @@ class NativeRecoveryHold(RuntimeError):
     pass
 
 
+def connected_settings_match(capture, connected):
+    """Keep all settings identical except the paired, connected-only worker reference."""
+    if type(capture) is not dict or type(connected) is not dict:
+        return False
+    record='MESH_NATIVE_WORKER_RECORD'
+    digest='MESH_NATIVE_WORKER_RECORD_SHA256'
+    worker_keys={record,digest}
+    if worker_keys & capture.keys():
+        return False
+    if worker_keys & connected.keys():
+        if not (worker_keys <= connected.keys() and type(connected[record]) is str
+                and Path(connected[record]).is_absolute() and type(connected[digest]) is str
+                and re.fullmatch('[0-9a-f]{64}',connected[digest])):
+            return False
+    return capture=={key:value for key,value in connected.items() if key not in worker_keys}
+
+
 def valid_memory_peers(value):
     """Only non-secret, exact process/profile identities belong in an attempt."""
     if type(value) is not dict or set(value)!={'reader','writer'}:return False

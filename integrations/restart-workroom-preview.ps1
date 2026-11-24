@@ -79,7 +79,10 @@ if ($nativeMindRequested) {
   $mindPreviewText = & $mindPython $mindHelper --profile $NativeMindProfile --sha256 $NativeMindSha256 --approval $NativeMindApproval
   if ($LASTEXITCODE -ne 0) { throw 'Native Mind reader/profile check refused; nothing stopped.' }
   $mindPreview = $mindPreviewText | ConvertFrom-Json
-  if (!$mindPreview.ready -or !$mindPreview.createsNothing -or @($mindPreview.settings.PSObject.Properties).Count -ne $settings.Count) { throw 'Native Mind preview refused; nothing stopped.' }
+  $workerKeys = @('MESH_NATIVE_WORKER_RECORD','MESH_NATIVE_WORKER_RECORD_SHA256')
+  $workerFields = @($mindPreview.settings.PSObject.Properties | Where-Object { $_.Name -cin $workerKeys })
+  if (!$mindPreview.ready -or !$mindPreview.createsNothing -or $workerFields.Count -notin @(0,2) -or
+      @($mindPreview.settings.PSObject.Properties).Count -ne ($settings.Count + $workerFields.Count)) { throw 'Native Mind preview refused; nothing stopped.' }
   foreach ($key in $settings.Keys) { if ($mindPreview.settings.$key -cne $settings[$key]) { throw 'Native Mind settings differ from the named Mesh launcher; nothing stopped.' } }
 }
 if ($owned) {
