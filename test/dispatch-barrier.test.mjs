@@ -210,7 +210,7 @@ test('actual Relay proxy drains sends, preserves GET access and remains paused a
   let app;
   try {
     app=await preview(env);
-    const request=(method)=>fetch(app.url+'/relay/api/fixture',{method,headers:{Authorization:'Bearer '+token,Origin:app.url,'Content-Type':'application/json'},
+    const request=(method,path='/relay/api/fixture')=>fetch(app.url+path,{method,headers:{Authorization:'Bearer '+token,Origin:app.url,'Content-Type':'application/json'},
       ...(method==='POST'?{body:'{}'}:{}),signal:AbortSignal.timeout(10000)});
     async function observedState(path) {
       const response = await fetch(app.url + path);
@@ -233,9 +233,27 @@ test('actual Relay proxy drains sends, preserves GET access and remains paused a
     await stop(app.child);app=await preview(env);
     assert.equal((await request('POST')).status,503);assert.equal(sent,1);
     assert.equal(assertDispatchHold(held,binding(join(dir,'tasks.sqlite'))).dispatchPaused,true);
-    held.release();gate.resume(paused.generation);
+    assert.throws(() => gate.allowRelayChat(paused.generation), status(409));
+    held.release();
+    assert.throws(() => gate.allowRelayChat(paused.generation - 1), status(409));
+    const chatOnly = gate.allowRelayChat(paused.generation);
+    assert.equal(chatOnly.state, 'paused');
+    assert.throws(() => gate.hold(), status(409));
+    await assert.rejects(gate.run(() => assert.fail('Workroom must stay paused')), status(503));
     assert.equal(await observedState(historyPath), 'open');
-    assert.equal((await request('POST')).status,200);assert.equal(sent,2);
+    assert.equal(await observedState('/relay/api/mesh-capabilities'), 'open');
+    const chat = '/relay/api/agents/echo/message';
+    assert.equal((await request('POST')).status,503);
+    assert.equal((await request('POST',chat+'/')).status,503);
+    assert.equal((await request('POST',chat)).status,200);
+    assert.equal(sent,2);
+    const maintenance = gate.pause();
+    assert.equal(maintenance.generation, chatOnly.generation + 1);
+    assert.equal((await request('POST',chat)).status,503);
+    assert.equal(await observedState(historyPath), 'paused');
+    assert.equal(sent,2);
+    gate.resume(maintenance.generation);
+    assert.equal((await request('POST')).status,200);assert.equal(sent,3);
     assert.deepEqual(db.prepare('SELECT * FROM tasks WHERE id=?').get(task.id),before);
   } finally {
     release?.();await stop(app?.child);upstream.closeAllConnections();await new Promise(resolve=>upstream.close(resolve));db.close();

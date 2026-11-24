@@ -371,10 +371,17 @@ function shortModel(name) {
 // --- Relay proxy --------------------------------------------------------------------
 async function relayProxy(req, res, token, path) {
   try {
-    const reply = await runDispatchRequest(app.dispatch, req.method, () => relayProxyNow(req, res, token, path));
+    const forward = () => relayProxyNow(req, res, token, path);
+    const ordinaryChat = req.method === 'POST' && /^\/api\/agents\/[^/?]+\/message$/.test(path);
+    const reply = ordinaryChat && app.dispatch
+      ? await app.dispatch.runRelayChat(forward)
+      : await runDispatchRequest(app.dispatch, req.method, forward);
     if (req.method === 'GET' && (path === '/api/mesh-capabilities' || path.split('?', 1)[0].endsWith('/messages'))) {
       let state = 'unavailable';
-      try { state = app.dispatch.status().state; } catch { /* Keep conversation history readable. */ }
+      try {
+        const gate = app.dispatch.status();
+        state = gate.relayChatOnly ? 'open' : gate.state;
+      } catch { /* Keep conversation history readable. */ }
       res.setHeader('X-Mesh-Dispatch-State', state);
     }
     res.writeHead(reply.status, { 'Content-Type': reply.type, 'Cache-Control': 'no-store' });
