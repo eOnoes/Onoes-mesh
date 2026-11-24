@@ -56,7 +56,7 @@ The live Relay service confirmed it can bind a request to the selected conversat
 
 The next connected Windows launch profile can carry the worker record and its SHA-256 through `MESH_NATIVE_WORKER_RECORD` and `MESH_NATIVE_WORKER_RECORD_SHA256`. The preview checks their exact match, private storage and the worker workspace, and the profile pins the bridge script. Offline capture and read-only fallback continue without worker enrollment. The live launch profiles still need a separate, reviewed enrollment after recovery.
 
-After the eight-job recovery, verify the exact recovery receipts and new Workroom backup while dispatch is paused. Prepare the combined update against that installed version with fresh capture, connected and fallback launch profiles. Their approvals and the hidden startup wrapper must reference the matching profiles. Then qualify the deployed Echo builder and independent Nims reviewer for one supervised phone job.
+The rollout draft contains the three updated startup profiles and their matching references. The copied launcher switched to those references, refused a changed profile and rolled back to its original reference. After the eight-job recovery, recheck the receipts, service owners and fresh Workroom backup while dispatch is paused. Then qualify the deployed Echo builder and independent Nims reviewer for one supervised phone job.
 
 The combined 18-file candidate passed disposable Windows startup in offline capture, connected sync and read-only fallback. A phone-sized browser reopened the saved card in each mode and Rook stayed paused. The offline edit reached Mind with its original event ID, existing receipts were preserved, and the healthy startup check kept the same processes.
 
