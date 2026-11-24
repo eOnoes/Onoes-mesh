@@ -7,7 +7,7 @@ import {tmpdir} from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput,assertPilotReviewTrace,pilotReviewCommand,BUILD_CHECK_SOURCE,verifyBuildCheckArtifacts} from '../integrations/guide-team-pilot.mjs';
+import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput,assertPilotReviewTrace,pilotReviewCommand,buildReviewCommand,BUILD_CHECK_SOURCE,verifyBuildCheckArtifacts} from '../integrations/guide-team-pilot.mjs';
 
 test('code pilot freezes terminal scope and immutable tests before executing only the expected module',{timeout:30000},()=>{
  const ready=prepareGuideTeamPilot({fixture:true,buildCheck:true}),p=validateGuideTeamPilot(ready.path);
@@ -22,6 +22,18 @@ test('code pilot freezes terminal scope and immutable tests before executing onl
   const command=task.plan.checks.split('\n').at(-1);assert.match(command,/^powershell.exe -NoProfile -NonInteractive -EncodedCommand [A-Za-z0-9+/=]+$/);
   const env={...process.env};delete env.NODE_TEST_CONTEXT;
   const actual=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',command.split(' ').at(-1)],{env,encoding:'utf8',windowsHide:true,timeout:10000});assert.equal(actual.status,0,actual.stderr);assert.match(actual.stdout,/pass 2/);
+  const root=mkdtempSync(join(tmpdir(),'mesh-build-review-'));
+  const prefix="quoted ' workspace ";
+  const longWorkspace=join(root,prefix+'x'.repeat(Math.max(0,230-root.length-prefix.length-1)));
+  mkdirSync(longWorkspace);
+  writeFileSync(join(longWorkspace,'board-column.mjs'),BUILD_CHECK_SOURCE);
+  writeFileSync(join(longWorkspace,'board-column.test.mjs'),tests);
+  const longCommand=buildReviewCommand(longWorkspace).command;
+  assert.ok(task.plan.checks.replace(command,longCommand).length<=4000,'Long workspaces must fit the locked plan');
+  const run=()=>spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',longCommand.split(' ').at(-1)],{env,encoding:'utf8',windowsHide:true,timeout:10000});
+  const longResult=run();assert.equal(longResult.status,0,longResult.stderr);assert.match(longResult.stdout,/pass 2/);
+  writeFileSync(join(longWorkspace,'board-column.test.mjs'),Buffer.concat([tests,Buffer.from('// changed')]));
+  const changed=run();assert.notEqual(changed.status,0);assert.match(changed.stderr,/Code or tests changed/);
  }
  writeFileSync(moduleFile,'import fs from "node:fs";fs.writeFileSync("unexpected","x");\n'+BUILD_CHECK_SOURCE);
  assert.throws(()=>verifyBuildCheckArtifacts(p),/Code or tests changed/);assert.equal(existsSync(join(p.workspace,'unexpected')),false);

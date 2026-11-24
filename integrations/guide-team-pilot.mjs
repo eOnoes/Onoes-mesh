@@ -64,14 +64,17 @@ export const BUILD_CHECK_SOURCE="export function boardColumn(stage) {\n  switch 
 const BUILD_CHECK_STUB="export function boardColumn() { throw new Error('Not implemented'); }\n";
 const BUILD_CHECK_TEST="import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport {boardColumn} from './board-column.mjs';\ntest('saved stages map to the three visible lanes',()=>{\n  for (const [stage,lane] of [['backlog','To do'],['ready','To do'],['working','In progress'],['needs_you','In progress'],['done','Done']]) assert.equal(boardColumn(stage),lane);\n});\ntest('unknown values do not invent a lane',()=>{\n  for (const value of ['unknown','toString','',null,undefined,1,{}]) assert.throws(()=>boardColumn(value),TypeError);\n});\n";
 const buildFiles=['board-column.mjs','board-column.test.mjs'];
-function buildReviewCommand(workspace) {
+export function buildReviewCommand(workspace) {
   const root=Buffer.from(workspace).toString('base64');
+  const hashes=buildFiles.map((name,i)=>`'${name}'='${sha(i?BUILD_CHECK_TEST:BUILD_CHECK_SOURCE)}'`).join(';');
   const script="$ErrorActionPreference='Stop';[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);"+
     `$r=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${root}'));$f=@(Get-ChildItem -LiteralPath $r -Force);`+
     "if($f.Count -ne 2 -or @($f|Where-Object {$_.PSIsContainer -or ($_.Attributes -band [IO.FileAttributes]::ReparsePoint)}).Count){throw 'Unexpected workspace entries'};"+
-    "function Get-PilotHash($p){$s=[Security.Cryptography.SHA256]::Create();try{[BitConverter]::ToString($s.ComputeHash([IO.File]::ReadAllBytes($p))).Replace('-','').ToLowerInvariant()}finally{$s.Dispose()}};"+
-    buildFiles.map((name,i)=>`$p=Join-Path $r '${name}';if((Get-PilotHash $p) -cne '${sha(i?BUILD_CHECK_TEST:BUILD_CHECK_SOURCE)}'){throw 'Code or tests changed'};[Console]::WriteLine([IO.File]::ReadAllText($p));`).join('')+
-    "Set-Location -LiteralPath $r;$pilotOutput=& node --test board-column.test.mjs;if($LASTEXITCODE -ne 0){throw 'Build checks failed'};$pilotOutput|ForEach-Object {[Console]::WriteLine($_)};";
+    `$hashes=@{${hashes}};$sha=[Security.Cryptography.SHA256]::Create();`+
+    "try{foreach($name in $hashes.Keys){$bytes=[IO.File]::ReadAllBytes((Join-Path $r $name));"+
+    "if(([BitConverter]::ToString($sha.ComputeHash($bytes))-replace '-','') -ne $hashes[$name]){throw 'Code or tests changed'};"+
+    "[Console]::WriteLine([Text.Encoding]::UTF8.GetString($bytes))}}finally{$sha.Dispose()};"+
+    "Set-Location -LiteralPath $r;& node --test board-column.test.mjs;exit $LASTEXITCODE;";
   return {script,command:'powershell.exe -NoProfile -NonInteractive -EncodedCommand '+Buffer.from(script,'utf16le').toString('base64')};
 }
 export function verifyBuildCheckArtifacts(p) {
@@ -101,7 +104,7 @@ export function prepareGuideTeamPilot({fixture=false,buildCheck=false}={}) {
   const patch={mode:'replace',path:artifactName,old_string:tail,new_string:buildCheck?BUILD_CHECK_SOURCE:tail+suffix};
   const reviewCheck=buildCheck?buildReviewCommand(workspace):pilotReviewCommand(workspace,expectedSha256,original.length+Buffer.byteLength(suffix));
   const buildSpec='Read both supplied files. Replace only the stub in board-column.mjs with the exact implementation below; do not edit board-column.test.mjs. This implements the five saved Workroom stages as three visible lanes and rejects unknown stages.\nExact patch JSON: '+JSON.stringify(patch);
-  const buildChecks='Builder: run node --test board-column.test.mjs; preserve tests and report actual output/exit. Report blocked on failure. Reviewer: read both files and run this exact hash-check/test command:\n'+reviewCheck.command;
+  const buildChecks='Builder: Run node --test board-column.test.mjs and report the result. Report blocked if it fails.\nReviewer: Read both files and run this exact check:\n'+reviewCheck.command;
   const buildBoundary='Isolated code-and-test qualification only. Edit only board-column.mjs; tests are immutable. Terminal commands limited to local read/syntax/test commands in this workspace. No network, installs, package manager, services, credentials, memory, other workers, commits, purchases or scope expansion. Nims reviews read-only. No automatic Done or owner approval.';
   const store=openTaskStore(join(ROOT,dataDir,'tasks.sqlite'));let task;
   try {
