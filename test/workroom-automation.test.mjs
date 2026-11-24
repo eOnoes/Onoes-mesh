@@ -5,6 +5,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomUUID} from 'node:crypto';
 import {EventEmitter} from 'node:events';
+import {DatabaseSync} from 'node:sqlite';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {sendTaskHandoff,syncTaskReplies} from '../lib/workroom.mjs';
 import {createTeamRunner} from '../lib/workroom-automation.mjs';
@@ -179,6 +180,83 @@ function nativeFixture(store,{lost=false,onCreate=()=>{}}={}){
      authority_epoch:1,execution_generation:1,status:'terminal'}};
   }};
 }
+
+test('an aged claim waits for the qualified native team and retains its original dispatch',async()=>{
+ const filename=file(),store=openTaskStore(filename);
+ const initial=store.create({title:'Aged native request',description:'Only the named fixture'});
+ const db=new DatabaseSync(filename);
+ try{db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2020-01-01T00:00:00Z',initial.id);}finally{db.close();}
+ const {flow}=store.workroom.flow.scheduledSweep();
+ const native=nativeFixture(store);
+ let enrolled=false,withdrawDuringRoster=false,reads=0;
+ native.enrollmentStatus=()=>enrolled?'configured':'held';
+ const qualified=[nativeAgents[0],{...nativeAgents[1],capabilities:{mode:'read-only',review:true}}];
+ let roster=qualified;
+ const sends=[];
+ const relay={
+  async agents(){reads++;if(withdrawDuringRoster)enrolled=false;return roster;},
+  async nativeRead(){return {taskSessionBinding:1,messages:[]};},
+  async taskMessage(body){sends.push(body);},
+ };
+ const runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,simpleFlow:true,nativeWorker:native});
+ try{
+  await runner.tick();
+  assert.equal(reads,0);
+  enrolled=true;
+  withdrawDuringRoster=true;
+  await runner.tick();
+  assert.equal(reads,1);
+  enrolled=true;
+  withdrawDuringRoster=false;
+  for(const invalid of [nativeAgents,[...qualified,qualified[1]],[qualified[1]]]){
+   roster=invalid;
+   await runner.tick();
+  }
+  assert.deepEqual(store.workroom.flow.read(initial.id),flow);
+  assert.equal(sends.length,0);
+  assert.equal(native.methods.length,0);
+  roster=qualified;
+  await runner.tick();
+  await runner.tick();
+  const card=store.workroom.get(initial.id);
+  assert.equal(card.flow.state,'planning');
+  assert.equal(card.flow.claim.claimId,flow.claim.claimId);
+  assert.deepEqual(sends.map(({id,agentId})=>[id,agentId]),[[flow.claim.dispatchId,'nims']]);
+  assert.equal(native.methods.length,0);
+ }finally{await runner.close();store.close();}
+});
+
+test('managed intake validates a locked plan with the native binding before reserving a team',async()=>{
+ const store=openTaskStore(file()),card=ready(store,'nims'),native=nativeFixture(store);
+ const roster=[nativeAgents[0],{...nativeAgents[1],capabilities:{mode:'read-only',review:true}}];
+ const relay={agents:async()=>roster,taskMessage:async()=>assert.fail('The locked plan must use the native connection')};
+ const runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,simpleFlow:true,nativeWorker:native});
+ try{
+  native.enrollmentStatus=()=> 'configured';
+  native.profileFor=()=>{throw Error('Locked plan is outside the enrolled route');};
+  store.workroom.flow.enqueue(card.id);
+  await runner.tick();
+  const held=store.workroom.get(card.id);
+  assert.equal(held.flow.state,'clarification');
+  assert.match(held.flow.question,/outside the enrolled route/);
+  assert.equal(held.workroom.stage,card.workroom.stage);
+  assert.equal(held.automation,undefined);
+  assert.equal(native.methods.length,0);
+
+  let bindingChecks=0;
+  native.profileFor=()=>{bindingChecks++;return native.profile;};
+  store.workroom.flow.enqueue(card.id);
+  await runner.tick();
+  const stage=store.workroom.get(card.id).automation;
+  assert.equal(stage.state,'active');
+  assert.equal(bindingChecks,2);
+  await runner.tick();
+  const started=store.workroom.get(card.id);
+  const worker=started.messages.find(message=>message.id===stage.workerSendId);
+  assert.equal(worker.nativeLocal.teamBound,1);
+  assert.equal(native.methods.filter(([method])=>method==='prompt.submit').length,1);
+ }finally{await runner.close();store.close();}
+});
 
 test('automatic native worker uses the saved stage once; restart observes without Relay or reviewer fallback',async()=>{
  const name=file();let store=openTaskStore(name),runner;const native=nativeFixture(store,{lost:true});let legacy=0;
