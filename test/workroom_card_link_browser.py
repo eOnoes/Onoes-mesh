@@ -10,9 +10,13 @@ repo = Path(__file__).resolve().parents[1]
 node = """
 import {startApp} from './server.mjs';
 import {openTaskStore} from './lib/task-store.mjs';
+import {randomUUID} from 'node:crypto';
 import path from 'node:path';
 const dataDir=process.argv[1],store=openTaskStore(path.join(dataDir,'tasks.sqlite'));
 const ids=['Build checklist fixture','Second saved card'].map(title=>store.create({title,owner:'nims'}).id);
+const receipt={id:randomUUID(),agentId:'echo',conversationId:randomUUID(),text:'Synthetic handoff'};
+store.workroom.reserve(ids[1],receipt);
+store.workroom.settle(receipt.id,'accepted');
 store.close();
 const app=await startApp({port:0,dataDir,standalone:true,relayEnabled:false});
 console.log(JSON.stringify({url:app.url,ids}));
@@ -34,6 +38,7 @@ def check_card_links():
                 browser = pw.chromium.launch(channel='msedge', headless=True)
                 ctx = browser.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
                 ctx.route('**/*', lambda r: r.continue_() if urlsplit(r.request.url).netloc == urlsplit(base).netloc else r.abort())
+                ctx.route(base + '/api/relay', lambda r: r.fulfill(json={'agents':[{'id':'echo','name':'Echo'}]}))
                 page = ctx.new_page()
                 page.set_default_timeout(12000)
                 problems = []
@@ -77,6 +82,24 @@ def check_card_links():
                 sheet.get_by_role('button', name='Close card', exact=True).tap()
                 expect(page.locator('#panel-mind')).to_be_visible()
                 expect(sheet).to_have_count(0)
+                for tab, card_id, title in [('mind', first, 'Build checklist fixture'), ('agent', second, 'Second saved card')]:
+                    page.goto(base + '/#' + tab)
+                    panel = page.locator('#panel-' + tab)
+                    if tab == 'mind':
+                        panel.get_by_label('Saved Workroom task').select_option(card_id)
+                        panel.get_by_role('button', name='Read selected task').tap()
+                        opener = panel.get_by_role('button', name='Open source task in Workroom')
+                    else:
+                        opener = panel.get_by_role('button', name=title, exact=True)
+                    opener.tap()
+                    expect(sheet).to_contain_text(title)
+                    expect(page).to_have_url(base + '/#task=' + card_id)
+                    page.reload()
+                    expect(sheet).to_contain_text(title)
+                    page.go_back()
+                    expect(page).to_have_url(base + '/#' + tab)
+                    expect(panel).to_be_visible()
+                    expect(sheet).to_have_count(0)
                 page.evaluate('()=>{location.hash="workroom"}')
                 page.reload()
                 expect(page.locator('.workroom-card')).to_have_count(2)
@@ -99,7 +122,7 @@ def check_card_links():
                 writes = [(m, p) for m, p in calls if m in ('PATCH', 'PUT', 'DELETE') or (m == 'POST' and any((t in p for t in ('dispatch', 'claim', 'assign', 'send', 'approve'))))]
                 assert not writes, writes
                 browser.close()
-                print('PASS: admission, open-card reload, dismissed-card reload, second link during editing, missing card and unavailable history. No work dispatched.')
+                print('PASS: Agent and Mind card links, reload and Back, admission, unsaved edits, dismissal, missing card and unavailable history. No work dispatched.')
         finally:
             proc.stdin.close()
             try:

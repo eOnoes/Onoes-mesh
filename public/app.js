@@ -36,8 +36,13 @@ for (const tab of tabs) {
 // Workspace links select a panel only; they never admit a session or dispatch work.
 let handledTaskLink;
 let deferredWorkspaceHash;
-function linkedTaskId() {
-  return /^#task=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(window.location?.hash ?? '')?.[1];
+function linkedTaskId(hash = window.location?.hash ?? '') {
+  return /^#task=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(hash)?.[1];
+}
+function openWorkroomCard(id) {
+  if (typeof id !== 'string' || !admitted || lifecycleSuspended || !navigator.onLine || !proofAvailable()) return;
+  const hash = '#task=' + id;
+  if (linkedTaskId(hash)) window.location.hash = hash;
 }
 function activateLinkedWorkspace() {
   handledTaskLink = undefined;
@@ -122,11 +127,7 @@ let lifecycleSuspended = document.visibilityState === 'hidden';
 const admissionPeers = typeof BroadcastChannel==='function' ? createAdmissionPeers({readProof:()=>admitted&&!workspaceLocked&&!lifecycleSuspended&&proofAvailable()?demo:null}) : null;
 let navigationProof; let normalNavigation = false;
 const relayChat = createRelayChat({request:api});
-const mindWorkspace = createMindWorkspace({root:$('mind-workspace'),request:api,openTask:id=>{
-  if (!admitted || !proofAvailable()) return;
-  activate($('tab-workroom'));
-  window.dispatchEvent(new CustomEvent('mesh-open-task',{detail:{id}}));
-}});
+const mindWorkspace = createMindWorkspace({root:$('mind-workspace'),request:api,openTask:openWorkroomCard});
 try {
   const raw = sessionStorage.getItem(nonceKey);
   if (raw && raw.length <= 128) {
@@ -867,12 +868,9 @@ function renderRookReports(snapshot) {
       ? 'Rook is enrolled on this board. Automatic assignments are off.'
     : `Watcher: ${state}. Opening these notices does not start work or approve a result.`;
   const openCard = (parent, taskId) => {
-    if (typeof taskId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(taskId)) return;
+    if (typeof taskId !== 'string' || !linkedTaskId('#task=' + taskId)) return;
     const open = document.createElement('button'); open.type = 'button'; open.textContent = 'Open card';
-    open.addEventListener('click', () => {
-      if (!admitted || lifecycleSuspended || !navigator.onLine || !proofAvailable()) return;
-      window.location.hash = '#task=' + taskId;
-    }); parent.append(open);
+    open.addEventListener('click', () => openWorkroomCard(taskId)); parent.append(open);
   };
   const seenHolds = new Set();
   for (const hold of Array.isArray(snapshot?.assignmentHolds) ? snapshot.assignmentHolds : []) {
@@ -1014,9 +1012,7 @@ export async function refresh() {
   mindWorkspace.setTasks(results[10].status === 'fulfilled' ? results[10].value.tasks : undefined);
   renderAgentWorkspace($('agent-workspace'), results[6].status === 'fulfilled' ? results[6].value : undefined,
     results[10].status === 'fulfilled' ? results[10].value.tasks : undefined, id => {
-      if (!admitted || !currentDemo(refreshDemo, refreshGeneration)) return;
-      activate($('tab-workroom'));
-      window.dispatchEvent(new CustomEvent('mesh-open-task', {detail:{id}}));
+      if (currentDemo(refreshDemo, refreshGeneration)) openWorkroomCard(id);
     }, results[10].status === 'fulfilled' ? results[10].value.teamPolicy : undefined);
   if (probeRequest === nodeProbeRequest) renderNodeProbes(results[7].status === 'fulfilled' ? results[7].value : undefined);
   renderLocalInference(results[8].status === 'fulfilled' ? results[8].value : undefined);
