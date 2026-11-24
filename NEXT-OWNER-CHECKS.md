@@ -28,9 +28,9 @@ On a copy of the board, editing the pilot kept its Workroom card and Mind record
 
 ## Before starting the first supervised job
 
-The November 23 read-only check matched the eight held sends to five original cards. All three separately reviewed pending records matched too. The extra admission seen earlier was absent at check time. The receipts leave the original workers' outcomes unknown, so dispatch stays paused.
+The post-install check matched all eight held sends to five original cards, with no additional held Workroom sends. Three previously reviewed queue records still matched exactly. Hermes also had one more record marked started, with no recorded direct card or shared-conversation link. The recovery check refused the changed queue. The original workers’ outcomes remain unknown.
 
-When you're ready for the quiet window, let agents editing Mesh finish and save, leave the services open and tell Nims you're ready. The unsigned preparation for installed release `420a233` passed the seven service-owner checks and matched all eight held sends and three retained records. The Windows preview stopped at the running model supervisor. Nims will recheck model activity, the exact startup timestamp, current service owners, backup and job records before requesting downtime. A phone installation or change to those inputs requires a fresh comparison.
+The unsigned preparation now matches the installed phone release. Seven service owners, 115 source files and 14 runtime records were verified. The Windows launcher preview stopped at the running model supervisor. When a quiet window is convenient, leave services open and tell Nims. Nims will check current model activity, startup, service owners and queue records before requesting downtime. If the extra record is still present, it needs separate reconciliation before recovery can proceed.
 
 The team fix is already installed. Once the old jobs are accounted for and the live worker route qualifies, the current manual setting leaves an independent review on the card. Tap **Record this review**, then **Move to Done**. Automatic movement after review passed on a separate managed-flow copy and still awaits production qualification.
 
