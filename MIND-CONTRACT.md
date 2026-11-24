@@ -16,6 +16,8 @@ Mind commit `53d056d` exposes this check to separately authorized MCP clients as
 
 On Eddie’s PC, the live writer verifies the actual files under `D:/Dev/Onoes-Mind/onoes_mind`, including their line endings. That checkout currently supplies runtime release `87eb6d7`. Develop newer Mind source in a separate worktree. Before promoting it into that path, qualify the reader and writer startup profiles against the exact release bytes. Publishing source can proceed independently.
 
+The print pilot can run the read-only MCP host from a separate `2db1cf5` source package. On a disposable ledger, that package read a new Workroom revision from the installed `87eb6d7` writer, rejected the superseded revision and honored credential revocation on the next call. The reader left the stored bytes intact. This qualifies using the two releases together. The live host still needs its own reviewed project binding and isolated credential custody.
+
 Two disposable readers with independent grants found the same handoff. After replacement, the old copy failed verification. Withdrawing one reader's tool grant ended its lookup while the other could still read. Withdrawing the guide itself removed the remaining reader's result.
 
 ### Echo's reader and delegated workers
