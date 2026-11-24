@@ -1,0 +1,11 @@
+{
+  "schema": "mesh-native-terminal-readback/v1",
+  "qualifiedCommit": "0a80c1732c3a8a568ff563db861cf5f705915300",
+  "files": [
+    {
+      "relativePath": "gateway/mesh_assignment_process.py",
+      "before": "16a62f3e2cfa99d15bcab33358bfac59212c1fa4502b9614fac7fe65f64bfe76",
+      "after": "820e6e54d8b1672204f2ed07e7d829c858d7bc5886a6d6452d5b14590e670ca4"
+    }
+  ]
+}

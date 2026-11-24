@@ -19,26 +19,36 @@ FILES = frozenset((
     'tools/file_tools.py',
 ))
 NEW_FILES = frozenset(('gateway/mesh_assignment_process.py', 'gateway/mesh_windows_process.py'))
+READBACK_PATH = 'gateway/mesh_assignment_process.py'
+READBACK_MANIFEST = Path(__file__).with_name('native-terminal-readback-release.json')
 
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
 
 
-def checked_files(package, target, *, rollback=False):
+def checked_files(package, target, *, rollback=False, terminal_readback=False):
     package, target = Path(package).resolve(), Path(target).resolve()
-    manifest = json.loads((package / 'manifest.json').read_text())
+    manifest = json.loads((package / 'manifest.json').read_text(encoding='utf-8'))
+    files, new_files = FILES, NEW_FILES
+    if terminal_readback:
+        reviewed = json.loads(READBACK_MANIFEST.read_text(encoding='utf-8'))
+        if manifest != reviewed or manifest.get('schema') != 'mesh-native-terminal-readback/v1':
+            raise RuntimeError('Terminal readback package does not match the reviewed release')
+        files, new_files = {READBACK_PATH}, set()
     entries = manifest['files']
-    if len(entries) != 7 or {e['relativePath'] for e in entries} != FILES:
+    if len(entries) != len(files) or {e['relativePath'] for e in entries} != files:
         raise RuntimeError('Unexpected bridge manifest file set')
     for entry in entries:
         rel = entry['relativePath']
-        if (entry['before'] is None) != (rel in NEW_FILES):
+        if (entry['before'] is None) != (rel in new_files):
             raise RuntimeError('Only the two introduced helpers may have no original source')
         paths = [package / 'candidate' / rel, package / 'baseline' / rel, target / rel]
         if any(not p.resolve().is_relative_to(root) for p, root in
                zip(paths, [package, package, target])):
             raise RuntimeError('Bridge path leaves its declared root')
+        if terminal_readback and any(p.resolve() != p for p in paths):
+            raise RuntimeError('Terminal readback cannot use linked source paths')
         candidate, baseline, installed = paths
         if digest(candidate) != entry['after'] or digest(baseline) != entry['before']:
             raise RuntimeError('Prepared bridge or rollback source changed')
@@ -83,9 +93,9 @@ def replace_bytes(path, content):
             os.unlink(staged)  # Only this invocation's uniquely created staging file.
 
 
-def change_sources(package, target, *, assert_stopped, rollback=False):
+def change_sources(package, target, *, assert_stopped, rollback=False, terminal_readback=False):
     package, target = Path(package).resolve(), Path(target).resolve()
-    entries = checked_files(package, target, rollback=rollback)
+    entries = checked_files(package, target, rollback=rollback, terminal_readback=terminal_readback)
     assert_stopped()
     for entry in entries:
         assert_stopped()
@@ -116,18 +126,21 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['dry-run', 'apply', 'rollback'], default='dry-run', nargs='?')
     parser.add_argument('--maintenance-approved', action='store_true')
+    parser.add_argument('--terminal-readback', action='store_true', help='Select the reviewed one-file terminal readback update')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    package = root / 'data/native-bridge-rollout-fb4d589d-0904-4282-bd67-5be857252ebe'
+    package_name = ('native-terminal-readback-rollout-0a80c17' if args.terminal_readback
+                    else 'native-bridge-rollout-fb4d589d-0904-4282-bd67-5be857252ebe')
+    package = root / 'data' / package_name
     target = Path('C:/Users/eMitchell109/AppData/Local/hermes/hermes-agent')
     if args.action == 'dry-run':
-        print(json.dumps({'action': 'dry-run', 'files': len(checked_files(package, target)),
+        print(json.dumps({'action': 'dry-run', 'files': len(checked_files(package, target, terminal_readback=args.terminal_readback)),
                           'sourceChanged': False, 'servicesChanged': False}))
     else:
         if not args.maintenance_approved:
             parser.error('Explicit maintenance permission is required; nothing changed')
         print(json.dumps(change_sources(package, target, assert_stopped=stopped_runtime,
-                                         rollback=args.action == 'rollback')))
+                                         rollback=args.action == 'rollback', terminal_readback=args.terminal_readback)))
 
 
 if __name__ == '__main__':

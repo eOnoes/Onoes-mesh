@@ -15,7 +15,8 @@ const fingerprint=t=>sha(JSON.stringify({id:t.id,title:t.title,description:t.des
   workroom:t.workroom,progress:t.progress,plan:t.plan}));
 const codeFiles=['server.mjs','lib/workroom.mjs','lib/workroom-updates.mjs','lib/workroom-native-binding.mjs','lib/native-gateway-transport.mjs',
   'lib/workroom-local-sessions.mjs','lib/workroom-automation.mjs','lib/nims-link.mjs','lib/codex-client.mjs',
-  'integrations/native_gateway_transport.py','integrations/guide-team-pilot.mjs'];
+  'integrations/native_gateway_transport.py','integrations/guide-team-pilot.mjs','integrations/native-terminal-readback-release.json'];
+const terminalReadbackPath='gateway/mesh_assignment_process.py';
 const home='C:/Users/eMitchell109/AppData/Local/hermes';
 const runtime={home,nativeRoot:home+'/hermes-agent',pythonExecutable:home+'/tools/python-3.14.9+20261021-win32-x64/python.exe'};
 const suffix="\n\n## Verified phone recovery\n\nBackground/resume, rotation with an unsaved draft, and network reconnection were confirmed on Eddie's phone. Reopening the completed guide still showed Done.\n";
@@ -36,11 +37,26 @@ export function reviewedNativeBaseline(header,capability,deployment) {
   assert.deepEqual(deployment.installedSourceFiles,expected,'Installed native source record differs');
   return expected;
 }
+export function reviewedTerminalReadback(expected,release,observed) {
+  assert.equal(release.schema,'mesh-native-terminal-readback/v1');
+  assert.match(release.qualifiedCommit,/^[a-f0-9]{40}$/);
+  assert.equal(release.files.length,1,'Unexpected terminal readback file set');
+  const [{relativePath,before,after}]=release.files;
+  assert.equal(relativePath,terminalReadbackPath,'Unexpected terminal readback path');
+  assert.equal(before,expected[terminalReadbackPath],'Terminal readback baseline differs');
+  assert.match(after,/^[a-f0-9]{64}$/);
+  assert.notEqual(before,after);
+  if(observed===after)return {...expected,[terminalReadbackPath]:after};
+  assert.equal(observed,before,'Installed native bridge changed: '+terminalReadbackPath);
+  return expected;
+}
 function nativeHashes() {
   const header=JSON.parse(readFileSync(join(ROOT,'integrations/native-header-fixture-qualification.json'),'utf8')).candidateFiles;
   const capability=JSON.parse(readFileSync(join(ROOT,'integrations/native-process-capability-qualification.json'),'utf8'));
   const maintenance=JSON.parse(readFileSync(join(ROOT,'integrations/native-worker-maintenance-qualification.json'),'utf8'));
-  const expected=reviewedNativeBaseline(header,capability,maintenance.deployment);
+  const baseline=reviewedNativeBaseline(header,capability,maintenance.deployment);
+  const readback=JSON.parse(readFileSync(join(ROOT,'integrations/native-terminal-readback-release.json'),'utf8'));
+  const expected=reviewedTerminalReadback(baseline,readback,hashFile(join(runtime.nativeRoot,terminalReadbackPath)));
   for(const [path,digest] of Object.entries(expected))assert.equal(hashFile(join(runtime.nativeRoot,path)),digest,'Installed native bridge changed: '+path);
   return expected;
 }

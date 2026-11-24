@@ -3,7 +3,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from integrations.native_bridge_maintenance import FILES, NEW_FILES, change_sources, checked_files
+from unittest.mock import patch
+from integrations.native_bridge_maintenance import FILES, NEW_FILES, READBACK_PATH, change_sources, checked_files
 
 
 class NativeBridgeMaintenanceTests(unittest.TestCase):
@@ -88,6 +89,40 @@ class NativeBridgeMaintenanceTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'Only the two introduced helpers'):
             change_sources(self.package, self.target, assert_stopped=lambda: None, rollback=True)
         self.assertEqual(self.snapshot(), self.before)
+
+    def test_terminal_readback_requires_the_reviewed_manifest_and_restores_existing_source(self):
+        before = b'value = "original"\n'
+        after = b'value = "replacement"\n'
+        for root, content in ((self.target, before), (self.package / 'baseline', before), (self.package / 'candidate', after)):
+            path = root / READBACK_PATH
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+        manifest = {
+            'schema': 'mesh-native-terminal-readback/v1',
+            'qualifiedCommit': '1' * 40,
+            'files': [{'relativePath': READBACK_PATH, 'before': hashlib.sha256(before).hexdigest(),
+                       'after': hashlib.sha256(after).hexdigest()}],
+        }
+        reviewed = self.package / 'reviewed.json'
+        prepared = self.package / 'manifest.json'
+        reviewed.write_text(json.dumps(manifest))
+        prepared.write_text(json.dumps(manifest))
+        original = self.snapshot()
+        with patch('integrations.native_bridge_maintenance.READBACK_MANIFEST', reviewed):
+            with self.assertRaisesRegex(RuntimeError, 'Unexpected bridge manifest'):
+                checked_files(self.package, self.target)
+            update = lambda **options: change_sources(
+                self.package, self.target, terminal_readback=True, assert_stopped=lambda: None, **options)
+            manifest['qualifiedCommit'] = '2' * 40
+            prepared.write_text(json.dumps(manifest))
+            with self.assertRaisesRegex(RuntimeError, 'reviewed release'):
+                update()
+            self.assertEqual(self.snapshot(), original)
+            prepared.write_bytes(reviewed.read_bytes())
+            self.assertEqual(update()['files'], 1)
+            self.assertEqual(self.snapshot(), {**original, READBACK_PATH: after})
+            self.assertEqual(update(rollback=True)['files'], 1)
+            self.assertEqual(self.snapshot(), original)
 
 
 if __name__ == '__main__':

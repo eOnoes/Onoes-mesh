@@ -7,7 +7,7 @@ import {tmpdir} from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {join,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,assertPilotReviewInput,assertPilotReviewTrace,pilotReviewCommand,buildReviewCommand,BUILD_CHECK_SOURCE,verifyBuildCheckArtifacts} from '../integrations/guide-team-pilot.mjs';
+import {prepareGuideTeamPilot,validateGuideTeamPilot,runGuideTeamPilot,readPilotReviewPayload,reviewedNativeBaseline,reviewedTerminalReadback,assertPilotReviewInput,assertPilotReviewTrace,pilotReviewCommand,buildReviewCommand,BUILD_CHECK_SOURCE,verifyBuildCheckArtifacts} from '../integrations/guide-team-pilot.mjs';
 
 test('code pilot freezes terminal scope and immutable tests before executing only the expected module',{timeout:30000},()=>{
  const ready=prepareGuideTeamPilot({fixture:true,buildCheck:true}),p=validateGuideTeamPilot(ready.path);
@@ -89,6 +89,19 @@ test('new pilot uses only the reviewed deployed patch and retains unchanged nati
 test('uninstalled, unverified, stale or broadened native baselines cannot prepare a live trial',()=>{
  for(const change of [f=>f.deployment.installed=false,f=>f.deployment.processScopeSupported='true',f=>f.deployment.installedSourceFiles=f.header,f=>f.capability.baselineHashes['gateway/session_controls.py']='other',f=>f.capability.candidateHashes['unreviewed.py']='new']){
   const f=baselineFixture();change(f);assert.throws(()=>reviewedNativeBaseline(f.header,f.capability,f.deployment));
+ }
+});
+
+test('the live pilot accepts the exact reviewed terminal overlay and preserves the other bridge pins',()=>{
+ const path='gateway/mesh_assignment_process.py',baseline={[path]:'a'.repeat(64),'gateway/session_controls.py':'controls'};
+ const release={schema:'mesh-native-terminal-readback/v1',qualifiedCommit:'1'.repeat(40),files:[
+   {relativePath:path,before:baseline[path],after:'b'.repeat(64)}]};
+ assert.deepEqual(reviewedTerminalReadback(baseline,release,baseline[path]),baseline);
+ assert.deepEqual(reviewedTerminalReadback(baseline,release,release.files[0].after),
+   {...baseline,[path]:release.files[0].after});
+ assert.throws(()=>reviewedTerminalReadback(baseline,release,'c'.repeat(64)),/Installed native bridge changed/);
+ for(const fields of [{relativePath:'gateway/session_controls.py'},{before:'d'.repeat(64)}]){
+   assert.throws(()=>reviewedTerminalReadback(baseline,{...release,files:[{...release.files[0],...fields}]},release.files[0].after));
  }
 });
 
