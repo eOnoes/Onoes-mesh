@@ -42,7 +42,14 @@ def verify(baseline, release_zip, backup, source_root):
 
         change = reviewed("source-readback.json")
         if prior.get("releaseCommit"):
-            require(prior["releaseCommit"].startswith(change["installedBase"]), "Unexpected preceding release")
+            if "installedBase" in change:
+                require(prior["releaseCommit"].startswith(change["installedBase"]), "Unexpected preceding release")
+            else:
+                inputs = reviewed("release-inputs.json")
+                require(inputs["commit"] == change["commit"] and inputs["files"] == change["changed"]
+                        and inputs["backupDirectory"] == change["backupDirectory"],
+                        "Release inputs disagree with source readback")
+                require(inputs["installedBase"] == prior["releaseCommit"], "Unexpected preceding release")
         files = change["changed"]
         require(files == reviewed("owner-review/overlay.review.json")["proposedPlan"]["files"],
                 "Release source records disagree")

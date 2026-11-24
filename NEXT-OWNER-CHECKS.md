@@ -8,21 +8,21 @@
 | Phone · Relay | Open Echo to read the conversation and load older messages. The installed composer shows the maintenance pause and lets you draft. Send becomes available after maintenance. A crew-folder handoff has no confirmed pickup time. [Open Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay) |
 | At the PC · 3D Print Pilot | When ready to share the pilot, have the saved backup archive password available for the two local prompts. The existing shared Mesh card is connected to Mind. The print pilot is still private to Workroom. |
 | At the PC · supervised work | Arrange a quiet recovery window for the historical job holds. After recovery and route qualification, start one real card from the phone with Echo building and Nims reviewing. Rook activation follows that check. |
-| Inference · other machines | Open **Other machines → Check machine status** for Tripp’s desktop temperatures and Ollama models. The prepared phone update adds Strata’s loaded model and a breakdown by GPU. [Open Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference) |
+| Inference · other machines | Open **Other machines → Check machine status** for Tripp’s desktop. Read Strata and Ollama separately, then expand **Individual GPUs** to see utilization and temperature for each card. [Open Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference) |
 
-Tripp’s desktop has an RTX 3060 and an RTX 4080 SUPER. The overview shows the busiest GPU’s usage and the hottest GPU’s temperature, which can come from different cards. In the prepared update, expand **Individual GPUs** under **TEMP** to match each temperature to its card. Strata and Ollama report separately. During the phone-width check, Strata reported `inkling` loaded and Ollama reported no loaded models. Model names and readings expire after 30 seconds. **LAN · Connection denied** means the check could not reach Tripp’s PC with the available connection.
+Tripp’s desktop has an RTX 3060 and an RTX 4080 SUPER. The overview shows the busiest GPU’s usage and the hottest GPU’s temperature, which can come from different cards. During the installed phone-width check, Strata reported `inkling` loaded. Model names and readings expire after 30 seconds. **LAN · Connection denied** means the check could not reach Tripp’s PC with the available connection.
 
 The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
 
-The next phone release combines the Inference display with Workroom card fixes through `1ab2103`. On a copy of the installed app, opening a card from Mind or Agent kept the right card on screen after reload. Back returned to the original tab. Workroom saved the brief and progress together, and a pending clarification showed the question on the card. In Inference, tap a shortened Ollama name to see its exact tags. A count in parentheses means multiple tags share that name.
+The combined phone release is installed. A phone-width browser on the private route opened the existing shared card from Mind, reloaded it, and returned to Mind with Back. The release-copy checks also covered Agent links, saving the brief and progress together, and displaying clarification questions on cards. In Inference, tap a shortened Ollama name to see its exact tags. A count in parentheses means multiple tags share that name.
 
-The design check caught a missing default for the temperature rings in `shared/tokens.css`. Eddie approved adding that existing stylesheet to the installer. It requires an exact match on the original file and still refuses other shared stylesheets. On the corrected twelve-file copy, both a complete rollback and recovery from an interrupted first write restored all 446 original files. The live phone app is on `420a233`.
+The design check caught a missing default for the temperature rings in `shared/tokens.css`. The installer now requires an exact match on that existing stylesheet. Both complete and interrupted rollback restored all 446 original files on the release copy. The installation preserved all 22 checked board tables and the same Mind reader. The post-install backup restored successfully and included all 104 app files named by the active startup profile.
 
-Use the twelve-file package for the next installation. Its release plan identifies the updated installer. The earlier six-file plan identifies the previous installer. For future combined releases, run the design check and app suite against the assembled copy before preparing the Windows startup records.
+For future combined releases, run the design check and app suite against the assembled copy before preparing the Windows startup records.
 
 ## Sharing the first print project
 
-The pilot card is still private to Workroom. Once the prepared phone update is installed and verified, the next attended step is the encrypted backup. Sharing the pilot will cover its title, lane and goal. Echo's live reader enrollment is a separate step.
+The pilot card is still private to Workroom. Recheck its proposed connection against the new installation before the attended encrypted backup. Sharing the pilot will cover its title, lane and goal. Echo's live reader enrollment is a separate step.
 
 On a copy of the board, editing the pilot kept its Workroom card and Mind record linked. A phone-sized browser showed the revised dimensions, and a search for the old dimensions returned no match. Replaying an earlier update preserved the current revision. Independent Echo and Nims test identities also read the same revised project through Relay and Telegram adapters. The live services still use their existing permissions.
 
@@ -34,7 +34,7 @@ When you're ready for the quiet window, let agents editing Mesh finish and save,
 
 The team fix is already installed. Once the old jobs are accounted for and the live worker route qualifies, the current manual setting leaves an independent review on the card. Tap **Record this review**, then **Move to Done**. Automatic movement after review passed on a separate managed-flow copy and still awaits production qualification.
 
-The installed LAN release at `420a233` matched the E: source backup and its archived release plan. Four of the 115 recovery source files and ten of the 14 startup records changed from the previous release. The file check did not inspect the queue or close any jobs. Repeat it after an installation. The read-only checker accepts the prior private readback, the reviewed release ZIP, the installed backup directory and the live checkout. Keep its output with the private recovery notes. [Recovery file checker](integrations/check_installed_recovery_files.py)
+The combined release matched its E: backup and reviewed package. Compared with `420a233`, nine of 115 recovery source files and ten of 14 startup records changed. The historical job holds still require their own recovery window. Repeat the file check after each installation using the prior private readback, the reviewed release ZIP, the installed backup directory and the live checkout. [Recovery file checker](integrations/check_installed_recovery_files.py)
 
 ## November 21 development check for project handoff
 
