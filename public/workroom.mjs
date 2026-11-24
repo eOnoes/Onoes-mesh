@@ -272,7 +272,15 @@ if(root){
       const list=el('ol');for(const event of events){const item=el('li');const when=el('time',Number.isFinite(Date.parse(event.at))?new Date(event.at).toLocaleString():'Time unavailable');if(Number.isFinite(Date.parse(event.at)))when.dateTime=new Date(event.at).toISOString();item.append(el('b',event.label),when);if(event.evidence||event.detail.length>180){const evidence=el('details');evidence.append(el('summary','Details and verification evidence'),el('p',event.detail));if(event.evidence)evidence.append(el('p',event.evidence));item.append(evidence);}else item.append(el('p',event.detail));list.append(item);}timeline.append(list);
     }
     paintTimeline(selected);
-    const editor=el('section');editor.hidden=true;edit.addEventListener('click',()=>{beginEdit(actionTask);summary.hidden=true;editor.hidden=false;renderActions(actionTask);editor.querySelector('input')?.focus();});
+    const editor=el('section');editor.hidden=true;
+    edit.addEventListener('click',()=>{
+      const answering=cardNextAction(actionTask,Boolean(teamPolicy?.simpleFlow))==='clarify';
+      beginEdit(actionTask);summary.hidden=true;editor.hidden=false;renderActions(actionTask);
+      if(answering){
+        goal.focus();
+        goal.setSelectionRange(goal.value.length,goal.value.length);
+      }else editor.querySelector('input')?.focus();
+    });
     const cancel=el('button','Cancel edits');cancel.type='button';cancel.addEventListener('click',()=>{if(!busy)closeDetails();});content.append(editor);
     const reports=el('section');reports.className='agent-reports';(teamPolicy?.simpleFlow?advanced:content).append(reports);
     let reportSignature=null;
@@ -375,17 +383,25 @@ if(root){
       selected=await saveCardBrief(selected,body,request);
     }
     async function saveCard(){
+      const answering=teamPolicy?.simpleFlow&&selected.flow?.state==='clarification';
       await saveBrief();
       const changed=goal.value!==selected.progress.goal || JSON.stringify(steps)!==JSON.stringify(selected.progress.checklist) || result.value!==selected.progress.result || evidence.value!==selected.progress.evidence || reviewer.value!==selected.progress.reviewer;
-      if(changed){await persist('pending');return;}
-      await load();closeDetails();status.textContent=teamPolicy?.simpleFlow?'Request saved. The team will check any updated clarification.':'Card saved. No agent was started.';
+      if(changed){await persist('pending',answering);return;}
+      await finishSave(teamPolicy?.simpleFlow?'Request saved.':'Card saved. No agent was started.',answering);
     }
-    async function persist(decision){
+    async function finishSave(message,answering){
+      await load();closeDetails();
+      const state=answering&&tasks.find(task=>task.id===id)?.flow?.state;
+      if(state==='clarification')message='The question is still open. Update the goal or acceptance criteria to answer it.';
+      if(state==='queued')message='Answer saved. The updated request is queued for another look.';
+      status.textContent=message;
+    }
+    async function persist(decision,answering=false){
       await saveBrief();
       await request('/api/workroom/'+id+'/progress',{method:'PATCH',body:JSON.stringify({goal:goal.value,checklist:steps,
         result:result.value,evidence:evidence.value,reviewer:reviewer.value,decision,revision:selected.progress.revision,
         taskRevision:selected.revision,briefRevision:selected.workroom.revision})});
-      await load();closeDetails();status.textContent=decision==='approved'?'Review approved and saved. You can now move this task to Done.':decision==='changes_requested'?'Changes requested. The task remains open.':'Goal and checklist saved.';
+      await finishSave(decision==='approved'?'Review approved and saved. You can now move this task to Done.':decision==='changes_requested'?'Changes requested. The task remains open.':'Goal and checklist saved.',answering);
     }
     progressForm.addEventListener('submit',event=>{event.preventDefault();act(()=>saveCard());});
     const approve=el('button','Record approved review');approve.type='button';approve.addEventListener('click',()=>act(()=>persist('approved')));
@@ -642,13 +658,14 @@ if(root){
     const startIdea=el('button','Work on this');startIdea.type='button';startIdea.addEventListener('click',()=>act(async()=>{await move(actionTask,'working');closeDetails();}));
     renderActions=task=>{
       actionTask=task;actionBar.replaceChildren();toolbar.insertBefore(edit,close);edit.hidden=!editor.hidden;
+      edit.textContent='Edit card';
       let primary,secondary,note;
       if(!ownerPanel.hidden){primary=submitChanges;secondary=cancelOwner;note='Explain what should be different';}
       else if(!editor.hidden){primary=save;secondary=cancel;note='Editing card';}
       else{
         const next=cardNextAction(task,Boolean(teamPolicy?.simpleFlow));
         if(next==='owner_review'){primary=acceptResult;secondary=requestChanges;note='Finished · ready for your review';}
-        else if(next==='clarify'){primary=edit;note='Clarification requested · add the missing detail';}
+        else if(next==='clarify'){primary=edit;edit.textContent='Answer question';note='Add the missing detail to the goal or acceptance criteria.';}
         else if(next==='idea'){primary=startIdea;secondary=edit;note='Idea · send it to the team when ready';}
         else if(next==='close'){primary=back;note=teamPolicy?.simpleFlow?'Done · accepted by you':'Done · review recorded';}
         else if(next==='finish'&&finishAction){primary=finishAction;primary.disabled=false;secondary=reviewAnchor?inspectReview:null;note='Review recorded · ready to finish';}

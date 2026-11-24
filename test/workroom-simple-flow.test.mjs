@@ -92,8 +92,18 @@ test('managed lane movement assigns the lead and queues one persisted intake; ed
   assert.equal(t.workroom.owner,'nims');assert.equal(t.flow.state,'queued');const sendId=t.flow.sendId;
   assert.equal(f.store.workroom.flow.enqueue(t.id).sendId,sendId);
   f.store.workroom.flow.question(t.id,'Which screen should this affect?',sendId);t=f.store.workroom.get(t.id);
+  const questionRevision=t.flow.revision;
+  t=f.store.workroom.saveProgress(t.id,{goal:t.progress.goal,checklist:[],result:'Waiting for the owner',evidence:'',reviewer:'',decision:'pending',revision:t.progress.revision,taskRevision:t.revision,briefRevision:t.workroom.revision});
+  assert.equal(t.flow.state,'clarification');assert.equal(t.flow.revision,questionRevision);
+  t=f.store.workroom.save(t.id,{project:'Mesh',criteria:'A clear outcome  ',owner:'echo',team:'local_build',stage:'working',revision:t.workroom.revision});
+  assert.equal(t.flow.state,'clarification');assert.equal(t.flow.sendId,sendId);
   t=f.store.workroom.saveProgress(t.id,{goal:'Fix the Workroom screen',checklist:[],result:'',evidence:'',reviewer:'',decision:'pending',revision:t.progress.revision,taskRevision:t.revision,briefRevision:t.workroom.revision});
   assert.equal(t.flow.state,'queued');assert.notEqual(t.flow.sendId,sendId);
+  f.store.workroom.flow.question(t.id,'Which phone layout should be checked?',t.flow.sendId);
+  t=f.store.workroom.saveProgress(t.id,{goal:'',checklist:[],result:'',evidence:'',reviewer:'',decision:'pending',revision:t.progress.revision,taskRevision:t.revision,briefRevision:t.workroom.revision});
+  assert.equal(t.flow.state,'clarification');
+  t=f.store.workroom.save(t.id,{project:'Mesh',criteria:'Check three columns at 390 px',owner:'echo',team:'local_build',stage:'working',revision:t.workroom.revision});
+  assert.equal(t.flow.state,'queued');assert.equal(f.sends.length,0);
  }finally{await f.close();if(old===undefined)delete process.env.MESH_SIMPLE_FLOW;else process.env.MESH_SIMPLE_FLOW=old;}
 });
 

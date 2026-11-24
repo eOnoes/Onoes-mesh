@@ -46,6 +46,7 @@ def check(browser, managed):
                                           is_mobile=True, has_touch=True)
             try:
                 page = context.new_page()
+                page.set_default_timeout(10000)
                 page.goto(fixture["url"])
                 page.locator("#rail-menu").tap()
                 page.get_by_role("button", name="Start local session", exact=True).tap()
@@ -59,9 +60,32 @@ def check(browser, managed):
                 card.tap()
                 sheet = page.get_by_role("dialog", name="Task details")
                 expect(sheet.get_by_text(QUESTION, exact=True)).to_be_visible()
-                sheet.get_by_role("button", name="Close card").tap()
-                change("")
-                page.get_by_role("button", name="Refresh board").tap()
+                if managed:
+                    sheet.get_by_role("button", name="Answer question").tap()
+                    goal = sheet.get_by_role("textbox", name="Goal", exact=True)
+                    expect(goal).to_be_focused()
+                    sheet.get_by_text(QUESTION, exact=True).tap()
+                    sheet.get_by_role("button", name="Save changes").tap()
+                    expect(sheet).to_be_hidden()
+                    expect(page.get_by_text("The question is still open.", exact=False)).to_be_visible()
+                    expect(question).to_be_visible()
+                    card.tap()
+                    sheet.get_by_role("button", name="Answer question").tap()
+                    answer = "Use a 95 mm tray width."
+                    revised_goal = goal.input_value() + " " + answer
+                    goal.fill(revised_goal)
+                    sheet.get_by_text(QUESTION, exact=True).tap()
+                    sheet.get_by_role("button", name="Save changes").tap()
+                    expect(sheet).to_be_hidden()
+                    expect(page.get_by_text("Answer saved. The updated request is queued for another look.", exact=True)).to_be_visible()
+                    page.reload()
+                    card.tap()
+                    expect(sheet.get_by_text(revised_goal, exact=True)).to_be_visible()
+                    sheet.get_by_role("button", name="Close card").tap()
+                else:
+                    sheet.get_by_role("button", name="Close card").tap()
+                    change("")
+                    page.get_by_role("button", name="Refresh board").tap()
                 expect(question).to_have_count(0)
                 if not managed:
                     expect(card.get_by_text("0/1 steps", exact=True)).to_be_visible()
