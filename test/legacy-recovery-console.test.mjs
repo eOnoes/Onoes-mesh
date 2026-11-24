@@ -10,7 +10,7 @@ import { createLegacyAuthorizationReader } from '../lib/workroom-legacy-authoriz
 function fixture(t) {
   const workspace=realpathSync.native(mkdtempSync(join(tmpdir(),'mesh-console-')));mkdirSync(join(workspace,'data'));
   t.after(()=>rmSync(workspace,{recursive:true,force:true}));
-  const plan={planHash:'a'.repeat(64),host:'fixture-host',preparedAt:new Date(Date.now()-60000).toISOString(),
+  const plan={schema:'mesh/legacy-recovery-plan/v2',planHash:'a'.repeat(64),host:'fixture-host',preparedAt:new Date(Date.now()-60000).toISOString(),
     disposition:'historical_outcome_unknown',targets:Array.from({length:8},(_,i)=>({sendId:`send-${i}`}))};
   const scope={workspace,retainedReview:{sha256:'b'.repeat(64)}};
   const inspection={planHash:plan.planHash,targetCount:8,status:'ready_for_operator_review',
@@ -79,7 +79,28 @@ test('a state change while the confirmation is open blocks apply',async t=>{
 
 test('same boot cannot mint a postboot owner approval',async t=>{
   const f=fixture(t);f.options.observe=async()=>({host:f.options.plan.host,bootedAt:f.options.plan.preparedAt});
-  await assert.rejects(runLegacyRecoveryConsole(f.options),/later boot/i);assert.equal(f.calls,0);
+  const result=await runLegacyRecoveryConsole(f.options);
+  assert.equal(result.status,'blocked_after_confirmation');
+  assert.equal(result.reason,'host_or_boot_changed');
+  assert.equal(f.calls,0);
+  assert.equal(existsSync(join(result.receiptDirectory,'authorization.json')),false);
+});
+
+test('the current-boot console accepts only the boot and machine frozen in the plan',async t=>{
+  for (const change of ['different boot','different machine','none']) {
+    const f=fixture(t);
+    const plan=f.options.plan;
+    plan.schema='mesh/legacy-recovery-plan/v3';
+    plan.baselineBoot=new Date(Date.parse(plan.preparedAt)-60000).toISOString();
+    plan.machineIdentity='1'.repeat(64);
+    f.options.observe=async()=>({host:plan.host,
+      bootedAt:change==='different boot'?plan.preparedAt:plan.baselineBoot,
+      machineIdentity:change==='different machine'?'2'.repeat(64):plan.machineIdentity});
+    const result=await runLegacyRecoveryConsole(f.options);
+    assert.equal(result.status,change==='none'?'operator_returned':'blocked_after_confirmation');
+    assert.equal(f.calls,change==='none'?1:0);
+    assert.equal(existsSync(join(result.receiptDirectory,'authorization.json')),change==='none');
+  }
 });
 
 test('uncertain apply remains durable and cannot be blindly retried from a new console',async t=>{
@@ -117,7 +138,7 @@ test('the real console CLI refuses a noninteractive invocation before touching a
 function feedbackFixture() {
   const workspace=realpathSync.native(mkdtempSync(join(tmpdir(),'mesh-confirmation-feedback-')));
   mkdirSync(join(workspace,'data'));
-  const plan={planHash:'a'.repeat(64),host:'synthetic-host',preparedAt:'2020-01-01T00:00:00.000Z',
+  const plan={schema:'mesh/legacy-recovery-plan/v2',planHash:'a'.repeat(64),host:'synthetic-host',preparedAt:'2020-01-01T00:00:00.000Z',
     disposition:'historical_outcome_unknown',targets:Array.from({length:8},(_,i)=>({sendId:`synthetic-${i}`}))};
   const scope={workspace,retainedReview:{sha256:'b'.repeat(64)}};
   const calls={inspect:0,observe:0,apply:0,confirm:0};

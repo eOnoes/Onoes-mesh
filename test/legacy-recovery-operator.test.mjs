@@ -159,12 +159,14 @@ test('current-boot operator pins the old witness and needs new authority plus un
   }finally{f.close();}
 });
 
-test('a frozen external controller preserves target code and runs the complete current-boot guarded closure in disposable stores',async()=>{
+test('the frozen console drives the complete current-boot recovery in disposable stores',async()=>{
  const f=await fixture();
  try{
+  retainedFixture(f);
   const root=join(resolve('data'),'mesh-legacy-controller-operator-'+f.dir.split(/[\\/]/).at(-1));
   const bundle=prepareFrozenLegacyController({sourceRoot:realpathSync.native(process.cwd()),destinationRoot:root});
   const frozen=await import(pathToFileURL(bundle.entry));
+  const {runLegacyRecoveryConsole}=await import(pathToFileURL(join(root,'lib','workroom-legacy-console.mjs')));
   await assert.rejects(frozen.runLegacyOperator({...f.options,action:'prepare'},f.runtime),/external controller/);
   f.scope.controllerBundle=bundle.descriptor;
   writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));
@@ -177,7 +179,17 @@ test('a frozen external controller preserves target code and runs the complete c
   const plan=JSON.parse(readFileSync(f.options.planPath,'utf8'));
   assert.ok(Object.keys(plan.sources).some(k=>k.startsWith('frozenControllerFile')));
   const original=f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all();
-  const receipt=await frozen.runLegacyOperator({...f.options,action:'apply',...f.authorize()},f.runtime);
+  const receiptWorkspace=join(f.dir,'console');
+  mkdirSync(join(receiptWorkspace,'data'),{recursive:true});
+  const result=await runLegacyRecoveryConsole({
+    scope:{...f.scope,workspace:receiptWorkspace},plan,
+    inspect:()=>frozen.runLegacyOperator({...f.options,action:'inspect'},f.runtime),
+    observe:()=>f.runtime.collect(frozen.loadOperatorScope(f.options.scopePath,f.options.scopeSha256)),
+    confirm:async({phrase})=>phrase,
+    apply:authority=>frozen.runLegacyOperator({...f.options,action:'apply',...authority},f.runtime),
+  });
+  assert.equal(result.status,'operator_returned');
+  const receipt=result.result;
   assert.equal(receipt.disposition,'historical_outcome_unknown');assert.equal(receipt.dispatchRemainsPaused,true);
   assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),original);
   assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n,8);
