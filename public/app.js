@@ -867,12 +867,11 @@ function renderRookReports(snapshot) {
       ? 'Rook is enrolled on this board. Automatic assignments are off.'
     : `Watcher: ${state}. Opening these notices does not start work or approve a result.`;
   const openCard = (parent, taskId) => {
-    if (typeof taskId !== 'string' || !/^[0-9a-f-]{36}$/.test(taskId)) return;
+    if (typeof taskId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(taskId)) return;
     const open = document.createElement('button'); open.type = 'button'; open.textContent = 'Open card';
     open.addEventListener('click', () => {
       if (!admitted || lifecycleSuspended || !navigator.onLine || !proofAvailable()) return;
-      activate($('tab-workroom'));
-      window.dispatchEvent(new CustomEvent('mesh-open-task', {detail: {id: taskId}}));
+      window.location.hash = '#task=' + taskId;
     }); parent.append(open);
   };
   const seenHolds = new Set();

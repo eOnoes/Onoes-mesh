@@ -105,14 +105,16 @@ test('page privacy clears notices and late responses cannot restore them', async
   assert.equal(ui.ids.get('rook-summary').textContent, 'Rook · connect to check');
 });
 
-test('opening the card emits navigation only and a locked refresh reads nothing', async () => {
-  const ui = await admittedUi(); const emitted = [];
-  ui.context.CustomEvent = class {constructor(type, options) {this.type = type; this.detail = options.detail;}};
-  ui.context.window.dispatchEvent = event => emitted.push(event);
+test('opening a Rook notice sets the card link and locked controls cannot navigate or refresh', async () => {
+  const ui = await admittedUi();
+  ui.context.window.location = {hash:'#relay'};
   const open = walk(ui.ids.get('rook-reports')).find(n => n.textContent === 'Open card');
   const before = ui.requests.length; open.events.click();
-  assert.equal(emitted[0].type, 'mesh-open-task'); assert.equal(emitted[0].detail.id, id);
+  assert.equal(ui.context.window.location.hash, '#task=' + id);
   assert.equal(ui.requests.length, before);
   vm.runInContext("clearPrivate('locked'); controls()", ui.context);
+  ui.context.window.location.hash = '#relay';
+  open.events.click();
+  assert.equal(ui.context.window.location.hash, '#relay');
   ui.ids.get('rook-refresh').events.click(); await flush(); assert.equal(ui.requests.length, before);
 });

@@ -1,6 +1,16 @@
 # Rook / Mesh integration checkpoint
 
-## Paused enrollment after the November 23 phone update
+## Rook on the combined phone release
+
+The current phone prerequisite is `197c81d`. Its six-file update and Rook enrollment are separate installation steps. The paused Rook proposal layers five files over that release, including the current clarification display. The earlier `7ff6188` packet targets different source bytes.
+
+On a 390-pixel browser, tapping **Open card** on a saved Relay clarification opened the right Workroom card. Reload kept the card open, and Back returned to Relay. After the card advanced, Relay showed **Earlier clarification** and removed the outstanding question. The original delivery receipt remained intact.
+
+On a restored 16-card board, paused enrollment preserved all 30 original tables. After recording a test notice, the previous phone release reopened the database. Reapplying the proposed update and delivering the same notice again preserved the original receipt and timestamp. The source rollback matched all 446 original files from the staged phone release.
+
+Before live enrollment, confirm the installed phone release and board identity. The proposed profiles keep scheduling off. The attended job recovery and first supervised production job are still pending.
+
+## Previous five-file phone release rehearsal
 
 The November 22 installer predates the LAN dashboard for Tripp’s desktop. Its copy of `public/app.js` includes an obsolete laptop display change. For phone release `7ff6188`, retain that release’s Inference code and merge only the Rook report changes into Relay.
 
