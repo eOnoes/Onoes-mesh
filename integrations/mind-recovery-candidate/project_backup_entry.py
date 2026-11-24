@@ -1,5 +1,6 @@
 """Owner-invoked backup window for an existing Mind store; inactive by default."""
 import argparse
+from dataclasses import asdict
 import hashlib
 import importlib.util
 import json
@@ -43,7 +44,7 @@ def source_paths(runtime):
     return paths
 
 
-def checked_profile(path,expected_sha,approval_path=None):
+def read_profile(path,expected_sha):
     require(os.name=='nt');path=Path(path)
     require(path.is_absolute() and path.resolve()==path)
     with path.open('rb') as stream:raw=stream.read(65537)
@@ -68,6 +69,17 @@ def checked_profile(path,expected_sha,approval_path=None):
     require(read_plain(path,65536)==raw)
     b=EventBinding(**p['binding']);require(identifier(b.store_id) and identifier(b.environment)
         and type(b.authority_ref) is str and 1<=len(b.authority_ref)<=300)
+    sid=subprocess.run([p['runtime']['pwsh'],'-NoLogo','-NoProfile','-NonInteractive','-Command',
+        '[Security.Principal.WindowsIdentity]::GetCurrent().User.Value'],capture_output=True,text=True,
+        timeout=15,creationflags=subprocess.CREATE_NO_WINDOW)
+    require(sid.returncode==0 and sid.stdout.strip()==p['ownerSid'])
+    return p,b,root
+
+
+def checked_profile(path,expected_sha,approval_path=None):
+    p,b,root=read_profile(path,expected_sha)
+    from onoes_mind.enrollment_store import qualify_private_storage
+    from checkpoint_candidate import read_plain
     database=qualify_private_storage(Path(b.database_path),kind='file')
     require(database.resolve()==database);s=database.stat();require((s.st_dev,s.st_ino)==(b.file_device,b.file_inode))
     require(Path(p['keyEnrollmentPath'])==database.parent/'key-enrollment.json'
@@ -88,10 +100,6 @@ def checked_profile(path,expected_sha,approval_path=None):
     from encrypted_backup_candidate import TOOL_SHA256
     require(digest(p['archiveTool'])==TOOL_SHA256 and Path(p['archiveTool']).resolve()==Path(p['archiveTool']))
     require(type(p['reviewRef']) is str and 1<=len(p['reviewRef'])<=240 and not re.search(r'[\x00-\x1f\x7f]',p['reviewRef']))
-    sid=subprocess.run([p['runtime']['pwsh'],'-NoLogo','-NoProfile','-NonInteractive','-Command',
-        '[Security.Principal.WindowsIdentity]::GetCurrent().User.Value'],capture_output=True,text=True,
-        timeout=15,creationflags=subprocess.CREATE_NO_WINDOW)
-    require(sid.returncode==0 and sid.stdout.strip()==p['ownerSid'])
     writer_gate(p,b)
     if approval_path is not None:
         a=json.loads(read_plain(qualify_private_storage(Path(approval_path),kind='file'),65536),object_pairs_hook=unique)
@@ -151,6 +159,49 @@ def windows_backup_password(path,profile_sha,*,create=False):
     return recovered
 
 
+def verify_completed_archive(path,sha):
+    """Reopen a completed Windows-local archive in memory without the live ledger."""
+    profile,binding,root=read_profile(path,sha)
+    from checkpoint_candidate import SnapshotReceipt,read_plain
+    from encrypted_backup_candidate import decode_bundle
+    from onoes_mind.enrollment_store import qualify_private_storage
+
+    def read_receipt(filename):
+        return json.loads(read_plain(qualify_private_storage(filename,kind='file'),65536),object_pairs_hook=unique)
+
+    require(profile.get('archiveCredentialMode')==WINDOWS_LOCAL)
+    attempt_path=Path(profile['attemptPath'])
+    result_path=Path(profile['resultPath'])
+    require(attempt_path!=result_path and attempt_path.parent==result_path.parent==root)
+    attempt,result=read_receipt(attempt_path),read_receipt(result_path)
+    require(attempt.get('schema')==SCHEMA and attempt.get('profileSha256')==sha
+        and attempt.get('state')==attempt.get('phase')=='complete')
+    archive=Path(profile['encryptedBackup'])
+    custody=result_path.with_suffix('.archive.dpapi')
+    require(archive.is_absolute() and archive.suffix.lower()=='.7z'
+        and result.get('archive')==str(archive) and result.get('archiveCredentialPath')==str(custody)
+        and result.get('archiveCredentialMode')==WINDOWS_LOCAL and result.get('windowSchema')==SCHEMA
+        and result.get('profileSha256')==sha and result.get('status')=='backup_complete_inactive'
+        and result.get('archiveRehearsal')=='PASS' and result.get('projectReceiptReadback')=='PASS'
+        and (result.get('storeId'),result.get('environment'))==(binding.store_id,binding.environment))
+    publication=result.get('archivePublication')
+    if publication is None:
+        export=read_receipt(Path(profile['stagingDirectory'])/'archive-export-receipt.json')
+        require(export.get('archive')==str(archive) and export.get('archiveSha256')==result.get('archiveSha256'))
+        publication=export['publication']
+    published=SnapshotReceipt(**publication)
+    require((published.store_id,published.environment)==(binding.store_id,binding.environment))
+    password=windows_backup_password(custody,sha)
+    try:
+        files=decode_bundle(archive,profile['archiveTool'],password,result.get('archiveSha256'),published)
+        require(hashlib.sha256(files['snapshot.sqlite']).hexdigest()==published.database_sha256
+            and hashlib.sha256(files['snapshot.sqlite.meta']).hexdigest()==published.metadata_sha256
+            and read_receipt(result_path)==result and read_receipt(attempt_path)==attempt)
+    finally:password=None
+    return dict(status='archive_verified',archive=str(archive),entriesVerified=len(files),
+        archiveCredentialMode=WINDOWS_LOCAL,sourceLedgerOpened=False,currentAuthorityQualified=False)
+
+
 def run_backup(path,sha,approval_path,password=None):
     p,b=checked_profile(path,sha,approval_path)
     import recall_process_candidate as roles
@@ -206,7 +257,8 @@ def run_backup(path,sha,approval_path,password=None):
         result.update(windowSchema=SCHEMA,profileSha256=sha,status='backup_complete_inactive',
             sourceLedgerOpened=True,newKeysCreated=False,newCredentialsCreated=False,serviceStarted=False)
         if local:
-            result.update(archiveCredentialMode=WINDOWS_LOCAL,archiveCredentialPath=str(custody))
+            result.update(archiveCredentialMode=WINDOWS_LOCAL,archiveCredentialPath=str(custody),
+                archivePublication=asdict(publication))
         phase('result')
         roles.private_new_json(p['resultPath'],result)
         phase('complete','complete')
@@ -224,8 +276,14 @@ def run_backup(path,sha,approval_path,password=None):
 def main(argv=None):
     parser=argparse.ArgumentParser(description='Preview or explicitly back up an existing Mind store; never initializes one.')
     parser.add_argument('--profile',required=True);parser.add_argument('--sha',required=True)
-    parser.add_argument('--approval');parser.add_argument('--run',action='store_true')
+    parser.add_argument('--approval')
+    actions=parser.add_mutually_exclusive_group()
+    actions.add_argument('--run',action='store_true')
+    actions.add_argument('--verify-archive',action='store_true')
     a=parser.parse_args(argv)
+    if a.verify_archive:
+        require(a.approval is None)
+        print(json.dumps(verify_completed_archive(a.profile,a.sha),indent=2));return 0
     if not a.run:print(json.dumps(preview(a.profile,a.sha),indent=2));return 0
     require(a.approval is not None)
     profile,_=checked_profile(a.profile,a.sha,a.approval)

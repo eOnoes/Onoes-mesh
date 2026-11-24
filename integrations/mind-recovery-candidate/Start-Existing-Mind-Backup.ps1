@@ -22,8 +22,12 @@ try {
         }
     }
     Write-Host 'Onoes-Mind / backup existing store' -ForegroundColor Cyan
-    Write-Host 'Use your saved BACKUP ARCHIVE password. This does not reset it.'
-    Write-Host 'Enter it only in the hidden prompts below, never in chat.'
+    if ($settings.PSObject.Properties['archiveCredentialMode'] -and $settings.archiveCredentialMode -ceq 'windows-local') {
+        Write-Host 'This encrypted archive uses your Windows account. No password entry is needed.'
+    } else {
+        Write-Host 'Use your saved BACKUP ARCHIVE password. This does not reset it.'
+        Write-Host 'Enter it only in the hidden prompts below, never in chat.'
+    }
     Write-Host ''
     & $python -I $entry --profile $Profile --sha $Sha --approval $Approval --run
     $backupExit = $LASTEXITCODE

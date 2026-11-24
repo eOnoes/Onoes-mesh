@@ -1327,6 +1327,14 @@ local release checklist stays 18/21.
 
 ## Successful backup and fresh-profile relaunch qualification
 
+For a Windows-local backup, keep the reviewed backup profile, completed attempt
+and result, sealed `.archive.dpapi` file, and encrypted archive available to the
+same Windows account. To check a completed archive later, run the pinned Python
+and `project_backup_entry.py` with `--profile <profile-path> --sha <profile-sha256>
+--verify-archive`. The verifier uses the encrypted archive and receipts, reads
+the five expected entries in memory, and reports whether they match the saved
+snapshot. A live restore still needs the independent current Mind authority.
+
 `test_project_backup_relaunch_candidate.py` passes its complete owned-process
 journey in 355.929s. It provisions one synthetic project grant, starts its service,
 saves an authenticated event and observes the original handle stop with matching

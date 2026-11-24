@@ -171,22 +171,60 @@ class BackupWindowTests(unittest.TestCase):
         custody=Path(self.value['resultPath']).with_suffix('.archive.dpapi')
         self.assertEqual(window.preview(self.profile,self.sha)['archiveCredentialMode'],window.WINDOWS_LOCAL)
         self.assertFalse(custody.exists())
-        output=io.StringIO()
-        with patch('project_backup_candidate.prompt_archive_password',side_effect=AssertionError('prompted')),contextlib.redirect_stdout(output):
-            self.assertEqual(window.main(['--profile',str(self.profile),'--sha',self.sha,
-                                          '--approval',str(self.approval),'--run']),0)
+        launcher=Path(window.__file__).with_name('Start-Existing-Mind-Backup.ps1')
+        backup=subprocess.run([self.value['runtime']['pwsh'],'-NoLogo','-NoProfile','-File',str(launcher),
+            '-Profile',str(self.profile),'-Sha',self.sha,'-Approval',str(self.approval)],
+            input='CLOSE\n',capture_output=True,text=True,timeout=180,creationflags=subprocess.CREATE_NO_WINDOW)
+        self.assertEqual(backup.returncode,0,backup.stdout+backup.stderr)
         result=json.loads(Path(self.value['resultPath']).read_text())
         self.assertEqual(result['archiveCredentialPath'],str(custody))
         self.assertEqual(result['archiveRehearsal'],'PASS')
-        self.assertIn('No password entry is needed',output.getvalue())
+        self.assertIn('No password entry is needed',backup.stdout)
+        self.assertNotIn('Use your saved BACKUP ARCHIVE password',backup.stdout)
         recovered=window.windows_backup_password(custody,self.sha)
-        self.assertNotIn(recovered,output.getvalue())
+        self.assertNotIn(recovered,backup.stdout+backup.stderr)
         self.assertNotIn(recovered.encode('ascii'),custody.read_bytes())
         self.assertNotIn(recovered,Path(self.value['resultPath']).read_text())
         run_tool(self.value['archiveTool'],['t',self.value['encryptedBackup']],recovered)
         with self.assertRaises(RuntimeKeyError):window.windows_backup_password(custody,'0'*64)
         sealed=custody.read_bytes()
         with self.assertRaises(FileExistsError):window.windows_backup_password(custody,self.sha,create=True)
+        self.assertEqual(custody.read_bytes(),sealed)
+
+        result_path=Path(self.value['resultPath'])
+        attempt_path=Path(self.value['attemptPath'])
+        original_result=result_path.read_bytes()
+        original_attempt=attempt_path.read_bytes()
+        attempt=json.loads(original_attempt)
+        attempt_path.write_text(json.dumps(dict(attempt,state='failed_outcome_unknown')))
+        with self.assertRaises(ValueError):window.verify_completed_archive(self.profile,self.sha)
+        attempt_path.write_bytes(original_attempt)
+        result_path.write_text(json.dumps(dict(result,archiveSha256='0'*64)))
+        from encrypted_backup_candidate import EncryptedBackupError
+        with self.assertRaises(EncryptedBackupError):window.verify_completed_archive(self.profile,self.sha)
+        old_receipt=dict(result);old_receipt.pop('archivePublication')
+        result_path.write_text(json.dumps(old_receipt))
+        self.assertEqual(window.verify_completed_archive(self.profile,self.sha)['entriesVerified'],5)
+        result_path.write_bytes(original_result)
+
+        # A later process can verify the sealed archive even after source
+        # storage and the plaintext staging receipt are unavailable.
+        snapshot=Path(self.value['binding']['database_path'])
+        export=Path(self.value['stagingDirectory'])/'archive-export-receipt.json'
+        snapshot.rename(snapshot.with_suffix('.unavailable'))
+        export.rename(export.with_suffix('.unavailable'))
+        checked=subprocess.run([sys.executable,'-I',str(window.__file__),'--profile',str(self.profile),
+            '--sha',self.sha,'--verify-archive'],capture_output=True,text=True,timeout=45,
+            creationflags=subprocess.CREATE_NO_WINDOW)
+        self.assertEqual(checked.returncode,0,checked.stderr)
+        proof=json.loads(checked.stdout)
+        self.assertEqual(proof['status'],'archive_verified')
+        self.assertEqual(proof['entriesVerified'],5)
+        self.assertFalse(proof['sourceLedgerOpened'])
+        self.assertFalse(proof['currentAuthorityQualified'])
+        self.assertNotIn(recovered,checked.stdout+checked.stderr)
+        self.assertEqual(result_path.read_bytes(),original_result)
+        self.assertEqual(attempt_path.read_bytes(),original_attempt)
         self.assertEqual(custody.read_bytes(),sealed)
 
     def test_archive_failure_retains_attempt_and_snapshot_without_success_or_retry(self):
