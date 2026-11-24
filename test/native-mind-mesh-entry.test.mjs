@@ -4,12 +4,15 @@ import {Readable,PassThrough} from 'node:stream';
 import {spawn} from 'node:child_process';
 import {randomUUID,createHash} from 'node:crypto';
 import {createServer} from 'node:http';
-import {mkdirSync, copyFileSync, renameSync} from 'node:fs';
-import {resolve} from 'node:path';
+import {mkdirSync, copyFileSync, renameSync, statSync, realpathSync, rmSync} from 'node:fs';
+import {join,resolve} from 'node:path';
+import {DatabaseSync} from 'node:sqlite';
 import {openTaskStore} from '../lib/task-store.mjs';
 import {databaseFileIdentity} from '../lib/database-identity.mjs';
 import {nativeRookOptions} from '../lib/workroom-rook.mjs';
-import {frameSchema,readNativeRecallInput,readNativeMeshInput,startNativeMesh} from '../integrations/native-mind-mesh-entry.mjs';
+import {createDispatchBarrier} from '../lib/workroom-dispatch-barrier.mjs';
+import {createWorkroomProjectSyncCandidate} from '../integrations/workroom-project-sync-candidate.mjs';
+import {frameSchema,captureFrameSchema,meshFrameSchema,readNativeRecallInput,readNativeMeshInput,startNativeMesh} from '../integrations/native-mind-mesh-entry.mjs';
 
 const options=()=>({baseUrl:'http://127.0.0.1:12345/',token:'synthetic-pipe-only-token',binding:{
   servicePrincipal:'mesh-recall',storeId:'00000000-0000-4000-8000-000000000001',environment:'synthetic',
@@ -28,12 +31,17 @@ function testEnrollment(directory) {
     boardIdentity:databaseFileIdentity(boardPath),approvalRef:'a'.repeat(64)};
 }
 
-test('native Rook enrollment refuses role substitution, activation and a different board',async()=>{
+test('native Rook enrollment refuses role substitution, offline activation and a different board',async()=>{
   const enrollment=testEnrollment('data/native-rook-'+randomUUID());
   const input=grant=>stream(JSON.stringify({...JSON.parse(frame(options())),rookEnrollment:grant}));
   for(const extra of [{id:'echo'},{mode:'running'},{destination:'telegram'},{enabled:true},{boardPath:'elsewhere'},{approvalRef:''}]){
     await assert.rejects(readNativeMeshInput(input({...enrollment,...extra})),/could not be verified/);
   }
+  const active={...enrollment,mode:'active'};
+  await assert.rejects(readNativeMeshInput(input(active)),/could not be verified/);
+  await assert.rejects(readNativeMeshInput(stream(JSON.stringify({
+    schema:captureFrameSchema,projectCaptureOptions:{},rookEnrollment:active,
+  }))),/could not be verified/);
   await assert.rejects(readNativeRecallInput(input(enrollment)),/could not be verified/);
   await assert.rejects(startNativeMesh({appOptions:{rookEnrollment:enrollment}}),/could not be verified/);
   const copy='data/native-rook-copy-'+randomUUID();
@@ -46,6 +54,80 @@ test('native Rook enrollment refuses role substitution, activation and a differe
     assert.equal(app.rookRuntime.start().scheduler.enabled,false);
     assert.equal((await fetch(app.url+'/')).status,200);
   } finally {await app.close();}
+});
+
+test('connected native Rook keeps its sweep across restart and stops when the worker grant is withdrawn',async t=>{
+  const dataDir='data/native-rook-active-'+randomUUID();
+  mkdirSync(dataDir);
+  const boardPath=join(realpathSync(dataDir),'tasks.sqlite');
+  const storeId=options().binding.storeId;
+  let sync;
+  const store=openTaskStore(boardPath,{projectSyncFactory:context=>
+    sync=createWorkroomProjectSyncCandidate(context,{storeId,initialize:true})});
+  const link={cardId:store.create({title:'Shared fixture note'}).id,projectId:'project-A',
+    approvalRef:'fixture:project-note',fields:['title','stage']};
+  sync.link(link);
+  const first=store.create({title:'Oldest fixture'});
+  const later=store.create({title:'Later fixture'});
+  store.close();
+  const db=new DatabaseSync(boardPath);
+  t.after(()=>{db.close();rmSync(dataDir,{recursive:true,force:true});});
+  db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2020-01-01T00:00:00Z',first.id);
+  db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2020-02-01T00:00:00Z',later.id);
+  const barrier=createDispatchBarrier(db);
+  const paused=barrier.pause();
+  const stat=statSync(boardPath,{bigint:true});
+  const frameFor=({mode='active',boardIdentity=databaseFileIdentity(boardPath)}={})=>stream(JSON.stringify({
+    schema:meshFrameSchema,mindRecallOptions:options(),
+    projectSyncOptions:{schema:'onoes-mesh-native-project-sync/v2',links:[link],
+      source:{databasePath:boardPath,fileDevice:String(stat.dev),fileInode:String(stat.ino)},
+      destination:{baseUrl:'http://127.0.0.1:9/',token:'fixture-only-project-token',storeId,
+        peer:{pid:process.pid,creationTicks:'1',runId:'1'.repeat(32),profileSha256:'1'.repeat(64)}}},
+    rookEnrollment:{id:'rook',mode,destination:'mesh_relay_inbox',boardPath,boardIdentity,approvalRef:'a'.repeat(64)},
+  }));
+  const env={MESH_STANDALONE:'0',MESH_NIMS:'1',MESH_RELAY_MODE:'http',MESH_SIMPLE_FLOW:'0',MESH_RELAY_URL:'http://127.0.0.1:9/',
+    MESH_RELAY_TOKEN_FILE:resolve(dataDir,'absent-token'),APPDATA:resolve(dataDir,'absent-appdata'),
+    MESH_MODEL_OBSERVATION:'0',MESH_NEMOTRON_CONTROL:'0'};
+  const prior=Object.fromEntries(Object.keys(env).map(key=>[key,process.env[key]]));
+  Object.assign(process.env,env);
+  t.after(()=>{for(const [key,value] of Object.entries(prior)){
+    if(value===undefined)delete process.env[key];else process.env[key]=value;
+  }});
+  let authorized=true;
+  const appOptions={dataDir,relayEnabled:true,nativeWorkerOptions:{
+    profile:{profileRef:'synthetic-echo',identityRef:'synthetic-native',provider:'openai-codex',model:'gpt-6-luna',workspace:resolve(dataDir)},
+    authorized:()=>authorized,rpc:async()=>assert.fail('The scheduler must not deliver worker requests'),
+  }};
+  await assert.rejects(startNativeMesh({input:frameFor(),appOptions:{dataDir,relayEnabled:true}}),/connected native team/);
+  await assert.rejects(startNativeMesh({input:frameFor({boardIdentity:'b'.repeat(64)}),appOptions}),/does not match/);
+  let app;
+  try{
+    app=await startNativeMesh({input:frameFor(),appOptions});
+    assert.equal(app.rookRuntime.status().scheduler.enabled,true);
+    assert.equal((await app.rookRuntime.tick()).status,'paused');
+    const boot=await fetch(app.url+'/api/trial-session/bootstrap',{method:'POST',headers:{Origin:app.url,'Content-Type':'application/json'},body:'{}'});
+    assert.equal(boot.status,201);
+    const headers={Cookie:boot.headers.get('set-cookie').split(';')[0],'X-Trial-CSRF':(await boot.json()).csrfToken};
+    const status=async()=>(await fetch(app.url+'/api/workroom/rook',{headers})).json();
+    assert.equal((await status()).managedFlowEnabled,true);
+    assert.equal((await status()).sweep.lastScheduledAt,null);
+    assert.equal(barrier.resume(paused.generation).state,'open');
+    const sweep=await app.rookRuntime.tick();
+    assert.equal(sweep.status,'claimed');assert.equal(sweep.taskId,first.id);
+    const observed=await status();
+    assert.ok(observed.reports.some(report=>report.kind==='claim_saved'&&report.taskId===first.id&&report.state==='delivered'));
+    assert.equal(observed.cards.length,1);
+    assert.equal((await app.rookRuntime.tick()).status,'not_due');
+    authorized=false;
+    assert.equal((await app.rookRuntime.tick()).status,'paused');
+    assert.equal((await status()).sweep.schedulerEnabled,false);
+    await app.close();app=null;
+    authorized=true;
+    app=await startNativeMesh({input:frameFor(),appOptions});
+    assert.equal((await app.rookRuntime.tick()).status,'not_due');
+    assert.equal(db.prepare('SELECT count(*) AS n FROM workroom_claims').get().n,1);
+    assert.equal(db.prepare('SELECT count(*) AS n FROM workroom_sends').get().n,0);
+  }finally{await app?.close();}
 });
 
 test('replacing the board withdraws enrollment for the rest of that Mesh process',()=>{

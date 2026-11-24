@@ -57,9 +57,18 @@ class CaptureFrameTests(unittest.TestCase):
         self.assertEqual(actual['rookEnrollment'], dict(record, boardPath=str(self.db), approvalRef=digest))
         self.assertEqual(set(actual), {'schema','projectCaptureOptions','rookEnrollment'})
         self.assertEqual(launch.digest(self.db), before)
-        for extra in ({'id':'nims'}, {'mode':'running'}, {'token':'fixture'}, {'boardIdentity':'c'*64}):
+        for extra in ({'id':'nims'}, {'mode':'running'}, {'mode':'active'}, {'token':'fixture'}, {'boardIdentity':'c'*64}):
             with self.subTest(extra=extra), self.assertRaises(launch.LaunchError):
                 launch.rook_frame_fields(dict(self.p, rookEnrollment=dict(record, **extra)), digest)
+        active = dict(record, mode='active')
+        connected = dict(self.p, schema='onoes-mesh-native-launch/v2', rookEnrollment=active,
+            settings={**self.p['settings'], 'MESH_NATIVE_WORKER_RECORD':'fixture', 'MESH_NATIVE_WORKER_RECORD_SHA256':'b'*64,
+                      'MESH_RELAY':'1', 'MESH_RELAY_MODE':'http', 'MESH_NIMS':'1'})
+        self.assertEqual(launch.rook_frame_fields(connected, digest)['rookEnrollment']['mode'], 'active')
+        for missing in ['MESH_NATIVE_WORKER_RECORD','MESH_NATIVE_WORKER_RECORD_SHA256','MESH_RELAY','MESH_RELAY_MODE','MESH_NIMS']:
+            with self.subTest(missing=missing), self.assertRaises(launch.LaunchError):
+                launch.rook_frame_fields(dict(connected, settings={k:v for k,v in connected['settings'].items() if k!=missing}), digest)
+        self.assertEqual(launch.digest(self.db), before)
 
     def test_changed_store_and_broader_fields_are_refused(self):
         for update in (dict(storeId='another-store'),dict(links=[dict(

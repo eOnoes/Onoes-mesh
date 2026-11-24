@@ -80,9 +80,14 @@ def rook_frame_fields(profile, profile_sha):
     record = profile['rookEnrollment']
     require(type(record) is dict and set(record) == {'id', 'destination', 'mode', 'boardIdentity'}
             and record['id'] == 'rook' and record['destination'] == 'mesh_relay_inbox'
-            and record['mode'] == 'paused' and type(record['boardIdentity']) is str
+            and record['mode'] in ('paused','active') and type(record['boardIdentity']) is str
             and re.fullmatch('[0-9a-f]{64}', record['boardIdentity']) and re.fullmatch('[0-9a-f]{64}', profile_sha))
-    board = ROOT / profile['settings']['MESH_DATA_DIR'] / 'tasks.sqlite'
+    settings = profile['settings']
+    if record['mode'] == 'active':
+        require(profile['schema'] == 'onoes-mesh-native-launch/v2' and NATIVE_WORKER_SETTINGS <= set(settings)
+                and settings.get('MESH_RELAY') == '1' and settings.get('MESH_RELAY_MODE') == 'http'
+                and settings.get('MESH_NIMS') == '1')
+    board = ROOT / settings['MESH_DATA_DIR'] / 'tasks.sqlite'
     require(board.is_file() and board.resolve(strict=True) == board)
     node = Path(profile['nodeExecutable'])
     module = ROOT / 'lib' / 'database-identity.mjs'

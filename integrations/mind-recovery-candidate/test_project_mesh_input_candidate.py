@@ -182,6 +182,9 @@ class ProjectMeshLauncherTests(unittest.TestCase):
     def test_paused_rook_needs_a_new_exact_launch_approval_and_coexists_with_project_sync(self):
         self.exercise_gateway(with_rook=True)
 
+    def test_active_rook_starts_only_with_exactly_approved_connected_workers(self):
+        self.exercise_gateway(with_rook='active')
+
     def exercise_gateway(self, with_pilot=False, with_rook=False):
         # Qualify the separate read-only identity first, with original-handle proof.
         child,stamp=roles.launch_operator(self.reader.operator,self.reader.operator_sha,self.reader.approval)
@@ -279,7 +282,7 @@ console.log(JSON.stringify({link,links,source,boardIdentity:databaseFileIdentity
                 a=json.loads(approval_path.read_text());a['profiles']=list(dict.fromkeys(a['profiles']+[sha]));approval_path.write_text(json.dumps(a))
             return sha
         sha=write(p)
-        if not (with_rook or with_pilot):
+        if with_rook == 'active' or not (with_rook or with_pilot):
             worker_record=self.root/'worker-enrollment.json'
             unexecutable=self.root/'worker-bridge-disabled'
             roles.private_new_json(unexecutable,{'mustNotExecute':True})
@@ -300,13 +303,18 @@ console.log(JSON.stringify({link,links,source,boardIdentity:databaseFileIdentity
                                    creationflags=subprocess.CREATE_NO_WINDOW)
             self.assertEqual(preview.returncode,0,preview.stdout+preview.stderr)
             self.assertTrue(json.loads(preview.stdout)['createsNothing'])
+            original_worker=worker_record.read_bytes()
             worker_record.write_text(json.dumps(worker,indent=2),encoding='utf-8')
             with self.assertRaises(launch.LaunchError):
                 launch.inspect_launch(profile,worker_sha,self.reader.approval)
             self.assertFalse(any(Path(p[key]).exists() for key in ('attemptPath','stdoutPath','stderrPath')))
-            sha=write(p)
+            if with_rook == 'active':
+                worker_record.write_bytes(original_worker)
+                p=connected
+            else:
+                sha=write(p)
         if with_rook:
-            p['rookEnrollment']=dict(id='rook',mode='paused',destination='mesh_relay_inbox',
+            p['rookEnrollment']=dict(id='rook',mode='active' if with_rook == 'active' else 'paused',destination='mesh_relay_inbox',
                                      boardIdentity=initialized['boardIdentity'])
             profile.write_text(json.dumps(p),encoding='utf-8')
             with self.assertRaises(launch.LaunchError):
@@ -356,10 +364,20 @@ console.log(JSON.stringify({link,links,source,boardIdentity:databaseFileIdentity
         admitted=request('/api/trial-session/bootstrap',{});csrf=admitted['csrfToken']
         if with_rook:
             status=request('/api/workroom/rook',csrf=csrf,method='GET')
+            active=with_rook=='active'
             self.assertEqual((status['connection']['id'],status['connection']['source'],status['connection']['status']),
-                             ('rook','native_mesh_profile','paused'))
-            self.assertFalse(status['sweep']['schedulerInstalled'])
-            self.assertIsNone(status['sweep']['lastScheduledAt'])
+                             ('rook','native_mesh_profile','running' if active else 'paused'))
+            self.assertEqual(status['sweep']['schedulerInstalled'],active)
+            self.assertEqual(status['managedFlowEnabled'],active)
+            if active:
+                def swept():
+                    latest=request('/api/workroom/rook',csrf=csrf,method='GET')
+                    return latest if latest['sweep']['lastResult']=='empty' else None
+                result=self.wait_for(swept,self.mesh)
+                self.assertIsNotNone(result['sweep']['lastScheduledAt'])
+                self.assertEqual(result['cards'],[])
+            else:
+                self.assertIsNone(status['sweep']['lastScheduledAt'])
         card=request('/api/tasks/'+link['cardId'],csrf=csrf,method='GET')['task']
         request('/api/tasks/'+link['cardId'],edited_card(card,'Composed launcher saved title'),csrf,method='PATCH')
         def recorded():

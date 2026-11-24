@@ -138,6 +138,12 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   if (nativeWorkerOptions !== undefined && !relayEnabled)
     throw new Error('Native worker connections require Mesh team routing; standalone cannot enroll one.');
   const nativeWorker = createNativeWorkerBinding(nativeWorkerOptions);
+  const activeRook = rookEnrollment?.mode === 'active';
+  const workerReady = () => nativeWorker?.enrollmentStatus() === 'configured';
+  if (activeRook && (!projectSyncOptions || !relayEnabled || process.env.MESH_RELAY_MODE !== 'http'
+      || process.env.MESH_NIMS !== '1' || !workerReady()))
+    throw Error('Active Rook requires the connected native team and project startup.');
+  const managedFlow = () => activeRook || process.env.MESH_SIMPLE_FLOW === '1';
   // A native enrollment may narrow its workspace to an owned subfolder, never
   // widen the existing qualification beyond this checkout or through a link.
   if(nativeWorker)await confinedPath(nativeWorker.workspace);
@@ -166,7 +172,9 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const directory = await confinedPath(dataDir);
   const release = releaseInfo(ROOT, dataDir);
   const filename = await confinedPath(path.join(directory, 'tasks.sqlite'));
-  const nativeRook = rookEnrollment === undefined ? undefined : nativeRookOptions(rookEnrollment, filename);
+  const nativeRook = rookEnrollment === undefined ? undefined : nativeRookOptions(rookEnrollment, filename, workerReady);
+  const activeRookReady = () => !activeRook || nativeRook.verifyIdentity(nativeRook.identity);
+  if (!activeRookReady()) throw Error('Active Rook approval does not match this Workroom board.');
   const nativeProjectSync=projectCaptureOptions===undefined
     ?prepareNativeProjectSync(projectSyncOptions,{filename,standalone})
     :prepareNativeProjectCapture(projectCaptureOptions,{filename,standalone});
@@ -178,15 +186,14 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   const executions = new Set();
   const activeRuns = new Map();
   let executionPersistenceFailed = false;
-  try { store = openTaskStore(filename,nativeProjectSync?{projectSyncFactory:nativeProjectSync.factory}:projectSyncTestOptions?{projectSyncFactory:projectSyncTestOptions.factory}:{}); }
+  try { store = openTaskStore(filename,{managedFlow,projectSyncFactory:nativeProjectSync?.factory??projectSyncTestOptions?.factory??null}); }
   catch { await nativeProjectSync?.close();if(nativeProjectSync)throw Error('Native project-sync storage unavailable; preserve data.');/* Preserve invalid data; serve a visible failure. */ }
-  // Native enrollment recognizes the local Relay inbox and never enables a timer.
-  nativeRook?.verifyIdentity(nativeRook.identity);
+  // Only the approved connected profile can enable the native scheduler.
   const rookRuntime = store ? createRookRuntime({store: store.workroom.rook, flow: store.workroom.flow,
     board: () => store.workroom.list(), ...rookRuntimeTestOptions, ...nativeRook,
     transport: nativeRook || rookRuntimeTestOptions?.transport === 'mesh_relay_inbox'
       ? store.workroom.rook.relayInbox : rookRuntimeTestOptions?.transport,
-    enabled: !nativeRook && process.env.MESH_SIMPLE_FLOW === '1' && rookRuntimeTestOptions?.enabled === true}) : null;
+    enabled: nativeRook?.enabled ?? (managedFlow() && rookRuntimeTestOptions?.enabled === true)}) : null;
   let modelDatabase;
   if(!standalone && supervisedInferenceTestOptions && store){modelDatabase=new DatabaseSync(filename);localInference=createSupervisedInference({...supervisedInferenceTestOptions,operations:createModelOperationStore(modelDatabase)});}
   else if(!standalone && process.env.MESH_NEMOTRON_CONTROL==='1' && store){
@@ -213,7 +220,8 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     })
     : await createRelayLink({ root: ROOT, directory, confine: confinedPath, store, enabled: relayEnabled });
   const relay=relayEnabled&&!standalone&&process.env.MESH_NIMS==='1'?withNims(baseRelay,{root:nativeWorker?.workspace??ROOT,workroom:store.workroom}):baseRelay;
-  const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:nativeWorker?.workspace??ROOT,simpleFlow:process.env.MESH_SIMPLE_FLOW==='1',nativeWorker,nativeObserver:nativeWorker}):null;
+  const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:nativeWorker?.workspace??ROOT,
+    simpleFlow:managedFlow(),intakeAllowed:activeRookReady,nativeWorker,nativeObserver:nativeWorker}):null;
   // Only hashes of fixed source code/CSS authorize the existing native HTML.
   // srcdoc receives that HTML via an admitted API read, never a public route.
   let relayScriptHashes = '', relayStyleHashes = '';
@@ -354,7 +362,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
       if(route==='/api/workroom/claim-next'){
         if(req.method!=='POST')throw new TaskError(405,'Method not allowed.');
         if(!store||executionPersistenceFailed)throw new TaskError(503,'Workroom unavailable.');
-        if(process.env.MESH_SIMPLE_FLOW!=='1')throw new TaskError(409,'Managed claims unavailable.');
+        if(!managedFlow()||!activeRookReady())throw new TaskError(409,'Managed claims unavailable.');
         if(!context.body||Object.keys(context.body).length)throw new TaskError(400,'Scheduled claim accepts no overrides.');
         return send(200,{sweep:store.workroom.flow.scheduledSweep()});
       }
@@ -363,7 +371,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         const connection=rookRuntime?.status()??{id:'rook',status:'unavailable',reason:'Rook state is unavailable.'};
         const tasks=store.workroom.list(),titles=new Map(tasks.map(t=>[t.id,t.title]));
         const assignmentHolds=writerQuiescenceBlockers(tasks).map(hold=>({...hold,title:titles.get(hold.taskId)}));
-        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:process.env.MESH_SIMPLE_FLOW==='1',sweep:{...store.workroom.flow.sweepStatus(),schedulerInstalled:connection.scheduler?.installed??false,schedulerEnabled:connection.scheduler?.enabled??false},connection,assignmentHolds,reports:rookRuntime?.reports()??[],cards:tasks.filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
+        return send(200,{schema:'mesh-rook-board/v1',observedAt:new Date().toISOString(),managedFlowEnabled:managedFlow(),sweep:{...store.workroom.flow.sweepStatus(),schedulerInstalled:connection.scheduler?.installed??false,schedulerEnabled:connection.scheduler?.enabled??false},connection,assignmentHolds,reports:rookRuntime?.reports()??[],cards:tasks.filter(t=>t.flow?.claim).map(t=>({taskId:t.id,title:t.title,stage:t.workroom.stage,flow:t.flow}))});
       }
       const workroomRoute = /^\/api\/workroom(?:\/([0-9a-f-]{36})(?:\/(message|progress|sync|apply-update|handoff|apply-review|approval|reconcile|plan|automation|apply-assignment|owner-review|intake|claim))?)?$/.exec(route);
       if (workroomRoute) {
@@ -372,14 +380,14 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if(req.method==='GET' && !workroomRoute[2]) {
           const teamPolicy={...automationPolicy(ROOT,nativeWorker),dispatch:{state:store.workroom.dispatch.status().state},
             ...(nativeWorker?{nativeWorker:nativeWorker.enrollmentStatus()}:{}),
-            ...(process.env.MESH_SIMPLE_FLOW==='1'?{simpleFlow:true}:{})};
+            ...(managedFlow()?{simpleFlow:true}:{})};
           return send(200,id?{task:store.workroom.get(id),teamPolicy,memorySync:store.projectSyncState(id)}:{tasks:store.workroom.list(),teamPolicy});
         }
         if(!id) throw new TaskError(405,'Method not allowed.');
         if(workroomRoute[2]==='claim'&&req.method==='GET')return send(200,{flow:store.workroom.get(id).flow??null});
         if(workroomRoute[2]==='owner-review'&&req.method==='POST')return send(200,store.workroom.ownerReview(id,context.body));
-        if(workroomRoute[2]==='claim'&&req.method==='POST'){if(process.env.MESH_SIMPLE_FLOW!=='1')throw new TaskError(409,'Managed claims unavailable.');return send(200,{flow:store.workroom.flow.claim(id,context.body)});}
-        if(workroomRoute[2]==='intake'&&req.method==='POST'){if(process.env.MESH_SIMPLE_FLOW!=='1')throw new TaskError(409,'Managed intake unavailable.');if(JSON.stringify(context.body)!=='{}')throw new TaskError(400,'No intake overrides allowed.');return send(200,{flow:store.workroom.flow.enqueue(id)});}
+        if(workroomRoute[2]==='claim'&&req.method==='POST'){if(!managedFlow()||!activeRookReady())throw new TaskError(409,'Managed claims unavailable.');return send(200,{flow:store.workroom.flow.claim(id,context.body)});}
+        if(workroomRoute[2]==='intake'&&req.method==='POST'){if(!managedFlow()||!activeRookReady())throw new TaskError(409,'Managed intake unavailable.');if(JSON.stringify(context.body)!=='{}')throw new TaskError(400,'No intake overrides allowed.');return send(200,{flow:store.workroom.flow.enqueue(id)});}
         if(workroomRoute[2]==='apply-assignment'&&req.method==='POST')return send(200,store.workroom.applyAssignment(id,context.body));
         if(workroomRoute[2]==='automation'&&req.method==='POST'){
           if(!teamRunner)throw new TaskError(503,'Connected team runner unavailable.');

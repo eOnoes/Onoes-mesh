@@ -41,6 +41,7 @@ function readNativeInput(input,{timeoutMs=10000,allowProjectSync=false}={}){
         const legacy=exact(value,['schema','mindRecallOptions'])&&value.schema===frameSchema;
         const combined=allowProjectSync&&exact(value,['schema','mindRecallOptions','projectSyncOptions'])&&value.schema===meshFrameSchema;
         const capture=allowProjectSync&&exact(value,['schema','projectCaptureOptions'])&&value.schema===captureFrameSchema;
+        if(approved.rookEnrollment?.mode==='active'&&!combined)throw refusal();
         if(capture){finish(false,{...approved,projectCaptureOptions:validateNativeProjectCapture(value.projectCaptureOptions)});return;}
         if(!legacy&&!combined)throw refusal();
         configureMindRecall({standalone:false,approvedOptions:value.mindRecallOptions});
