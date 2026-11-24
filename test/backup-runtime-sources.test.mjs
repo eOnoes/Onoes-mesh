@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,realpathSync,symlinkSync,renameSync} from 'node:fs';
+import fs,{mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,realpathSync,symlinkSync,renameSync} from 'node:fs';
+import {syncBuiltinESMExports} from 'node:module';
 import {tmpdir} from 'node:os';
 import {join,resolve,sep} from 'node:path';
 import {collectRuntimeBackupSources} from '../lib/backup-runtime-sources.mjs';
@@ -32,6 +33,35 @@ test('changed profile bytes, another workspace, and stale declared source are re
   const f=fixture(t),ref=f.profile();writeFileSync(f.profilePath,readFileSync(f.profilePath)+' ');assert.throws(()=>collectRuntimeBackupSources(f.root,[],ref),/Exact runtime profile/);
   assert.throws(()=>collectRuntimeBackupSources(f.root,[],f.profile({workspace:join(f.root,'different')})),/does not match/);
   const current=f.profile();writeFileSync(join(f.root,'server.mjs'),'changed source');assert.throws(()=>collectRuntimeBackupSources(f.root,[],current),/Declared runtime source changed/);
+});
+test('archive verification uses the exact profile and source bytes observed before concurrent edits',t=>{
+  const f=fixture(t);
+  const ref=f.profile();
+  const source=join(f.root,'server.mjs');
+  const expectedSourceHash=hash(source);
+  const originalRead=fs.readFileSync;
+  const replacementProfile=JSON.stringify({workspace:f.root,sourceHashes:{[source]:expectedSourceHash}});
+  const edited=new Set();
+  const read=t.mock.method(fs,'readFileSync',function(path,...options){
+    const bytes=originalRead.call(this,path,...options);
+    if(!edited.has(path)&&(path===ref.profilePath||path===source)){
+      edited.add(path);
+      writeFileSync(path,path===source?'concurrent build edit':replacementProfile);
+    }
+    return bytes;
+  });
+  syncBuiltinESMExports();
+  try{
+    const result=collectRuntimeBackupSources(f.root,[],ref);
+    assert.equal(result.coverage.requiredAppFiles,3);
+    assert.deepEqual(result.files.map(file=>file.path),result.entries);
+    const file=result.files.find(file=>file.path==='server.mjs');
+    assert.equal(file.sha256,expectedSourceHash);
+    assert.notEqual(file.sha256,hash(source));
+  }finally{
+    read.mock.restore();
+    syncBuiltinESMExports();
+  }
 });
 test('data files cannot be admitted as source and external dependencies are excluded from this app archive',t=>{
   const f=fixture(t);assert.throws(()=>collectRuntimeBackupSources(f.root,[],f.profile({sourceHashes:{[join(f.root,'data/private.json')]:hash(join(f.root,'data/private.json'))}})),/non-source app path/);

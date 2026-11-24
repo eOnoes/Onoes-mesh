@@ -1173,7 +1173,19 @@ at logon and on its minute check, without replaying tasks or restarting shared a
 
 ## Backup and rollback
 
-Run `node integrations/backup-mesh-to-library.mjs`. Open
+For a manual or milestone backup of the connected installation, run the released
+backup tool from the maintained source checkout and pass the installed app root,
+its active profile path, and the SHA-256 from the reviewed startup record:
+
+```powershell
+node integrations/backup-mesh-to-library.mjs E:/App-Backups $installedApp $activeProfile $reviewedProfileSha256
+```
+
+Confirm `runtimeSourceCoverage.provided` and `allIncluded` are true.
+If a concurrent build changes pinned bytes, the command fails and the last
+verified backup remains available. Once the build settles, check the active
+profile against its reviewed record before making a new backup. For a standalone
+checkout without a runtime profile, run `node integrations/backup-mesh-to-library.mjs` there. Open
 `E:\App-Backups\ONOes-Mesh\LATEST.txt` for the latest verified matching source/data
 snapshot and RESTORE.txt. Restore into an isolated location first. Preserve the
 current database with WAL/SHM before any deliberate replacement. Do not merge the

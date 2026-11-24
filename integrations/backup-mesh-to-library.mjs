@@ -50,12 +50,9 @@ if(existsSync(join(root,mindCandidate)))for(const item of readdirSync(join(root,
 // Capture new runtime integration entry points and every app source declared
 // by an explicitly supplied, hash-pinned native profile. Never archive the profile.
 const hash=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
-const runtimeSources=collectRuntimeBackupSources(root,entries,{profilePath:process.argv[4],profileSha256:process.argv[5]});
-entries.splice(0,entries.length,...runtimeSources.entries);
-const runtimeSourceCoverage=runtimeSources.coverage;
-const files=entries.map(path=>({path,sha256:hash(join(root,path))}));
+const {entries:archiveEntries,files,coverage:runtimeSourceCoverage}=collectRuntimeBackupSources(root,entries,{profilePath:process.argv[4],profileSha256:process.argv[5]});
 const archive=join(directory,'Mesh-app-source.zip');
-execFileSync('tar.exe',['-a','-cf',archive,'-C',root,'--',...entries],{cwd:root,stdio:'pipe'});
+execFileSync('tar.exe',['-a','-cf',archive,'-C',root,'--',...archiveEntries],{cwd:root,stdio:'pipe'});
 const extraction=join(root,'data/backup-source-verification',id);mkdirSync(extraction,{recursive:true});
 const listing=execFileSync('tar.exe',['-tf',archive],{encoding:'utf8'}).trim().split(/\r?\n/);
 for(const entry of listing){const target=resolve(extraction,entry);const rel=relative(extraction,target);if(isAbsolute(entry)||rel.startsWith('..')||isAbsolute(rel))throw Error('Unsafe archive entry refused.');}
