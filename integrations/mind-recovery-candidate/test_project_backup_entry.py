@@ -162,6 +162,33 @@ class BackupWindowTests(unittest.TestCase):
         ready['state']='failed';Path(self.value['writerGate']['readyPath']).write_text(json.dumps(ready))
         with self.assertRaises(ValueError):window.preview(self.profile,self.sha)
 
+    def test_windows_local_archive_reopens_without_a_password_prompt(self):
+        from encrypted_backup_candidate import run_tool
+        from onoes_mind.runtime_keys import RuntimeKeyError
+
+        self.value['archiveCredentialMode']=window.WINDOWS_LOCAL
+        self.write()
+        custody=Path(self.value['resultPath']).with_suffix('.archive.dpapi')
+        self.assertEqual(window.preview(self.profile,self.sha)['archiveCredentialMode'],window.WINDOWS_LOCAL)
+        self.assertFalse(custody.exists())
+        output=io.StringIO()
+        with patch('project_backup_candidate.prompt_archive_password',side_effect=AssertionError('prompted')),contextlib.redirect_stdout(output):
+            self.assertEqual(window.main(['--profile',str(self.profile),'--sha',self.sha,
+                                          '--approval',str(self.approval),'--run']),0)
+        result=json.loads(Path(self.value['resultPath']).read_text())
+        self.assertEqual(result['archiveCredentialPath'],str(custody))
+        self.assertEqual(result['archiveRehearsal'],'PASS')
+        self.assertIn('No password entry is needed',output.getvalue())
+        recovered=window.windows_backup_password(custody,self.sha)
+        self.assertNotIn(recovered,output.getvalue())
+        self.assertNotIn(recovered.encode('ascii'),custody.read_bytes())
+        self.assertNotIn(recovered,Path(self.value['resultPath']).read_text())
+        run_tool(self.value['archiveTool'],['t',self.value['encryptedBackup']],recovered)
+        with self.assertRaises(RuntimeKeyError):window.windows_backup_password(custody,'0'*64)
+        sealed=custody.read_bytes()
+        with self.assertRaises(FileExistsError):window.windows_backup_password(custody,self.sha,create=True)
+        self.assertEqual(custody.read_bytes(),sealed)
+
     def test_archive_failure_retains_attempt_and_snapshot_without_success_or_retry(self):
         with patch('project_backup_candidate.archive_prepared_project_backup',side_effect=RuntimeError('synthetic failure')) as called:
             with self.assertRaises(RuntimeError):window.run_backup(self.profile,self.sha,self.approval,self.password)

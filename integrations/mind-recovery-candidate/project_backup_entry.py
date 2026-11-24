@@ -6,12 +6,14 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 import subprocess
 import sys
 
 HERE=Path(__file__).resolve().parent
 SCHEMA='onoes-mind-existing-backup-window/v1'
 DECISION='approve_exact_mind_existing_backup'
+WINDOWS_LOCAL='windows-local'
 
 
 def require(ok):
@@ -47,10 +49,10 @@ def checked_profile(path,expected_sha,approval_path=None):
     with path.open('rb') as stream:raw=stream.read(65537)
     require(len(raw)<=65536 and hashlib.sha256(raw).hexdigest()==expected_sha)
     p=json.loads(raw,object_pairs_hook=unique)
-    require(type(p) is dict and set(p)=={'schema','ownerSid','runtime','sourceHashes','binding',
+    require(type(p) is dict and set(p)-{'archiveCredentialMode'}=={'schema','ownerSid','runtime','sourceHashes','binding',
         'keyEnrollmentPath','authorityBindingPath','historyPath','sourceDirectory','stagingDirectory',
         'rehearsalDirectory','encryptedBackup','archiveTool','attemptPath','resultPath','reviewRef','writerGate'}
-        and p['schema']==SCHEMA)
+        and p['schema']==SCHEMA and p.get('archiveCredentialMode','operator') in ('operator',WINDOWS_LOCAL))
     pins=p['sourceHashes'];require(type(pins) is dict and {Path(n) for n in pins}==source_paths(p['runtime'])
         and all(type(h) is str and re.fullmatch('[a-f0-9]{64}',h) and digest(n)==h for n,h in pins.items())
         and Path(p['runtime']['python']).resolve()==Path(sys.executable).resolve())
@@ -77,7 +79,9 @@ def checked_profile(path,expected_sha,approval_path=None):
         and not f.is_relative_to(database.parent) and not database.parent.is_relative_to(f) for f in folders)
         and all(not a.is_relative_to(b) and not b.is_relative_to(a) for i,a in enumerate(folders) for b in folders[i+1:]))
     outputs=[Path(p[n]) for n in ('attemptPath','resultPath')]
-    require(len(set(outputs))==2 and all(n.is_absolute() and n.parent==root and n.resolve()==n and not os.path.lexists(n) for n in outputs))
+    if p.get('archiveCredentialMode')==WINDOWS_LOCAL:
+        outputs.append(Path(p['resultPath']).with_suffix('.archive.dpapi'))
+    require(len(set(outputs))==len(outputs) and all(n.is_absolute() and n.parent==root and n.resolve()==n and not os.path.lexists(n) for n in outputs))
     archive=Path(p['encryptedBackup']);require(archive.is_absolute() and archive.suffix.lower()=='.7z'
         and archive.parent.is_dir() and archive.resolve()==archive and not os.path.lexists(archive)
         and all(not archive.is_relative_to(f) for f in [database.parent,*folders]))
@@ -123,10 +127,31 @@ def preview(path,sha):
     p,b=checked_profile(path,sha)
     return dict(schema=SCHEMA,ready=True,storeId=b.store_id,environment=b.environment,
         encryptedBackup=p['encryptedBackup'],createsNothing=True,keysRead=False,sourceLedgerOpened=False,
-        sourcePins=len(p['sourceHashes']),writerGate=p['writerGate']['kind'])
+        sourcePins=len(p['sourceHashes']),writerGate=p['writerGate']['kind'],
+        archiveCredentialMode=p.get('archiveCredentialMode','operator'))
 
 
-def run_backup(path,sha,approval_path,password):
+def windows_backup_password(path,profile_sha,*,create=False):
+    """Use a sealed per-archive secret on the same Windows account."""
+    from checkpoint_candidate import read_plain
+    from encrypted_backup_candidate import save_new
+    from onoes_mind.enrollment_store import qualify_private_storage
+    from onoes_mind.runtime_keys import _crypt
+
+    require(type(profile_sha) is str and re.fullmatch('[a-f0-9]{64}',profile_sha))
+    destination=Path(path)
+    entropy=hashlib.sha256(b'onoes-mind/local-archive/v1\0'+bytes.fromhex(profile_sha)).digest()
+    if create:
+        qualify_private_storage(destination.parent)
+        password=secrets.token_hex(32)
+        save_new(destination,_crypt(password.encode('ascii'),entropy,protect=True))
+    data=read_plain(qualify_private_storage(destination,kind='file'),2048)
+    recovered=_crypt(data,entropy,protect=False).decode('ascii')
+    require(re.fullmatch('[a-f0-9]{64}',recovered) and (not create or recovered==password))
+    return recovered
+
+
+def run_backup(path,sha,approval_path,password=None):
     p,b=checked_profile(path,sha,approval_path)
     import recall_process_candidate as roles
     from checkpoint_candidate import publish_snapshot_candidate,read_plain
@@ -135,7 +160,9 @@ def run_backup(path,sha,approval_path,password):
     from onoes_mind.runtime_keys import unprotect_runtime_keys
     from project_backup_candidate import archive_prepared_project_backup
     from encrypted_backup_candidate import password_bytes,save_new
-    password_bytes(password)
+    local=p.get('archiveCredentialMode')==WINDOWS_LOCAL
+    if local:require(password is None)
+    else:password_bytes(password)
     record=dict(schema=SCHEMA,profileSha256=sha,pid=os.getpid(),
         creationTicks=roles.current_ticks(),state='started',phase='keys')
     roles.private_new_json(p['attemptPath'],record)
@@ -150,6 +177,10 @@ def run_backup(path,sha,approval_path,password):
     ledger=keys=None
     try:
         writer_gate(p,b)
+        if local:
+            phase('archive_custody')
+            custody=Path(p['resultPath']).with_suffix('.archive.dpapi')
+            password=windows_backup_password(custody,sha,create=True)
         package=json.loads(read_plain(Path(p['keyEnrollmentPath']),16384),object_pairs_hook=unique)
         require(set(package)=={'schema','storeId','environment','recovery_envelope','runtime_envelope'}
             and package['schema']=='onoes-mind-key-enrollment/v1' and package['storeId']==b.store_id
@@ -174,6 +205,8 @@ def run_backup(path,sha,approval_path,password):
         stat=Path(b.database_path).stat();require((stat.st_dev,stat.st_ino)==(b.file_device,b.file_inode))
         result.update(windowSchema=SCHEMA,profileSha256=sha,status='backup_complete_inactive',
             sourceLedgerOpened=True,newKeysCreated=False,newCredentialsCreated=False,serviceStarted=False)
+        if local:
+            result.update(archiveCredentialMode=WINDOWS_LOCAL,archiveCredentialPath=str(custody))
         phase('result')
         roles.private_new_json(p['resultPath'],result)
         phase('complete','complete')
@@ -185,7 +218,7 @@ def run_backup(path,sha,approval_path,password):
         raise RuntimeError('Backup did not complete. Preserve this attempt and its artifacts for review; do not rerun.') from None
     finally:
         if ledger is not None:ledger.close()
-        keys=None
+        keys=password=None
 
 
 def main(argv=None):
@@ -195,12 +228,15 @@ def main(argv=None):
     a=parser.parse_args(argv)
     if not a.run:print(json.dumps(preview(a.profile,a.sha),indent=2));return 0
     require(a.approval is not None)
-    checked_profile(a.profile,a.sha,a.approval)
+    profile,_=checked_profile(a.profile,a.sha,a.approval)
     from project_backup_candidate import prompt_archive_password
     password=None
     try:
-        print('Backing up the existing Mind store. Enter your saved archive password locally. Access remains unchanged.',flush=True)
-        password=prompt_archive_password()
+        if profile.get('archiveCredentialMode')==WINDOWS_LOCAL:
+            print('Backing up Mind with Windows account protection. No password entry is needed.',flush=True)
+        else:
+            print('Backing up the existing Mind store. Enter your saved archive password locally. Access remains unchanged.',flush=True)
+            password=prompt_archive_password()
         result=run_backup(a.profile,a.sha,a.approval,password)
         print('Backup COMPLETE. Encrypted backup and recovery readback passed.')
         print('Encrypted backup: '+result['archive'])
