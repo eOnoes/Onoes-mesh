@@ -1,0 +1,11 @@
+--- a/current-boot-maintenance-handoff-CANDIDATE.ps1
++++ b/current-boot-maintenance-handoff-CANDIDATE.ps1
+@@ -28,7 +28,7 @@
+    $a.ownerSid -ceq $ownerSid -and $a.host -ceq $hostName -and $a.bootedAt -ceq $boot -and
+    $a.preparationSha256 -ceq $preparationHash -and $a.restoreTriggerExecutionApproved -eq $true -and
+    $a.quietWorkspaceConfirmed -eq $true -and $plan.schema -ceq 'mesh/legacy-recovery-plan/v3' -and
+-   $plan.bootedAt -ceq $boot -and $plan.targets.Count -eq 8 -and $null -ne $plan.retirementWitness -and
++   $plan.baselineBoot -ceq $boot -and $plan.targets.Count -eq 8 -and $null -ne $plan.retirementWitness -and
+    $issued -le $now -and $expires -gt $now -and $expires -gt $issued -and ($expires-$issued).TotalHours -le 24 -and
+    [DateTimeOffset]::Parse($plan.preparedAt) -ge $issued)
+  }catch{return $false}

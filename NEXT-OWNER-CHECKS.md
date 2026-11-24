@@ -42,7 +42,9 @@ The packaged reader and isolated worker also passed a combined rehearsal. The in
 
 The post-install check matched all eight held sends to five original cards, with no additional held Workroom sends. The recovery check initially refused a fourth Hermes queue record. On the next read, only the three reviewed records remained, and the strict check passed. All four main-PC model endpoints reported idle at that time. The original workers’ outcomes remain unknown, and recovery still requires a quiet window.
 
-The unsigned preparation now matches the installed phone release. Seven service owners, 115 source files and 14 runtime records were verified. The Windows launcher preview stopped at the running model supervisor. When a quiet window is convenient, leave services open and tell Nims. Nims will check current model activity, startup, service owners and queue records before requesting downtime. If the extra record is still present, it needs separate reconciliation before recovery can proceed.
+The November 23 quiet window verified the same eight holds and three unrelated records. The standalone controller wrote a v3 plan with `baselineBoot`. The Windows handoff looked for `bootedAt` and refused the final plan check before applying recovery. The restore-only path returned the original four startup tasks and three login shortcuts. Preserve that plan as evidence.
+
+Build a fresh window with the [handoff correction](integrations/current-boot-handoff-plan.patch). The regression test checks the v3 plan shape against the corrected handoff in Windows PowerShell and PowerShell 7. It also accepts an optional pair of captured plan and approval files for read-only qualification. Recheck running jobs, the original launchers and the exact held and retained records before any new downtime. [Plan contract test](test/current-boot-handoff-plan.test.ps1)
 
 The live Relay service confirmed it can bind a request to the selected conversation. Workroom listed Echo with a current conversation and Nims as a connected read-only reviewer. Production dispatch remains paused pending recovery.
 
