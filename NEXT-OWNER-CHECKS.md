@@ -32,6 +32,10 @@ The installed Windows Hermes client also discovered the packaged Mind reader and
 
 To rerun this check on Windows, put the canonical Mind checkout and its `tests` directory on `PYTHONPATH`. Set `MESH_TEST_HERMES_PYTHON` to the installed Hermes Python executable. From Mesh, run `python -B -m pytest -q test/echo-project-reader.py` with a fresh writable pytest temporary directory. The test uses synthetic records and runs without a model.
 
+Previewing a new reader against Echo's current Hermes configuration showed default tool availability on all 25 recognized surfaces, including background jobs and A2A. Explicit selections limited the reader to Relay's API server and Telegram while preserving the existing tool sets on all 25 surfaces. Availability in this comparison describes tool selection even for surfaces whose transports are off. Recheck the exact candidate after any gateway or configuration change.
+
+The same gateway process serves both chats and can run delegated turns. It currently inherits MCP tools for delegation. Disabling automatic MCP inheritance excluded the reader from a test child with an explicit utility assignment. A child with no explicit tool list still inherited it. Before giving Echo live access, verify a worker route with independent credential custody as described in [Echo's reader and delegated workers](MIND-CONTRACT.md#echos-reader-and-delegated-workers). The print card can be shared with the existing Mesh reader as its own milestone.
+
 ## Before starting the first supervised job
 
 The post-install check matched all eight held sends to five original cards, with no additional held Workroom sends. The recovery check initially refused a fourth Hermes queue record. On the next read, only the three reviewed records remained, and the strict check passed. All four main-PC model endpoints reported idle at that time. The original workers’ outcomes remain unknown, and recovery still requires a quiet window.

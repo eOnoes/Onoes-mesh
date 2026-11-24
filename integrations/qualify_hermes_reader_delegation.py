@@ -31,6 +31,44 @@ def serve():
     server.run(transport="stdio")
 
 
+def check_platform_selection(config, reader_server):
+    from hermes_cli.tools_config import _get_platform_tools
+
+    chat_platforms = ("api_server", "telegram")
+    platforms = (*chat_platforms, "cli", "discord")
+    before = {platform: _get_platform_tools(config, platform) for platform in platforms}
+    # Simulate adding a reader to an existing gateway that has an ordinary MCP server.
+    after = {**config, "mcp_servers": {**config["mcp_servers"], READER: reader_server}}
+    default_visibility = {
+        platform: READER in _get_platform_tools(after, platform) for platform in platforms
+    }
+    assert all(default_visibility.values()), default_visibility
+
+    selected = {
+        "api_server": [UTILITY, READER],
+        "telegram": [UTILITY, READER],
+        "cli": [UTILITY],
+        "discord": ["no_mcp"],
+    }
+    # Set the same base Hermes toolsets in both comparisons so any drift is
+    # attributable to adding the reader.
+    baseline = {**config, "platform_toolsets": {
+        platform: [name for name in names if name != READER]
+        for platform, names in selected.items()
+    }}
+    constrained = {**after, "platform_toolsets": selected}
+    for platform in platforms:
+        previous = _get_platform_tools(baseline, platform)
+        current = _get_platform_tools(constrained, platform)
+        assert current == previous | ({READER} if platform in chat_platforms else set())
+        assert (UTILITY in current) == (platform != "discord")
+    assert all(UTILITY in toolsets for toolsets in before.values())
+    return {
+        "defaultReaderPlatforms": [p for p in platforms if default_visibility[p]],
+        "selectedReaderPlatforms": list(chat_platforms),
+    }
+
+
 def check(case, source=None):
     import faulthandler
     if source is not None:
@@ -87,6 +125,8 @@ def check(case, source=None):
             if not expected:
                 assert not any(tool.startswith(f"mcp__{READER}__") for tool in child_tools)
             rows[label] = {"reader": reader in child_tools, "utility": utility in child_tools}
+        if case == "worker-profile":
+            rows["platformSelection"] = check_platform_selection(config, server)
         print("RESULT " + json.dumps(rows))
     finally:
         shutdown_mcp_servers()
