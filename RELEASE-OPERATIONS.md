@@ -1,5 +1,7 @@
 ## Service ownership before a launch or change
 
+On the Windows host, run `./tools/check-mesh-listeners.ps1 -RegisterPath $registerPath | Format-Table -AutoSize` using the path to the shared register. The command compares registered host TCP addresses and ports with one Windows listener snapshot. It flags services listed against the same endpoint in AlsoRegisteredTo. The rows include previous and current PIDs and any other local addresses listening on that port. Before maintenance, verify the launcher or process start time because Windows can reuse PIDs. Check Linux bindings on Tripp's PC through the existing LAN connection.
+
 Check the shared service register named in the private Workroom checkpoint and the current listeners on the target host. Match the network namespace, bind address, port, launcher, workspace and data location. Check the external proxy mapping separately. When a socket owner, bot poller or scheduler is uncertain, coordinate with the maintainer before changing it. After an approved change, verify the actual binding and update the same record with the evidence and rollback reference.
 
 Workroom's Rook timer, the Windows Mesh recovery task and Tripp's OpenClaw jobs have distinct responsibilities. A Telegram bot needs one transport owner across hosts. Give background checks their own sessions and qualified accounts. Keep bot credentials and service management outside build workers. The private staging register remains the working copy until the supported Mind interface admits that register and its exact version is read back.
