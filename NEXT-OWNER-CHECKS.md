@@ -22,7 +22,7 @@ The release copy passed the Windows checks for offline capture, catch-up and rea
 
 The November 23 read-only check matched the eight held sends to five original cards. All three separately reviewed pending records matched too. The extra admission seen earlier was absent at check time. The receipts leave the original workers' outcomes unknown, so dispatch stays paused.
 
-When you're ready for the quiet window, let agents editing Mesh finish and save. Leave this chat and the app services open, then tell Nims you're ready. The next step is a fresh read-only comparison of the eight held sends, all retained jobs, the service owners and the backup. Wait for the result before opening a recovery launcher.
+When you're ready for the quiet window, let agents editing Mesh finish and save, leave the services open and tell Nims you're ready. The unsigned preparation for installed release `420a233` passed the seven service-owner checks and matched all eight held sends and three retained records. The Windows preview stopped at the running model supervisor. Nims will recheck model activity, the exact startup timestamp, current service owners, backup and job records before requesting downtime. A phone installation or change to those inputs requires a fresh comparison.
 
 The team fix is already installed. Once the old jobs are accounted for and the live worker route qualifies, the current manual setting leaves an independent review on the card. Tap **Record this review**, then **Move to Done**. Automatic movement after review passed on a separate managed-flow copy and still awaits production qualification.
 
