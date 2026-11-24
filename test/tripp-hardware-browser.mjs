@@ -12,17 +12,22 @@ import { controlledProbe } from './m5-nodes-fixture.mjs';
 const { chromium } = await import(process.env.M5_NODES_PLAYWRIGHT
   ? pathToFileURL(process.env.M5_NODES_PLAYWRIGHT).href : 'playwright');
 const fixture = controlledProbe();
-const network = createNodeProbeReader(fixture.options);
 let ollamaModels = [];
 let connectionDenied = false;
 let firstGpuTemperature = null;
+const network = createNodeProbeReader({...fixture.options, observeDesktop:true, sampleDesktop: () => {
+  if (connectionDenied) {
+    throw Object.assign(Error('SSH denied'), {stderr:'ssh: connect to host fixture port 22: Permission denied'});
+  }
+  return {ollamaModels,strataHealth:'ready',strataLoaded:true,strataModel:'inkling',
+    cpuTempC:51,gpuTempC:73,ramPct:31,cpuPct:0,gpuPct:77,
+    gpus:[{index:0,name:'RTX 3060',tempC:firstGpuTemperature,usagePct:77},
+      {index:1,name:'RTX 4080 SUPER',tempC:73,usagePct:0}]};
+}});
 // Both remote machines share the fixture's network clock, but have distinct sensors.
 function withBox(view) {
   return {...view, nodes: [...view.nodes, {...view.nodes[1], id:'ai-box', label:'AI box',
-    dnsName:'fixture.tail8c4a75.ts.net', tailscaleIp:'100.64.0.23'}],
-    trippDesktop:connectionDenied ? {state:'unknown',source:'lan_ssh',reason:'connection_denied',ageMs:0} :
-      {source:'lan_ssh',ollamaModels,strataHealth:'ready',strataLoaded:true,strataModel:'inkling',state:'online', ageMs:0, cpuTempC:51, gpuTempC:73, ramPct:31, cpuPct:0, gpuPct:77,
-      gpus:[{index:0,name:'RTX 3060',tempC:firstGpuTemperature,usagePct:77},{index:1,name:'RTX 4080 SUPER',tempC:73,usagePct:0}]}};
+    dnsName:'fixture.tail8c4a75.ts.net', tailscaleIp:'100.64.0.23'}]};
 }
 let boxSensorsAvailable = true;
 const reader = withRemoteHardware({
@@ -133,6 +138,13 @@ try {
   assert.equal(await tripp.getByText(ollamaModels[0], {exact:true}).count(), 0);
   assert.doesNotMatch(await tripp.innerText(),/31%|77%|51 °C/);
   assert.equal(await boxMeters.count(),0);
+  fixture.advance(31000);
+  await page.reload();
+  const otherMachines = page.getByText('Other machines', {exact:true});
+  if (!await otherMachines.evaluate(el => el.parentElement.open)) await otherMachines.tap();
+  await tripp.getByText('LAN · Check expired. Tap Check machine status to refresh.', {exact:true}).waitFor();
+  assert.doesNotMatch(await tripp.innerText(),/inkling|31%|77%|51 °C/);
+  assert.equal(requests, 2);
   connectionDenied = true;
   boxSensorsAvailable = false;
   await Promise.all([page.waitForResponse(origin + '/api/node-probes/refresh'), check.tap()]);

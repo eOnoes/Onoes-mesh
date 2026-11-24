@@ -153,6 +153,9 @@ test('TEMP shows independent CPU and GPU readings only while the desktop observa
   assert.doesNotMatch(expired,/51 °C|demo:small/);
   delete snapshot.trippDesktop.source;
   assert.doesNotMatch(card().textContent,/Check expired|51 °C|demo:small/);
+  snapshot.trippDesktop = {source:'lan_ssh',state:'expired'};
+  assert.match(card().textContent,/LAN · Check expired\. Tap Check machine status to refresh\./);
+  assert.doesNotMatch(card().textContent,/51 °C|demo:small/);
   snapshot.trippDesktop = {source:'lan_ssh',state:'offline',ageMs:0,cpuTempC:51};
   assert.match(card().textContent,/LAN · OfflineCPUTemperature unavailable/);
 });

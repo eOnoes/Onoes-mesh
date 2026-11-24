@@ -66,10 +66,11 @@ test('a denied SSH connection is distinct from a rejected login and expires with
   let stderr = 'ssh: connect to host 10.0.0.1 port 22: Permission denied';
   const reader = createNodeProbeReader({...fixture.options, observeDesktop:true,
     sampleDesktop:() => readTrippHardware(async () => { throw Object.assign(Error('SSH failed'), {stderr}); })});
+  assert.deepEqual(reader.snapshot().trippDesktop, {state:'unknown'});
   const denied = (await reader.refresh()).trippDesktop;
   assert.deepEqual(denied, {state:'unknown', source:'lan_ssh', reason:'connection_denied', ageMs:0});
   fixture.advance(30000);
-  assert.deepEqual(reader.snapshot().trippDesktop, {state:'unknown'});
+  assert.deepEqual(reader.snapshot().trippDesktop, {state:'expired', source:'lan_ssh'});
   for (stderr of ['onoes@sample: Permission denied (publickey).', 'Host key verification failed.']) {
     const unknown = (await reader.refresh()).trippDesktop;
     assert.deepEqual(unknown, {state:'unknown', source:'lan_ssh', ageMs:0});
@@ -87,7 +88,8 @@ test('LAN telemetry survives a failed Tailscale discovery and clears after an SS
   assert.equal(calls,1);assert.deepEqual(a.trippDesktop,b.trippDesktop);
   assert.equal(a.trippDesktop.source,'lan_ssh');assert.equal(a.trippDesktop.gpuPct,0);
   assert.ok(a.nodes.every(n=>n.observationAvailability==='unavailable'));
-  fixture.advance(30001);assert.equal(reader.snapshot().trippDesktop.state,'unknown');
+  fixture.advance(30001);
+  assert.deepEqual(reader.snapshot().trippDesktop, {state:'expired', source:'lan_ssh'});
   const next=await reader.refresh();assert.equal(next.trippDesktop.state,'unknown');
   assert.equal(next.trippDesktop.gpuPct,undefined);
 });

@@ -752,7 +752,8 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
     }
     if (n.id === 'tripp-pc') {
       const desktop = snapshot.trippDesktop;
-      const hasTimedCheck = desktop?.source === 'lan_ssh' && Number.isFinite(desktop.ageMs) && desktop.ageMs >= 0;
+      const isLanCheck = desktop?.source === 'lan_ssh';
+      const hasTimedCheck = isLanCheck && Number.isFinite(desktop.ageMs) && desktop.ageMs >= 0;
       const fresh = hasTimedCheck && desktop.ageMs + elapsed < 30000;
       const online = fresh && desktop.state === 'online';
       const state = online ? 'Online' : fresh && desktop.state === 'offline' ? 'Offline' : 'Status unavailable';
@@ -765,7 +766,7 @@ export function renderNodeProbes(snapshot, receivedAt = probeTick()) {
         if (desktop.strataLoaded === true) strataStatus = 'Model loaded · ' + (desktop.strataModel || 'Name unavailable');
       }
       strata.textContent = 'Strata IK2: ' + strataStatus;
-      if (hasTimedCheck && !fresh) {
+      if (isLanCheck && (desktop.state === 'expired' || (hasTimedCheck && !fresh))) {
         location.textContent = 'LAN · Check expired. Tap Check machine status to refresh.';
       } else if (fresh && desktop.state === 'unknown' && desktop.reason === 'connection_denied') {
         location.textContent = 'LAN · Connection denied';
