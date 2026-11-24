@@ -114,6 +114,39 @@ test('a replaced claim while peer discovery is pending cannot dispatch or overwr
   assert.equal(sends,0);assert.deepEqual(s.workroom.flow.read(task.id),next);
  }finally{s.close();}
 });
+test('maintenance preserves a queued intake and rejects a roster observation across a pause and resume',async()=>{
+ const s=openTaskStore(join(mkdtempSync(join(tmpdir(),'mesh-claim-maintenance-')),'tasks.sqlite'));
+ try{
+  const task=s.create({title:'Preserve queued intake',description:''});
+  const claim=s.workroom.flow.enqueue(task.id),sends=[];
+  const agents=[{id:'nims',backend:'codex',status:'idle',conversation_id:'nims'}];
+  let rosterReads=0,release;
+  const firstRoster=new Promise(resolve=>{release=resolve;});
+  const relay={agents:async()=>++rosterReads===1?firstRoster:agents,
+   nativeRead:async()=>({taskSessionBinding:1,messages:[]}),taskMessage:async body=>{sends.push(body.id);}};
+  const tick=createIntakeRunner({workroom:s.workroom,root:process.cwd(),relay,sendTaskHandoff,syncTaskReplies});
+  let paused=s.workroom.dispatch.pause();
+  await tick();
+  assert.equal(rosterReads,0);
+  assert.deepEqual(s.workroom.flow.read(task.id),claim);
+  s.workroom.dispatch.resume(paused.generation);
+
+  const stale=tick();
+  assert.equal(rosterReads,1);
+  paused=s.workroom.dispatch.pause();
+  s.workroom.dispatch.resume(paused.generation);
+  release(agents);
+  await stale;
+  assert.deepEqual(sends,[]);
+  assert.deepEqual(s.workroom.flow.read(task.id),claim);
+  assert.deepEqual(s.workroom.get(task.id).messages,[]);
+
+  await tick();await tick();
+  assert.deepEqual(sends,[claim.sendId]);
+  assert.equal(s.workroom.flow.read(task.id).claim.claimId,claim.claim.claimId);
+  assert.equal(s.workroom.flow.read(task.id).state,'planning');
+ }finally{s.close();}
+});
 test('automatic handoff cannot use the deliberate uncertain-send retry path',async()=>{
  const s=openTaskStore(join(mkdtempSync(join(tmpdir(),'mesh-auto-no-replay-')),'tasks.sqlite'));
  try{const task=s.create({title:'No automatic uncertain replay',description:''});const claim=s.workroom.flow.enqueue(task.id);let sends=0;const relay={agents:async()=>[{id:'nims',backend:'codex',conversation_id:'nims',status:'idle'}],nativeRead:async()=>({taskSessionBinding:1}),taskMessage:async()=>{sends++;throw Error('Fixture response lost');}};
@@ -128,7 +161,13 @@ test('five-hour Rook sweep selects one oldest card, coalesces duplicate ticks an
  try{
   const older=a.create({title:'Oldest sweep fixture',description:'No live dispatch'}),newer=a.create({title:'Next sweep fixture',description:'No live dispatch'});
   const db=new DatabaseSync(path);db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2020-01-01T00:00:00.000Z',older.id);db.prepare('UPDATE tasks SET createdAt=? WHERE id=?').run('2021-01-01T00:00:00.000Z',newer.id);db.close();
-  b=openTaskStore(path);const first=a.workroom.flow.scheduledSweep(at);assert.equal(first.status,'claimed');assert.equal(first.taskId,older.id);assert.equal(first.flow.claim.trigger,'aged');assert.equal(first.flow.claim.dispatchId,first.flow.sendId);
+  b=openTaskStore(path);
+  const paused=b.workroom.dispatch.pause(),before=a.workroom.flow.sweepStatus();
+  assert.deepEqual(a.workroom.flow.scheduledSweep(at),{status:'paused',reason:'dispatch_unavailable',lastScheduledAt:null,lastResult:'never'});
+  assert.deepEqual(a.workroom.flow.sweepStatus(),before);
+  assert.equal(a.workroom.flow.read(older.id),undefined);
+  b.workroom.dispatch.resume(paused.generation);
+  const first=a.workroom.flow.scheduledSweep(at);assert.equal(first.status,'claimed');assert.equal(first.taskId,older.id);assert.equal(first.flow.claim.trigger,'aged');assert.equal(first.flow.claim.dispatchId,first.flow.sendId);
   assert.equal(b.workroom.flow.scheduledSweep(at).status,'not_due');
   a.close();a=openTaskStore(path);assert.equal(a.workroom.flow.sweepStatus().lastScheduledAt,new Date(at).toISOString());
   const second=a.workroom.flow.scheduledSweep(at+5*60*60*1000);assert.equal(second.status,'claimed');assert.equal(second.taskId,newer.id);
