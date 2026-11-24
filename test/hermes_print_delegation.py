@@ -29,6 +29,9 @@ def delegate(interpreter, checkout, container, assignment):
             env[key] = str(directory)
         env.update(PATH=os.pathsep.join([str(docker.parent), str(Path(interpreter).parent),
                                         str(Path(env["SystemRoot"]) / "System32")]), PYTHONUTF8="1")
+        # Use the already-installed dependencies. A disposable profile must
+        # never trigger Hermes' source-update synchronization.
+        env["HERMES_DISABLE_LAZY_INSTALLS"] = "1"
         model_trial = bool(os.environ.get("MESH_TEST_PRINT_GGUF"))
         if model_trial:
             env["MESH_PRINT_TRIAL_MODEL"] = "tinyllama"

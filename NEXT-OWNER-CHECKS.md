@@ -36,6 +36,8 @@ Previewing a new reader against Echo's current Hermes configuration showed defau
 
 The same gateway process serves both chats and can run delegated turns. It currently inherits MCP tools for delegation. Disabling automatic MCP inheritance excluded the reader from a test child with an explicit utility assignment. A child with no explicit tool list still inherited it. Before giving Echo live access, verify a worker route with independent credential custody as described in [Echo's reader and delegated workers](MIND-CONTRACT.md#echos-reader-and-delegated-workers). The print card can be shared with the existing Mesh reader as its own milestone.
 
+The packaged reader and isolated worker also passed a combined rehearsal. The installed Hermes client read the same drawing reference from both disposable profiles. The offline worker received the resulting project ID, revision, source and specification through the Hermes delegation adapter. Its container had no network connection or host mounts and could not open the parent test file. It returned the expected fit range and matching source reference. A separate Workroom trial reopened the saved result with review still pending. This checks the offline calculator and the test route. Live worker routing remains open.
+
 ## Before starting the first supervised job
 
 The post-install check matched all eight held sends to five original cards, with no additional held Workroom sends. The recovery check initially refused a fourth Hermes queue record. On the next read, only the three reviewed records remained, and the strict check passed. All four main-PC model endpoints reported idle at that time. The original workers’ outcomes remain unknown, and recovery still requires a quiet window.
