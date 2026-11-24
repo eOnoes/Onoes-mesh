@@ -23,6 +23,43 @@ test('CPU counter reset, changed topology and zero sampling time cannot report u
   for(const after of [{...before},{count:1,idle:210,total:500},{count:2,idle:100,total:500},{count:2,idle:400,total:500},{count:2,idle:300,total:200},{count:2,idle:Infinity,total:500}])assert.equal(cpuLoadPercent(before,after),null);
 });
 
+test('local model probes distinguish a closed port from unanswered or unreadable residency', async () => {
+  const source = await readFile(new URL('../serve.mjs', import.meta.url), 'utf8');
+  const probes = source.slice(source.indexOf('async function probeJson('), source.indexOf('async function comfyStatus('));
+  let mode = 'refused';
+  const fetch = async url => {
+    if (mode === 'refused') throw new TypeError('request failed', { cause: { code: 'ECONNREFUSED' } });
+    if (mode === 'timeout') throw new DOMException('fixture timeout', 'TimeoutError');
+    if (mode === 'denied') return { ok: false };
+    if (mode === 'invalid JSON') return { ok: true, json() { throw new SyntaxError('invalid response'); } };
+    const json = url.endsWith('/version') ? { version: '1.0' } : url.endsWith('/ps')
+      ? { models: mode === 'invalid list' ? [null] : [] } : { data: [] };
+    return { ok: true, json: async () => json };
+  };
+  const { ollamaStatus, lmStudioStatus } = vm.runInNewContext(`${probes}\n({ollamaStatus,lmStudioStatus})`, {fetch,AbortSignal});
+  for (const read of [ollamaStatus, lmStudioStatus]) {
+    mode = 'refused';
+    const absent = await read();
+    assert.equal(absent.reachable, false);
+    assert.equal(absent.probeState, 'not_listening');
+    for (const failure of ['timeout', 'denied', 'invalid JSON']) {
+      mode = failure;
+      const result = await read();
+      assert.equal(result.reachable, null);
+      assert.equal(result.probeState, 'unknown');
+      assert.equal(result.loadedCount, null);
+    }
+  }
+  mode = 'ready';
+  assert.equal((await ollamaStatus()).loadedCount, 0);
+  assert.equal((await ollamaStatus()).residencyKnown, true);
+  assert.equal((await lmStudioStatus()).residencyKnown, false);
+  assert.equal((await lmStudioStatus()).loadedCount, null);
+  mode = 'invalid list';
+  assert.equal((await ollamaStatus()).residencyKnown, false);
+  assert.equal((await ollamaStatus()).loadedCount, null);
+});
+
 test('shared host readings age, clear on failure and never invoke model controls', async () => {
   const originals = Object.fromEntries(['document','fetch','setInterval','setTimeout','clearTimeout'].map(key => [key, globalThis[key]]));
   const makeNode = () => ({ children: [], textContent: '',dataset:{},style:{},append(...nodes) { this.children.push(...nodes); }, replaceChildren(...nodes) { this.children = nodes; } });
@@ -44,10 +81,16 @@ test('shared host readings age, clear on failure and never invoke model controls
     assert.equal(hostTelemetryState({generatedAt:'invalid'}, now), 'unknown');
     assert.equal(hostTelemetryState(null, now), 'unavailable');
     assert.equal(summary.textContent,'Model loaded: Unknown');assert.equal(location.textContent,'Test PC');
-    const modelReading={...sample,modelObservation:{schemaVersion:'mesh-supervisor-observation/v1',source:'local_supervisor',expiresAt:Date.now()+5000,models:['qwen3.8-flash-next-iq3-s','qwen3.6-35b-a3b-ud-q6_k_xl','qwen3.8-27b','nemotron-3.5-bolt-74b-a9b'].map(id=>({id,state:'ready',loaded:false}))}};
+    const closedOllama={id:'ollama',reachable:false,probeState:'not_listening'};
+    const closedStudio={id:'lmstudio',reachable:false,probeState:'not_listening'};
+    const modelReading={...sample,services:[closedOllama,closedStudio],modelObservation:{schemaVersion:'mesh-supervisor-observation/v1',source:'local_supervisor',expiresAt:Date.now()+5000,models:['qwen3.8-flash-next-iq3-s','qwen3.6-35b-a3b-ud-q6_k_xl','qwen3.8-27b','nemotron-3.5-bolt-74b-a9b'].map(id=>({id,state:'ready',loaded:false}))}};
     assert.equal(inferenceModelLabel(modelReading),'No');
+    assert.equal(inferenceModelLabel({...modelReading,services:[]}), 'Unknown');
+    assert.equal(inferenceModelLabel({...modelReading,services:[{...closedOllama,reachable:null,probeState:'unknown'},closedStudio]}), 'Unknown');
+    assert.equal(inferenceModelLabel({...modelReading,services:[closedOllama,{...closedStudio,reachable:null,probeState:'unknown'}]}), 'Unknown');
     const ollama={id:'ollama',reachable:true,residencyKnown:true,loadedCount:1,
       models:[{name:'local/Qwen3.8-Flash-Next-Q4_K_M.gguf:latest',residency:'reported_loaded'}]};
+    assert.equal(inferenceModelLabel({...modelReading,services:[{...ollama,loadedCount:0,models:[]},closedStudio]}), 'No');
     const otherRuntimes={...modelReading,services:[ollama]};
     assert.equal(inferenceModelLabel(otherRuntimes),'Qwen3.8-Flash-Next');
     assert.equal(inferenceModelLabel({...otherRuntimes,modelObservation:undefined}),'Qwen3.8-Flash-Next');

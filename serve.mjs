@@ -142,54 +142,70 @@ async function appAdmission() {
 }
 
 // --- Live telemetry -----------------------------------------------------------------
-// One short-timeout probe helper. Every service below is optional: a dead port must cost
-// a timeout, never an exception, so the summary always renders.
+// A refused loopback connection means no listener. Any other failed observation
+// leaves the runtime's state unknown, even if the host is healthy.
 async function probeJson(url, timeout = 1200) {
+  let response;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch { return null; }
+    response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(timeout) });
+  } catch (error) {
+    return {state: error?.cause?.code === 'ECONNREFUSED' ? 'not_listening' : 'unknown', value: null};
+  }
+  if (response.ok) {
+    try { return {state:'answered', value:await response.json()}; }
+    catch { /* Unreadable evidence cannot establish residency. */ }
+  }
+  return {state:'unknown', value:null};
+}
+
+function unavailableModelProbe(state) {
+  const closed = state === 'not_listening';
+  return {reachable:closed ? false : null, probeState:closed ? state : 'unknown', detail:null,
+    loadedCount:null, residencyKnown:false, libraryCount:null, models:[]};
 }
 
 async function ollamaStatus() {
-  const version = await probeJson('http://127.0.0.1:11434/api/version');
-  if (!version?.version) return { reachable: false, detail: null, loadedCount: 0, libraryCount: 0, models: [] };
-  const [ps, tags] = await Promise.all([
+  const {state, value:version} = await probeJson('http://127.0.0.1:11434/api/version');
+  if (typeof version?.version !== 'string' || !version.version.trim()) return unavailableModelProbe(state);
+  const [{value:ps}, {value:tags}] = await Promise.all([
     probeJson('http://127.0.0.1:11434/api/ps'),
     probeJson('http://127.0.0.1:11434/api/tags'),
   ]);
-  const loaded = Array.isArray(ps?.models) ? ps.models : [];
-  const library = Array.isArray(tags?.models) ? tags.models : [];
+  const residencyKnown = Array.isArray(ps?.models) && ps.models.every(model =>
+    typeof model?.name === 'string' && model.name.trim());
+  const loaded = residencyKnown ? ps.models : [];
   return {
     reachable: true,
+    probeState: 'answered',
     detail: `v${version.version}`,
-    loadedCount: Array.isArray(ps?.models)?loaded.length:null,
-    residencyKnown:Array.isArray(ps?.models),
-    libraryCount: library.length,
+    loadedCount: residencyKnown ? loaded.length : null,
+    residencyKnown,
+    libraryCount: Array.isArray(tags?.models) ? tags.models.length : null,
     models: loaded.map((m) => ({
-      name: String(m.name ?? ''),residency:'reported_loaded',
+      name: m.name,residency:'reported_loaded',
       vramGB: m.size_vram ? Math.round((m.size_vram / 1e9) * 100) / 100 : null,
     })),
   };
 }
 
 async function lmStudioStatus() {
-  const models = await probeJson('http://127.0.0.1:1234/v1/models');
-  const list = Array.isArray(models?.data) ? models.data : [];
+  const {state, value:models} = await probeJson('http://127.0.0.1:1234/v1/models');
+  if (!Array.isArray(models?.data)) return unavailableModelProbe(state);
+  const list = models.data;
   return {
-    reachable: Boolean(models),
-    detail: models ? `${list.length} listed` : null,
-    loadedCount: list.length,
+    reachable: true,
+    probeState: 'answered',
+    detail: `${list.length} listed`,
+    loadedCount: null,
     libraryCount: list.length,
     residencyKnown:false,
-    models: list.slice(0, 8).map((m) => ({ name: String(m.id ?? ''),residency:'listed' })),
+    models: list.slice(0, 8).map((m) => ({ name: String(m?.id ?? ''),residency:'listed' })),
   };
 }
 
 async function comfyStatus() {
-  const stats = await probeJson('http://127.0.0.1:8188/system_stats', 1500);
-  if (!stats) return { reachable: false, detail: null, busy: null, queued: null };
+  const {state, value:stats} = await probeJson('http://127.0.0.1:8188/system_stats', 1500);
+  if (!stats) return { reachable: state === 'not_listening' ? false : null, detail: null, busy: null, queued: null };
   const device = Array.isArray(stats.devices) ? stats.devices[0] : null;
   return {
     reachable: true,

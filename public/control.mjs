@@ -48,10 +48,9 @@ export function inferenceModelLabel(snapshot, now = Date.now()) {
     const {name} = ollama.models[0];
     return (typeof name === 'string' && shortOllamaName(name.trim()).slice(0, 100)) || '1 model';
   }
-  // A reachable runtime with no verified residency cannot contribute an empty reading.
   const lmStudio = services.find(row => row?.id === 'lmstudio');
-  if ((ollama?.reachable === true && !ollamaKnown) || lmStudio?.reachable === true) return 'Unknown';
-  return engine.loaded === false ? 'No' : 'Unknown';
+  const closed = row => row?.reachable === false && row.probeState === 'not_listening';
+  return engine.loaded === false && (ollamaKnown || closed(ollama)) && closed(lmStudio) ? 'No' : 'Unknown';
 }
 function renderInferenceHost() {
   if (!inferenceHost) return;
