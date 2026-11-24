@@ -22,7 +22,7 @@ For future combined releases, run the design check and app suite against the ass
 
 ## Sharing the first print project
 
-The pilot card is still private to Workroom. Recheck its proposed connection against the new installation before the attended encrypted backup. Sharing the pilot will cover its title, lane and goal. Echo's live reader enrollment is a separate step.
+The pilot card is private to Workroom. Its title, lane and goal matched the proposed connection on the installed phone release. On a restored copy, an interrupted installation rolled back, a lost acknowledgment recovered the same pilot link, and two offline updates survived reopening. All 16 cards and 11 earlier sync receipts were preserved. The before-and-after encrypted backup instructions are ready for the attended step. Echo's live reader enrollment is separate.
 
 On a copy of the board, editing the pilot kept its Workroom card and Mind record linked. A phone-sized browser showed the revised dimensions, and a search for the old dimensions returned no match. Replaying an earlier update preserved the current revision. Independent Echo and Nims test identities also read the same revised project through Relay and Telegram adapters. The live services still use their existing permissions.
 
