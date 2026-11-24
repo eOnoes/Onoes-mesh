@@ -172,7 +172,13 @@ test('the frozen console drives the complete current-boot recovery in disposable
   writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));
   await frozen.runLegacyOperator({...f.options,action:'prepare'},f.runtime);
   const historicalWitnessPath=f.options.planPath,historicalWitnessSha256=sha(readFileSync(historicalWitnessPath));f.boot();
-  f.scope.additionalSources={legacyRetirementWitness:historicalWitnessPath};
+  const consoleSource=join(root,'lib','workroom-legacy-console.mjs');
+  assert.throws(()=>frozen.requireMaintenanceConsoleSource({}),/executing console source/);
+  assert.throws(()=>frozen.requireMaintenanceConsoleSource({
+    additionalSources:{maintenanceConsole:resolve('lib/workroom-legacy-console.mjs')},
+  }),/executing console source/);
+  f.scope.additionalSources={legacyRetirementWitness:historicalWitnessPath,maintenanceConsole:consoleSource};
+  assert.equal(frozen.requireMaintenanceConsoleSource(f.scope),consoleSource);
   writeFileSync(f.options.scopePath,JSON.stringify(f.scope));f.options.scopeSha256=sha(readFileSync(f.options.scopePath));
   f.options.planPath=join(f.dir,'frozen-current-boot-plan.json');
   await frozen.runLegacyOperator({...f.options,action:'prepare-current-boot',historicalWitnessPath,historicalWitnessSha256},f.runtime);
@@ -189,11 +195,23 @@ test('the frozen console drives the complete current-boot recovery in disposable
     apply:authority=>frozen.runLegacyOperator({...f.options,action:'apply',...authority},f.runtime),
   });
   assert.equal(result.status,'operator_returned');
+  const readback=frozen.readMaintenanceRecovery(f.scope,plan);
+  assert.equal(readback.status,'eight_recoveries_read_back');
+  assert.equal(readback.targetCount,8);
+  assert.equal(readback.dispatchRemainsPaused,true);
   const receipt=result.result;
   assert.equal(receipt.disposition,'historical_outcome_unknown');assert.equal(receipt.dispatchRemainsPaused,true);
   assert.deepEqual(f.db.prepare('SELECT * FROM workroom_sends ORDER BY id').all(),original);
   assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n,8);
  }finally{f.close();}
+});
+
+test('operator readback requires the exact scope and plan hashes before opening files',()=>{
+  const child=spawnSync(process.execPath,['integrations/legacy-recovery-operator.mjs','readback',
+    'missing-scope.json','a'.repeat(64),'missing-plan.json'],{encoding:'utf8',timeout:10000,windowsHide:true});
+  assert.equal(child.status,1);
+  assert.match(child.stderr,/Use readback <scope\.json> <scope-sha256> <plan\.json> <plan-sha256>/);
+  assert.doesNotMatch(child.stderr,/ENOENT/);
 });
 
 test('the assembled operator prepares, denies same-boot apply, commits only after the fixture boot and exact approval, and stays paused', async () => {

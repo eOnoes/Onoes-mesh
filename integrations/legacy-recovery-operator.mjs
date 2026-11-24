@@ -11,7 +11,7 @@ import { databaseFileIdentity } from '../lib/database-identity.mjs';
 import { createDispatchBarrier, assertDispatchHold } from '../lib/workroom-dispatch-barrier.mjs';
 import { holdWindowsNativeMaintenance, assertNativeMaintenanceHold, holdWindowsFileReadBarrier, assertWindowsFileReadBarrier, productionWorkerRuntimeNames, nativeResourceFingerprint } from '../lib/windows-native-maintenance.mjs';
 import { createLegacyAuthorizationReader } from '../lib/workroom-legacy-authorization.mjs';
-import { issueLegacyRecoveryPermit, createLegacyRecoveryStore } from '../lib/workroom-legacy-recovery.mjs';
+import { issueLegacyRecoveryPermit, createLegacyRecoveryStore, readMaintenanceRecovery } from '../lib/workroom-legacy-recovery.mjs';
 import { makeLegacyRecoveryPlan, makeCurrentBootLegacyRecoveryPlan, assessLegacyRecovery, legacyRecoveryFingerprint as fingerprint } from '../lib/workroom-legacy-evidence.mjs';
 import { observeLegacyRecovery, legacyRecoverySources } from './legacy-recovery-plan.mjs';
 import { runLegacyRecoveryConsole, formatLegacyRecoveryPrompt, formatLegacyRecoveryResult } from '../lib/workroom-legacy-console.mjs';
@@ -500,16 +500,42 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
   }
 }
 
+export function requireMaintenanceConsoleSource(scope) {
+  const actual = fileURLToPath(new URL('../lib/workroom-legacy-console.mjs', import.meta.url));
+  requireValue(scope.additionalSources?.maintenanceConsole === actual,
+    'The executing console source must be pinned in the reviewed scope before preparing the plan.');
+  return actual;
+}
+
+export { readMaintenanceRecovery };
+
 async function main() {
   const [action, scopePath, scopeSha256, planPath, authorizationPath, authorizationSha256, ...extra] = process.argv.slice(2);
+  if (action === 'readback') {
+    requireValue(scopePath && digest(scopeSha256) && planPath && digest(authorizationPath) &&
+      !authorizationSha256 && !extra.length,
+    'Use readback <scope.json> <scope-sha256> <plan.json> <plan-sha256>.');
+    const { scope, sourceFiles, checkScope } = loadOperatorScope(scopePath, scopeSha256);
+    verifyDeploymentScope(scope);
+    const plan = JSON.parse(readPinned(planPath, authorizationPath));
+    const checkSources = () => {
+      checkScope();
+      readPinned(planPath, authorizationPath);
+      for (const [name, path] of Object.entries(sourceFiles)) readPinned(path, plan.sources?.[name]);
+    };
+    checkSources();
+    const result = readMaintenanceRecovery(scope, plan);
+    checkSources();
+    process.stdout.write(JSON.stringify(result) + '\n');
+    return;
+  }
   if (action === 'console') {
     requireValue(scopePath && scopeSha256 && planPath && !authorizationPath && !authorizationSha256 && !extra.length &&
       process.stdin.isTTY && process.stdout.isTTY,
     'Use console <absolute-scope.json> <reviewed-scope-sha256> <plan.json> in an interactive local terminal.');
     const { scope, sourceFiles, checkScope } = loadOperatorScope(scopePath, scopeSha256);
     verifyDeploymentScope(scope);
-    requireValue(scope.additionalSources?.maintenanceConsole === resolve(scope.workspace, 'lib/workroom-legacy-console.mjs'),
-      'The console source must be pinned in the reviewed scope before preparing the plan.');
+    requireMaintenanceConsoleSource(scope);
     const planBytes=readFileSync((localFile(planPath,1048576),planPath));
     const plan=JSON.parse(planBytes.toString('utf8'));
     // The handoff's preboot authority is pinned by the same frozen scope/plan.
