@@ -162,6 +162,66 @@ class ProjectServiceProcessTests(unittest.TestCase):
         self.assertEqual(child.wait(timeout=120),0)
         self.assertEqual([service.digest(path) for path in artifacts],before)
 
+    def test_reviewed_release_preserves_enrollment_and_requires_identical_migrations(self):
+        original = json.loads(self.base.profile.read_bytes())
+        self.assertFalse(Path(self.value['attemptPath']).exists())
+        source = Path(original['runtime']['mindSource'])
+        release = self.profile.parent / 'reviewed-mind-release'
+        shutil.copytree(source / 'onoes_mind', release / 'onoes_mind',
+                        ignore=shutil.ignore_patterns('__pycache__'))
+        ledger = release / 'onoes_mind/ledger.py'
+        ledger.write_bytes(ledger.read_bytes() + b'\n# Synthetic released source\n')
+        runtime_path = self.profile.parent / 'reviewed-release-runtime.json'
+        view = {**original, 'runtime': {**original['runtime'], 'mindSource': str(release)}}
+
+        def select_view(schema=service.REVIEWED_RELEASE_SCHEMA):
+            view['sourceHashes'] = {str(p): service.digest(p) for p in operator.source_paths(view['runtime'])}
+            runtime_path.write_text(json.dumps(view), encoding='utf-8')
+            self.value.update(schema=schema, serviceRuntimeProfilePath=str(runtime_path),
+                              serviceRuntimeProfileSha256=service.digest(runtime_path))
+            self.write(actions=['run_service', 'run_mesh_sync'])
+
+        select_view(service.RELOCATED_RUNTIME_SCHEMA)
+        with self.assertRaises(service.ServiceProcessError):
+            service.checked_profile(self.profile, self.sha, self.base.approval)
+        select_view()
+        with self.assertRaises(service.ServiceProcessError):
+            service.checked_profile(self.profile, self.sha)
+
+        migration = release / 'onoes_mind/migrations/001_core.sql'
+        old_migration = migration.read_bytes()
+        migration.write_bytes(old_migration + b'\n-- changed migration\n')
+        select_view()
+        with self.assertRaises(service.ServiceProcessError):
+            service.checked_profile(self.profile, self.sha, self.base.approval)
+        migration.write_bytes(old_migration)
+        view['projects'] = [['new-project', 'Broader project']]
+        select_view()
+        with self.assertRaises(service.ServiceProcessError):
+            service.checked_profile(self.profile, self.sha, self.base.approval)
+        view['projects'] = original['projects']
+        select_view()
+
+        # The parent has the historical source loaded. The normal service CLI
+        # starts fresh and must validate the reviewed release from its own pins.
+        command = [sys.executable, '-I', '-B', str(Path(service.__file__).resolve()), '--profile',
+                   str(self.profile), '--sha256', self.sha, '--approval', str(self.base.approval)]
+        preview = subprocess.run(command, capture_output=True, encoding='utf-8', timeout=45,
+                                 creationflags=subprocess.CREATE_NO_WINDOW)
+        self.assertEqual(preview.returncode, 0, preview.stdout + preview.stderr)
+        self.assertTrue(json.loads(preview.stdout)['createsNothing'])
+        direct_operator = [sys.executable, '-I', '-B', str(Path(operator.__file__).resolve()), '--profile',
+                           str(runtime_path), '--sha256', service.digest(runtime_path), '--approval',
+                           str(self.base.approval), '--run']
+        refused = subprocess.run(direct_operator, input='', capture_output=True, encoding='utf-8', timeout=45,
+                                 creationflags=subprocess.CREATE_NO_WINDOW)
+        self.assertEqual(refused.returncode, 1)
+        self.assertEqual(json.loads(refused.stdout)['status'], 'refused')
+        self.assertFalse(Path(self.value['attemptPath']).exists())
+        self.assertFalse(Path(original['attemptPath']).exists())
+        self.assertEqual(json.loads(self.base.profile.read_bytes()), original)
+        self.assertEqual(self.base.project_principals(), 0)
+
     def test_terminal_operator_then_service_readonly_reload_exact_stop_and_retired_restart(self):
         self.prepare()
         child,stamp=service.launch_service(self.profile,self.sha,self.base.approval);self.children.append((child,stamp))

@@ -2783,3 +2783,13 @@ separate runtime profile when an update removes the original PowerShell path.
 4. Qualify the complete Mesh launch and read-only fallback on a disposable board.
    Check a saved card and its shared Mind result after stopping the writer.
    A profile pointing to a removed package cannot serve as the fallback.
+
+### Update the Mind release used by both roles
+
+Use `onoes-mind-project-service/v3` for a reviewed change to the Mind source
+directory. Keep the original writer enrollment and receipt. Use the same
+reviewed release in the capture, writer runtime and reader runtime profiles.
+The writer checks the exact replacement source, preserves the existing program
+and bridge pins, and requires identical database migrations apart from Windows
+line endings. The service-only approval binds the new service profile and the
+connected gateway. Exclude the runtime view and all operator actions.

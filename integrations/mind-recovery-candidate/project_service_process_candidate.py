@@ -18,6 +18,8 @@ from urllib.parse import urlsplit
 
 HERE = Path(__file__).resolve().parent
 SCHEMA = 'onoes-mind-project-service/v1'
+RELOCATED_RUNTIME_SCHEMA = 'onoes-mind-project-service/v2'
+REVIEWED_RELEASE_SCHEMA = 'onoes-mind-project-service/v3'
 
 
 class ServiceProcessError(RuntimeError):
@@ -51,6 +53,19 @@ def read_pinned_profile(path, raw_sha):
     return json.loads(raw, object_pairs_hook=unique)
 
 
+def pinned_migrations(source, pins):
+    """Compare released schema bytes while allowing Git's Windows line endings."""
+    directory = source / 'onoes_mind' / 'migrations'
+    migrations = {}
+    for path, expected in pins.items():
+        if path.parent == directory and path.suffix == '.sql':
+            raw = path.read_bytes()
+            require(hashlib.sha256(raw).hexdigest() == expected)
+            migrations[path.name] = raw.replace(b'\r\n', b'\n')
+    require(bool(migrations))
+    return migrations
+
+
 def checked_service_runtime(p, profile_path, expected_sha, approval_path, operator):
     # The original operator record and terminal proof keep their old digest.
     # Only a service can use this view. Operator commands reject its approval.
@@ -79,14 +94,27 @@ def checked_service_runtime(p, profile_path, expected_sha, approval_path, operat
             and a['projects'] == [v[0] for v in old['projects']] and a['reviewRef'] == old['reviewRef'])
     require({k: v for k, v in old.items() if k not in ('runtime', 'sourceHashes')}
             == {k: v for k, v in view.items() if k not in ('runtime', 'sourceHashes')})
-    old_shell = Path(old['runtime']['pwsh'])
-    new_shell = Path(view['runtime']['pwsh'])
+    old_runtime = old['runtime']
+    new_runtime = view['runtime']
+    old_shell = Path(old_runtime['pwsh'])
+    new_shell = Path(new_runtime['pwsh'])
+    expected_runtime = {**old_runtime, 'pwsh': str(new_shell)}
+    if p['schema'] == REVIEWED_RELEASE_SCHEMA:
+        previous_source = Path(old_runtime['mindSource'])
+        released_source = Path(new_runtime['mindSource'])
+        require(released_source.is_absolute() and released_source.resolve(strict=True) == released_source
+                and released_source != previous_source)
+        expected_runtime['mindSource'] = str(released_source)
     require(new_shell.is_absolute() and new_shell.resolve(strict=True) == new_shell
-            and view['runtime'] == {**old['runtime'], 'pwsh': str(new_shell)})
+            and new_runtime == expected_runtime)
     old_pins = {Path(k): v for k, v in old['sourceHashes'].items()}
     new_pins = {Path(k): v for k, v in view['sourceHashes'].items()}
-    require(new_pins.get(new_shell) == old_pins.pop(old_shell)
-            and all(new_pins.get(k) == v for k, v in old_pins.items()))
+    require(new_pins.get(new_shell) == old_pins.pop(old_shell))
+    if p['schema'] == REVIEWED_RELEASE_SCHEMA:
+        require(pinned_migrations(previous_source, old_pins) == pinned_migrations(released_source, new_pins))
+        previous_package = previous_source / 'onoes_mind'
+        old_pins = {path: pin for path, pin in old_pins.items() if not path.is_relative_to(previous_package)}
+    require(all(new_pins.get(k) == v for k, v in old_pins.items()))
     base, binding = operator.checked_profile(view_path, p['serviceRuntimeProfileSha256'])
     from onoes_mind.enrollment_store import qualify_private_storage
     from checkpoint_candidate import read_plain
@@ -103,8 +131,8 @@ def checked_profile(path,expected_sha,approval_path=None,*,preview=False):
     with path.open('rb') as source: raw=source.read(65537)
     require(len(raw)<=65536 and hashlib.sha256(raw).hexdigest()==expected_sha)
     p=json.loads(raw,object_pairs_hook=unique)
-    require(type(p) is dict and p.get('schema') in (SCHEMA,'onoes-mind-project-service/v2'))
-    separate_runtime = p['schema'] == 'onoes-mind-project-service/v2'
+    require(type(p) is dict and p.get('schema') in (SCHEMA, RELOCATED_RUNTIME_SCHEMA, REVIEWED_RELEASE_SCHEMA))
+    separate_runtime = p['schema'] != SCHEMA
     if preview and not separate_runtime:
         approval_path = None
     extra = {'serviceRuntimeProfilePath','serviceRuntimeProfileSha256'} if separate_runtime else set()
