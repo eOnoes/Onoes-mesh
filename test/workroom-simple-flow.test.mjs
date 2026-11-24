@@ -122,5 +122,17 @@ test('a source-bound lead proposal establishes scope, builds, independently revi
   if(b.text.includes('Phase: plan\n')){const p={schema:'workroom-assignment/v1',taskId:t.id,sendId:b.id,spec:'Implement the requested UI fixture',workspace:process.cwd(),allowedFiles:'public/fixture.mjs',checks:'node --check public/fixture.mjs',boundaries:'Only the named fixture',workerId:'echo',reviewerId:'nims'};text='```workroom-assignment\n'+JSON.stringify(p)+'\n```';}
   else if(b.text.includes('Phase: work\n'))text='```workroom-update\n'+JSON.stringify({schema:'workroom-update/v1',taskId:t.id,sendId:b.id,goal:t.progress.goal,checklist:t.progress.checklist.map(s=>({...s,status:'done'})),result:'Built fixture',evidence:'Fixture check passed'})+'\n```';
   else text='```workroom-review\n'+JSON.stringify({schema:'workroom-review/v1',taskId:t.id,sendId:b.id,verdict:'approved',summary:'Independently verified fixture',evidence:'Read fixture and checked result'})+'\n```';replies.set(b.id,text);},nativeRead:async p=>p.includes('capabilities')?{taskSessionBinding:1}:{messages:sends.flatMap(s=>[{id:s.id,k:'you',t:s.text},{id:s.id+'-reply',k:'ag',t:replies.get(s.id)}])}};
- const runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,simpleFlow:true});try{let t=store.create({title:'Clear managed idea',description:'Implement the requested UI fixture'});t=store.workroom.get(t.id);t=store.workroom.save(t.id,{project:'Mesh',criteria:'',owner:'',team:'local_build',stage:'working',revision:t.workroom.revision});for(let i=0;i<12;i++)await runner.tick();t=store.workroom.get(t.id);assert.equal(t.workroom.stage,'done',t.flow?.question);assert.equal(t.plan.state,'locked');assert.equal(t.plan.workerId,'echo');assert.equal(t.plan.reviewerId,'nims');assert.equal(sends.length,3);assert.equal(t.progress.decision,'approved');assert.notEqual(t.flow.ownerDecision,'accepted');}finally{await runner.close();store.close();if(old===undefined)delete process.env.MESH_SIMPLE_FLOW;else process.env.MESH_SIMPLE_FLOW=old;}
+ const runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,simpleFlow:true});try{let t=store.create({title:'Clear managed idea',description:'Implement the requested UI fixture'});t=store.workroom.get(t.id);t=store.workroom.save(t.id,{project:'Mesh',criteria:'',owner:'',team:'local_build',stage:'working',revision:t.workroom.revision});for(let i=0;i<12;i++)await runner.tick();t=store.workroom.get(t.id);assert.equal(t.workroom.stage,'done',t.flow?.question);assert.equal(t.plan.state,'locked');assert.equal(t.plan.workerId,'echo');assert.equal(t.plan.reviewerId,'nims');assert.equal(sends.length,3);assert.equal(t.progress.decision,'approved');assert.notEqual(t.flow.ownerDecision,'accepted');
+
+  const note='Use the shorter output format.';
+  const feedback={decision:'changes_requested',note,revision:t.flow.revision,taskRevision:t.revision,
+   briefRevision:t.workroom.revision,progressRevision:t.progress.revision};
+  t=store.workroom.ownerReview(t.id,feedback).task;
+  assert.equal(t.flow.state,'queued');
+  assert.equal(sends.length,3);
+  await runner.tick();
+  t=store.workroom.get(t.id);
+  assert.equal(t.flow.state,'queued');
+  assert.equal(sends.length,3,'a legacy worker report alone cannot release the writer for rework');
+ }finally{await runner.close();store.close();if(old===undefined)delete process.env.MESH_SIMPLE_FLOW;else process.env.MESH_SIMPLE_FLOW=old;}
 });

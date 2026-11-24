@@ -376,14 +376,15 @@ test('failed retired native worker pauses without dispatching Nims review',async
  }finally{if(runner)await runner.close();store.close();}
 });
 
-test('qualified native completion applies once and dispatches the original Nims review once',async()=>{
- const store=openTaskStore(file());let runner;try{
+test('qualified native completion and owner rework use distinct builds and independent reviews',async()=>{
+ const store=openTaskStore(file(),{managedFlow:()=>true});let runner;try{
   const t=ready(store,'nims');store.workroom.automation.action(t.id,action(t),nativeAgents,process.cwd());
   const stage=store.workroom.automation.read(t.id),native=nativeFixture(store),original=native.rpc,reviews=[];
   native.retireCompleted=true;
+  native.enrollmentStatus=()=> 'configured';
   native.rpc=async(method,params)=>{
    const reply=await original(method,params);if(method!=='prompt.lookup')return reply;
-   const update={schema:'workroom-update/v1',taskId:t.id,sendId:stage.workerSendId,goal:t.progress.goal,
+   const update={schema:'workroom-update/v1',taskId:t.id,sendId:store.workroom.automation.read(t.id).workerSendId,goal:t.progress.goal,
     checklist:t.progress.checklist.map(step=>({...step,status:'done'})),result:'Fixture artifact built',evidence:'Synthetic unit report'};
    return {...reply,outcome:'completed',profile_contract:{model:native.profile.model,provider:'custom',base_url:native.profile.baseUrl,
     workspace:process.cwd(),toolsets:['file'],safe_mode:true,ignore_user_config:true,follow_profile:false,source:'tool',max_turns:50,terminal_backend:'local',closed:true},
@@ -393,8 +394,13 @@ test('qualified native completion applies once and dispatches the original Nims 
     receipt:{...reply.receipt,result:{final_response:'```workroom-update\n'+JSON.stringify(update)+'\n```'}}};
   };
   let allowed=true;
-  const relay={agents:async()=>nativeAgents,nativeRead:async()=>({taskSessionBinding:1,messages:[]}),taskMessage:async message=>reviews.push(message)};
-  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,
+  const roster=[nativeAgents[0],{...nativeAgents[1],capabilities:{mode:'read-only',review:true}}];
+  let releaseReviews=false;
+  const relay={agents:async()=>roster,nativeRead:async()=>({taskSessionBinding:1,messages:releaseReviews?reviews.flatMap(review=>[
+   {id:review.id,k:'you',t:review.text},{id:review.id+'-reply',k:'ag',t:'```workroom-review\n'+JSON.stringify({
+    schema:'workroom-review/v1',taskId:t.id,sendId:review.id,verdict:'approved',summary:'Output checked',evidence:'Independent fixture check'})+'\n```'}]):[]}),
+   taskMessage:async message=>reviews.push(message)};
+  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,simpleFlow:true,
    nativeWorker:native,routeAllowed:()=>allowed});
   for(let i=0;i<4&&store.workroom.automation.read(t.id).phase!=='reviewer';i++)await runner.tick();
   const awaitingReview=store.workroom.automation.read(t.id);
@@ -409,6 +415,30 @@ test('qualified native completion applies once and dispatches the original Nims 
   assert.equal(after.messages.find(m=>m.id===stage.workerSendId).nativeLocal.writerQuiescence,true);
   assert.equal(reviews.length,1);assert.equal(reviews[0].id,stage.reviewerSendId);assert.equal(reviews[0].agentId,'nims');
   assert.match(reviews[0].text,/Read-only tools only/);assert.equal(after.progress.decision,'pending');assert.notEqual(after.status,'done');
+  releaseReviews=true;
+  await runner.tick();
+  const done=store.workroom.get(t.id);
+  assert.equal(done.status,'done');
+  const note='Use the shorter output format.';
+  const queued=store.workroom.ownerReview(t.id,{decision:'changes_requested',note,revision:done.flow?.revision??0,
+   taskRevision:done.revision,briefRevision:done.workroom.revision,progressRevision:done.progress.revision}).task;
+  assert.equal(queued.flow.state,'queued');
+  assert.throws(()=>store.workroom.save(t.id,{project:queued.workroom.project,criteria:queued.workroom.criteria,owner:queued.workroom.owner,
+   team:queued.workroom.team,revision:queued.workroom.revision,stage:'working'}),/existing claim/);
+  for(let i=0;i<12;i++)await runner.tick();
+  const revised=store.workroom.get(t.id);
+  assert.equal(revised.workroom.stage,'done',revised.flow?.question||revised.automation?.reason);
+  assert.equal(revised.plan.revision,done.plan.revision);
+  assert.equal(revised.agentReviews.filter(review=>review.applied).length,2);
+  assert.equal(reviews.length,2);
+  assert.equal(reviews[1].agentId,'nims');
+  assert.notEqual(reviews[1].id,reviews[0].id);
+  assert.ok(reviews[1].text.includes(note));
+  const builds=revised.messages.filter(message=>message.phase==='work');
+  assert.equal(builds.length,2);
+  assert.notEqual(builds[0].id,builds[1].id);
+  assert.ok(builds.every(build=>build.nativeLocal.writerQuiescence));
+  assert.ok(builds.find(build=>build.id===revised.automation.workerSendId).text.includes(note));
  }finally{if(runner)await runner.close();store.close();}
 });
 

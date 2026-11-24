@@ -652,7 +652,7 @@ if(root){
     const sendOwnerReview=decision=>act(async()=>{const task=actionTask;await request('/api/workroom/'+id+'/owner-review',{method:'POST',body:JSON.stringify({decision,note:decision==='accepted'?'':ownerNote.value,revision:task.flow?.revision??0,taskRevision:task.revision,briefRevision:task.workroom.revision,progressRevision:task.progress.revision})});await load();await open(id);});
     const acceptResult=el('button','Accept result');acceptResult.type='button';acceptResult.addEventListener('click',()=>sendOwnerReview('accepted'));
     const requestChanges=el('button','Request changes');requestChanges.type='button';requestChanges.addEventListener('click',()=>{ownerPanel.hidden=false;renderActions(actionTask);ownerNote.focus();});
-    const submitChanges=el('button','Send changes to team');submitChanges.type='button';submitChanges.addEventListener('click',()=>sendOwnerReview('changes_requested'));
+    const submitChanges=el('button','Queue requested changes');submitChanges.type='button';submitChanges.addEventListener('click',()=>sendOwnerReview('changes_requested'));
     const cancelOwner=el('button','Cancel');cancelOwner.type='button';cancelOwner.addEventListener('click',()=>{ownerPanel.hidden=true;renderActions(actionTask);});
     const startIdea=el('button','Work on this');startIdea.type='button';startIdea.addEventListener('click',()=>act(async()=>{await move(actionTask,'working');closeDetails();}));
     renderActions=task=>{
