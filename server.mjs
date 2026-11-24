@@ -221,7 +221,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     : await createRelayLink({ root: ROOT, directory, confine: confinedPath, store, enabled: relayEnabled });
   const relay=relayEnabled&&!standalone&&process.env.MESH_NIMS==='1'?withNims(baseRelay,{root:nativeWorker?.workspace??ROOT,workroom:store.workroom}):baseRelay;
   const teamRunner=relayEnabled&&!standalone?createTeamRunner({workroom:store.workroom,relay,root:nativeWorker?.workspace??ROOT,
-    simpleFlow:managedFlow(),intakeAllowed:activeRookReady,nativeWorker,nativeObserver:nativeWorker}):null;
+    simpleFlow:managedFlow(),routeAllowed:activeRookReady,nativeWorker,nativeObserver:nativeWorker}):null;
   // Only hashes of fixed source code/CSS authorize the existing native HTML.
   // srcdoc receives that HTML via an admitted API read, never a public route.
   let relayScriptHashes = '', relayStyleHashes = '';
@@ -392,7 +392,10 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         if(workroomRoute[2]==='automation'&&req.method==='POST'){
           if(!teamRunner)throw new TaskError(503,'Connected team runner unavailable.');
           const requestsWork=['start','resume'].includes(context.body?.action);
-          if(requestsWork) store.workroom.dispatch.assertOpen();
+          if(requestsWork){
+            store.workroom.dispatch.assertOpen();
+            teamRunner.assertRoute();
+          }
           const agents=requestsWork?await relay.agents():[];
           if(!current())return;
           return send(200,teamRunner.action(id,context.body,agents));

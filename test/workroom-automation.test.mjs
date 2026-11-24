@@ -291,6 +291,32 @@ test('native team pause during asynchronous session creation prevents submission
  }finally{if(runner)await runner.close();store.close();}
 });
 
+test('withdrawn Rook route holds an already-admitted builder at the roster check',async()=>{
+ const store=openTaskStore(file());
+ const card=ready(store,'nims'),native=nativeFixture(store);
+ const team=store.workroom.automation.action(card.id,action(card),nativeAgents,process.cwd()).task.automation;
+ let allowed=true,finishRoster;
+ const runner=createTeamRunner({workroom:store.workroom,root:process.cwd(),intervalMs:600000,nativeWorker:native,
+  routeAllowed:()=>allowed,relay:{
+   agents:()=>finishRoster===undefined?new Promise(resolve=>{finishRoster=resolve;}):Promise.resolve(nativeAgents),
+  }});
+ try{
+  const tick=runner.tick();
+  assert.equal(typeof finishRoster,'function');
+  allowed=false;
+  finishRoster(nativeAgents);
+  await tick;
+  assert.equal(native.methods.length,0);
+  assert.deepEqual(store.workroom.get(card.id).automation,team);
+  assert.equal(store.workroom.get(card.id).messages.length,0);
+  allowed=true;
+  await runner.tick();
+  const after=store.workroom.get(card.id);
+  assert.equal(after.messages[0].id,team.workerSendId);
+  assert.equal(native.methods.filter(([method])=>method==='prompt.submit').length,1);
+ }finally{await runner.close();store.close();}
+});
+
 test('native selection refuses other review routes and cannot replace an existing Relay send',async()=>{
  const store=openTaskStore(file());let runner;try{
   let t=ready(store);store.workroom.automation.action(t.id,action(t),agents,process.cwd());
@@ -366,9 +392,19 @@ test('qualified native completion applies once and dispatches the original Nims 
      termination_requested:false,writer_quiescence:false,execution_closed:true,authority_writes_drained:true,worker_resources_idle:true},
     receipt:{...reply.receipt,result:{final_response:'```workroom-update\n'+JSON.stringify(update)+'\n```'}}};
   };
+  let allowed=true;
   const relay={agents:async()=>nativeAgents,nativeRead:async()=>({taskSessionBinding:1,messages:[]}),taskMessage:async message=>reviews.push(message)};
-  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,nativeWorker:native});
-  for(let i=0;i<5;i++)await runner.tick();const after=store.workroom.get(t.id);
+  runner=createTeamRunner({workroom:store.workroom,relay,root:process.cwd(),intervalMs:600000,
+   nativeWorker:native,routeAllowed:()=>allowed});
+  for(let i=0;i<4&&store.workroom.automation.read(t.id).phase!=='reviewer';i++)await runner.tick();
+  const awaitingReview=store.workroom.automation.read(t.id);
+  assert.equal(awaitingReview.phase,'reviewer');
+  allowed=false;
+  await runner.tick();
+  assert.equal(reviews.length,0);
+  assert.deepEqual(store.workroom.automation.read(t.id),awaitingReview);
+  allowed=true;
+  await runner.tick();await runner.tick();const after=store.workroom.get(t.id);
   assert.equal(after.automation.phase,'reviewer');assert.equal(after.agentUpdates[0].applied,true);
   assert.equal(after.messages.find(m=>m.id===stage.workerSendId).nativeLocal.writerQuiescence,true);
   assert.equal(reviews.length,1);assert.equal(reviews[0].id,stage.reviewerSendId);assert.equal(reviews[0].agentId,'nims');

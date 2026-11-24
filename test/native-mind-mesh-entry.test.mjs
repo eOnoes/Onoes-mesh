@@ -121,6 +121,10 @@ test('connected native Rook keeps its sweep across restart and stops when the wo
     authorized=false;
     assert.equal((await app.rookRuntime.tick()).status,'paused');
     assert.equal((await status()).sweep.schedulerEnabled,false);
+    const held=await fetch(app.url+'/api/workroom/'+first.id+'/automation',{method:'POST',
+      headers:{...headers,Origin:app.url,'Content-Type':'application/json'},body:'{"action":"start"}'});
+    assert.equal(held.status,409);
+    assert.match(await held.text(),/board or native worker connection/);
     await app.close();app=null;
     authorized=true;
     app=await startNativeMesh({input:frameFor(),appOptions});
