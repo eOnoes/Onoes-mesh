@@ -1,3 +1,17 @@
+## Relay and Mind handoff | November 24, 2026
+
+The first live Nims-to-Mind-to-Echo handoff works on Echo's PC through Relay. Eddie confirmed ordinary Relay messages survive phone reload. The owner-approved setup then admitted one structured Nims handoff through Mind's supported write interface, enrolled a dedicated project-bound Echo reader, and added one MCP server to the default Hermes profile.
+
+Echo used `read_project_context` in the actual Relay run and returned the exact admitted record ID, revision, provenance reference and recorded next action. The check supplied the search phrase without the handoff contents. Relay's persisted tool activity confirms the call completed. The installed MCP host independently returned the same handoff and refused a caller-selected project.
+
+The reader can read deliberately shared `onoes-mesh` facts. It has no ordinary write credential and exposes only `read_project_context`. The owner credential stays in Windows-protected setup custody. These services share Eddie's Windows account, so this is a scoped API boundary rather than separate operating-system identities. Automatic workers remain off.
+
+To use the connection, open Relay, select Echo and ask him to read the current shared Onoes-Mesh handoff from Mind, cite its source and explain the next step. Relay and Telegram still have separate chat histories. This milestone establishes explicit shared-project retrieval in Relay. Automatic context loading, individual agent homes, optional Telegram acceptance and additional devices remain follow-up work. Workroom, Rook and Inference stay parked.
+
+Encrypted Windows-local backups taken before and after enrollment passed recovery readback. This mode needs the original Windows account and its protection keys. Earlier portable password-protected backups retain their original passwords. Keep protected credential locations and archive metadata in the private operations record, outside Git.
+
+The earlier sections below record previous implementation and qualification stages. The pending print-pilot enrollment and stronger worker isolation described there remain separate work.
+
 ## Mesh and Mind connection status | November 22, 2026
 
 The live Workroom serves saved cards, and Mesh can retrieve the deliberately shared result from its existing linked card in Onoes-Mind. Workroom owns task stage and review. Mind keeps the linked project record and its revision history. The live writer is scoped to Onoes-Mesh.
