@@ -18,6 +18,12 @@ The combined six-file phone update uses source through `197c81d` with the instal
 
 The release copy passed the Windows checks for offline capture, catch-up and read-only fallback. A phone-width browser opened the card in each mode. Rolling back a complete or interrupted file update restored all 446 original files. The final installer preview matched the running gateway, reader, writer and board backup. The installation decision is pending.
 
+## Sharing the first print project
+
+The pilot card is still private to Workroom. Once the prepared phone update is installed and verified, the next attended step is the encrypted backup. Sharing the pilot will cover its title, lane and goal. Echo's live reader enrollment is a separate step.
+
+On a copy of the board, editing the pilot kept its Workroom card and Mind record linked. A phone-sized browser showed the revised dimensions, and a search for the old dimensions returned no match. Replaying an earlier update preserved the current revision. Independent Echo and Nims test identities also read the same revised project through Relay and Telegram adapters. The live services still use their existing permissions.
+
 ## Before starting the first supervised job
 
 The November 23 read-only check matched the eight held sends to five original cards. All three separately reviewed pending records matched too. The extra admission seen earlier was absent at check time. The receipts leave the original workers' outcomes unknown, so dispatch stays paused.
