@@ -39,10 +39,22 @@ export function teamRequestNotice(policy){
   return policy?.dispatch?.state==='paused'?'Agent requests are paused for maintenance. You can still create, edit and organize cards. Refresh the board after maintenance.':'';
 }
 
-export function scopedTeamStatus(plan,policy){
+export function scopedTeamStatus(plan,policy,peers){
   const notice=teamRequestNotice(policy);if(notice)return {matches:false,message:notice};
   if(policy?.schema!=='mesh-team-policy/v1'||typeof policy.workspace!=='string'||!policy.workspace||!Array.isArray(policy.builderIds)||!Array.isArray(policy.reviewerIds)||policy.actionLimit!==50)return {matches:false,message:'Automatic team policy unavailable. Refresh before starting or resuming.'};
   const same=typeof plan?.workspace==='string'&&plan.workspace.replace(/\\/g,'/').replace(/\/+$/,'').toLowerCase()===policy.workspace.replace(/\\/g,'/').replace(/\/+$/,'').toLowerCase();
   const roles=policy.builderIds.includes(plan?.workerId)&&policy.reviewerIds.includes(plan?.reviewerId)&&plan?.workerId!==plan?.reviewerId;
-  return {matches:same&&roles,message:`Automatic team workspace: ${policy.workspace}. Builder: Echo. Independent reviewer: Deep or Nims. Limit: ${policy.actionLimit} transitions. ${!same?'This plan names a different workspace; it is not qualified for automatic work.':!roles?'The selected builder/reviewer pair is not qualified for this automatic lane.':'Saved scope matches this lane; current connections, task revisions and review checks still apply.'}`};
+  if(!same)return {matches:false,message:`This scope names a different workspace. Automatic teams use ${policy.workspace}.`};
+  if(!roles)return {matches:false,message:'The saved builder and reviewer do not match the team policy.'};
+  if(peers===null)return {matches:false,recheck:true,message:'Check connections to verify the saved builder and reviewer.'};
+  const names={echo:'Echo',nims:'Nims',dsh:'DeepSeek Harness'};
+  if(Array.isArray(peers)){
+    const missing=[];
+    for(const [role,id,backends] of [['builder',plan.workerId,['hermes','a2a']],['reviewer',plan.reviewerId,['hermes','a2a','codex']]]){
+      const peer=peers.find(entry=>entry?.id===id);
+      if(!peer?.conversation_id||!backends.includes(peer.backend))missing.push(`${role} (${names[id]||id})`);
+    }
+    if(missing.length)return {matches:false,recheck:true,message:'Waiting for the saved '+missing.join(' and ')+'. Check the connection in Relay.'};
+  }
+  return {matches:true,message:`Automatic team workspace: ${policy.workspace}. Builder: ${names[plan.workerId]||plan.workerId}. Independent reviewer: ${names[plan.reviewerId]||plan.reviewerId}. Limit: ${policy.actionLimit} transitions. Saved scope matches this lane; current connections, task revisions and review checks still apply.`};
 }

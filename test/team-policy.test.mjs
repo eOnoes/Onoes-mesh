@@ -18,6 +18,23 @@ test('team scope display follows the server policy without qualifying other fold
  assert.deepEqual(policy.builderIds,['echo']);assert.deepEqual(policy.reviewerIds,['dsh','nims']);assert.equal(policy.actionLimit,50);
 });
 
+test('scoped team readiness uses the two saved peers and recovers after a new roster read',()=>{
+ const policy=automationPolicy('C:/Mesh');
+ const plan={workspace:policy.workspace,workerId:'echo',reviewerId:'nims'};
+ const echo={id:'echo',backend:'hermes',conversation_id:'builder-session'};
+ const nims={id:'nims',backend:'codex',conversation_id:'review-session'};
+ for(const peers of [null,[],[echo],[echo,{...nims,conversation_id:''}],[{...echo,backend:'codex'},nims]]){
+  const status=scopedTeamStatus(plan,policy,peers);
+  assert.equal(status.matches,false);assert.equal(status.recheck,true);
+ }
+ assert.match(scopedTeamStatus(plan,policy,[echo]).message,/reviewer \(Nims\)/);
+ assert.equal(scopedTeamStatus(plan,policy,[echo,nims]).matches,true);
+ assert.match(scopedTeamStatus(plan,policy,[echo,nims]).message,/Builder: Echo\. Independent reviewer: Nims\./);
+ const paused=scopedTeamStatus(plan,{...policy,dispatch:{state:'paused'}},[echo,nims]);
+ assert.equal(paused.matches,false);assert.match(paused.message,/paused for maintenance/);
+ assert.ok(!paused.recheck);
+});
+
 test('actual admitted HTTP exposes the enforced team scope while anonymous reads remain denied',async()=>{
  const previous=process.env.MESH_STANDALONE;process.env.MESH_STANDALONE='1';
  const app=await startApp({dataDir:'data/team-policy-'+randomUUID(),relayEnabled:false});

@@ -50,7 +50,7 @@ if(root){
       else status.textContent='This card is unavailable. Choose another card from the board.';
     }
   },onAgents(peers,available){
-    agents=peers;agentsKnown=available;draw();
+    agents=peers;agentsKnown=available;paintCardPolicy?.();draw();
     if(status.textContent===checkingStatus)status.textContent=`${tasks.length} saved tasks · ${available?'Plan / build / review handoffs':'Agent connections unavailable; saved cards remain usable'}`;
   }});
   const dragHelp=el('p','Drag anywhere on a card with your mouse. On your phone, hold briefly, then drag. Tap once for details; swipe without holding to scroll.');
@@ -489,8 +489,12 @@ if(root){
     }
     let paintAuto=()=>{},paintScopedAvailability=()=>{};
     if(selected.plan){
-      const auto=el('section');auto.append(el('h3','Automatic scoped team'),el('p','Starts the assigned Echo builder, applies its completed report, then asks the independent reviewer. Stops for you to inspect/record the review. Never auto-approves or marks Done. Pause stops next steps; already accepted work continues. Qualified for this Mesh checkout only.'));
-      const teamState=el('p'),qualification=el('p');auto.append(qualification,teamState);let visible=selected;const buttons=new Map(),originalPlanRevision=selected.plan.revision;
+      const auto=el('section'),completion=el('p');
+      auto.append(el('h3','Automatic scoped team'),completion);
+      const teamState=el('p'),qualification=el('p'),recheck=el('button','Check connections');
+      recheck.type='button';recheck.hidden=true;
+      recheck.addEventListener('click',()=>act(load));
+      auto.append(qualification,recheck,teamState);let visible=selected;const buttons=new Map(),originalPlanRevision=selected.plan.revision;
       for(const [action,label] of [['start','Start scoped team'],['resume','Resume saved team'],['pause','Pause next team steps'],['close','Close saved team attempt']]){
         const b=el('button',label);b.type='button';buttons.set(action,b);b.addEventListener('click',()=>act(async()=>{
           if(!editor.hidden||planEditor?.isDirty())throw new Error('Save or cancel edits before team actions.');
@@ -499,9 +503,17 @@ if(root){
         }));auto.append(b);
       }
       paintScopedAvailability=()=>{const task=visible,state=task.automation?.state,changed=task.plan?.revision!==originalPlanRevision;
-        const qualified=scopedTeamStatus(task.plan,teamPolicy);qualification.textContent=qualified.message;
-        buttons.get('resume').disabled=!qualified.matches||changed||task.plan?.state!=='locked'||state!=='paused';
-        buttons.get('start').disabled=!qualified.matches||changed||task.plan?.state!=='locked'||['active','paused','needs_review'].includes(state)||task.status==='done'||task.progress.decision==='approved';
+        const locked=!changed&&task.plan?.state==='locked';
+        const canResume=locked&&state==='paused';
+        const canStart=locked&&!['active','paused','needs_review'].includes(state)&&task.status!=='done'&&task.progress.decision!=='approved';
+        const peers=agentsKnown?agents:null;
+        const qualified=scopedTeamStatus(task.plan,teamPolicy,canStart||canResume?peers:undefined);qualification.textContent=qualified.message;
+        recheck.hidden=!qualified.recheck;
+        completion.textContent=teamPolicy?.simpleFlow
+          ? 'After the builder finishes, an independent reviewer checks the work. An approved result moves to Done for your acceptance. Pausing stops the next step; accepted work can continue.'
+          : 'After the builder finishes, inspect the independent review. Record the review, then move the card to Done when approved. Pausing stops the next step; accepted work can continue.';
+        buttons.get('resume').disabled=!qualified.matches||!canResume;
+        buttons.get('start').disabled=!qualified.matches||!canStart;
       };
       paintAuto=task=>{visible=task;const state=task.automation?.state,changed=task.plan?.revision!==originalPlanRevision;
         teamState.textContent='Team: '+(state||'not started')+' · '+(task.automation?.reason||'One build → one review, no automatic rework loop.')+(changed?' Scope changed; reopen this card before starting/resuming.':'');
