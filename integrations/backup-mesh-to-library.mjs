@@ -1,4 +1,4 @@
-import {existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync,renameSync,copyFileSync} from 'node:fs';
+import {existsSync,mkdirSync,readdirSync,readFileSync,writeFileSync,renameSync,copyFileSync,lstatSync,realpathSync,rmSync} from 'node:fs';
 import {resolve,join,dirname,relative,isAbsolute} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash,randomUUID} from 'node:crypto';
@@ -53,53 +53,65 @@ const hash=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const {entries:archiveEntries,files,coverage:runtimeSourceCoverage}=collectRuntimeBackupSources(root,entries,{profilePath:process.argv[4],profileSha256:process.argv[5]});
 const archive=join(directory,'Mesh-app-source.zip');
 execFileSync('tar.exe',['-a','-cf',archive,'-C',root,'--',...archiveEntries],{cwd:root,stdio:'pipe'});
-const extraction=join(root,'data/backup-source-verification',id);mkdirSync(extraction,{recursive:true});
-const listing=execFileSync('tar.exe',['-tf',archive],{encoding:'utf8'}).trim().split(/\r?\n/);
-for(const entry of listing){const target=resolve(extraction,entry);const rel=relative(extraction,target);if(isAbsolute(entry)||rel.startsWith('..')||isAbsolute(rel))throw Error('Unsafe archive entry refused.');}
-execFileSync('tar.exe',['-xf',archive,'-C',extraction],{stdio:'pipe'});
-for(const file of files)if(hash(join(extraction,file.path))!==file.sha256)throw Error('Extracted source hash mismatch: '+file.path);
-for(const file of ['server.mjs','serve.mjs','public/app.js','public/chat.mjs','public/relay-conversation.mjs','public/mind-workspace.mjs'])execFileSync(process.execPath,['--check',join(extraction,file)],{stdio:'pipe'});
-// Exercise the restored source against a COPY of the E: data snapshot.
-const restoredData=join(extraction,'data','backup-http-rehearsal');mkdirSync(restoredData,{recursive:true});copyFileSync(receipt.snapshot,join(restoredData,'tasks.sqlite'),1);
-const {startApp}=await import(pathToFileURL(join(extraction,'server.mjs')).href);
-const restoredApp=await startApp({dataDir:'data/backup-http-rehearsal',relayEnabled:false});
-try{
-  let response=await fetch(restoredApp.url+'/api/workroom');if(response.status!==401)throw Error('Restored app did not enforce admission.');
-  const origin=restoredApp.url;response=await fetch(origin+'/api/trial-session/bootstrap',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:'{}'});if(response.status!==201)throw Error('Restored app bootstrap failed.');
-  const session=await response.json(),headers={Origin:origin,Cookie:response.headers.get('set-cookie').split(';')[0],'X-Trial-CSRF':session.csrfToken};
-  response=await fetch(origin+'/api/workroom',{headers});if(response.status!==200)throw Error('Restored app could not read saved tasks.');const taskBody=await response.json();if(taskBody.tasks.length!==receipt.taskCount)throw Error('Restored source/data task count mismatch.');
-  for(const file of ['chat.mjs','relay-conversation.mjs','mind-workspace.mjs']){
-    const asset=await fetch(origin+'/'+file,{headers});if(asset.status!==200||await asset.text()!==readFileSync(join(extraction,'public',file),'utf8'))throw Error('Restored UI module did not match its source: '+file);
-  }
-  await fetch(origin+'/api/trial-session/logout',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}'});
-}finally{await restoredApp.close();}
-// Syntax checks and a backend-only start miss gateway import/dependency gaps.
-// Run only a test-owned child against the restored COPY; never attach live
-// Relay, inference, native workers, memory credentials or the owner's gate key.
-const probeEnv=Object.fromEntries(Object.entries(process.env).filter(([key])=>!key.toUpperCase().startsWith('MESH_')&&!['NODE_OPTIONS','NODE_PATH'].includes(key.toUpperCase())));
-Object.assign(probeEnv,{MESH_STANDALONE:'1',MESH_PREVIEW_PORT:'0',MESH_DATA_DIR:'data/backup-http-rehearsal',MESH_RELAY:'0',MESH_RELAY_MODE:'child',MESH_MODEL_OBSERVATION:'0',MESH_NEMOTRON_CONTROL:'0',MESH_SIMPLE_FLOW:'0',MESH_NIMS:'0',MESH_GATE_TOKEN:'disposable-backup-gate'});
-const gateChild=spawn(process.execPath,[join(extraction,'serve.mjs')],{cwd:extraction,env:probeEnv,stdio:['ignore','pipe','pipe'],windowsHide:true});
-const gateExit=new Promise(resolve=>gateChild.once('exit',resolve));
-try{
-  const ready=await new Promise((resolve,reject)=>{
-    let output='';const timer=setTimeout(()=>reject(Error('Restored gateway readiness timed out; test-owned child retained for cleanup.')),10000);
-    gateChild.once('error',()=>{clearTimeout(timer);reject(Error('Restored gateway could not start.'));});
-    gateChild.once('exit',()=>{clearTimeout(timer);reject(Error('Restored gateway exited before readiness.'));});
-    gateChild.stderr.resume();gateChild.stdout.on('data',chunk=>{
-      output+=chunk;if(output.length>16384){clearTimeout(timer);reject(Error('Unexpected restored gateway output.'));return;}
-      if(output.includes('\n')){clearTimeout(timer);try{const value=JSON.parse(output.trim());if(value.event!=='mesh_listening')throw Error();resolve(value);}catch{reject(Error('Restored gateway readiness was not verified.'));}}
+// Restore rehearsals use a throwaway copy on the backup drive. The dated
+// source archive, database snapshot and verification receipts are retained.
+const extraction=join(realpathSync(directory),'restore-verification-temp');
+mkdirSync(extraction);
+const ownedExtraction=lstatSync(extraction,{bigint:true});
+try {
+  const listing=execFileSync('tar.exe',['-tf',archive],{encoding:'utf8'}).trim().split(/\r?\n/);
+  for(const entry of listing){const target=resolve(extraction,entry);const rel=relative(extraction,target);if(isAbsolute(entry)||rel.startsWith('..')||isAbsolute(rel))throw Error('Unsafe archive entry refused.');}
+  execFileSync('tar.exe',['-xf',archive,'-C',extraction],{stdio:'pipe'});
+  for(const file of files)if(hash(join(extraction,file.path))!==file.sha256)throw Error('Extracted source hash mismatch: '+file.path);
+  for(const file of ['server.mjs','serve.mjs','public/app.js','public/chat.mjs','public/relay-conversation.mjs','public/mind-workspace.mjs'])execFileSync(process.execPath,['--check',join(extraction,file)],{stdio:'pipe'});
+  // Exercise the restored source against a COPY of the E: data snapshot.
+  const restoredData=join(extraction,'data','backup-http-rehearsal');mkdirSync(restoredData,{recursive:true});copyFileSync(receipt.snapshot,join(restoredData,'tasks.sqlite'),1);
+  const {startApp}=await import(pathToFileURL(join(extraction,'server.mjs')).href);
+  const restoredApp=await startApp({dataDir:'data/backup-http-rehearsal',relayEnabled:false});
+  try{
+    let response=await fetch(restoredApp.url+'/api/workroom');if(response.status!==401)throw Error('Restored app did not enforce admission.');
+    const origin=restoredApp.url;response=await fetch(origin+'/api/trial-session/bootstrap',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:'{}'});if(response.status!==201)throw Error('Restored app bootstrap failed.');
+    const session=await response.json(),headers={Origin:origin,Cookie:response.headers.get('set-cookie').split(';')[0],'X-Trial-CSRF':session.csrfToken};
+    response=await fetch(origin+'/api/workroom',{headers});if(response.status!==200)throw Error('Restored app could not read saved tasks.');const taskBody=await response.json();if(taskBody.tasks.length!==receipt.taskCount)throw Error('Restored source/data task count mismatch.');
+    for(const file of ['chat.mjs','relay-conversation.mjs','mind-workspace.mjs']){
+      const asset=await fetch(origin+'/'+file,{headers});if(asset.status!==200||await asset.text()!==readFileSync(join(extraction,'public',file),'utf8'))throw Error('Restored UI module did not match its source: '+file);
+    }
+    await fetch(origin+'/api/trial-session/logout',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}'});
+  }finally{await restoredApp.close();}
+  // Syntax checks and a backend-only start miss gateway import/dependency gaps.
+  // Run only a test-owned child against the restored COPY; never attach live
+  // Relay, inference, native workers, memory credentials or the owner's gate key.
+  const probeEnv=Object.fromEntries(Object.entries(process.env).filter(([key])=>!key.toUpperCase().startsWith('MESH_')&&!['NODE_OPTIONS','NODE_PATH'].includes(key.toUpperCase())));
+  Object.assign(probeEnv,{MESH_STANDALONE:'1',MESH_PREVIEW_PORT:'0',MESH_DATA_DIR:'data/backup-http-rehearsal',MESH_RELAY:'0',MESH_RELAY_MODE:'child',MESH_MODEL_OBSERVATION:'0',MESH_NEMOTRON_CONTROL:'0',MESH_SIMPLE_FLOW:'0',MESH_NIMS:'0',MESH_GATE_TOKEN:'disposable-backup-gate'});
+  const gateChild=spawn(process.execPath,[join(extraction,'serve.mjs')],{cwd:extraction,env:probeEnv,stdio:['ignore','pipe','pipe'],windowsHide:true});
+  const gateExit=new Promise(resolve=>gateChild.once('exit',resolve));
+  try{
+    const ready=await new Promise((resolve,reject)=>{
+      let output='';const timer=setTimeout(()=>reject(Error('Restored gateway readiness timed out; test-owned child retained for cleanup.')),10000);
+      gateChild.once('error',()=>{clearTimeout(timer);reject(Error('Restored gateway could not start.'));});
+      gateChild.once('exit',()=>{clearTimeout(timer);reject(Error('Restored gateway exited before readiness.'));});
+      gateChild.stderr.resume();gateChild.stdout.on('data',chunk=>{
+        output+=chunk;if(output.length>16384){clearTimeout(timer);reject(Error('Unexpected restored gateway output.'));return;}
+        if(output.includes('\n')){clearTimeout(timer);try{const value=JSON.parse(output.trim());if(value.event!=='mesh_listening')throw Error();resolve(value);}catch{reject(Error('Restored gateway readiness was not verified.'));}}
+      });
     });
-  });
-  const url=ready.previewUrl;
-  if((await fetch(url+'/api/workroom')).status!==401)throw Error('Restored gateway did not enforce backend admission.');
-  const boot=await fetch(url+'/api/trial-session/bootstrap',{method:'POST',headers:{Origin:url,'Content-Type':'application/json'},body:'{}'});
-  if(boot.status!==201)throw Error('Restored gateway admission failed.');
-  const session=await boot.json(),headers={Origin:url,Cookie:boot.headers.get('set-cookie').split(';')[0],'X-Trial-CSRF':session.csrfToken};
-  const tasks=await fetch(url+'/api/workroom',{headers});if(tasks.status!==200||(await tasks.json()).tasks.length!==receipt.taskCount)throw Error('Restored gateway task read failed.');
-  const mind=await fetch(url+'/api/mind/status',{headers});if(mind.status!==200||(await mind.json()).configured!==false)throw Error('Restored gateway unexpectedly enrolled memory.');
-}finally{
-  // Captured disposable child only; no service/PID-name or port-wide stopping.
-  if(gateChild.pid && gateChild.exitCode===null && gateChild.signalCode===null){gateChild.kill();await gateExit;}
+    const url=ready.previewUrl;
+    if((await fetch(url+'/api/workroom')).status!==401)throw Error('Restored gateway did not enforce backend admission.');
+    const boot=await fetch(url+'/api/trial-session/bootstrap',{method:'POST',headers:{Origin:url,'Content-Type':'application/json'},body:'{}'});
+    if(boot.status!==201)throw Error('Restored gateway admission failed.');
+    const session=await boot.json(),headers={Origin:url,Cookie:boot.headers.get('set-cookie').split(';')[0],'X-Trial-CSRF':session.csrfToken};
+    const tasks=await fetch(url+'/api/workroom',{headers});if(tasks.status!==200||(await tasks.json()).tasks.length!==receipt.taskCount)throw Error('Restored gateway task read failed.');
+    const mind=await fetch(url+'/api/mind/status',{headers});if(mind.status!==200||(await mind.json()).configured!==false)throw Error('Restored gateway unexpectedly enrolled memory.');
+  }finally{
+    // Captured disposable child only; no service/PID-name or port-wide stopping.
+    if(gateChild.pid && gateChild.exitCode===null && gateChild.signalCode===null){gateChild.kill();await gateExit;}
+  }
+} finally {
+  const current=lstatSync(extraction,{bigint:true});
+  if (!current.isDirectory() || realpathSync(extraction)!==extraction ||
+      current.dev!==ownedExtraction.dev || current.ino!==ownedExtraction.ino)
+    throw Error('Restore verification directory changed; inspect it before cleanup.');
+  rmSync(extraction,{recursive:true,maxRetries:4,retryDelay:100});
 }
 const restore=`RESTORE Onoes-Mesh / Workroom\n\nData snapshot: Workroom-data/tasks.sqlite\nApp source: Mesh-app-source.zip\nVerification: manifest.json and Workroom-data/receipt.json\n\nTo restore data on this PC:\n1. Verify the tasks.sqlite SHA256 against the receipt/manifest (PowerShell: Get-FileHash -Algorithm SHA256).\n2. In the Mesh source folder, run: powershell -NoProfile -File integrations/restart-workroom-preview.ps1 -Action Stop\n   This intentionally pauses Mesh automatic recovery. Do not stop other apps.\n3. Preserve the CURRENT tasks.sqlite and any tasks.sqlite-wal / tasks.sqlite-shm together in a separate dated safety folder. Keep recovery-paused in data/workroom-preview in place. Do not mix old WAL/SHM files with the replacement database.\n4. Copy this backup's Workroom-data/tasks.sqlite to:\n   ${source}\n5. Run the named launcher with -Action Start, then open the private Workroom link and check cards, reports and reviews. Start resumes automatic recovery.\n\nTo recover app source:\nExtract Mesh-app-source.zip into a NEW folder, not over an existing working copy. It contains the matching app source, operational scripts and root-level test sources. Keep the existing working copy as a safety copy. Use a compatible Node24 runtime. For a moved checkout, review paths in the launcher and reinstall its named recovery task deliberately. The current backup targets the active mesh-workroom-ab checkout.\n\nRuntime integration code is included automatically. When an exact pinned runtime profile is supplied, every app source file declared by that profile is included and hash-verified; the profile itself and enrollment credentials are not archived. External runtime dependencies such as the existing Relay service/configuration and AI model files need their own app-specific backup. They are not part of this Mesh source/data snapshot.\n\nThe live database has NOT been replaced by creating or verifying this backup. restore-rehearsal.sqlite is a verification copy, not the primary restore snapshot.\n`;
 writeFileSync(join(directory,'RESTORE.txt'),restore);

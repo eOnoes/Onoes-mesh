@@ -38,6 +38,7 @@ def prepare_local(native):
             if member.name=='.github/workflows' or member.name.startswith('.github/workflows/'):continue
             members.append(member)
         tar.extractall(source,members=members,filter='data')
+    archive.unlink()
     originals,modules=local_receipt_candidate(source,baselines=LOCAL_BASELINES)
     assignment_originals,assignment_modules=assignment_process_candidate(source)
     originals.update(assignment_originals);modules.update(assignment_modules)

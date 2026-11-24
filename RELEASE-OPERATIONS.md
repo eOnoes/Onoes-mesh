@@ -1184,6 +1184,9 @@ node integrations/backup-mesh-to-library.mjs E:/App-Backups $installedApp $activ
 ```
 
 Confirm `runtimeSourceCoverage.provided` and `allIncluded` are true.
+The restore check extracts its temporary app copy inside the new backup folder.
+It removes that copy when the check finishes and keeps the dated archives and
+verification receipts.
 If a concurrent build changes pinned bytes, the command fails and the last
 verified backup remains available. Once the build settles, check the active
 profile against its reviewed record before making a new backup. For a standalone

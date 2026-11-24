@@ -234,6 +234,7 @@ def prepare(native_root):
                 continue
             members.append(member)
         tar.extractall(source, members=members, filter='data')
+    archive.unlink()
     subprocess.run(['git', 'apply', str(generated / 'candidate.patch')], cwd=source, check=True)
     for name, content in modules.items():
         if (source / name).read_bytes() != content.encode('utf-8'):

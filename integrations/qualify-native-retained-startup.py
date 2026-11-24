@@ -55,6 +55,8 @@ def main():
     with archive.open('wb') as output:
         subprocess.run(['git','-C',str(native),'archive','--format=tar','HEAD'],stdout=output,check=True,
             creationflags=subprocess.CREATE_NO_WINDOW)
+    with archive.open('rb') as snapshot_source:
+        source_archive_digest = hashlib.file_digest(snapshot_source, 'sha256').hexdigest()
     with tarfile.open(archive) as bundle:
         for member in bundle.getmembers():
             target = (snapshot / member.name).resolve()
@@ -62,6 +64,7 @@ def main():
             if member.isfile():
                 target.parent.mkdir(parents=True,exist_ok=True)
                 with bundle.extractfile(member) as data: target.write_bytes(data.read())
+    archive.unlink()
     changed = subprocess.check_output(['git','-C',str(native),'diff','--name-only','HEAD','-z'],creationflags=subprocess.CREATE_NO_WINDOW).decode().split('\0')
     for relative in filter(None,changed):
         original, target = native / relative, snapshot / relative
@@ -119,7 +122,7 @@ def main():
         'directory':str(root),'sourceSha256':hashes,'ownedFixtureCrashExitCode':crash_exit,'recoveries':runs,
         'helperSha256':helper_hashes,
         'coordinatorIsPrimaryRecovery':all(run['coordinatorIsPrimaryRecovery'] for run in runs),
-        'sourceArchiveSha256':hashlib.sha256(archive.read_bytes()).hexdigest(),
+        'sourceArchiveSha256':source_archive_digest,
         'liveStoreOpened':False,'liveServiceRestarted':False,'originalWorkerRetirementEstablished':False,
         'limits':['Real profile ownership, GatewayRunner/SessionDB/runtime initialization, Windows control server, API startup and full native recovery coordinator; synthetic messaging adapter and local fake model.',
             'Does not run the whole gateway service entry point or prove loaded production bytes, original worker retirement or remote writer coverage.',
