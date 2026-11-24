@@ -16,6 +16,8 @@ import sys
 HERE = Path(__file__).resolve().parent
 SCHEMA = 'onoes-mind-project-operator/v1'
 DECISION = 'approve_exact_mesh_project_lifecycle'
+OPERATOR_MODE = 'enroll_operator'
+OPERATOR_DECISION = 'approve_first_mind_operator_credential'
 SCOPE = 'project/onoes-mind/shared'
 
 
@@ -68,7 +70,8 @@ def checked_profile(path, expected_sha, approval_path=None):
     require(type(p) is dict)
     if p.get('mode') == 'add_project': keys.add('addedProjectId')
     require(set(p) == keys and p['schema'] == SCHEMA
-            and p['mode'] in ('first_setup','replace','revoke','add_project'))
+            and p['mode'] in ('first_setup','replace','revoke','add_project',OPERATOR_MODE))
+    enroll_owner = p['mode'] == OPERATOR_MODE
     runtime = p['runtime']
     require(type(runtime) is dict and set(runtime) == {'python','pwsh','mindSource'}
             and Path(runtime['python']).resolve() == Path(sys.executable).resolve())
@@ -80,15 +83,26 @@ def checked_profile(path, expected_sha, approval_path=None):
     spec = importlib.util.find_spec('onoes_mind')
     require(spec is not None and Path(spec.origin).resolve() == Path(runtime['mindSource'])/'onoes_mind/__init__.py')
     from onoes_mind.enrollment_store import qualify_private_storage
+    from onoes_mind.recall_binding import RecallBinding
     from checkpoint_candidate import read_plain
     from project_events_candidate import EventBinding, identifier, text
     qualify_private_storage(path, kind='file'); root = qualify_private_storage(path.parent)
     require(read_plain(path,65536) == raw)
-    binding = EventBinding(**p['binding'])
+    if enroll_owner:
+        from onoes_mind import context_enrollment
+        require(callable(getattr(context_enrollment, 'enroll_initial_operator', None))
+                and callable(getattr(context_enrollment, 'WindowsOperatorCustody', None)))
+        store = RecallBinding(**p['binding'])
+        require(store.scope_id == SCOPE and store.review_ref == p['reviewRef']
+                and Path(p['credentialPath']) == root / 'operator.dpapi')
+        binding = EventBinding(store.database_path, store.file_device, store.file_inode,
+                               store.store_id, store.environment, store.authority_ref)
+    else:
+        binding = EventBinding(**p['binding'])
     require(identifier(binding.store_id) and identifier(binding.environment) and text(binding.authority_ref,300))
     require(identifier(p['operationId']) and type(p['reviewRef']) is str and p['reviewRef'].strip() == p['reviewRef']
             and 1 <= len(p['reviewRef']) <= 300 and not re.search(r'[\x00-\x1f\x7f]',p['reviewRef']))
-    require(type(p['projects']) is list and 1 <= len(p['projects']) <= 8
+    require(type(p['projects']) is list and (not p['projects'] if enroll_owner else 1 <= len(p['projects']) <= 8)
             and all(type(v) is list and len(v)==2 and identifier(v[0]) and text(v[1],160)
                     and v[1] and v[1].strip()==v[1] for v in p['projects']))
     ids = [v[0] for v in p['projects']]; require(ids == sorted(set(ids)))
@@ -114,13 +128,16 @@ def checked_profile(path, expected_sha, approval_path=None):
         qualify_private_storage(Path(approval_path),kind='file')
         a = json.loads(read_plain(Path(approval_path),65536),object_pairs_hook=unique)
         require(type(a) is dict and set(a) == {'decision','ownerSid','profiles','storeId','scopeId','projects','reviewRef','actions'}
-            and a['decision'] == DECISION and a['ownerSid'] == p['ownerSid']
+            and a['decision'] == (OPERATOR_DECISION if enroll_owner else DECISION) and a['ownerSid'] == p['ownerSid']
             and type(a['profiles']) is list and len(a['profiles']) == len(set(a['profiles']))
             and all(type(h) is str and re.fullmatch('[0-9a-f]{64}',h) for h in a['profiles']) and expected_sha in a['profiles']
+            and (not enroll_owner or a['profiles'] == [expected_sha])
             and a['storeId'] == binding.store_id and a['scopeId'] == SCOPE
             and a['projects'] == ids and a['reviewRef'] == p['reviewRef']
             and type(a['actions']) is list and len(a['actions']) == len(set(a['actions']))
-            and all(x in ('first_setup','replace','revoke','add_project','run_service','run_mesh_sync') for x in a['actions']) and p['mode'] in a['actions'])
+            and (a['actions'] == [OPERATOR_MODE] if enroll_owner else
+                all(x in ('first_setup','replace','revoke','add_project','run_service','run_mesh_sync') for x in a['actions'])
+                and p['mode'] in a['actions']))
     return p, binding
 
 
@@ -143,18 +160,35 @@ def operator_role(p, binding, profile_sha):
     require(set(package) == {'schema','storeId','environment','recovery_envelope','runtime_envelope'}
         and package['schema'] == 'onoes-mind-key-enrollment/v1'
         and package['storeId'] == binding.store_id and package['environment'] == binding.environment)
-    keys = writer = None
+    keys = writer = lease = None
     try:
+        if p['mode'] == OPERATOR_MODE:
+            from native_project_sync_candidate import ProjectServiceLease
+            lease = ProjectServiceLease(binding)
         keys = unprotect_runtime_keys(package['runtime_envelope'],store_id=binding.store_id,environment_id=binding.environment)
         authority = PersistentAuthorityCandidate(AuthorityBinding(**roles.plain_json(p['authorityBindingPath'])))
         writer = CheckpointedLedgerCandidate(binding.database_path,p['historyPath'],authority,
             store_id=binding.store_id,environment=binding.environment,**keys)
-        prepare_project_service(ProjectEventsCandidate(writer,binding),mode=p['mode'],
-            projects=tuple(tuple(v) for v in p['projects']),credential_path=p['credentialPath'],outcome_path=p['outcomePath'],
-            operation_id=p['operationId'],review_ref=p['reviewRef'],added_project_id=p.get('addedProjectId'))
+        if p['mode'] == OPERATOR_MODE:
+            from onoes_mind.context_enrollment import WindowsOperatorCustody, enroll_initial_operator
+            from onoes_mind.recall_binding import RecallBinding
+            custody = WindowsOperatorCustody(Path(p['credentialPath']).parent, RecallBinding(**p['binding']))
+            enrolled = enroll_initial_operator(writer, custody)
+            require(enrolled == {'principal_id':'operator','store_id':binding.store_id})
+            roles.private_new_json(p['outcomePath'], dict(status='operator_enrolled_inactive',
+                operationId=p['operationId'],storeId=binding.store_id,environment=binding.environment,
+                principal='operator',mode=OPERATOR_MODE,projects=[],serviceStarted=False,runtimeEnrollment=False,
+                credentialIssued=True,credentialStorage={'fileSha256':digest(custody.path)}))
+        else:
+            prepare_project_service(ProjectEventsCandidate(writer,binding),mode=p['mode'],
+                projects=tuple(tuple(v) for v in p['projects']),credential_path=p['credentialPath'],outcome_path=p['outcomePath'],
+                operation_id=p['operationId'],review_ref=p['reviewRef'],added_project_id=p.get('addedProjectId'))
     finally:
-        if writer is not None: writer.close()
-        keys = None
+        try:
+            if writer is not None: writer.close()
+        finally:
+            if lease is not None: lease.close()
+            keys = None
 
 
 def launch_operator(profile_path, profile_sha, approval_path):
@@ -205,10 +239,11 @@ def finish_operator(child, stamp, profile_path, profile_sha, approval_path):
     require(attempt.get('profileSha256') == profile_sha and attempt.get('pid') == child.pid
             and attempt.get('creationTicks') == stamp and attempt.get('state') == 'started')
     expected = {'first_setup':'provisioned_inactive','replace':'replaced_inactive','revoke':'revoked_inactive',
-                'add_project':'project_added_inactive'}[p['mode']]
+                'add_project':'project_added_inactive',OPERATOR_MODE:'operator_enrolled_inactive'}[p['mode']]
     require(outcome.get('status') == expected and outcome.get('operationId') == p['operationId']
         and outcome.get('storeId') == binding.store_id and outcome.get('environment') == binding.environment
-        and outcome.get('principal') == 'mesh-project-sync' and outcome.get('mode') == p['mode']
+        and outcome.get('principal') == ('operator' if p['mode'] == OPERATOR_MODE else 'mesh-project-sync')
+        and outcome.get('mode') == p['mode']
         and outcome.get('projects') == [v[0] for v in p['projects']]
         and outcome.get('addedProjectId') == p.get('addedProjectId')
         and outcome.get('serviceStarted') is False and outcome.get('runtimeEnrollment') is False

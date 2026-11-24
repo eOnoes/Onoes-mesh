@@ -1,4 +1,5 @@
 """Real source-pinned child operator, synthetic private profiles/stores only."""
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -11,6 +12,8 @@ from unittest.mock import patch
 import test_recall_process_candidate as fixtures
 import recall_process_candidate as roles
 import project_operator_process_candidate as project
+from native_project_sync_candidate import ProjectCredentialError, ProjectServiceLease
+from onoes_mind.recall_binding import RecallBinding
 
 
 @unittest.skipUnless(sys.platform == 'win32','Windows owned process handles')
@@ -33,9 +36,11 @@ class ProjectOperatorProcessTests(unittest.TestCase):
 
     def write(self):
         self.profile.write_text(json.dumps(self.value,indent=2),encoding='utf-8');self.sha=project.digest(self.profile)
-        self.approval.write_text(json.dumps(dict(decision=project.DECISION,ownerSid=self.value['ownerSid'],profiles=[self.sha],
-            storeId=self.value['binding']['store_id'],scopeId=project.SCOPE,projects=['project-A'],
-            reviewRef=self.value['reviewRef'],actions=['first_setup'])),encoding='utf-8')
+        mode=self.value['mode']
+        decision=project.OPERATOR_DECISION if mode==project.OPERATOR_MODE else project.DECISION
+        self.approval.write_text(json.dumps(dict(decision=decision,ownerSid=self.value['ownerSid'],profiles=[self.sha],
+            storeId=self.value['binding']['store_id'],scopeId=project.SCOPE,projects=[item[0] for item in self.value['projects']],
+            reviewRef=self.value['reviewRef'],actions=[mode])),encoding='utf-8')
 
     def cli(self,*,run=False,approval=False,input_text=None,env=None):
         args=[sys.executable,'-I',str(Path(project.__file__).resolve()),'--profile',str(self.profile),'--sha256',self.sha]
@@ -78,6 +83,54 @@ class ProjectOperatorProcessTests(unittest.TestCase):
         with patch.object(project.subprocess,'Popen',side_effect=no_operator) as spawn:
             with self.assertRaises(Exception):project.launch_operator(self.profile,self.sha,self.approval)
             self.assertFalse(any(str(Path(project.__file__).resolve()) in c.args[0] for c in spawn.call_args_list))
+
+    def test_first_mind_operator_requires_its_own_approval_and_stopped_writer(self):
+        from onoes_mind import context_enrollment
+        if not hasattr(context_enrollment, 'WindowsOperatorCustody'):
+            self.skipTest('first-operator release is required for this check')
+        from onoes_mind.context_enrollment import WindowsOperatorCustody
+        binding = self.base.operator_data['binding']
+        self.value.update(mode=project.OPERATOR_MODE, projects=[], binding=binding, reviewRef=binding['review_ref'],
+                          credentialPath=str(self.profile.parent / 'operator.dpapi'))
+        self.write()
+        credential = Path(self.value['credentialPath'])
+
+        preview = self.cli()
+        self.assertEqual(preview.returncode, 0, preview.stdout + preview.stderr)
+        self.assertTrue(json.loads(preview.stdout)['createsNothing'])
+        approval = json.loads(self.approval.read_text())
+        for changes in ({'decision': project.DECISION}, {'actions': [project.OPERATOR_MODE, 'run_service']},
+                        {'profiles': [self.sha, 'a' * 64]}):
+            self.approval.write_text(json.dumps({**approval, **changes}))
+            with self.assertRaises(project.ProjectProcessError):
+                project.launch_operator(self.profile, self.sha, self.approval)
+            self.assertFalse(Path(self.value['attemptPath']).exists())
+        self.approval.write_text(json.dumps(approval))
+
+        _, project_binding = project.checked_profile(self.profile, self.sha, self.approval)
+        with closing(ProjectServiceLease(project_binding)):
+            with self.assertRaises(ProjectCredentialError):
+                project.launch_operator(self.profile, self.sha, self.approval)
+        self.assertFalse(Path(self.value['attemptPath']).exists())
+        self.assertFalse(credential.exists())
+        self.assertEqual(self.cli(run=True, approval=True, input_text='').returncode, 1)
+
+        child, stamp = project.launch_operator(self.profile, self.sha, self.approval)
+        self.base.children.append(child)
+        self.assertEqual(child.wait(timeout=120), 0)
+        terminal = project.finish_operator(child, stamp, self.profile, self.sha, self.approval)
+        self.assertEqual(terminal['credentialFileSha256'], project.digest(credential))
+        outcome = json.loads(Path(self.value['outcomePath']).read_text())
+        self.assertEqual(outcome['status'], 'operator_enrolled_inactive')
+        self.assertFalse(outcome['serviceStarted'])
+        self.assertEqual(self.project_principals(), 0)
+        with closing(sqlite3.connect(self.base.database)) as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM credentials WHERE principal_id='operator' "
+                                        "AND revoked_at IS NULL").fetchone()[0], 1)
+        custody = WindowsOperatorCustody(credential.parent, RecallBinding(**binding))
+        self.assertNotIn(custody.read().encode('ascii'), credential.read_bytes())
+        with self.assertRaises(project.ProjectProcessError):
+            project.launch_operator(self.profile, self.sha, self.approval)
 
     def test_unknown_identity_retains_same_child_pid_marker_and_never_sends_start(self):
         actual=project.subprocess.Popen
