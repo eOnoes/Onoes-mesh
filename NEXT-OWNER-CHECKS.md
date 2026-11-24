@@ -6,7 +6,7 @@
 | --- | --- |
 | Phone · Workroom | Open the board to create, edit or move a card. The guide and direct card links are installed. The phone checks for dragging, review, reload, rotation and reconnect have passed. [Open Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom) |
 | Phone · Relay | Open Echo to read the conversation and load older messages. The installed composer shows the maintenance pause and lets you draft. Send becomes available after maintenance. A crew-folder handoff has no confirmed pickup time. [Open Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay) |
-| At the PC · 3D Print Pilot | When ready to share the pilot, have the saved backup archive password available for the two local prompts. The existing shared Mesh card is connected to Mind. The print pilot is still private to Workroom. |
+| 3D Print Pilot | Approve the prepared link when ready to share this one card with Mind. The reviewed Windows-local backup option removes the password prompts for this pilot. The existing shared Mesh card is connected to Mind. The print pilot is still private to Workroom. |
 | At the PC · supervised work | Arrange a quiet recovery window for the historical job holds. After recovery and route qualification, start one real card from the phone with Echo building and Nims reviewing. Rook activation follows that check. |
 | Inference · other machines | Open **Other machines → Check machine status** for Tripp’s desktop. Read Strata and Ollama separately, then expand **Individual GPUs** to see utilization and temperature for each card. [Open Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference) |
 
@@ -24,11 +24,13 @@ For future combined releases, run the design check and app suite against the ass
 
 ## Sharing the first print project
 
-The pilot card is private to Workroom. Its title, lane and goal matched the proposed connection on the installed phone release. On a restored copy, an interrupted installation rolled back, a lost acknowledgment recovered the same pilot link, and two offline updates survived reopening. All 16 cards and 11 earlier sync receipts were preserved. The before-and-after encrypted backup instructions are ready for the attended step. Echo's live reader enrollment is separate.
+The pilot card is private to Workroom. Its title, lane and goal matched the proposed connection on the installed phone release. On a restored copy, an interrupted installation rolled back, a lost acknowledgment recovered the same pilot link, and two offline updates survived reopening. All 16 cards and 11 earlier sync receipts were preserved. The before-and-after backup package has a tested Windows-local mode that uses this account's protected archive password without prompting. Those profiles are prepared for the pilot approval. Echo's live reader enrollment is separate.
 
 On a copy of the board, editing the pilot kept its Workroom card and Mind record linked. A phone-sized browser showed the revised dimensions, and a search for the old dimensions returned no match. Replaying an earlier update preserved the current revision. Independent Echo and Nims test identities also read the same revised project through Relay and Telegram adapters. The live services still use their existing permissions.
 
 The installed Windows Hermes client also discovered the packaged Mind reader and called it from disposable Relay and Telegram profiles. Both profiles used the same project identity and returned the same snapshot and source record. A private note and another project's drawing matched the search words and stayed outside both results. The remaining live check is to ask Echo for the current print spec from each chat after the pilot is shared and Echo's reader is enrolled.
+
+The same two disposable profiles also passed guide discovery with Onoes-Mind commit `14bf885`. The catalog exposes reviewed source and review references, checksums and revision IDs for one project. Search, checksum verification and catalog discovery each have their own permission. Removing the catalog grant took effect immediately in both rehearsals. This capability is available in Mind source for a future reviewed enrollment.
 
 To rerun this check on Windows, put the canonical Mind checkout and its `tests` directory on `PYTHONPATH`. Set `MESH_TEST_HERMES_PYTHON` to the installed Hermes Python executable. From Mesh, run `python -B -m pytest -q test/echo-project-reader.py` with a fresh writable pytest temporary directory. The test uses synthetic records and runs without a model.
 
