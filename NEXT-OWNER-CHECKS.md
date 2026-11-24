@@ -24,6 +24,8 @@ The November 23 read-only check matched the eight held sends to five original ca
 
 When you're ready for the quiet window, let agents editing Mesh finish and save. Leave this chat and the app services open, then tell Nims you're ready. The next step is a fresh read-only comparison of the eight held sends, all retained jobs, the service owners and the backup. Wait for the result before opening a recovery launcher.
 
+The team fix is already installed. Once the old jobs are accounted for and the live worker route qualifies, the current manual setting leaves an independent review on the card. Tap **Record this review**, then **Move to Done**. Automatic movement after review passed on a separate managed-flow copy and still awaits production qualification.
+
 The installed LAN release at `420a233` matched the E: source backup and its archived release plan. Four of the 115 recovery source files and ten of the 14 startup records changed from the previous release. The file check did not inspect the queue or close any jobs. Repeat it after an installation. The read-only checker accepts the prior private readback, the reviewed release ZIP, the installed backup directory and the live checkout. Keep its output with the private recovery notes. [Recovery file checker](integrations/check_installed_recovery_files.py)
 
 ## November 21 development check for project handoff

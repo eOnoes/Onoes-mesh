@@ -21,9 +21,11 @@ To prepare a Windows AI box, first verify its Tailscale DNS name and IP in the v
 
 ## November 23, 2026 | First supervised job after recovery
 
-If historical job recovery runs first, keep dispatch paused through recovery and startup restoration. Verify the recovery records, saved cards and linked Mind records on the restored installation. Use that recovered state as the baseline for the phone and team update. Refresh the package's backup and comparisons before installation. A pre-recovery backup predates the recorded outcomes.
+Keep dispatch paused through historical recovery and startup restoration. Verify the eight recovery records, retained jobs, saved cards and linked Mind records before qualifying a new job. Any later phone installation needs a backup matching the recovered board.
 
-In the restored-board rehearsal, the original app still held a fresh team job after historical recovery. The seven-file candidate let a local builder complete one file and an independent reviewer verify it. The completed card opened from Done and from its direct link after a phone-width reload. The existing cards, recovery records, Mind links and sync history matched their pre-job contents. Rolling the application files back restored the original hold on a fresh copy. Production qualification still requires a phone-started job through the deployed Echo and Nims routes.
+The installed release contains the team fixes from the earlier seven-file proposal. On a copy of the installed source and a previously recovered board, a stand-in builder wrote one file and a separate stand-in reviewer checked it. With the installed manual setting, the card waited for review. A phone-width browser tapped **Record this review** and **Move to Done**, then reopened it from the Done lane and direct link. With managed flow enabled on a separate copy, the independent approval moved the card to Done automatically. Both runs preserved the 15 original cards and eight recovery receipts.
+
+The installed connected profile has `MESH_SIMPLE_FLOW=0`. Managed flow also processes pending intake when no team is active. The verified board backup had zero active teams and zero queued intakes. Recheck both counts at the actual cutover. Qualify the first real job with the deployed builder and reviewer before enabling unattended assignment.
 
 ## First supervised job | Echo gateway compatibility
 
@@ -31,7 +33,7 @@ The November 22 check reached Echo through the normal Workroom connection. For a
 
 Keep Echo running for ordinary use. Its submission lookup passed on the installed version. For a future Hermes upgrade, check the launcher's source and repeat the read-only lookup before deciding whether gateway maintenance is needed. The isolated build and rollback evidence is in [the worker maintenance guide](integrations/NATIVE-WORKER-MAINTENANCE.md).
 
-Workroom dispatch still depends on historical job recovery. Compare the entire current Relay and Hermes retained-record set with the window's reviewed set. At 16:02 Central on November 23 the controller matched all three reviewed records and found no additional admission. It also matched all eight held sends across five cards. Six Echo admissions had terminal receipts and two DSH tasks had completion receipts. The original worker outcomes remain unknown. A fresh comparison at the quiet window must account for any new admission. Preserve the hold until the running work and the recovery scope are reconciled. After recovery and the tested phone/team update, verify one fresh job through Echo and the independent Nims reviewer before enabling automatic assignments.
+Workroom dispatch still depends on historical job recovery. Compare the entire current Relay and Hermes retained-record set with the window's reviewed set. At 16:02 Central on November 23 the controller matched all three reviewed records and found no additional admission. It also matched all eight held sends across five cards. Six Echo admissions had terminal receipts and two DSH tasks had completion receipts. The original worker outcomes remain unknown. A fresh comparison at the quiet window must account for any new admission. Preserve the hold until the running work and the recovery scope are reconciled. After recovery, verify one fresh job through the deployed Echo and Nims routes. The pending phone display release can be installed independently.
 
 ## November 22, 2026 | Combined Workroom and Inference rollout
 
