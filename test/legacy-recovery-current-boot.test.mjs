@@ -5,6 +5,7 @@ import {resolve} from 'node:path';
 import {makeLegacyRecoveryPlan,makeCurrentBootLegacyRecoveryPlan,assessLegacyRecovery,legacyRecoveryFingerprint} from '../lib/workroom-legacy-evidence.mjs';
 
 const sourceKey='legacyRetirementWitness';
+const relocationKey='historicalDatabaseRelocation';
 function fixture() {
   const original={workspace:resolve('synthetic-mesh'),databasePath:resolve('synthetic.sqlite'),databaseIdentity:'d'.repeat(64),
     boardSha256:'a'.repeat(64),taskCount:14,host:'SYNTHETIC',machineIdentity:'1'.repeat(64),
@@ -71,4 +72,48 @@ test('rehashed tampering cannot turn a modified, nested, or unpinned historical 
     const {planHash,...body}=plan;plan.planHash=legacyRecoveryFingerprint(body);
     assert.throws(()=>assessLegacyRecovery(plan,f.current));
   }
+});
+
+function relocatedFixture() {
+  const f = fixture();
+  const coordinates = value => Object.fromEntries(['workspace', 'databasePath', 'databaseIdentity'].map(key => [key, value[key]]));
+  const current = {...f.current, workspace: resolve('relocated-mesh'), databasePath: resolve('relocated.sqlite'),
+    databaseIdentity: '2'.repeat(64), sources: {...f.current.sources, verifiedDatabaseCutover: '3'.repeat(64)}};
+  const relocation = {schema: 'mesh/legacy-recovery-database-relocation/v1', source: coordinates(f.historical),
+    destination: coordinates(current), historicalPlanHash: f.historical.planHash, host: current.host,
+    machineIdentity: current.machineIdentity, targetsSha256: legacyRecoveryFingerprint(f.historical.targets),
+    sourceBoardSha256: current.boardSha256, destinationBoardSha256: current.boardSha256,
+    cutoverReceiptSha256: current.sources.verifiedDatabaseCutover, observedAt: '2026-11-15T10:00:00Z'};
+  const plan = (changed = {}) => {
+    const raw = JSON.stringify({...relocation, ...changed});
+    current.sources[relocationKey] = createHash('sha256').update(raw).digest('hex');
+    return makeCurrentBootLegacyRecoveryPlan(current, {sourceKey, raw: f.raw, databaseRelocation: {sourceKey: relocationKey, raw}});
+  };
+  return {f, current, relocation, plan};
+}
+
+test('a separately pinned relocation carries exact targets without granting release', () => {
+  const {f, current, plan} = relocatedFixture();
+  assert.throws(() => makeCurrentBootLegacyRecoveryPlan(current, {sourceKey, raw: f.raw}), /relocation/);
+  const approvedForReview = plan();
+  const result = assessLegacyRecovery(approvedForReview, current);
+  assert.equal(result.status, 'ready_for_operator_review');
+  assert.equal(result.canRelease, false);
+  assert.equal(result.pcCustody.workerRetirementEstablished, false);
+  assert.equal(result.pcCustody.historicalPlanHash, f.historical.planHash);
+  assert.ok(assessLegacyRecovery(approvedForReview, {...current, databaseIdentity: '9'.repeat(64)})
+    .reasons.includes('workspace_or_database_changed'));
+  assert.ok(assessLegacyRecovery(approvedForReview, {...current, sources: {...current.sources, [relocationKey]: '8'.repeat(64)}})
+    .reasons.includes('source_changed'));
+});
+
+test('relocation rejects changed coordinates, historical targets, cutover and board proof despite repinning', () => {
+  const {relocation, plan} = relocatedFixture();
+  for (const change of [
+    {source: {...relocation.source, databaseIdentity: 'f'.repeat(64)}},
+    {destination: {...relocation.destination, workspace: resolve('unrelated')}},
+    {historicalPlanHash: 'f'.repeat(64)}, {machineIdentity: 'f'.repeat(64)}, {host: 'ANOTHER'},
+    {targetsSha256: 'f'.repeat(64)}, {destinationBoardSha256: 'f'.repeat(64)},
+    {cutoverReceiptSha256: 'f'.repeat(64)}, {observedAt: '2026-11-17T10:00:00Z'},
+  ]) assert.throws(() => plan(change), /Database relocation/);
 });

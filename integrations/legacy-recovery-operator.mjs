@@ -427,8 +427,12 @@ export async function runLegacyOperator({ action, scopePath, scopeSha256, planPa
       const source = Object.entries(sourceFiles).find(([, path]) => key(path) === key(historicalWitnessPath));
       requireValue(source && observation.sources[source[0]] === historicalWitnessSha256,
         'The exact historical witness must already be pinned in the reviewed scope.');
+      const relocationKey = 'historicalDatabaseRelocation';
+      const relocationPath = sourceFiles[relocationKey];
+      const databaseRelocation = relocationPath ? { sourceKey: relocationKey,
+        raw: readPinned(relocationPath, observation.sources[relocationKey]).toString('utf8') } : undefined;
       plan = makeCurrentBootLegacyRecoveryPlan(observation, { sourceKey: source[0],
-        raw: readPinned(historicalWitnessPath, historicalWitnessSha256).toString('utf8') });
+        raw: readPinned(historicalWitnessPath, historicalWitnessSha256).toString('utf8'), databaseRelocation });
     } else plan = makeLegacyRecoveryPlan(observation);
     writeFileSync(planPath, JSON.stringify(plan, null, 2) + '\n', { flag: 'wx' });
     return { status: 'prepared_only', planHash: plan.planHash, canRelease: false };

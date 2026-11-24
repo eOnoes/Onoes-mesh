@@ -159,6 +159,67 @@ test('current-boot operator pins the old witness and needs new authority plus un
   }finally{f.close();}
 });
 
+test('the frozen operator recovers a verified copied board only with relocation proof and fresh authority', async () => {
+  const f = await fixture();
+  let closed = false;
+  try {
+    await runLegacyOperator({...f.options, action: 'prepare'}, f.runtime);
+    const historicalWitnessPath = f.options.planPath;
+    const historicalWitnessSha256 = sha(readFileSync(historicalWitnessPath));
+    const historical = JSON.parse(readFileSync(historicalWitnessPath, 'utf8'));
+    f.boot();
+    const oldAuthority = f.authorize();
+    f.close();
+    closed = true;
+    const copied = join(f.dir, 'relocated-tasks.sqlite');
+    copyFileSync(f.scope.databasePath, copied);
+    const relocationPath = join(f.dir, 'relocation.json'), cutoverPath = join(f.dir, 'cutover.json');
+    const coordinates = value => Object.fromEntries(['workspace', 'databasePath', 'databaseIdentity']
+      .map(key => [key, value[key]]));
+    const expected = {...coordinates(f.scope), databasePath: copied, databaseIdentity: databaseFileIdentity(copied)};
+    writeFileSync(cutoverPath, JSON.stringify({state: 'relocated', destination: expected}));
+    const data = readLegacyRows(copied, historical.targets.map(row => row.sendId));
+    writeFileSync(relocationPath, JSON.stringify({schema: 'mesh/legacy-recovery-database-relocation/v1',
+      source: coordinates(historical), destination: expected, historicalPlanHash: historical.planHash,
+      host: historical.host, machineIdentity: historical.machineIdentity, targetsSha256: hash(historical.targets),
+      sourceBoardSha256: historical.boardSha256, destinationBoardSha256: data.boardSha256,
+      cutoverReceiptSha256: sha(readFileSync(cutoverPath)), observedAt: new Date().toISOString()}));
+    const bundle = prepareFrozenLegacyController({sourceRoot: realpathSync.native(process.cwd()),
+      destinationRoot: join(resolve('data'), 'mesh-legacy-controller-relocated-' + f.dir.split(/[\\/]/).at(-1))});
+    const {runLegacyOperator: runFrozen} = await import(pathToFileURL(bundle.entry));
+    const runtime = {...f.runtime,
+      validateDeployment: scope => assert.equal(scope.databasePath, copied),
+      collect: async args => ({...await f.runtime.collect(args), ...expected,
+        ...readLegacyRows(copied, historical.targets.map(row => row.sendId))})};
+    Object.assign(f.scope, expected, {controllerBundle: bundle.descriptor,
+      additionalSources: {historicalRetirementWitness: historicalWitnessPath, verifiedDatabaseCutover: cutoverPath}});
+    f.options.planPath = join(f.dir, 'relocated-plan.json');
+    const persistScope = () => {
+      writeFileSync(f.options.scopePath, JSON.stringify(f.scope));
+      f.options.scopeSha256 = sha(readFileSync(f.options.scopePath));
+    };
+    const prepare = () => runFrozen({...f.options, action: 'prepare-current-boot',
+      historicalWitnessPath, historicalWitnessSha256}, runtime);
+    persistScope();
+    await assert.rejects(prepare(), /relocation proof/);
+    assert.equal(existsSync(f.options.planPath), false);
+    f.scope.additionalSources.historicalDatabaseRelocation = relocationPath;
+    persistScope();
+    const prepared = await prepare();
+    assert.equal(prepared.canRelease, false);
+    await assert.rejects(runFrozen({...f.options, action: 'apply', ...oldAuthority}, runtime), /authorization|owner|plan/i);
+    const result = await runFrozen({...f.options, action: 'apply', ...f.authorize()}, runtime);
+    assert.equal(result.disposition, 'historical_outcome_unknown');
+    assert.equal(result.dispatchRemainsPaused, true);
+    const oldDb = new DatabaseSync(historical.databasePath, {readOnly: true});
+    const newDb = new DatabaseSync(copied, {readOnly: true});
+    try {
+      assert.equal(oldDb.prepare("SELECT COUNT(*) AS n FROM sqlite_schema WHERE name='workroom_legacy_recovery_sends'").get().n, 0);
+      assert.equal(newDb.prepare('SELECT COUNT(*) AS n FROM workroom_legacy_recovery_sends').get().n, 8);
+    } finally { oldDb.close(); newDb.close(); }
+  } finally { if (!closed) f.close(); }
+});
+
 test('the frozen console drives the complete current-boot recovery in disposable stores',async()=>{
  const f=await fixture();
  try{
