@@ -378,15 +378,15 @@ if(root){
       steps.splice(0,steps.length,...task.progress.checklist.map(step=>({...step})));drawSteps();
       reviewStatus.textContent='Review: '+task.progress.decision;
     }
-    async function saveBrief(){
+    async function saveEditedFields(progress){
       const body={project:project.value,criteria:criteria.value,owner:owner.value,stage:stage.value,team:'local_build',revision:selected.workroom.revision};
-      selected=await saveCardBrief(selected,body,request);
+      selected=await saveCardBrief(selected,body,request,progress);
     }
     async function saveCard(){
       const answering=teamPolicy?.simpleFlow&&selected.flow?.state==='clarification';
-      await saveBrief();
       const changed=goal.value!==selected.progress.goal || JSON.stringify(steps)!==JSON.stringify(selected.progress.checklist) || result.value!==selected.progress.result || evidence.value!==selected.progress.evidence || reviewer.value!==selected.progress.reviewer;
       if(changed){await persist('pending',answering);return;}
+      await saveEditedFields();
       await finishSave(teamPolicy?.simpleFlow?'Request saved.':'Card saved. No agent was started.',answering);
     }
     async function finishSave(message,answering){
@@ -397,10 +397,9 @@ if(root){
       status.textContent=message;
     }
     async function persist(decision,answering=false){
-      await saveBrief();
-      await request('/api/workroom/'+id+'/progress',{method:'PATCH',body:JSON.stringify({goal:goal.value,checklist:steps,
+      await saveEditedFields({goal:goal.value,checklist:steps,
         result:result.value,evidence:evidence.value,reviewer:reviewer.value,decision,revision:selected.progress.revision,
-        taskRevision:selected.revision,briefRevision:selected.workroom.revision})});
+        taskRevision:selected.revision,briefRevision:selected.workroom.revision});
       await finishSave(decision==='approved'?'Review approved and saved. You can now move this task to Done.':decision==='changes_requested'?'Changes requested. The task remains open.':'Goal and checklist saved.',answering);
     }
     progressForm.addEventListener('submit',event=>{event.preventDefault();act(()=>saveCard());});

@@ -74,10 +74,21 @@ def check(browser, managed):
                     answer = "Use a 95 mm tray width."
                     revised_goal = goal.input_value() + " " + answer
                     goal.fill(revised_goal)
+                    sheet.get_by_role("textbox", name="Acceptance criteria").fill("Measure the finished tray.")
                     sheet.get_by_text(QUESTION, exact=True).tap()
-                    sheet.get_by_role("button", name="Save changes").tap()
+                    patches = []
+                    page.on("request", lambda request: patches.append(request) if request.method == "PATCH" else None)
+                    with page.expect_response(lambda response: response.request.method == "PATCH") as result:
+                        sheet.get_by_role("button", name="Save changes").tap()
+                    saved = result.value.json()["task"]
+                    claim = saved["flow"]["claim"]
+                    assert claim["briefRevision"] == saved["workroom"]["revision"]
+                    assert claim["progressRevision"] == saved["progress"]["revision"]
                     expect(sheet).to_be_hidden()
                     expect(page.get_by_text("Answer saved. The updated request is queued for another look.", exact=True)).to_be_visible()
+                    assert len(patches) == 1
+                    assert patches[0].post_data_json["brief"]["criteria"] == "Measure the finished tray."
+                    assert patches[0].post_data_json["progress"]["goal"] == revised_goal
                     page.reload()
                     card.tap()
                     expect(sheet.get_by_text(revised_goal, exact=True)).to_be_visible()

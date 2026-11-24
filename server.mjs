@@ -425,7 +425,11 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
           captureDshResult(store.workroom,id,source,result.result?.task);
           return send(200,{decision:result.decision,duplicate:result.duplicate,task:store.workroom.get(id)});
         }
-        if(req.method==='PATCH' && !workroomRoute[2]) return send(200,{task:store.workroom.save(id,context.body)});
+        if(req.method==='PATCH' && !workroomRoute[2]){
+          const body=context.body;
+          if(body&&Object.keys(body).sort().join(',')==='brief,progress')return send(200,{task:store.workroom.save(id,body.brief,body.progress)});
+          return send(200,{task:store.workroom.save(id,body)});
+        }
         if(req.method==='PATCH' && workroomRoute[2]==='progress')return send(200,{task:store.workroom.saveProgress(id,context.body)});
         if(req.method==='POST' && workroomRoute[2]==='apply-update')return send(200,store.workroom.applyAgentUpdate(id,context.body));
         if(req.method==='POST' && workroomRoute[2]==='apply-review')return send(200,store.workroom.applyAgentReview(id,context.body));

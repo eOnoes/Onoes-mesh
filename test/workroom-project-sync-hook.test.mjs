@@ -82,6 +82,30 @@ test('field approval excludes goal/result and Relay text stays unshared by defau
   assert.equal(f.controller.outbox.status(relay.taskId).length,0);
 });
 
+test('one card edit saves the whole answer and one shared snapshot, or rolls it all back',t=>{
+  const f=fixture(t);
+  const c=card(f.store);
+  f.controller.link({...approval,cardId:c.id});
+  const original=f.store.workroom.get(c.id);
+  const brief={project:'Print',criteria:'Check the 95 mm tray',owner:'echo',stage:'working',team:'local_build',revision:original.workroom.revision};
+  const progress={goal:'Use 95 mm',checklist:[],result:'',evidence:'',reviewer:'',decision:'pending',revision:original.progress.revision,taskRevision:original.revision,briefRevision:original.workroom.revision};
+  const count=()=>f.controller.outbox.status(c.id).length;
+  const before=count();
+  assert.throws(()=>f.store.workroom.save(c.id,brief,{...progress,checklist:[{}]}),/checklist step/);
+  assert.deepEqual(f.store.workroom.get(c.id),original);
+  assert.equal(count(),before);
+  const saved=f.store.workroom.save(c.id,brief,progress);
+  assert.equal(saved.workroom.criteria,brief.criteria);
+  assert.equal(saved.progress.goal,progress.goal);
+  assert.equal(count(),before+1);
+  const snapshot=JSON.parse(f.db.prepare('SELECT payload FROM mind_project_outbox ORDER BY sequence DESC LIMIT 1').get().payload);
+  assert.equal(snapshot.kind,'stage_changed');
+  assert.equal(snapshot.snapshot.goal,progress.goal);
+  assert.equal(snapshot.snapshot.stage,'working');
+  assert.throws(()=>f.store.workroom.save(c.id,brief,progress),e=>e.status===409);
+  assert.equal(count(),before+1);
+});
+
 test('Done keeps plan/review gates and captures combined status change once',t=>{
   const f=fixture(t);const c=card(f.store);f.controller.link({...approval,cardId:c.id});
   brief(f.store,c.id,{stage:'working',criteria:'Guide exists'});

@@ -18,6 +18,11 @@ test('metadata save cannot promote stale goal inputs to a newer progress revisio
     const draft={goal:'Older unsaved draft',checklist:[],result:'',evidence:'',reviewer:'',decision:'pending'};
     const progressBody=t=>({...draft,revision:t.progress.revision,taskRevision:t.revision,briefRevision:t.workroom.revision});
     const {task:newer}=await query('/api/workroom/'+created.id+'/progress',{method:'PATCH',body:JSON.stringify({...progressBody(older),goal:'Newer saved goal'})});
+    const staleBrief={project:'Discarded partial edit',criteria:'Stale criteria',owner:older.workroom.owner,stage:older.workroom.stage,team:older.workroom.team,revision:older.workroom.revision};
+    await assert.rejects(saveCardBrief(older,staleBrief,query,progressBody(older)),error=>error.status===409);
+    const {task:preserved}=await query('/api/workroom/'+created.id);
+    assert.deepEqual(preserved.workroom,newer.workroom);
+    assert.deepEqual(preserved.progress,newer.progress);
     const edited=await saveCardBrief(older,{project:'Changed project',criteria:older.workroom.criteria,owner:older.workroom.owner,stage:older.workroom.stage,team:older.workroom.team,revision:older.workroom.revision},query);
     assert.equal(edited.progress.revision,older.progress.revision);
     assert.equal(edited.workroom.project,'Changed project');
