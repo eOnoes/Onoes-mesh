@@ -28,6 +28,10 @@ The pilot card is private to Workroom. Its title, lane and goal matched the prop
 
 On a copy of the board, editing the pilot kept its Workroom card and Mind record linked. A phone-sized browser showed the revised dimensions, and a search for the old dimensions returned no match. Replaying an earlier update preserved the current revision. Independent Echo and Nims test identities also read the same revised project through Relay and Telegram adapters. The live services still use their existing permissions.
 
+The installed Windows Hermes client also discovered the packaged Mind reader and called it from disposable Relay and Telegram profiles. Both profiles used the same project identity and returned the same snapshot and source record. A private note and another project's drawing matched the search words and stayed outside both results. The remaining live check is to ask Echo for the current print spec from each chat after the pilot is shared and Echo's reader is enrolled.
+
+To rerun this check on Windows, put the canonical Mind checkout and its `tests` directory on `PYTHONPATH`. Set `MESH_TEST_HERMES_PYTHON` to the installed Hermes Python executable. From Mesh, run `python -B -m pytest -q test/echo-project-reader.py` with a fresh writable pytest temporary directory. The test uses synthetic records and runs without a model.
+
 ## Before starting the first supervised job
 
 The post-install check matched all eight held sends to five original cards, with no additional held Workroom sends. The recovery check initially refused a fourth Hermes queue record. On the next read, only the three reviewed records remained, and the strict check passed. All four main-PC model endpoints reported idle at that time. The original workers’ outcomes remain unknown, and recovery still requires a quiet window.
