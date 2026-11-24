@@ -14,9 +14,11 @@ Tripp’s desktop has an RTX 3060 and an RTX 4080 SUPER. The overview shows the 
 
 The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
 
-The combined six-file phone update uses source through `197c81d` with the installed release as its base. It includes the earlier `7ff6188` changes in the same installation. In Mind search results, **Open current Workroom card** opens the matching saved card. Back returns to Mind after a reload. If a shared card is waiting for Mind, the open card explains why. In Inference, tap a shortened Ollama name to see its exact tags. A count in parentheses means multiple tags share that name.
+The next phone release combines the Inference display with Workroom card fixes through `1ab2103`. On a copy of the installed app, opening a card from Mind or Agent kept the right card on screen after reload. Back returned to the original tab. Workroom saved the brief and progress together, and a pending clarification showed the question on the card. In Inference, tap a shortened Ollama name to see its exact tags. A count in parentheses means multiple tags share that name.
 
-The release copy passed the Windows checks for offline capture, catch-up and read-only fallback. A phone-width browser opened the card in each mode. Rolling back a complete or interrupted file update restored all 446 original files. The final installer preview matched the running gateway, reader, writer and board backup. The installation decision is pending.
+The design check caught a missing default for the temperature rings in `shared/tokens.css`. Eddie approved adding that existing stylesheet to the installer. It requires an exact match on the original file and still refuses other shared stylesheets. On the corrected twelve-file copy, both a complete rollback and recovery from an interrupted first write restored all 446 original files. The live phone app is on `420a233`.
+
+Use the twelve-file package for the next installation. Its release plan identifies the updated installer. The earlier six-file plan identifies the previous installer. For future combined releases, run the design check and app suite against the assembled copy before preparing the Windows startup records.
 
 ## Sharing the first print project
 

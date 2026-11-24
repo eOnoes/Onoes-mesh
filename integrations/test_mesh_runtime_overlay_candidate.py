@@ -64,11 +64,11 @@ class MeshOverlayTests(unittest.TestCase):
     def test_existing_ui_files_replace_and_restore_only_exact_named_originals(self):
         for folder in (self.live, self.payload):
             (folder / 'public').mkdir()
+            (folder / 'shared').mkdir()
         files = []
-        for name in ('app.js', 'index.html', 'styles.css'):
-            rel = 'public/' + name
-            (self.live / rel).write_bytes(b'original ' + name.encode())
-            (self.payload / rel).write_bytes(b'updated ' + name.encode())
+        for rel in ('public/app.js', 'public/index.html', 'public/styles.css', 'shared/tokens.css'):
+            (self.live / rel).write_bytes(b'original ' + rel.encode())
+            (self.payload / rel).write_bytes(b'updated ' + rel.encode())
             files.append(dict(relativePath=rel, beforeSha256=overlay.digest(self.live / rel),
                               afterSha256=overlay.digest(self.payload / rel)))
         self.plan['files'] = files
@@ -76,13 +76,20 @@ class MeshOverlayTests(unittest.TestCase):
             missing_original = dict(entry, beforeSha256=None)
             with self.subTest(path=entry['relativePath']):
                 self.assertRaises(RuntimeError, overlay.checked, dict(self.plan, files=[missing_original]))
-        for rel in ('public/custom.js', 'public/help.html', 'public/theme.css'):
+        for rel in ('public/custom.js', 'public/help.html', 'public/theme.css', 'shared/theme.css'):
             (self.payload / rel).write_bytes(b'other')
             (self.live / rel).write_bytes(b'prior')
             other = dict(relativePath=rel, beforeSha256=overlay.digest(self.live / rel),
                          afterSha256=overlay.digest(self.payload / rel))
             with self.subTest(path=rel):
                 self.assertRaises(RuntimeError, overlay.checked, dict(self.plan, files=[other]))
+        stylesheet = self.live / 'shared/tokens.css'
+        original = stylesheet.read_bytes()
+        stylesheet.write_bytes(b'newer local edit')
+        self.assertRaises(RuntimeError, overlay.apply_overlay, self.plan, self.approve())
+        self.assertEqual(stylesheet.read_bytes(), b'newer local edit')
+        self.assertFalse((self.root / 'journal').exists())
+        stylesheet.write_bytes(original)
         self.assertEqual(overlay.apply_overlay(self.plan, self.approve())['state'], 'installed')
         for entry in files:
             self.assertEqual(overlay.digest(self.live / entry['relativePath']), entry['afterSha256'])
