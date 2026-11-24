@@ -22,7 +22,7 @@ from onoes_mind.recall_binding import RecallBinding, prepare_mesh_principal, pre
 from project_events_candidate import EventBinding, ProjectEventsCandidate
 
 
-def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False):
+def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False, check_width=False):
     options = ["--keep-fixture"] if keep_board else ["--private-edit"]
     if missing_tolerance:
         options.append("--missing-tolerance")
@@ -52,8 +52,8 @@ def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False)
         writer.register_project("project-A", "Desktop tray")
         writer_token = writer.enroll(["project-A"])
 
-        def channel(agent, transport):
-            binding = AgentContextBinding(store, "context-"+agent, "project-A")
+        def channel(agent, transport, project="project-A"):
+            binding = AgentContextBinding(store, "context-"+agent, project)
             custody = {}
             def save_new(token):
                 assert not custody
@@ -67,7 +67,13 @@ def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False)
         echo = channel("echo", "relay")
         nims = channel("nims", "telegram")
         grant = ReviewedProjectToolGrant(tmp_path/"grant.json", nims.reader.context_binding, "fixture:tool")
-        server = project_tool_server(nims, grant)
+        if check_width:
+            from onoes_mind.project_tool_grant import PRINT_WIDTH_TOOL_NAME
+            width_grant = ReviewedProjectToolGrant(tmp_path/"width.json", nims.reader.context_binding,
+                                                  "fixture:width", PRINT_WIDTH_TOOL_NAME)
+            server = project_tool_server(nims, grant, print_width_grant=width_grant)
+        else:
+            server = project_tool_server(nims, grant)
         writer.submit(writer_token, first)
 
         async def trial():
@@ -84,6 +90,12 @@ def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False)
                     return row
                 before = await current()
                 assert json.loads(before["claim"])["goal"] == first["snapshot"]["goal"]
+                def revision(row):
+                    return {key: row[key] for key in ("record_id", "revision_id")}
+                if check_width:
+                    assert (await client.call_tool(PRINT_WIDTH_TOOL_NAME, revision(before))).isError
+                    width_grant.path.write_bytes(width_grant.document())
+                    assert [t.name for t in (await client.list_tools()).tools] == [TOOL_NAME, PRINT_WIDTH_TOOL_NAME]
                 receipt = writer.submit(writer_token, revised)
                 after = await current()
                 assert before["record_id"] == after["record_id"] and before["revision_id"] != after["revision_id"]
@@ -107,6 +119,37 @@ def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False)
                     assert writer.submit(writer_token, private_edit) == private_receipt
                     assert await current() == last
                     after = last
+                if check_width:
+                    assert (await client.call_tool(PRINT_WIDTH_TOOL_NAME, revision(before))).isError
+                    choice = revision(after)
+                    for invalid in (dict(choice, width=123), dict(choice, revision_id=True),
+                                    dict(choice, record_id="rec_mesh_"+"0"*64)):
+                        assert (await client.call_tool(PRINT_WIDTH_TOOL_NAME, invalid)).isError
+                    result = await client.call_tool(PRINT_WIDTH_TOOL_NAME, choice)
+                    assert not result.isError
+                    report = json.loads(result.content[0].text)
+                    assert report["provenance"] == after["provenance"] and report["revision_id"] == after["revision_id"]
+                    if missing_tolerance:
+                        assert report["status"] == "needs_clarification" and "minimum_mm" not in report
+                    else:
+                        assert (report["status"], report["cad_filename"], report["minimum_mm"], report["maximum_mm"]) == (
+                            "calculated", "tray-v2.step", "94.8", "95.2")
+                    other = channel("local", "relay", project="separate-project")
+                    def width_server(adapter):
+                        grant = ReviewedProjectToolGrant(tmp_path/(adapter.reader.context_binding.principal_id+".json"),
+                                                         adapter.reader.context_binding, "fixture:width", PRINT_WIDTH_TOOL_NAME)
+                        grant.path.write_bytes(grant.document())
+                        return project_tool_server(adapter, lambda *_: False, print_width_grant=grant)
+                    echo_tools = width_server(echo)
+                    other_tools = width_server(other)
+                    async with create_connected_server_and_client_session(echo_tools) as echo_client:
+                        reply = await echo_client.call_tool(PRINT_WIDTH_TOOL_NAME, choice)
+                        assert not reply.isError and json.loads(reply.content[0].text) == report
+                    async with create_connected_server_and_client_session(other_tools) as other_client:
+                        assert (await other_client.call_tool(PRINT_WIDTH_TOOL_NAME, choice)).isError
+                    width_grant.path.unlink()
+                    assert (await client.call_tool(PRINT_WIDTH_TOOL_NAME, choice)).isError
+                    assert await current() == after
                 grant.path.unlink()
                 assert (await client.call_tool(TOOL_NAME, query)).isError
                 assert json.loads(echo.read(query))["records"] == [after]
@@ -116,6 +159,14 @@ def read_revised_fixture(tmp_path, *, keep_board=False, missing_tolerance=False)
 
 def test_recorded_card_edit_reaches_independent_agent_and_replay_keeps_revision(tmp_path):
     read_revised_fixture(tmp_path)
+
+
+def test_both_agents_can_check_the_current_print_width_with_its_own_grant(tmp_path):
+    read_revised_fixture(tmp_path, check_width=True)
+
+
+def test_print_width_returns_a_question_when_tolerance_is_missing(tmp_path):
+    read_revised_fixture(tmp_path, check_width=True, missing_tolerance=True)
 
 
 def test_offline_worker_can_use_only_the_selected_assignment_brief(tmp_path):
