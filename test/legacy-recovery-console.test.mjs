@@ -77,6 +77,36 @@ test('a state change while the confirmation is open blocks apply',async t=>{
   assert.equal(result.status,'blocked_after_confirmation');assert.equal(f.calls,0);
 });
 
+test('a failed safety read saves a definitive pre-apply receipt without exposing the exception',async t=>{
+  const privateError='fixture-only process details';
+  for(const phase of ['initial inspection','reconfirmation inspection','final inspection','host observation']) {
+    const f=fixture(t);
+    const inspect=f.options.inspect;
+    const failedRead={'initial inspection':1,'reconfirmation inspection':2,'final inspection':2}[phase];
+    let reads=0;
+    f.options.inspect=async()=>{
+      if(++reads===failedRead)throw Error(privateError);
+      return inspect();
+    };
+    if(phase==='reconfirmation inspection')f.options.confirm=async()=> 'typo';
+    if(phase==='host observation')f.options.observe=async()=>{throw Error(privateError);};
+    const receipt=await runLegacyRecoveryConsole(f.options);
+    const reason=phase==='host observation'?'host_observation_unavailable':'inspection_unavailable';
+    const status=phase==='final inspection'||phase==='host observation'?'blocked_after_confirmation':'blocked';
+    assert.equal(receipt.status,status,phase);
+    assert.equal(receipt.reason,reason,phase);
+    assert.equal(receipt.recoveryApplied,false,phase);
+    const bytes=readFileSync(join(receipt.receiptDirectory,'result.json'),'utf8');
+    assert.deepEqual(JSON.parse(bytes),receipt);
+    assert.doesNotMatch(bytes,new RegExp(privateError));
+    assert.match(formatLegacyRecoveryResult(receipt),/RECOVERY NOT APPLIED/);
+    assert.match(formatLegacyRecoveryResult(receipt),/could not be completed/);
+    assert.equal(existsSync(join(receipt.receiptDirectory,'authorization.json')),false);
+    assert.equal(existsSync(join(f.workspace,'data','maintenance-console',f.options.plan.planHash+'.attempt.json')),false);
+    assert.equal(f.calls,0);
+  }
+});
+
 test('same boot cannot mint a postboot owner approval',async t=>{
   const f=fixture(t);f.options.observe=async()=>({host:f.options.plan.host,bootedAt:f.options.plan.preparedAt});
   const result=await runLegacyRecoveryConsole(f.options);
