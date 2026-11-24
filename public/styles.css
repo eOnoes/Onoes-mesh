@@ -1453,6 +1453,7 @@ html[data-theme=light] .workroom-sheet h2{font-family:var(--display);text-transf
 .workroom-stack .workroom-card-open b{flex-shrink:0;font-size:12px;line-height:1.3}
 .workroom-stack .workroom-card-open small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;margin-top:4px;font-size:10px}
 .workroom-stack .workroom-card-open small:nth-of-type(n+2){display:none}
+.workroom-stack .workroom-card-open .workroom-card-question{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow-wrap:anywhere;color:var(--ink)}
 .workroom-stack .workroom-move{flex:0 0 44px;min-height:44px;padding:0}
 @media(min-width:1000px){
   .workroom-lane[data-density="2"] .workroom-stack{grid-template-columns:repeat(2,minmax(0,1fr))}

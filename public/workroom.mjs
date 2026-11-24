@@ -178,9 +178,20 @@ if(root){
       if(!visible.length)stack.append(el('p','No tasks'));
       for(const task of visible){
         const button=el('button');button.type='button';button.dataset.taskId=task.id;button.className='workroom-card-open';button.setAttribute('aria-label','Open '+task.title);button.title=task.title;
-        const completed=task.progress.checklist.filter(step=>step.status==='done').length;
-        button.append(el('b',task.title));if(!teamPolicy?.simpleFlow)button.append(el('small',`${completed}/${task.progress.checklist.length} steps`));
-        if(task.flow?.state==='clarification')button.append(el('small','Clarification requested · '+new Date(task.flow.askedAt).toLocaleDateString()));
+        button.append(el('b',task.title));
+        const gestures='Tap to open. Hold and drag to move, or use left and right arrow keys.';
+        button.setAttribute('aria-description',gestures);
+        if(task.flow?.state==='clarification'){
+          const question=task.flow.question?.trim() || 'Clarification requested';
+          const preview=el('small','? '+question);
+          preview.className='workroom-card-question';
+          button.append(preview);
+          button.title=task.title+' — '+question;
+          button.setAttribute('aria-description','Clarification requested. '+question+' '+gestures);
+        }else if(!teamPolicy?.simpleFlow){
+          const completed=task.progress.checklist.filter(step=>step.status==='done').length;
+          button.append(el('small',`${completed}/${task.progress.checklist.length} steps`));
+        }
         if(teamPolicy?.simpleFlow&&task.workroom.stage==='done')button.append(el('small',task.flow?.ownerDecision==='accepted'?'Accepted by Eddie':'Ready for your review'));
         if(!teamPolicy?.simpleFlow){
         const report=task.agentUpdates?.at(-1);if(report && !report.applied)button.append(el('small',`Agent: ${report.update.checklist.filter(step=>step.status==='done').length}/${report.update.checklist.length} · unreviewed`));
@@ -191,7 +202,6 @@ if(root){
         }
         button.addEventListener('click',()=>{returnFocus=button;cardOpener.request(task.id);});
         const card=el('div');card.className='workroom-card';
-        button.setAttribute('aria-description','Tap to open. Hold and drag to move, or use left and right arrow keys.');
         handleDrag(button,card,task);card.append(button);stack.append(card);
       }
       board.append(column);
