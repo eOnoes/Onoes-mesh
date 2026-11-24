@@ -1,8 +1,16 @@
 # Rook / Mesh integration checkpoint
 
-## Rook on the combined phone release
+## Rook on the installed phone release
 
-The current phone prerequisite is `197c81d`. Its six-file update and Rook enrollment are separate installation steps. The paused Rook proposal layers five files over that release, including the current clarification display. The earlier `7ff6188` packet targets different source bytes.
+The paused enrollment package was rebuilt for the installed `1ab2103r3` phone release with Tripp’s per-GPU display. The five-file overlay changes only the Relay notice renderer in the phone application file. The candidate pins the same board and project links in its offline capture, connected and fallback profiles. The live board still reports Rook unconfigured.
+
+On a disposable restore, applying and rolling back the overlay returned all 446 original files, including when the installer was interrupted after its first write. The saved-notice test preserved 16 cards, 30 original tables and the original receipt across rollback and re-enrollment. Phone checks opened the correct card and kept the link working after reload and Back. The proposed enrollment uses Mesh’s existing Relay inbox and leaves the scheduler off.
+
+The isolated Windows recovery check showed Rook paused in offline capture, connected and read-only fallback. Mind delivered the original queued event after reconnecting, and the next warm check kept the same processes. Before installing, recheck the current board, service owners and private startup profiles, then take a fresh Workroom backup.
+
+## Earlier combined phone proposal
+
+The earlier paused Rook proposal layered five files over the `197c81d` phone release, including the clarification display. The `7ff6188` packet targeted different source bytes.
 
 On a 390-pixel browser, tapping **Open card** on a saved Relay clarification opened the right Workroom card. Reload kept the card open, and Back returned to Relay. After the card advanced, Relay showed **Earlier clarification** and removed the outstanding question. The original delivery receipt remained intact.
 
