@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {mkdtempSync,mkdirSync,writeFileSync,unlinkSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,renameSync,writeFileSync,unlinkSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {mainboardNativeConnection} from '../lib/native-mainboard.mjs';
@@ -91,6 +91,22 @@ test('revocation during a request rejects its late result while preserving the o
   const binding=createNativeWorkerBinding(result.options),pending=binding.rpc('prompt.lookup',{});
   f.env.MESH_NATIVE_WORKER_RECORD_SHA256='0'.repeat(64);settle({found:true});
   await assert.rejects(pending,/not authorized/);assert.equal(calls,1);await binding.close();
+});
+
+test('a changed workspace directory holds the native connection even when its path is unchanged',async()=>{
+  const f=fixture();let settle,calls=0;
+  const result=mainboardNativeConnection({...f,makeOptions:options=>({profile:options.profile,authorized:options.authorized,
+    rpc:()=>{calls++;return new Promise(resolve=>{settle=resolve;});}})});
+  assert.equal(result.state,'configured');
+  const binding=createNativeWorkerBinding(result.options),pending=binding.rpc('prompt.lookup',{});
+  renameSync(f.root,join(f.directory,'original-project'));
+  mkdirSync(f.root);
+  settle({found:true});
+  await assert.rejects(pending,/not authorized/);
+  assert.equal(binding.enrollmentStatus(),'held');
+  await assert.rejects(binding.rpc('session.create',{}),/not authorized/);
+  assert.equal(calls,1);
+  await binding.close();
 });
 
 test('standalone and non-live Relay modes never construct a live native transport',()=>{

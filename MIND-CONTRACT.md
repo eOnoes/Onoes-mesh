@@ -42,6 +42,8 @@ On Windows, setting `MESH_TEST_WINDOWS_HERMES_CHECKOUT` in the existing Docker t
 
 The companion `integrations/qualify_hermes_docker_tools.py` exercises the installed Hermes file and terminal tools through that Windows assignment launcher. Give it the installed Hermes Python, source checkout and a local evidence directory. It uses the pinned, already-local Onoes sandbox image. The worker reads an input, writes an approved file under `/workspace` and runs its check without networking. The launcher waits for both the assigned Windows process tree and the Docker container to finish. The worker cannot read a synthetic marker beside the mounted workspace. The probe checks one writable task mount, empty read-only directories owned by the test profile, no credential mounts, a non-root user and dropped capabilities. Use explicit `/workspace` paths for outputs. The installed Workroom worker policy still selects the local Windows backend. The Docker proof covers only the disposable assignment, and Echo's ordinary in-process delegation still needs its own boundary before live enrollment.
 
+Each native Workroom launcher also checks the workspace directory it verified when it started. If that directory changes or disappears, the connection holds new requests and ignores late results. The check lasts for the launcher process and complements the worker's filesystem controls.
+
 The same cross-project check can exercise Hermes' public `delegate_task` entry.
 Set `MESH_TEST_DELEGATE_PYTHON` to the installed Hermes interpreter alongside
 the Windows checkout and local image settings above. The test creates a temporary
