@@ -254,6 +254,51 @@ class ProjectServiceProcessTests(unittest.TestCase):
         finally:db.close()
         service.request_stop(self.profile,self.sha,self.base.approval);self.assertEqual(replacement.wait(timeout=120),0)
 
+    def test_relocated_mesh_sources_keep_the_same_enrollment_and_require_matching_bytes(self):
+        original = json.loads(self.base.profile.read_bytes())
+        previous = Path(service.__file__).resolve().parent
+        relocated = self.profile.parent / 'relocated-mesh' / previous.name
+        registered = {Path(name): pin for name, pin in original['sourceHashes'].items()}
+        relocated.mkdir(parents=True)
+        view = {**original, 'sourceHashes': {}}
+        for file, pin in registered.items():
+            target = file
+            if file.is_relative_to(previous):
+                target = relocated / file.relative_to(previous)
+                shutil.copyfile(file, target)
+            view['sourceHashes'][str(target)] = pin
+        script = relocated / Path(service.__file__).name
+        shutil.copyfile(service.__file__, script)
+        runtime_path = self.profile.parent / 'relocated-mesh-runtime.json'
+        operator_copy = relocated / Path(operator.__file__).name
+
+        def preview(schema, directory=previous):
+            runtime_path.write_text(json.dumps(view), encoding='utf-8')
+            self.value.update(schema=schema, serviceRuntimeProfilePath=str(runtime_path),
+                              serviceRuntimeProfileSha256=service.digest(runtime_path),
+                              sourceHashes={str(p): service.digest(p) for p in (script, operator_copy)})
+            self.value.pop('enrolledMeshSourceDirectory', None)
+            if schema == service.RELOCATED_MESH_SCHEMA:
+                self.value['enrolledMeshSourceDirectory'] = str(directory)
+            self.write(actions=['run_service', 'run_mesh_sync'])
+            return subprocess.run([sys.executable, '-I', '-B', str(script), '--profile', str(self.profile),
+                                   '--sha256', self.sha, '--approval', str(self.base.approval)],
+                                  capture_output=True, text=True, timeout=45,
+                                  creationflags=subprocess.CREATE_NO_WINDOW)
+
+        self.assertEqual(preview(service.RELOCATED_RUNTIME_SCHEMA).returncode, 1)
+        self.assertEqual(preview(service.RELOCATED_MESH_SCHEMA, directory=previous.parent).returncode, 1)
+        result = preview(service.RELOCATED_MESH_SCHEMA)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(json.loads(result.stdout)['createsNothing'])
+
+        changed = relocated / 'project_events_candidate.py'
+        changed.write_bytes(changed.read_bytes() + b'\n# Different candidate bytes\n')
+        view['sourceHashes'][str(changed)] = service.digest(changed)
+        self.assertEqual(preview(service.RELOCATED_MESH_SCHEMA).returncode, 1)
+        self.assertEqual(json.loads(self.base.profile.read_bytes()), original)
+        self.assertFalse(Path(self.value['attemptPath']).exists())
+
     def test_preview_missing_terminal_or_action_refuses_without_service_attempt(self):
         preview=subprocess.run([sys.executable,'-I',str(Path(service.__file__).resolve()),'--profile',str(self.profile),'--sha256',self.sha],
             capture_output=True,text=True,timeout=45,creationflags=subprocess.CREATE_NO_WINDOW)

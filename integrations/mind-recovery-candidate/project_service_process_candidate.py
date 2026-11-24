@@ -20,6 +20,7 @@ HERE = Path(__file__).resolve().parent
 SCHEMA = 'onoes-mind-project-service/v1'
 RELOCATED_RUNTIME_SCHEMA = 'onoes-mind-project-service/v2'
 REVIEWED_RELEASE_SCHEMA = 'onoes-mind-project-service/v3'
+RELOCATED_MESH_SCHEMA = 'onoes-mind-project-service/v4'
 
 
 class ServiceProcessError(RuntimeError):
@@ -64,6 +65,19 @@ def pinned_migrations(source, pins):
             migrations[path.name] = raw.replace(b'\r\n', b'\n')
     require(bool(migrations))
     return migrations
+
+
+def relocate_mesh_source_pins(pins, new_pins, original_directory):
+    """Carry the enrolled candidate files to this directory without changing their bytes."""
+    previous = Path(original_directory)
+    require(previous.is_absolute() and previous == Path(os.path.normpath(previous))
+            and previous != HERE and previous.name == HERE.name)
+    original = {path.relative_to(previous): pin for path, pin in pins.items()
+                if path.is_relative_to(previous)}
+    relocated = {path.relative_to(HERE): pin for path, pin in new_pins.items()
+                 if path.is_relative_to(HERE)}
+    require(Path('project_operator_process_candidate.py') in original and original == relocated)
+    return {path: pin for path, pin in pins.items() if not path.is_relative_to(previous)}
 
 
 def checked_service_runtime(p, profile_path, expected_sha, approval_path, operator):
@@ -114,6 +128,8 @@ def checked_service_runtime(p, profile_path, expected_sha, approval_path, operat
         require(pinned_migrations(previous_source, old_pins) == pinned_migrations(released_source, new_pins))
         previous_package = previous_source / 'onoes_mind'
         old_pins = {path: pin for path, pin in old_pins.items() if not path.is_relative_to(previous_package)}
+    if p['schema'] == RELOCATED_MESH_SCHEMA:
+        old_pins = relocate_mesh_source_pins(old_pins, new_pins, p['enrolledMeshSourceDirectory'])
     require(all(new_pins.get(k) == v for k, v in old_pins.items()))
     base, binding = operator.checked_profile(view_path, p['serviceRuntimeProfileSha256'])
     from onoes_mind.enrollment_store import qualify_private_storage
@@ -131,11 +147,14 @@ def checked_profile(path,expected_sha,approval_path=None,*,preview=False):
     with path.open('rb') as source: raw=source.read(65537)
     require(len(raw)<=65536 and hashlib.sha256(raw).hexdigest()==expected_sha)
     p=json.loads(raw,object_pairs_hook=unique)
-    require(type(p) is dict and p.get('schema') in (SCHEMA, RELOCATED_RUNTIME_SCHEMA, REVIEWED_RELEASE_SCHEMA))
+    require(type(p) is dict and p.get('schema') in
+            (SCHEMA, RELOCATED_RUNTIME_SCHEMA, REVIEWED_RELEASE_SCHEMA, RELOCATED_MESH_SCHEMA))
     separate_runtime = p['schema'] != SCHEMA
     if preview and not separate_runtime:
         approval_path = None
     extra = {'serviceRuntimeProfilePath','serviceRuntimeProfileSha256'} if separate_runtime else set()
+    if p['schema'] == RELOCATED_MESH_SCHEMA:
+        extra.add('enrolledMeshSourceDirectory')
     require(set(p)=={'schema','sourceHashes','operatorProfilePath','operatorProfileSha256',
         'attemptPath','readyPath','stopPath'} | extra)
     required={Path(__file__).resolve(),HERE/'project_operator_process_candidate.py'}
