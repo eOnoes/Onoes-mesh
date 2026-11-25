@@ -11,6 +11,10 @@ The existing shared-project MCP reader remains independent.
 - Selected memory and personality/profile facts use `onoes_memory`. There is no
   automatic raw transcript ingestion, native-memory import, or second memory DB.
 - Every meaningful turn reads current private profile facts and matching memory.
+  It selects up to eight literal keywords from conversational wording, removes
+  filler/duplicates, and ranks alternative matches inside that private home.
+  Query selection is bounded to 512 characters. Explicit tool recall retains
+  ALL-term matching by default; `match_mode: "any"` opts into alternatives.
   Results carry canonical record/revision/provenance and snapshot IDs, are bounded
   whole entries, and are reference data. Corrections and forget are visible on
   the next read. Forget suppresses recall; owner hard purge remains separate.
@@ -125,7 +129,10 @@ checks under each Python version. The long 3.14 process check emitted a schedule
 that snapshot did not terminate the run or trigger a retry.
 
 Live Echo setup remains unactivated. A realistic conversational recall check
-exposed a separate provider query issue: passing the whole sentence to literal
-AND search can miss the saved fact. Fix and requalify that behavior before the
-live profile cutover, together with the reviewed handling of Echo's existing
-curated memory/preferences. No raw transcript migration is proposed.
+exposed a provider query issue: passing the whole sentence to literal AND search
+missed the saved fact. Follow-up qualification corrected it with bounded keyword
+selection and ranked private alternatives; the exact previously failing question
+then passed through the actual Hermes loader/manager. Mind's 77 private-home and
+transport checks passed under production Python, and all 16 provider checks passed
+with the normal timeout. Native saved memory/preferences still require a finite
+reviewed import/cutover; no raw transcript migration is proposed.

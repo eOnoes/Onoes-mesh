@@ -310,6 +310,34 @@ def test_callers_cannot_select_another_home_or_store(fixture,field):
         manager.shutdown_all()
 
 
+def test_natural_question_recall_and_current_edits_need_no_manual_keyword_search(fixture):
+    _,_,profiles=fixture
+    with scope(profiles["nims"]["home"]):
+        provider,manager=loaded(profiles["nims"])
+        try:
+            saved=call(manager,"remember",event_id="natural-cover",text="GPU covers use removable armor around a black frame. Fit oldmarker.")
+            assert saved["ok"]
+            question="Hey Echo, what did Eddie want for the GPU covers?"
+            assert "oldmarker" in manager.prefetch_all(question)
+            row,=call(manager,"recall",query="gpu covers")["result"]["records"]
+            assert call(manager,"correct",event_id="natural-cover-corrected",record_id=row["record_id"],
+                expected_revision_id=row["revision_id"],text="GPU covers use removable armor around a black frame. Fit newmarker.")["ok"]
+            context=manager.prefetch_all(question)
+            assert "newmarker" in context and "oldmarker" not in context
+            assert call(manager,"recall",query="covers absentword")["result"]["records"] == []
+            row,=call(manager,"recall",query="covers absentword",match_mode="any")["result"]["records"]
+            assert call(manager,"forget",event_id="natural-cover-forgotten",record_id=row["record_id"],
+                expected_revision_id=row["revision_id"])["ok"]
+            assert "newmarker" not in manager.prefetch_all(question)
+            module=sys.modules[provider.__module__]
+            assert module.recall_terms("Hey, can you please remind me?") == ""
+            terms=module.recall_terms("GPU gpu 3D covers black armor panels clips keyed removable alpha beta gamma")
+            assert len(terms.split()) == 8 and terms.split().count("gpu") == 1 and "3d" in terms.split()
+            assert len(module.recall_terms(" ".join(chr(97+i)*64 for i in range(8)))) <= 512
+            assert module.recall_terms("--- ---") == ""
+        finally:manager.shutdown_all()
+
+
 def test_unavailable_transport_never_serves_old_memory(fixture):
     _,server,profiles = fixture
     with scope(profiles["deep"]["home"]):

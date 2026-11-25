@@ -1,6 +1,7 @@
 """Hermes MemoryProvider adapter for a reviewed private Onoes-Mind home."""
 import json
 import os
+import re
 from pathlib import Path
 
 from agent.memory_provider import MemoryProvider, RecallStatus
@@ -10,6 +11,22 @@ from .journal import IntentJournal, JournalError
 
 def wire(value):
     return canonical(value).decode("utf-8").replace("<","\\u003c").replace(">","\\u003e")
+
+
+_QUESTION_WORDS = frozenset("a an and are as at be been but by can could did do does for from had has have "
+    "hey hi how i if in is it me my of on or our please remember remind that the their them there these they "
+    "this to us was we were what when where which who why will with would you your want wanted".split())
+
+
+def recall_terms(query):
+    if not isinstance(query,str):return ""
+    terms = []
+    for word in re.findall(r"[\w-]{2,64}",query[:4096].casefold()):
+        if word in _QUESTION_WORDS or word in terms or not any(char.isalnum() for char in word):continue
+        if len(" ".join([*terms,word])) > 512:break
+        terms.append(word)
+        if len(terms) == 8:break
+    return " ".join(terms)
 
 
 class OnoesMindProvider(MemoryProvider):
@@ -85,8 +102,10 @@ class OnoesMindProvider(MemoryProvider):
             self._guard()
             budget = self._profile.body["max_context_bytes"]
             snapshots = [self._client.call("recall",{"kind":"profile","limit":8,"max_bytes":budget})]
-            if isinstance(query,str) and query.strip():
-                snapshots.append(self._client.call("recall",{"query":query[:512],"kind":"all","limit":5,"max_bytes":budget}))
+            terms = recall_terms(query)
+            if terms:
+                snapshots.append(self._client.call("recall",{"query":terms,"match_mode":"any",
+                    "kind":"all","limit":5,"max_bytes":budget}))
             latest = {}
             for snapshot in snapshots:
                 for record in snapshot["records"]:
@@ -116,6 +135,7 @@ class OnoesMindProvider(MemoryProvider):
             "parameters":{"type":"object","additionalProperties":False,"required":["action"],"properties":{
                 "action":{"type":"string","enum":["recall","remember","correct","forget","pending","reconcile"]},
                 "query":{"type":"string","minLength":1,"maxLength":512},
+                "match_mode":{"type":"string","enum":["all","any"]},
                 "kind":{"type":"string","enum":["memory","profile","all"]},
                 "text":{"type":"string","minLength":1,"maxLength":8192},
                 "event_id":{"type":"string","minLength":1,"maxLength":128},
@@ -125,7 +145,7 @@ class OnoesMindProvider(MemoryProvider):
                 "max_bytes":{"type":"integer","minimum":1024,"maximum":16384}}}}]
 
     def _validated(self, args):
-        allowed = {"recall":({"query","kind","limit","max_bytes"},set()),
+        allowed = {"recall":({"query","kind","limit","max_bytes","match_mode"},set()),
             "remember":({"event_id","text","kind"},{"event_id","text"}),
             "correct":({"event_id","record_id","expected_revision_id","text"},{"event_id","record_id","expected_revision_id","text"}),
             "forget":({"event_id","record_id","expected_revision_id"},{"event_id","record_id","expected_revision_id"}),
@@ -149,6 +169,9 @@ class OnoesMindProvider(MemoryProvider):
                 or not 1 <= payload["expected_revision_id"] <= 9007199254740991):raise ValueError("invalid revision")
         if "query" in payload and (not isinstance(payload["query"],str) or not payload["query"].strip()
                 or len(payload["query"]) > 512):raise ValueError("invalid query")
+        if "match_mode" in payload and (payload["match_mode"] not in ("all","any")
+                or (payload["match_mode"] == "any" and "query" not in payload)):
+            raise ValueError("invalid match mode")
         if "limit" in payload and (type(payload["limit"]) is not int or not 1 <= payload["limit"] <= 20):
             raise ValueError("invalid limit")
         if "max_bytes" in payload and (type(payload["max_bytes"]) is not int or not 1024 <= payload["max_bytes"] <= 16384):
