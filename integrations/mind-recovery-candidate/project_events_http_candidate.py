@@ -19,7 +19,7 @@ def unique_object(pairs):
 
 
 class ProjectEventsServerCandidate:
-    def __init__(self, writer, *, port=0, project_ids=None):
+    def __init__(self, writer, *, port=0, project_ids=None, writer_lock=None):
         if type(writer) is not ProjectEventsCandidate or type(port) is not int or not 0 <= port <= 65535:
             raise ValueError("Explicit candidate writer and loopback port required.")
         self.writer, self.port = writer, port
@@ -28,6 +28,7 @@ class ProjectEventsServerCandidate:
                 or tuple(sorted(set(project_ids))) != project_ids):
             raise ValueError("Explicit fixed project binding required.")
         self.project_ids = project_ids
+        self.writer_lock = writer_lock if writer_lock is not None else threading.RLock()
         self.server = self.thread = None
 
     @property
@@ -72,6 +73,12 @@ class ProjectEventsServerCandidate:
                 return self.reply(status, {"schema": ERROR_SCHEMA, "code": code})
 
             def do_POST(self):
+                # A host may expose private-home operations over the same writer.
+                # Serialize authentication/readback as well as mutations.
+                with owner.writer_lock:
+                    return self.handle_post()
+
+            def handle_post(self):
                 if self.path not in {"/v1/project-events/submit", "/v1/project-events/lookup"}:
                     return self.error(404, "route_not_found")
                 if self.headers.get_all("Host") != [f"127.0.0.1:{owner.address[1]}"] or any(

@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import threading
 
 from onoes_mind.enrollment_store import qualify_private_storage
 from onoes_mind.runtime_keys import _crypt
@@ -262,12 +263,16 @@ class ProjectServiceLease:
 class NativeProjectSyncHost:
     """Own one protected writer/listener; no discovery, setup or auto recovery."""
     def __init__(self, *, binding, history_path, authority, audit_key, deletion_key,
-                 credential_path, project_ids, review_ref):
+                 credential_path, project_ids, review_ref, agent_home_bindings=()):
+        require(type(agent_home_bindings) is tuple and len(agent_home_bindings) <= 5)
         self.binding = binding
         self.history_path, self.authority = history_path, authority
         self.keys = dict(audit_key=audit_key, deletion_key=deletion_key)
         self.credential_path, self.projects, self.review = credential_path, project_ids, review_ref
         self.lease = self.ledger = self.events = self.server = None
+        self.home_bindings = agent_home_bindings
+        self.home_server = None
+        self.writer_lock = threading.RLock()
         self.stopped = False
 
     def start(self):
@@ -280,8 +285,17 @@ class NativeProjectSyncHost:
             # No listener exists until current credential and exact grants pass.
             load_project_credential(self.credential_path, events=self.events,
                 project_ids=self.projects, review_ref=self.review)
-            self.server = ProjectEventsServerCandidate(self.events, project_ids=self.projects)
+            self.server = ProjectEventsServerCandidate(self.events, project_ids=self.projects,
+                writer_lock=self.writer_lock)
+            if self.home_bindings:
+                # Source-only opt-in. No enrollment, scope selection from HTTP,
+                # second ledger, second lease, or startup discovery.
+                from onoes_mind.agent_home import AgentHome
+                from onoes_mind.agent_home_http import AgentHomeServer
+                homes = tuple(AgentHome(self.ledger, binding) for binding in self.home_bindings)
+                self.home_server = AgentHomeServer(homes, writer_lock=self.writer_lock)
             self.server.start()
+            if self.home_server is not None:self.home_server.start()
             return self.status()
         except Exception:
             self.close()
@@ -289,13 +303,23 @@ class NativeProjectSyncHost:
 
     def status(self):
         return dict(ready=not self.stopped and self.lease is not None and self.lease.handle is not None and self.server is not None
-                    and self.server.thread is not None and self.server.thread.is_alive())
+                    and self.server.thread is not None and self.server.thread.is_alive()
+                    and (not self.home_bindings or (self.home_server is not None
+                        and self.home_server._thread is not None and self.home_server._thread.is_alive())))
+
+    def agent_home_options(self):
+        """Non-secret connection descriptors for explicitly attached homes only."""
+        require(self.status()['ready'] and self.home_server is not None)
+        from onoes_mind.agent_home_http import home_binding_sha256
+        return dict(baseUrl=self.home_server.base_url, agents={
+            actor:home_binding_sha256(home.binding) for actor,home in self.home_server.homes.items()})
 
     def native_options(self):
         """Secret return for direct native constructor/pipe use, never logs/files."""
         require(self.status()['ready'])
-        token = load_project_credential(self.credential_path, events=self.events,
-            project_ids=self.projects, review_ref=self.review)
+        with self.writer_lock:
+            token = load_project_credential(self.credential_path, events=self.events,
+                project_ids=self.projects, review_ref=self.review)
         address, port = self.server.address
         require(address == '127.0.0.1')
         return dict(baseUrl=f'http://127.0.0.1:{port}/', token=token, storeId=self.binding.store_id)
@@ -304,6 +328,8 @@ class NativeProjectSyncHost:
         self.stopped = True
         # Never release the lifetime lock ahead of listener/writer retirement.
         # A failed close preserves the lease for explicit handling; no restart.
+        if self.home_server is not None:
+            self.home_server.close(); self.home_server = None
         if self.server is not None:
             self.server.close(); self.server = None
         if self.ledger is not None:

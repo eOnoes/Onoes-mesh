@@ -71,3 +71,34 @@ Hermes's default 8-second prefetch bound (37.99 s for fixture and full path).
 The initial test runner lacked pytest; the existing matching Python 3.11 runner
 was used without installation. A disposable path-layout error was corrected
 before the passing runs. Private test credentials/databases are not source.
+
+## Existing protected writer attachment
+
+The Mesh `NativeProjectSyncHost` candidate accepts an explicit tuple of reviewed
+`agent_home_bindings`. Its default remains empty. When selected, it constructs
+the private homes over the same already-open CheckpointedLedger, with the same
+kernel-held writer lease. Project and home HTTP handlers share `writer_lock`,
+including project authorization/readback. Trusted direct owner operations on the
+running ledger must also hold that lock.
+
+All store/home bindings are validated before either listener starts. If attachment
+or listener startup fails, both listeners are retired before the ledger and lease
+close. Normal close follows the same order. Readiness includes both selected
+interfaces; `agent_home_options()` returns only the current endpoint and binding
+fingerprints, never credentials. It does not enroll agents or issue credentials.
+
+Existing process/startup profiles do not expose this optional parameter, so this
+source change cannot enable private homes through an old service approval. The
+actual profile upgrade, protected home enrollment, backup and one-profile Hermes
+cutover remain a separate reviewed rollout. No native memory is imported by this
+attachment. `test_writer_host.py` exercises the real protected writer on synthetic
+stores and requires `MIND_SOURCE` to identify the new reviewed Mind SDK explicitly.
+
+Writer qualification: all six native attachment/recovery checks passed in
+377.24 seconds. All 35 existing writer/event/HTTP cases are covered by passing
+runs (eight initial passes and 27 corrected-environment passes, plus eight
+subtests). The initial regression run stopped at a child import failure; the
+child did not inherit Mind's source path. Direct reproduction confirmed that
+cause, and the failed plus unrun cases passed after setting `PYTHONPATH` to the
+reviewed source. This is composed coverage, not a claimed clean single 35-case
+invocation. No live service was changed.
