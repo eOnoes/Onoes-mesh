@@ -263,14 +263,17 @@ class ProjectServiceLease:
 class NativeProjectSyncHost:
     """Own one protected writer/listener; no discovery, setup or auto recovery."""
     def __init__(self, *, binding, history_path, authority, audit_key, deletion_key,
-                 credential_path, project_ids, review_ref, agent_home_bindings=()):
+                 credential_path, project_ids, review_ref, agent_home_bindings=(), agent_home_port=0):
         require(type(agent_home_bindings) is tuple and len(agent_home_bindings) <= 5)
+        require(type(agent_home_port) is int and 0 <= agent_home_port <= 65535
+                and (agent_home_bindings or agent_home_port == 0))
         self.binding = binding
         self.history_path, self.authority = history_path, authority
         self.keys = dict(audit_key=audit_key, deletion_key=deletion_key)
         self.credential_path, self.projects, self.review = credential_path, project_ids, review_ref
         self.lease = self.ledger = self.events = self.server = None
         self.home_bindings = agent_home_bindings
+        self.home_port = agent_home_port
         self.home_server = None
         self.writer_lock = threading.RLock()
         self.stopped = False
@@ -293,7 +296,7 @@ class NativeProjectSyncHost:
                 from onoes_mind.agent_home import AgentHome
                 from onoes_mind.agent_home_http import AgentHomeServer
                 homes = tuple(AgentHome(self.ledger, binding) for binding in self.home_bindings)
-                self.home_server = AgentHomeServer(homes, writer_lock=self.writer_lock)
+                self.home_server = AgentHomeServer(homes, writer_lock=self.writer_lock,port=self.home_port)
             self.server.start()
             if self.home_server is not None:self.home_server.start()
             return self.status()

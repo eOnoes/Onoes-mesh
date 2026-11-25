@@ -21,6 +21,7 @@ SCHEMA = 'onoes-mind-project-service/v1'
 RELOCATED_RUNTIME_SCHEMA = 'onoes-mind-project-service/v2'
 REVIEWED_RELEASE_SCHEMA = 'onoes-mind-project-service/v3'
 RELOCATED_MESH_SCHEMA = 'onoes-mind-project-service/v4'
+AGENT_HOME_SCHEMA = 'onoes-mind-project-service/v5'
 
 
 class ServiceProcessError(RuntimeError):
@@ -67,17 +68,50 @@ def pinned_migrations(source, pins):
     return migrations
 
 
-def relocate_mesh_source_pins(pins, new_pins, original_directory):
+def relocate_mesh_source_pins(pins, new_pins, original_directory, *, home_upgrade=False):
     """Carry the enrolled candidate files to this directory without changing their bytes."""
     previous = Path(original_directory)
     require(previous.is_absolute() and previous == Path(os.path.normpath(previous))
-            and previous != HERE and previous.name == HERE.name)
+            and (home_upgrade or previous != HERE) and previous.name == HERE.name)
     original = {path.relative_to(previous): pin for path, pin in pins.items()
                 if path.is_relative_to(previous)}
     relocated = {path.relative_to(HERE): pin for path, pin in new_pins.items()
                  if path.is_relative_to(HERE)}
-    require(Path('project_operator_process_candidate.py') in original and original == relocated)
+    changes = {Path('native_project_sync_candidate.py'),Path('project_events_http_candidate.py')} if home_upgrade else set()
+    require(Path('project_operator_process_candidate.py') in original and set(original) == set(relocated)
+            and all(original[path] == relocated[path] for path in original if path not in changes))
     return {path: pin for path, pin in pins.items() if not path.is_relative_to(previous)}
+
+
+def home_approval(p):
+    """Exact non-secret approval descriptor; import no unverified SDK here."""
+    rows = p.get('agentHomeBindings')
+    port = p.get('agentHomePort')
+    require(type(rows) is list and 1 <= len(rows) <= 5
+            and type(port) is int and 1024 <= port <= 65535)
+    agents = []
+    fingerprints = {}
+    for row in rows:
+        require(type(row) is dict and set(row) == {'store','agent_id'} and type(row['store']) is dict
+                and type(row['agent_id']) is str and row['agent_id'] in {'echo','tripp','cyony','nims','deep'})
+        agents.append(row['agent_id'])
+        raw = json.dumps(row,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8')
+        fingerprints[row['agent_id']] = hashlib.sha256(raw).hexdigest()
+    require(agents == sorted(set(agents)))
+    return dict(decision='approve_exact_private_agent_homes',port=port,bindings=fingerprints)
+
+
+def profile_agent_homes(p,binding):
+    if p['schema'] != AGENT_HOME_SCHEMA:return ()
+    home_approval(p)
+    from onoes_mind.agent_home import AgentHomeBinding
+    from onoes_mind.recall_binding import RecallBinding
+    homes = tuple(AgentHomeBinding(RecallBinding(**row['store']),row['agent_id']) for row in p['agentHomeBindings'])
+    for home in homes:
+        require(home.store.scope_id == 'project/onoes-mind/shared'
+                and all(getattr(home.store,key) == getattr(binding,key) for key in
+                    ('database_path','store_id','environment','authority_ref','file_device','file_inode')))
+    return homes
 
 
 def checked_service_runtime(p, profile_path, expected_sha, approval_path, operator):
@@ -98,10 +132,12 @@ def checked_service_runtime(p, profile_path, expected_sha, approval_path, operat
         approval_bytes = source.read(65537)
     require(len(approval_bytes) <= 65536)
     a = json.loads(approval_bytes, object_pairs_hook=unique)
-    require(set(a) == {'decision','ownerSid','profiles','storeId','scopeId','projects','reviewRef','actions'}
+    home = p['schema'] == AGENT_HOME_SCHEMA
+    require(set(a) == {'decision','ownerSid','profiles','storeId','scopeId','projects','reviewRef','actions'} | ({'agentHomes'} if home else set())
             and a['decision'] == operator.DECISION and a['ownerSid'] == old['ownerSid']
             and type(a['actions']) is list and 'run_service' in a['actions']
-            and set(a['actions']) <= {'run_service','run_mesh_sync'}
+            and set(a['actions']) <= {'run_service','run_mesh_sync'} | ({'run_agent_homes'} if home else set())
+            and (not home or ('run_agent_homes' in a['actions'] and a['agentHomes'] == home_approval(p)))
             and type(a['profiles']) is list and expected_sha in a['profiles']
             and p['serviceRuntimeProfileSha256'] not in a['profiles']
             and a['storeId'] == old['binding']['store_id'] and a['scopeId'] == operator.SCOPE
@@ -113,23 +149,23 @@ def checked_service_runtime(p, profile_path, expected_sha, approval_path, operat
     old_shell = Path(old_runtime['pwsh'])
     new_shell = Path(new_runtime['pwsh'])
     expected_runtime = {**old_runtime, 'pwsh': str(new_shell)}
-    if p['schema'] == REVIEWED_RELEASE_SCHEMA:
+    if p['schema'] in (REVIEWED_RELEASE_SCHEMA, AGENT_HOME_SCHEMA):
         previous_source = Path(old_runtime['mindSource'])
         released_source = Path(new_runtime['mindSource'])
         require(released_source.is_absolute() and released_source.resolve(strict=True) == released_source
-                and released_source != previous_source)
+                and (home or released_source != previous_source))
         expected_runtime['mindSource'] = str(released_source)
     require(new_shell.is_absolute() and new_shell.resolve(strict=True) == new_shell
             and new_runtime == expected_runtime)
     old_pins = {Path(k): v for k, v in old['sourceHashes'].items()}
     new_pins = {Path(k): v for k, v in view['sourceHashes'].items()}
     require(new_pins.get(new_shell) == old_pins.pop(old_shell))
-    if p['schema'] == REVIEWED_RELEASE_SCHEMA:
+    if p['schema'] in (REVIEWED_RELEASE_SCHEMA, AGENT_HOME_SCHEMA):
         require(pinned_migrations(previous_source, old_pins) == pinned_migrations(released_source, new_pins))
         previous_package = previous_source / 'onoes_mind'
         old_pins = {path: pin for path, pin in old_pins.items() if not path.is_relative_to(previous_package)}
-    if p['schema'] == RELOCATED_MESH_SCHEMA:
-        old_pins = relocate_mesh_source_pins(old_pins, new_pins, p['enrolledMeshSourceDirectory'])
+    if p['schema'] in (RELOCATED_MESH_SCHEMA, AGENT_HOME_SCHEMA):
+        old_pins = relocate_mesh_source_pins(old_pins, new_pins, p['enrolledMeshSourceDirectory'],home_upgrade=home)
     require(all(new_pins.get(k) == v for k, v in old_pins.items()))
     base, binding = operator.checked_profile(view_path, p['serviceRuntimeProfileSha256'])
     from onoes_mind.enrollment_store import qualify_private_storage
@@ -148,13 +184,14 @@ def checked_profile(path,expected_sha,approval_path=None,*,preview=False):
     require(len(raw)<=65536 and hashlib.sha256(raw).hexdigest()==expected_sha)
     p=json.loads(raw,object_pairs_hook=unique)
     require(type(p) is dict and p.get('schema') in
-            (SCHEMA, RELOCATED_RUNTIME_SCHEMA, REVIEWED_RELEASE_SCHEMA, RELOCATED_MESH_SCHEMA))
+            (SCHEMA, RELOCATED_RUNTIME_SCHEMA, REVIEWED_RELEASE_SCHEMA, RELOCATED_MESH_SCHEMA, AGENT_HOME_SCHEMA))
     separate_runtime = p['schema'] != SCHEMA
     if preview and not separate_runtime:
         approval_path = None
     extra = {'serviceRuntimeProfilePath','serviceRuntimeProfileSha256'} if separate_runtime else set()
-    if p['schema'] == RELOCATED_MESH_SCHEMA:
+    if p['schema'] in (RELOCATED_MESH_SCHEMA, AGENT_HOME_SCHEMA):
         extra.add('enrolledMeshSourceDirectory')
+    if p['schema'] == AGENT_HOME_SCHEMA:extra.update(('agentHomeBindings','agentHomePort'))
     require(set(p)=={'schema','sourceHashes','operatorProfilePath','operatorProfileSha256',
         'attemptPath','readyPath','stopPath'} | extra)
     required={Path(__file__).resolve(),HERE/'project_operator_process_candidate.py'}
@@ -169,6 +206,7 @@ def checked_profile(path,expected_sha,approval_path=None,*,preview=False):
     else:
         base,binding=operator.checked_profile(p['operatorProfilePath'],p['operatorProfileSha256'],approval_path)
     require(base['mode'] in ('first_setup','replace','add_project'))
+    profile_agent_homes(p,binding)
     from onoes_mind.enrollment_store import qualify_private_storage
     from checkpoint_candidate import read_plain
     import recall_process_candidate as roles
@@ -318,8 +356,10 @@ def service_role(p,base,binding,profile_sha):
             keys=unprotect_runtime_keys(package['runtime_envelope'],store_id=binding.store_id,environment_id=binding.environment)
             authority=PersistentAuthorityCandidate(AuthorityBinding(**roles.plain_json(base['authorityBindingPath'])))
             host=NativeProjectSyncHost(binding=binding,history_path=base['historyPath'],authority=authority,**keys,
-                credential_path=base['credentialPath'],project_ids=tuple(v[0] for v in base['projects']),review_ref=base['reviewRef'])
+                credential_path=base['credentialPath'],project_ids=tuple(v[0] for v in base['projects']),review_ref=base['reviewRef'],
+                agent_home_bindings=profile_agent_homes(p,binding),agent_home_port=p.get('agentHomePort',0))
             host.start();address,port=host.server.address
+            if p['schema'] == AGENT_HOME_SCHEMA:record['agentHomes'] = host.agent_home_options()
             require(address=='127.0.0.1');record.update(state='running',baseUrl=f'http://127.0.0.1:{port}/');save()
             while True:
                 if os.path.lexists(stop):
@@ -354,6 +394,9 @@ def service_state(profile_path,profile_sha,approval_path):
         and record.get('projects')==[v[0] for v in base['projects']])
     stop_target(p,record['runId'])
     live=roles.same_process_alive(record['pid'],record['creationTicks'])
+    if p['schema'] == AGENT_HOME_SCHEMA and (record.get('state') == 'running' or 'agentHomes' in record):
+        require(record.get('agentHomes') == dict(baseUrl=f"http://127.0.0.1:{p['agentHomePort']}",
+                agents=home_approval(p)['bindings']))
     return {**record,'processLive':live,'ready':live and record.get('state')=='running'}
 
 

@@ -102,3 +102,30 @@ child did not inherit Mind's source path. Direct reproduction confirmed that
 cause, and the failed plus unrun cases passed after setting `PYTHONPATH` to the
 reviewed source. This is composed coverage, not a claimed clean single 35-case
 invocation. No live service was changed.
+
+## Exact home startup profile
+
+The existing project-service launcher now accepts an explicit v5 profile. It
+preserves the original project enrollment, store/key/history paths and project
+grants, and requires the separate `run_agent_homes` action plus an exact
+agent/home fingerprint and fixed loopback-port approval. The runtime cannot
+enroll itself. Existing schemas still reject private-home fields/actions.
+The reviewed SDK upgrade must retain identical migrations; candidate-file changes
+are limited to the attached writer and shared-lock HTTP modules. The operator
+validator and unrelated recovery modules retain their enrolled bytes.
+
+The exact v5 profile passed 18 native checks under Python 3.11, then the final
+19-case suite under production Python 3.14. The owned process proof starts with
+owner-enrolled disposable access, serves selected private facts and project
+receipts, restarts at the same private endpoint, and rolls back to project-only
+service with the original project receipt still stable. Both legacy release and
+relocation checks passed separately. Mind's stable-port transport passed 26
+checks under each Python version. The long 3.14 process check emitted a scheduled
+180-second diagnostic stack while checking Windows permissions and later passed;
+that snapshot did not terminate the run or trigger a retry.
+
+Live Echo setup remains unactivated. A realistic conversational recall check
+exposed a separate provider query issue: passing the whole sentence to literal
+AND search can miss the saved fact. Fix and requalify that behavior before the
+live profile cutover, together with the reviewed handling of Echo's existing
+curated memory/preferences. No raw transcript migration is proposed.
