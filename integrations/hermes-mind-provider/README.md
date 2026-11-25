@@ -34,8 +34,8 @@ The existing shared-project MCP reader remains independent.
 
 ## Integration contract
 
-Requires Mind's private-home transport with exact binding fingerprints, initially
-qualified at Mind commit `63c6391`. The host embeds AgentHomeServer over its already
+Requires Mind's private-home transport with exact binding fingerprints and ranked
+alternative-keyword recall, qualified at Mind commit `0fe0e10`. The host embeds AgentHomeServer over its already
 open canonical ledger and shares its existing writer lease and serialization lock.
 Do not start a second canonical writer or let an agent choose a database path.
 
