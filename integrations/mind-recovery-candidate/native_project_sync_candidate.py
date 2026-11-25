@@ -263,10 +263,18 @@ class ProjectServiceLease:
 class NativeProjectSyncHost:
     """Own one protected writer/listener; no discovery, setup or auto recovery."""
     def __init__(self, *, binding, history_path, authority, audit_key, deletion_key,
-                 credential_path, project_ids, review_ref, agent_home_bindings=(), agent_home_port=0):
+                 credential_path, project_ids, review_ref, agent_home_bindings=(), agent_home_port=0, handoff_binding=None):
         require(type(agent_home_bindings) is tuple and len(agent_home_bindings) <= 5)
         require(type(agent_home_port) is int and 0 <= agent_home_port <= 65535
                 and (agent_home_bindings or agent_home_port == 0))
+        if handoff_binding is not None:
+            from onoes_mind.handoff_channel import HandoffBinding
+            require(bool(agent_home_bindings) and isinstance(handoff_binding,HandoffBinding)
+                    and handoff_binding.project_id in project_ids
+                    and handoff_binding.store.scope_id == 'project/onoes-mind/shared'
+                    and all(getattr(handoff_binding.store,key) == getattr(binding,key) for key in
+                        ('database_path','store_id','environment','authority_ref','file_device','file_inode')))
+        self.handoff_binding = handoff_binding
         self.binding = binding
         self.history_path, self.authority = history_path, authority
         self.keys = dict(audit_key=audit_key, deletion_key=deletion_key)
@@ -296,7 +304,11 @@ class NativeProjectSyncHost:
                 from onoes_mind.agent_home import AgentHome
                 from onoes_mind.agent_home_http import AgentHomeServer
                 homes = tuple(AgentHome(self.ledger, binding) for binding in self.home_bindings)
-                self.home_server = AgentHomeServer(homes, writer_lock=self.writer_lock,port=self.home_port)
+                options = {}
+                if self.handoff_binding is not None:
+                    from onoes_mind.handoff_channel import HandoffChannel
+                    options['handoff_channel'] = HandoffChannel(self.ledger,self.handoff_binding)
+                self.home_server = AgentHomeServer(homes,writer_lock=self.writer_lock,port=self.home_port,**options)
             self.server.start()
             if self.home_server is not None:self.home_server.start()
             return self.status()
@@ -316,6 +328,14 @@ class NativeProjectSyncHost:
         from onoes_mind.agent_home_http import home_binding_sha256
         return dict(baseUrl=self.home_server.base_url, agents={
             actor:home_binding_sha256(home.binding) for actor,home in self.home_server.homes.items()})
+
+    def handoff_options(self):
+        """Non-secret descriptor for the explicit owner-only record refresh."""
+        require(self.status()['ready'] and self.home_server is not None and self.handoff_binding is not None)
+        from onoes_mind.handoff_channel import handoff_binding_sha256
+        return dict(baseUrl=self.home_server.base_url,bindingSha256=handoff_binding_sha256(self.handoff_binding),
+                    recordId=self.handoff_binding.record_id,projectId=self.handoff_binding.project_id,
+                    author=self.handoff_binding.author)
 
     def native_options(self):
         """Secret return for direct native constructor/pipe use, never logs/files."""

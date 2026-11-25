@@ -221,3 +221,30 @@ reads restored configuration through Hermes's supported raw-config reader. The
 next attempt was cancelled at Eddie's request for Docker relocation. The final
 fresh run above passed all five recorded phases without skips or retries inside
 the run. These are one composed test's phases, not five independent test cases.
+
+## Owner-side current handoff refresh (inactive)
+
+The v6 writer profile can attach one already admitted shared handoff to its
+existing private-home listener. It requires the explicit run_handoff_refresh
+action and exact handoffRefresh target fingerprint as well as the existing home
+approval. Earlier profile versions cannot acquire the endpoint. The running
+service creates no principal, credential, scope, schema or additional listener.
+
+handoff_drop_candidate.py is a local owner client, not a model-facing tool.
+Its reviewed profile pins the SDK/client sources, one Nims handoff, existing
+Windows operator custody and separate private input/journal folders. It reads
+only a deliberately selected JSON envelope in that input folder. The envelope
+contains expected_revision_id, event_id, document and review_ref. Markdown may
+be carried inside the versioned document; identity and document revision remain
+canonical. Credential values never belong in arguments, output or handoff files.
+This local owner credential is not a cloud/device publishing credential.
+
+Run its finite --preview, --read or --publish operation with --profile and the
+reviewed --sha256 under python -I. Preview creates nothing and needs no live
+credential/service. Publish persists a payload-free intent before exactly one
+send. An uncertain reply preserves the original event and input; only a deliberate
+--reconcile with the same canonical payload can reconcile it. It never retries
+automatically. A recorded receipt proves a past commit, not the current handoff;
+use --read for current state. Input edits, different source/profile pins and
+out-of-folder files are refused. No live profile or activation is installed by
+copying this client. Actual enrollment/runtime approval is separate.
