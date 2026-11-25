@@ -184,3 +184,28 @@ backup or an uncertain interrupted attempt is preserved for inspection, not
 silently retried or overwritten. These checks are not a cross-process CAS lock;
 the installer owns the exclusive maintenance window and durable phase evidence.
 Live setup remains separate from disposable source qualification.
+
+## Composed Echo rollout rehearsal
+
+The real owned-process rehearsal passed as one test under Echo's Python 3.14.9
+in 822.67 seconds. It first saved a project receipt on the project-only service,
+stopped that owned writer, and imported two disposable curated files through the
+existing canonical writer lease. The v5 service then served that private home to
+fresh actual Hermes memory managers. A new selected fact and the imported profile
+survived a writer restart at the same private address.
+
+The check restored the original Hermes configuration, revoked only the new Echo
+credential, retained both canonical records and original native files, and restarted
+the original project-only service. The original project event returned the same
+receipt; the withdrawn private endpoint was unavailable. No model, real gateway,
+Docker container or actual private memory was used. A future live cutover still
+needs its owner approval and an idle Echo gateway reload; this proof is not a
+claim of a deployed private home.
+
+The initial composed attempt reached restart recovery, then failed in its test-only
+revocation assertion because it called a nonexistent snapshot method. Its original
+source/XML are retained. The corrected test uses the supported recall API, and
+reads restored configuration through Hermes's supported raw-config reader. The
+next attempt was cancelled at Eddie's request for Docker relocation. The final
+fresh run above passed all five recorded phases without skips or retries inside
+the run. These are one composed test's phases, not five independent test cases.
