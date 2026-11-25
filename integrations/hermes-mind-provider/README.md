@@ -1,7 +1,8 @@
 # Onoes-Mind memory provider for Hermes
 
-This source candidate uses Hermes's supported MemoryProvider plugin seam. It is
-not installed in Echo's real profile and does not activate any private home.
+This adapter uses Hermes's supported MemoryProvider plugin seam. Copying this
+package does not enroll an agent or activate a private home. Live deployment
+status and exact access approvals belong in the operator's private checkpoint.
 The existing shared-project MCP reader remains independent.
 
 ## Behavior
@@ -53,6 +54,17 @@ reviewed RecallBinding, custody/journal directories, exact loopback home endpoin
 review reference, context byte budget and optional shared-project tool name.
 The SDK loads under a source-specific namespace to avoid silently using a
 different already-imported Mind version in Hermes.
+
+## Shared-reader compatibility
+
+When this SDK also serves Mesh's shared reader, use Mind `baea45b` or later.
+Internal search/private-home results retain revision IDs, while the original
+shared-recall v1 HTTP response keeps its original nine record fields. Test actual
+HTTP output with Mesh's existing strict validator; an empty response alone misses
+this compatibility defect. No grant or credential change is needed for the fix.
+Keep deployed SDK directories immutable. A server-only compatibility release can
+retain a separately pinned older private client when the home protocol/binding
+fingerprint is unchanged; verify current recall after the reconnect.
 
 ## Native acceptance
 
