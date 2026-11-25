@@ -338,6 +338,42 @@ def test_natural_question_recall_and_current_edits_need_no_manual_keyword_search
         finally:manager.shutdown_all()
 
 
+def test_imported_curated_context_comes_from_mind_after_native_files_retire(fixture):
+    from onoes_mind.curated_home_import import prepare_curated_import,import_curated_home
+    writer,server,profiles=fixture
+    profile=profiles["nims"];native=profile["home"]/"memories";native.mkdir(exist_ok=True)
+    files={"MEMORY.md":"Saved fact: removable armor stays on a black frame.",
+           "USER.md":"Saved preference: concise handoff summaries."}
+    for name,text in files.items():(native/name).write_text(text,encoding="utf-8")
+    hashes={name:hashlib.sha256((native/name).read_bytes()).hexdigest() for name in files}
+    prepared=prepare_curated_import(profile["binding"],hermes_home=profile["home"],expected_sha256=hashes)
+    with server._lock:
+        receipt=import_curated_home(writer,profile["binding"],operator_token="synthetic-operator",
+            home_token=profile["custody"].read(),prepared=prepared)
+    assert receipt["durable"]
+    # Only these disposable test files move. The provider must read canonical
+    # context, without any native-file fallback or second import path.
+    for name in files:(native/name).rename(native/(name+".retired"))
+    with scope(profile["home"]):
+        for iteration in range(2):
+            _,manager=loaded(profile)
+            try:
+                context=manager.prefetch_all("Where are we now?")
+                assert all(text in context for text in files.values())
+                assert "hermes-curated-bootstrap:nims:v1" in context
+                assert not call(manager,"import")["ok"]
+            finally:manager.shutdown_all()
+        _,manager=loaded(profile)
+        try:
+            row,=call(manager,"recall",query="concise handoff")["result"]["records"]
+            assert call(manager,"correct",event_id="curated-current-edit",record_id=row["record_id"],
+                expected_revision_id=row["revision_id"],text="Current preference: clear short summaries.")["ok"]
+            context=manager.prefetch_all("Where are we now?")
+            assert "Current preference: clear short summaries." in context
+            assert "removable armor stays on a black frame" not in context
+        finally:manager.shutdown_all()
+
+
 def test_unavailable_transport_never_serves_old_memory(fixture):
     _,server,profiles = fixture
     with scope(profiles["deep"]["home"]):

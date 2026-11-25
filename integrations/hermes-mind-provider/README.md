@@ -136,3 +136,26 @@ then passed through the actual Hermes loader/manager. Mind's 77 private-home and
 transport checks passed under production Python, and all 16 provider checks passed
 with the normal timeout. Native saved memory/preferences still require a finite
 reviewed import/cutover; no raw transcript migration is proposed.
+
+## Finite curated-memory bootstrap
+
+Mind's owner-side `curated_home_import` contract is qualified at `71ab025`.
+It reads only the two approved Hermes MEMORY.md and USER.md files, pins their
+identities and raw hashes, and writes one private profile snapshot through the
+existing AgentHome API. Keeping the initial curated notes/preferences together
+preserves the previous always-loaded context atomically. The combined 8 KiB
+bound rejects oversized input without truncation. Original files remain intact;
+new memories continue to use ordinary individual records.
+
+Import is not a model-facing action. It needs the reviewed owner and enrolled
+home credentials, rechecks the source snapshot before writing, and uses a stable
+one-time event. Retry cannot overwrite later corrections/forget or import changed
+legacy files as a new authority. The receipt describes the historical import.
+
+All 95 Mind import/home/transport cases passed under the writer's Python 3.14.3.
+The complete 17-case provider suite passed under both the earlier test interpreter
+and Echo's exact hidden-launcher Python 3.14.9 (185.44 s). The new integration
+checks fresh provider sessions after retiring only disposable native test files,
+then proves that a canonical correction becomes current. Source bootstrap/import
+is inactive until the finite live plan is approved. Actual private file contents,
+home credentials and Echo's memory configuration have not been changed.
