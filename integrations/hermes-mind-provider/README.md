@@ -159,3 +159,28 @@ checks fresh provider sessions after retiring only disposable native test files,
 then proves that a canonical correction becomes current. Source bootstrap/import
 is inactive until the finite live plan is approved. Actual private file contents,
 home credentials and Echo's memory configuration have not been changed.
+
+## Owner-side configuration switch
+
+`owner_profile_switch.py` is an inactive installer helper, outside the plugin.
+It never stops a gateway, enrolls a credential or imports memory. The approved
+installer must first qualify the complete provider/source binding, stop Echo
+through its existing supported controls, and keep other configuration writers
+stopped throughout the operation. Its required quiescence callback must return
+True; unknown or busy state refuses the write.
+
+Preparation pins the original raw configuration and the one Echo provider profile.
+Installation saves an exclusive private backup, checks both pins again, then uses
+Hermes's existing comment-preserving one-document writer. Only four memory
+settings change; credential templates, the shared-project MCP reader, Telegram,
+model settings and unrelated memory settings are retained. No merged defaults or
+expanded environment secrets are written back. Prepared config payloads stay out
+of representations and metadata. The helper is not a model-facing tool or a CLI.
+
+Rollback requires the exact installed config digest and retained backup. It
+restores the original settings using Hermes's supported replacement API, preserving
+comments; the original raw bytes remain in the private backup. Drift, an existing
+backup or an uncertain interrupted attempt is preserved for inspection, not
+silently retried or overwritten. These checks are not a cross-process CAS lock;
+the installer owns the exclusive maintenance window and durable phase evidence.
+Live setup remains separate from disposable source qualification.
