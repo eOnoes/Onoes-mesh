@@ -517,3 +517,24 @@ it does not change permissions or accept Python's OWNER RIGHTS substitute.
 Seven synthetic cases qualify import/readback, preserved originals, replay,
 changed-source/transport denial, secret rejection and the transfer size bound.
 These helpers do not activate cloud enrollment, move real notes or call models.
+
+`cloud_owner_phase.py` connects the enrollment helper to existing Windows DPAPI
+custodians and protected, exclusive attempt/receipt files. It verifies private
+and shared authentication, imports an explicitly prepared two-file snapshot
+with source metadata and checks the current record. Two native Windows cases
+pass: complete custody/import/readback/revocation and partial reader-custody
+failure followed by revocation of only the recorded private enrollment.
+
+`cloud_custody_delivery.py` is the corresponding finite POSIX delivery primitive.
+It verifies every installed public package byte and private file identity before
+writing three new private custody files, syncs them and reads them through the
+actual SDK credential classes. It changes no config and starts no service.
+Four cases pass in the matching cloud image: SDK readback/repeat refusal and
+refusal of changed public code, an invalid token or unresolved intent state.
+Credentials are inputs from the separately approved owner operation; the helper
+does not issue them, send SSH requests or retry uncertain delivery.
+
+These are component/operation proofs on disposable data. The enclosing live
+installer still needs fresh backups, approved host/route/gateway changes,
+maintained admission and writer quiescence, exact protected delivery receipts,
+normal startup restoration and end-to-end acceptance before claiming enrollment.
