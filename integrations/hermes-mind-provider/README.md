@@ -349,3 +349,31 @@ with its explicit registry scope and name; an unscoped name-only shutdown does
 not close another profile's reader. The rehearsal leaves no registered reader.
 Source and fixture success do not approve a live endpoint, enrollment, cloud
 configuration, gateway restart or normal-agent acceptance task.
+
+## Portable owner configuration switch (inactive)
+
+`portable_owner_switch.py` reuses Hermes's raw-config parser and atomic writer.
+It selects exact reviewed private-home and reader profiles, actor/project/reader
+identity, SDK/source fingerprints and the dedicated reader interpreter. The
+home prompt must name the actual `mcp__onoes_mind_mesh__read_project_context`
+tool. Both profiles use the same reviewed private HTTPS endpoint; the helper
+creates no credentials, endpoint, service, scheduler or memory records.
+
+The switch preserves unrelated settings, Blender, literal secret references,
+comments and native MEMORY.md/USER.md files. It exclusively saves the original
+config in a private owner-selected folder, checks the caller's quiescence twice,
+and refuses changed input or an occupied reader name. Rollback requires the exact
+installed config, receipt and original backup; withdrawing new profile files
+must not prevent restoration. It never silently overwrites another writer.
+
+The actual native composed case now also installs this switch, checks model
+prompt/tool-name agreement and rolls it back. Seventeen focused owner cases
+verify refusal/recovery and the concrete gateway's provider cache fingerprint.
+Fingerprint change is not proof of safe live hot replacement or drained work:
+the installer still needs a verified maintenance/admission boundary.
+
+`test_legacy_home_clients.py` runs the deployed public Echo/Deep client SDKs in
+isolated subprocesses against a fresh candidate host. Set MIND_SOURCE and the
+explicit MIND_LEGACY_ECHO_SOURCE / MIND_LEGACY_DEEP_SOURCE code roots. Both
+clients passed save/recall/correct/forget and cross-actor denial on Linux and
+Windows. No live client profiles, credentials or canonical database are used.

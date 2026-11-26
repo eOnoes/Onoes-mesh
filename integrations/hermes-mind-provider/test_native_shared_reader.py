@@ -17,16 +17,14 @@ from test_agent_context import context_store
 from test_remote_home_client import tls_home
 from test_project_context_http import shared
 from test_portable_provider import profile,scope,loaded,call,canonical,private
+from portable_owner_switch import SERVER,TOOL,prepare_switch,install_switch,rollback_switch
 
 pytestmark=pytest.mark.skipif(os.name!='posix',reason='Native POSIX MCP/custody rehearsal')
 
 
-def test_native_discovery_dispatch_shared_handoff_and_private_home_keep_separate_current_permissions(profile,shared,tmp_path):
+@pytest.fixture
+def staged_native_reader(profile,shared):
     assert importlib.metadata.version('mcp')=='2.3.0'
-    from tools.mcp_tool_discovery import discover_mcp_tools
-    from tools.mcp_tool_lifecycle import shutdown_mcp_servers
-    from tools.registry import registry
-    import tools.mcp_tool as core
 
     document={'author':'nims','revision':9,'marker':'handoffmarker',
               'next_action':'Read the current measured print specification'}
@@ -54,7 +52,10 @@ def test_native_discovery_dispatch_shared_handoff_and_private_home_keep_separate
     site=runtime/'lib'/f'python{sys.version_info.major}.{sys.version_info.minor}'/'site-packages'
     import sysconfig
     package_paths=['/reader-deps','/reader-extra',sysconfig.get_path('purelib')]
-    (site/'qualified-reader.pth').write_text('import sys; sys.path[0:0]='+repr(package_paths)+'\n',encoding='utf-8')
+    # Trust only the synthetic CA in this disposable child, not a live config option.
+    child_init='import sys; sys.path[0:0]='+repr(package_paths)+'\n'
+    child_init+='import os; os.environ[\'SSL_CERT_FILE\']='+repr(str(review/'fixture-ca.pem'))+'\n'
+    (site/'qualified-reader.pth').write_text(child_init,encoding='utf-8')
     python=runtime/'bin/python'
     version=subprocess.run([str(python),'-I','-B','-c',
         "import mcp,importlib.metadata,json;print(json.dumps([importlib.metadata.version('mcp'),mcp.__file__]))"],
@@ -62,20 +63,53 @@ def test_native_discovery_dispatch_shared_handoff_and_private_home_keep_separate
     assert version.returncode==0,version.stderr
     child_version,child_source=json.loads(version.stdout)
     assert child_version=='1.26.0' and Path(child_source).is_relative_to('/reader-deps')
-    cfg=profile['config']
-    cfg['mcp_servers']={'mind':{'command':str(python),
-        'args':['-I','-B',str(entry_path),'--profile',str(reader),'--sha256',sha256(reader_bytes).hexdigest()],
-        'env':{'SSL_CERT_FILE':str(review/'fixture-ca.pem')},'trust':'untrusted',
-        'connect_timeout':15,'tool_timeout':15}}
-    (home/'config.yaml').write_bytes(canonical(cfg))
+    profile['body']['shared_project_tool']=TOOL
+    profile['path'].write_bytes(canonical(profile['body']))
+    original=b'''# Preserve the existing cloud profile and literal secret reference.
+model: {default: existing-cloud-model}
+memory:
+  provider: ''
+  memory_enabled: true
+  user_profile_enabled: true
+  custom_limit: 1500 # Keep this comment too.
+mcp_servers:
+  blender:
+    command: existing-blender-server
+    env: {EXISTING_SECRET: '${DO_NOT_EXPAND}'}
+platforms: {telegram: {enabled: true}}
+'''
+    (home/'config.yaml').write_bytes(original)
+    backup=home/'owner-backup';backup.mkdir(mode=0o700)
+    native_files={'MEMORY.md':b'Existing selected native memory remains here.',
+                  'USER.md':b'Existing native user profile remains here.'}
+    for filename,raw in native_files.items():(home/filename).write_bytes(raw)
+    arguments=dict(home=home,home_profile=profile['path'],home_sha256=sha256(profile['path'].read_bytes()).hexdigest(),
+        reader_profile=reader,reader_sha256=sha256(reader_bytes).hexdigest(),reader_python=python,
+        agent_id='cyony',project_id=client.project_id,principal_id=client.principal_id,
+        expected_config_sha256=sha256(original).hexdigest())
+    return dict(profile=profile,shared=shared,document=document,reader=reader,reader_bytes=reader_bytes,
+        original=original,backup=backup,arguments=arguments,native_files=native_files)
+
+
+def test_native_discovery_dispatch_shared_handoff_and_private_home_keep_separate_current_permissions(staged_native_reader):
+    from tools.mcp_tool_discovery import discover_mcp_tools
+    from tools.mcp_tool_lifecycle import shutdown_mcp_servers
+    from tools.registry import registry
+    import tools.mcp_tool as core
+    fixture=staged_native_reader;profile=fixture['profile'];shared=fixture['shared'];home=profile['home']
+    reader=fixture['reader'];reader_bytes=fixture['reader_bytes'];document=fixture['document']
 
     with scope(home):
-        provider,manager=loaded(profile)
+        plan=prepare_switch(**fixture['arguments'])
+        receipt=install_switch(plan,backup_directory=fixture['backup'],assert_quiescent=lambda:True)
+        provider=None;manager=None
         try:
+            provider,manager=loaded(profile)
+            assert TOOL in provider.system_prompt_block()
             saved=call(manager,'remember',event_id='native-composed-private',text='Private azureharbor preference')
             assert saved['ok']
-            names=discover_mcp_tools(allowed_mcp_names=['mind'])
-            name='mcp__mind__read_project_context'
+            names=discover_mcp_tools(allowed_mcp_names=[SERVER])
+            name=TOOL
             assert name in names and registry.get_entry(name) is not None
             schema,=registry.get_definitions({name})
             assert schema['function']['name']==name
@@ -104,7 +138,13 @@ def test_native_discovery_dispatch_shared_handoff_and_private_home_keep_separate
             assert len(shared['proxy']['requests'])==requests
             assert call(manager,'recall',query='azureharbor')['ok']
         finally:
-            shutdown_mcp_servers(scope=registry.current_scope_key(),names={'mind'},timeout=15)
-            manager.shutdown_all()
+            shutdown_mcp_servers(scope=registry.current_scope_key(),names={SERVER},timeout=15)
+            if manager is not None:manager.shutdown_all()
+            rollback_switch(plan,receipt,assert_quiescent=lambda:True)
         assert not core._servers
-        assert registry.get_entry('mcp__mind__read_project_context') is None
+        assert registry.get_entry(TOOL) is None
+        from hermes_cli.config import require_readable_config_before_write
+        assert require_readable_config_before_write(home/'config.yaml')==plan.original
+        for filename,raw in fixture['native_files'].items():assert (home/filename).read_bytes()==raw
+        text=(home/'config.yaml').read_text(encoding='utf-8')
+        assert '# Keep this comment too.' in text and '${DO_NOT_EXPAND}' in text
