@@ -27,3 +27,28 @@ test('refresh updates a native message by ID without duplicating it or discardin
   let phase=0;const core=fixture(()=>phase++?page(a,[group('new',[message('r','Finished')])]):page(a,[group('old',[message('o','Older')]),group('new',[message('r','Streaming')])]));
   core.setAvailable(true);await core.catalog();await core.select(a);await core.refresh();assert.deepEqual(core.state().messages.map(m=>m.text),['Older','Finished']);
 });
+test('refresh of a notLoaded native conversation shows the label without touching raw state or sending',async()=>{
+  const calls=[];
+  const core=createNimsChatState({request:async(path,options)=>{
+    calls.push(path);
+    if(path.endsWith('status'))return{configured:true,readOnly:false};
+    if(path.endsWith('catalog'))return {...catalog,project:{id:'33333333-3333-4333-8333-333333333333',label:'Project'}};
+    if(path.endsWith('history'))return{conversation:{id:a,title:'A',status:'notLoaded'},groups:[group('t',[message('m1','Saved reply')])],olderTurnCursor:null};
+    throw Error('Unexpected mock request '+path);
+  },storage:{getItem:()=>null,setItem(){},removeItem(){}}});
+  core.setAvailable(true);await core.catalog();
+  await core.select(a);
+  core.setDraft('unsent draft');
+  const before=core.state().canSend;
+  assert.equal(core.state().canSend,true);
+  await core.refresh();
+  const after=core.state();
+  assert.ok(after.note.includes('Saved chat'));
+  assert.ok(!after.note.includes('notLoaded'));
+  assert.equal(after.selected.status,'notLoaded');
+  assert.equal(after.selected.id,a);
+  assert.deepEqual(after.messages.map(m=>m.text),['Saved reply']);
+  assert.equal(after.draft,'unsent draft');
+  assert.equal(after.canSend,before);
+  assert.deepEqual(calls.filter(p=>!p.endsWith('status')&&!p.endsWith('catalog')&&!p.endsWith('history')),[]);
+});

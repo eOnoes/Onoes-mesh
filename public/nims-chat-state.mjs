@@ -1,5 +1,7 @@
 const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
 import {createNimsSendState} from './nims-send-state.mjs';
+const STATUS_LABELS=Object.create(null,{notLoaded:{value:'Saved chat',enumerable:true},idle:{value:'Idle',enumerable:true},active:{value:'Working',enumerable:true},running:{value:'Working',enumerable:true},inProgress:{value:'Working',enumerable:true},systemError:{value:'Needs attention',enumerable:true},interrupted:{value:'Paused',enumerable:true}});
+export function nimsStatusLabel(status){return typeof status==='string'&&Object.hasOwn(STATUS_LABELS,status)?STATUS_LABELS[status]:'Status unknown';}
 export function createNimsChatState({request,onChange=()=>{},storage,makeId,hash}){
   let available=false,epoch=0,busy=false,configured=false,project=null,conversations=[],listCursor=null,selected=null,groups=[],turnCursor=null;
   let note='Connect to browse Nims project chats.',readOnly=true,sender;
@@ -24,7 +26,7 @@ export function createNimsChatState({request,onChange=()=>{},storage,makeId,hash
     if(mode!=='olderItems')turnCursor=result.olderTurnCursor;
     selected=result.conversation;
     sender?.synchronize(groups.flatMap(group=>group.messages));
-    note=`${selected.title} · ${selected.status}${readOnly?' · read-only preview':''}.`;
+    note=`${selected.title} · ${nimsStatusLabel(selected.status)}${readOnly?' · read-only preview':''}.`;
   }
   async function read(input,mode){
     if(!available||busy||!selected||sender?.state().writing)return;

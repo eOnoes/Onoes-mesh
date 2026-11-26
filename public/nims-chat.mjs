@@ -1,4 +1,4 @@
-import {createNimsChatState} from './nims-chat-state.mjs';
+import {createNimsChatState,nimsStatusLabel} from './nims-chat-state.mjs';
 
 export function createNimsChatReader({root,request}){
   if(!root)return {setAvailable(){},clear(){}};
@@ -29,7 +29,7 @@ export function createNimsChatReader({root,request}){
     if(next!==catalogSignature){
       catalogSignature=next;select.replaceChildren();
       const empty=document.createElement('option');empty.value='';empty.textContent='Choose a conversation…';select.append(empty);
-      for(const conversation of state.conversations){const option=document.createElement('option');option.value=conversation.id;option.textContent=`${conversation.title} · ${conversation.status}`;select.append(option);}
+      for(const conversation of state.conversations){const option=document.createElement('option');option.value=conversation.id;option.textContent=`${conversation.title} · ${nimsStatusLabel(conversation.status)}`;select.append(option);}
     }
     select.value=state.selected?.id??'';
     refresh.disabled=!state.available||state.busy||state.writing;older.disabled=refresh.disabled;older.hidden=!state.hasOlder;
