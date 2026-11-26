@@ -377,3 +377,24 @@ isolated subprocesses against a fresh candidate host. Set MIND_SOURCE and the
 explicit MIND_LEGACY_ECHO_SOURCE / MIND_LEGACY_DEEP_SOURCE code roots. Both
 clients passed save/recall/correct/forget and cross-actor denial on Linux and
 Windows. No live client profiles, credentials or canonical database are used.
+
+## Native external-drain rehearsal
+
+The pinned gateway already supports `.drain_request.json`: its watcher refuses
+new chat turns, its API returns retryable `503 gateway_draining`, and its
+in-process scheduler receives the same dispatch gate. Reuse that native control;
+do not introduce a second supervisor. These are source-version-specific findings.
+
+`test_native_maintenance.py` runs the real marker writer/watcher and API admission
+response around the portable owner switch and rollback. A synthetic in-flight
+work hook prevents a premature switch; admission remains held through rollback.
+Clearing the marker restores admission. Separate cases verify that an old epoch
+or expired marker is ignored, while malformed content stays drain-active.
+
+Four native cases passed without a model or running gateway. Their synthetic
+work hooks are not proof that deployed workers, children, transcripts or config
+writers have drained. The marker expires after one hour and does not survive
+container recreation as an active hold. A live plan must verify exact owner and
+current drain/work state, keep its window bounded, preserve other writers and
+qualify normal gateway retirement separately. Do not infer safe hot replacement
+from the provider cache signature or use an idle snapshot as a maintained hold.
