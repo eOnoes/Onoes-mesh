@@ -14,6 +14,7 @@ class Adapter:
         self.fail=fail;self.uncertain_hold=uncertain_hold;self.calls=[]
         self.admitted=True;self.gateway=True;self.windows=True;self.config='original'
         self.new_access=False;self.records=['original-record'];self.qualified=False
+        self.public_code=False;self.client_credentials=False
 
     def preflight(self,pin,evidence):
         self.calls.append('preflight');return True
@@ -24,12 +25,20 @@ class Adapter:
             if name=='quiesce_gateway':self.admitted=False;self.gateway=False
             elif name=='retire_windows':
                 assert not self.gateway and not self.admitted;self.windows=False
+            elif name=='materialize_client':
+                assert not self.windows and not self.gateway;self.public_code=True
+            elif name=='capture_curated':
+                assert self.public_code and not self.gateway and not self.new_access
             elif name=='admit_cyony':
                 assert not self.windows and not self.gateway
                 self.new_access=True;self.records.append('curated-record')
             elif name=='backup_after':assert not self.windows and not self.gateway
             elif name=='start_windows':self.windows=True
-            elif name=='select_configuration':self.config='new'
+            elif name=='deliver_client':
+                assert self.public_code and self.new_access and self.windows and not self.gateway
+                self.client_credentials=True
+            elif name=='select_configuration':
+                assert self.client_credentials;self.config='new'
             elif name=='qualify_held':
                 assert self.windows and not self.gateway and not self.admitted
                 assert self.config=='new' and self.new_access;self.qualified=True
@@ -59,13 +68,14 @@ def test_success_qualifies_before_release_and_never_copies_private_hook_results(
     a=Adapter();result=install_once(a,tmp_path,'a'*64)
     assert result['installed'] and a.new_access and a.gateway and a.admitted
     assert a.calls.index('qualify_held')<a.calls.index('release_gateway')
+    assert a.calls.index('materialize_client')<a.calls.index('capture_curated')<a.calls.index('admit_cyony')<a.calls.index('deliver_client')
     assert a.records==['original-record','curated-record']
     assert SECRET.encode() not in receipts(tmp_path)
     assert json.loads((tmp_path/'COMPLETE.json').read_bytes())['realModelAcceptance']=='NOT_RUN'
 
 
-@pytest.mark.parametrize('failure',['quiesce_gateway','backup_before','admit_cyony','backup_after',
-    'qualify_held','release_gateway','qualify_running'])
+@pytest.mark.parametrize('failure',['quiesce_gateway','backup_before','materialize_client','capture_curated',
+    'admit_cyony','backup_after','deliver_client','qualify_held','release_gateway','qualify_running'])
 def test_failure_reholds_before_revocation_and_preserves_canonical_records(tmp_path,failure):
     a=Adapter(failure);result=install_once(a,tmp_path,'b'*64)
     assert result['restored'] and not result['installed']

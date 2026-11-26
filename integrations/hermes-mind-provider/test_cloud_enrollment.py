@@ -17,6 +17,32 @@ from onoes_mind.ledger import LedgerError
 from cloud_enrollment import EnrollmentHold,enroll,revoke_new
 
 
+def test_unprepared_recall_store_refuses_before_any_private_grant_or_custody(tmp_path):
+    import secrets
+    from onoes_mind import Ledger
+    from onoes_mind.recall_binding import RecallBinding,prepare_store_identity
+    path=tmp_path/'fresh-canonical.sqlite'
+    with closing(Ledger(path,environment_id='synthetic-fresh',audit_key=secrets.token_bytes(32),
+                        deletion_key=secrets.token_bytes(32))) as writer:
+        writer.create_principal('operator');writer.issue_credential('operator','synthetic-operator')
+        writer.create_principal('echo');writer.issue_credential('echo','synthetic-prior-echo')
+        store_id=prepare_store_identity(writer,environment='synthetic-fresh',authority_ref='fixture:owner')
+        info=path.stat()
+        store=RecallBinding(str(path),store_id,'synthetic-fresh','fixture:owner','project/onoes-mind/shared',
+            info.st_dev,info.st_ino,'fixture:custodian','fixture:revoke','fixture:review')
+        pair=(writer,AgentHomeBinding(store,'cyony'),AgentContextBinding(store,'context-cyony','onoes-mesh'))
+        assert not writer.db.execute("SELECT 1 FROM sqlite_master WHERE name='recall_service_credentials'").fetchone()
+        saved=[]
+        with pytest.raises(EnrollmentHold):
+            enroll(writer,pair[1],pair[2],operator_token='synthetic-operator',attempt_id='synthetic-cloud-unprepared',
+                review_sha256='a'*64,save_home_token=lambda t:saved.append(t) or True,
+                save_reader_token=lambda t:saved.append(t) or True,persist_receipt=lambda r:saved.append(r) or True)
+        assert saved==[]
+        assert not writer.db.execute("SELECT 1 FROM principals WHERE principal_id IN ('cyony','context-cyony')").fetchone()
+        assert not writer.db.execute("SELECT 1 FROM sqlite_master WHERE name='recall_service_credentials'").fetchone()
+        assert writer.authenticate('synthetic-prior-echo')=='echo'
+
+
 @pytest.fixture
 def setup(context_store):
     writer,store,_,_=context_store

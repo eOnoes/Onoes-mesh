@@ -683,3 +683,30 @@ owned-file cases pass native replacement, UTF-8/both UTF-16 orders, partial
 failure recovery, drift refusal and admission/replay limits. This preserves the
 existing recovery task rather than introducing a scheduler. The complete
 cross-host adapter/entry and installed-path acceptance remain outstanding.
+
+
+### Canonical owner entry and public-code bootstrap order
+
+`cloud_owner_entry.py` is the cold Windows owner operation. It verifies the
+completed encrypted before-backup in its original runtime before importing the
+selected owner SDK, then reuses the native writer lease/checkpoint authority and
+protected operator custody. The reviewed access remains exactly Cyony's private
+home and context-cyony's read-only Mesh project. Curated capture is limited to
+MEMORY.md/USER.md; existing custody fingerprints remain unchanged. A separate
+cold revoke uses only the recorded new identity receipts and retains memory.
+
+One owned native integration passed an actual encrypted backup/recovery
+readback, cold owner admission, curated profile readback and cold exact
+revocation while existing Echo/Deep credentials stayed valid. No production
+store, credential, cloud service or model was used. Eleven enrollment checks
+include early refusal when the store lacks the existing Mesh recall extension;
+that refusal commits no private home and saves no custody. This does not
+implicitly create another Mesh identity or initialize an extension.
+
+The finite window now materializes public client code before curated capture,
+because capture uses the frozen SDK validators. Private credential delivery is
+a separate later operation after enrollment and Windows startup. Thirteen
+fault/order/privacy/replay cases pass. Public files alone do not select memory
+configuration or enable access. Concrete cloud client/route qualification and
+the enclosing cross-host installer remain outstanding; live enrollment remains
+unapproved and inactive.

@@ -67,13 +67,16 @@ def install_once(adapter,evidence,plan_sha256):
         step('gateway-quiesce',adapter.quiesce_gateway)
         step('windows-retire',adapter.retire_windows)
         step('backup-before',adapter.backup_before)
+        # Capture uses the frozen SDK's validators on the cloud host. Install
+        # public code first; credentials and configuration remain absent/inactive.
+        step('client-materialize',adapter.materialize_client)
         step('curated-capture',adapter.capture_curated)
         step('source-install',adapter.install_source)
         step('admit-cyony',adapter.admit_cyony)
         # The leased owner writer must be closed; new services are not started.
         step('backup-after',adapter.backup_after)
         step('windows-start',adapter.start_windows)
-        step('client-install',adapter.install_client)
+        step('client-delivery',adapter.deliver_client)
         step('configuration-select',adapter.select_configuration)
         # Exercise actual host/reader/client/MCP tools without starting a model
         # or admitting chat/cron work. Release is a separate, deliberate step.

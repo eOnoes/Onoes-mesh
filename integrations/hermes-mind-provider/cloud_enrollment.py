@@ -61,6 +61,11 @@ def enroll(ledger,home,reader,*,operator_token,attempt_id,review_sha256,
         and all(callable(f) for f in (save_home_token,save_reader_token,persist_receipt)))
     _check_store(ledger,home.store)
     require(ledger.authenticate(operator_token)=='operator')
+    # The supported context-reader SDK expects an existing Mesh recall
+    # extension. Refuse before committing a private home or saving custody;
+    # do not implicitly provision another principal/table during this pair.
+    require(ledger.db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='recall_service_credentials'").fetchone()
+        and {'principal_id','salt','verifier','epoch'}<={r[1] for r in ledger.db.execute('PRAGMA table_info(recall_service_credentials)')})
     require(not ledger.db.execute('SELECT 1 FROM principals WHERE principal_id IN (?,?)',
         (home.agent_id,reader.principal_id)).fetchone())
     receipts=[]
