@@ -579,7 +579,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     else socket.destroy();
   });
   try { await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });nativeProjectSync?.start(); }
-  catch (e) { if(server.listening){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}await nativeProjectSync?.close();await nativeWorker?.close().catch(()=>{});await teamRunner?.close();await rookRuntime?.close();await localInference.close?.();modelDatabase?.close();await relay.close(); store?.close(); throw e; }
+  catch (e) { if(server.listening){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}await nativeProjectSync?.close();await nativeWorker?.close().catch(()=>{});await teamRunner?.close();await rookRuntime?.close();await localInference.close?.();modelDatabase?.close();await relay.close();await codexConversations?.close(); store?.close(); throw e; }
   guard = createTrialHttpGuard({ manager, port: server.address().port });
   rookRuntime?.start();
   return { server, rookRuntime, dispatch: store?.workroom.dispatch, mode: standalone ? 'standalone' : 'mesh', url: `http://127.0.0.1:${server.address().port}`, close: async () => {

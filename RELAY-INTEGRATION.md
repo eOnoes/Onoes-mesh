@@ -320,3 +320,18 @@ that same chat, without retries or a second transcript store. Persistent product
 enrollment, same-current-chat steering, actual desktop restart and owner phone
 acceptance remain pending.
 No live reader/messaging profile is installed by this source milestone.
+
+
+The existing native Mesh input frame and private launch profile now accept the
+optional `codexDesktopOptions` field. It is validated before being passed through
+the same inherited pipe; it cannot be supplied as a startNativeMesh appOptions
+override or through the recall-only input reader. Existing profiles without the
+field retain their behavior. Source/model/caller/host overrides remain refused.
+
+Codex availability is independent of Mesh startup. Trusted config shape is
+checked immediately, but executable/server pins are checked before a native proxy
+launch when a chat is opened. If Codex is absent or its installed files changed,
+the Nims read refuses the stale connection while the rest of Mesh stays usable.
+Review new installed-file pins before reconnecting; never accept changed code by
+disabling the check. Gateway and native-frame checks use a synthetic app peer and
+temporary private app data, without enrolling the live phone service.

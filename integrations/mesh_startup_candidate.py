@@ -83,6 +83,7 @@ def profiles(handoff):
     require(c['schema']=='onoes-mesh-native-capture-launch/v1' and n['schema']=='onoes-mesh-native-launch/v2'
         and c['workspace']==n['workspace']==str(ROOT) and connected_settings_match(c['settings'],n['settings'])
         and c['nodeExecutable']==n['nodeExecutable'] and c['nodeSha256']==n['nodeSha256']
+        and c.get('codexDesktopOptions')==n.get('codexDesktopOptions')
         and c['projectCapture']['source']==n['projectSync']['source'] and c['projectCapture']['links']==n['projectSync']['links'])
     port=int(c['settings']['MESH_PREVIEW_PORT']);require(0<port<65536)
     protected={str(ROOT.parent/'workroom-ab-preview-process.json')}

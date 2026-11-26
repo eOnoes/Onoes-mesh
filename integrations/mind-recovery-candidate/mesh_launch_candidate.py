@@ -74,6 +74,34 @@ def source_paths(*, project=False, settings=None):
 
 CAPTURE_SCHEMA='onoes-mesh-native-capture-launch/v1'
 
+def codex_frame_fields(profile):
+    """Optional native chat metadata through the existing private inherited frame.
+
+    Do not open a native endpoint, copy credentials or require Codex availability
+    while launching the rest of Mesh. Node pins are checked before proxy launch.
+    """
+    if 'codexDesktopOptions' not in profile:return {}
+    value=profile['codexDesktopOptions']
+    require(type(value) is dict and set(value)=={'source','projectDirectory','transport'}
+        and value['source'] in ('native_codex_desktop_readonly','native_codex_desktop_messaging'))
+    project=value['projectDirectory']
+    require(type(project) is str and 1<=len(project)<=1024 and re.match(r'^[A-Za-z]:[\\/]',project)
+        and not re.search(r'[\x00\r\n]',project))
+    transport=value['transport']
+    keys={'nodePath','serverPath','nodeSha256','serverSha256','pipePath','callerThreadId'}
+    require(type(transport) is dict and set(transport) in (keys,keys|{'discovery'})
+        and all(type(v) is str for v in transport.values()))
+    require(re.fullmatch(r'[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}',transport['callerThreadId']))
+    for kind in ('node','server'):
+        require(Path(transport[kind+'Path']).is_absolute()
+            and re.fullmatch('[a-f0-9]{64}',transport[kind+'Sha256']))
+    require(re.fullmatch(r'\\\\\.\\pipe\\[A-Za-z0-9_.-]{1,180}',transport['pipePath']))
+    if 'discovery' in transport:
+        require(transport['discovery']=='single_local_codex_desktop'
+            and re.fullmatch(r'\\\\\.\\pipe\\codex-app-tools-[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}',transport['pipePath']))
+    return {'codexDesktopOptions':json.loads(json.dumps(value))}
+
+
 def rook_frame_fields(profile, profile_sha):
     if 'rookEnrollment' not in profile:
         return {}
@@ -180,7 +208,7 @@ await confinedPath(native.options.profile.workspace);
 
 
 def inspect_capture(p,path,expected_sha,approval_path):
-    require(os.name=='nt' and set(p)-{'rookEnrollment'}=={'schema','workspace','pythonExecutable','nodeExecutable','pythonSha256','nodeSha256',
+    require(os.name=='nt' and set(p)-{'rookEnrollment','codexDesktopOptions'}=={'schema','workspace','pythonExecutable','nodeExecutable','pythonSha256','nodeSha256',
         'sourceHashes','settings','attemptPath','stdoutPath','stderrPath','runtime','ownerSid','pwshSha256','projectCapture'})
     require(Path(p['workspace']).resolve()==ROOT and Path(p['pythonExecutable']).resolve()==Path(sys.executable).resolve()
         and digest(sys.executable)==p['pythonSha256'])
@@ -212,6 +240,7 @@ def inspect_capture(p,path,expected_sha,approval_path):
         and target not in (path,approval_path,Path(settings['MESH_GATE_KEY_FILE'])) for target in targets))
     capture_frame(p)
     rook_frame_fields(p, expected_sha)
+    codex_frame_fields(p)
     return p,roles
 
 
@@ -226,7 +255,7 @@ def inspect_launch(path,expected_sha,approval_path):
     require(type(p) is dict)
     if p.get('schema')==CAPTURE_SCHEMA:return inspect_capture(p,path,expected_sha,approval_path)
     project=p.get('schema')=='onoes-mesh-native-launch/v2'
-    require(set(p)-{'rookEnrollment'}=={'schema','workspace','pythonExecutable','nodeExecutable',
+    require(set(p)-{'rookEnrollment','codexDesktopOptions'}=={'schema','workspace','pythonExecutable','nodeExecutable',
         'pythonSha256','nodeSha256','sourceHashes','readerProfile','readerProfileSha256',
         'settings','attemptPath','stdoutPath','stderrPath'} | ({'projectSync'} if project else set()))
     require(p['schema'] in ('onoes-mesh-native-launch/v1','onoes-mesh-native-launch/v2') and Path(p['workspace']).resolve()==ROOT)
@@ -258,6 +287,7 @@ def inspect_launch(path,expected_sha,approval_path):
         target=Path(p[name]);require(target.is_absolute() and target.parent==root)
     require(len({p[n] for n in ('attemptPath','stdoutPath','stderrPath')})==3)
     rook_frame_fields(p, expected_sha)
+    codex_frame_fields(p)
     return p,roles
 
 
@@ -284,6 +314,7 @@ def native_peers(p,roles,approval_path,options):
 def native_frame(p,roles,approval_path,profile_sha):
     options = _mind_frame(p,roles,approval_path,profile_sha)
     options.update(rook_frame_fields(p, profile_sha))
+    options.update(codex_frame_fields(p))
     require(len(json.dumps(options).encode('utf-8')) <= 16384)
     return options
 

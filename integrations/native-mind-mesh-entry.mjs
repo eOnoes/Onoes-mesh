@@ -2,6 +2,7 @@
 // the secret frame through its inherited pipe. A review reference is not consent.
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {validateCodexDesktopOptions} from '../lib/codex-conversations.mjs';
 import {configureMindRecall} from '../lib/mind-recall.mjs';
 import {startApp} from '../server.mjs';
 import {validateRookEnrollment} from '../lib/workroom-rook.mjs';
@@ -38,6 +39,10 @@ function readNativeInput(input,{timeoutMs=10000,allowProjectSync=false}={}){
           approved.rookEnrollment=validateRookEnrollment(value.rookEnrollment);
           delete value.rookEnrollment;
         }
+        if(allowProjectSync && value && Object.hasOwn(value,'codexDesktopOptions')){
+          approved.codexDesktopOptions=validateCodexDesktopOptions(value.codexDesktopOptions);
+          delete value.codexDesktopOptions;
+        }
         const legacy=exact(value,['schema','mindRecallOptions'])&&value.schema===frameSchema;
         const combined=allowProjectSync&&exact(value,['schema','mindRecallOptions','projectSyncOptions'])&&value.schema===meshFrameSchema;
         const capture=allowProjectSync&&exact(value,['schema','projectCaptureOptions'])&&value.schema===captureFrameSchema;
@@ -65,7 +70,7 @@ export function readNativeMeshInput(input,options){
 }
 
 export async function startNativeMesh({input=process.stdin,appOptions={},inputTimeoutMs}={}){
-  if(['mindRecallOptions','mindRecallTestOptions','projectSyncOptions','projectSyncTestOptions','projectCaptureOptions','rookEnrollment','rookRuntimeTestOptions'].some(key=>Object.hasOwn(appOptions,key)))throw refusal();
+  if(['mindRecallOptions','mindRecallTestOptions','projectSyncOptions','projectSyncTestOptions','projectCaptureOptions','rookEnrollment','rookRuntimeTestOptions','codexDesktopOptions'].some(key=>Object.hasOwn(appOptions,key)))throw refusal();
   const approved=await readNativeMeshInput(input,{timeoutMs:inputTimeoutMs});
   // Existing startApp owns all Mesh components. The reader is an independent
   // dependency: its failure, exit or pipe closure must not close this app.

@@ -87,6 +87,18 @@ class StartupTests(unittest.TestCase):
     def call(self):
         return startup.ensure_capture_first(self.window,approval_path=self.private/'startup.json',approval_sha='f'*64)
 
+    def test_native_chat_binding_cannot_change_across_capture_and_connected_modes(self):
+        def save(mode,profile):
+            path=Path(self.handoff[mode]['profilePath']);path.write_text(json.dumps(profile))
+            self.handoff[mode]['profileSha256']=startup.digest(path)
+        value={'source':'native_codex_desktop_readonly','projectDirectory':'C:/Owned/Project'}
+        self.cp['codexDesktopOptions']=value.copy();save('capture',self.cp)
+        with self.assertRaises(startup.StartupHold):startup.profiles(self.handoff)
+        self.np['codexDesktopOptions']=value.copy();save('connected',self.np)
+        startup.profiles(self.handoff)
+        self.np['codexDesktopOptions']['projectDirectory']='C:/Other';save('connected',self.np)
+        with self.assertRaises(startup.StartupHold):startup.profiles(self.handoff)
+
     def test_profile_substitution_or_record_paths_inside_code_repo_are_refused(self):
         startup.profiles(self.handoff)
         bad=self.private/'capture-profile.json';bad.write_text('{}')
