@@ -1,3 +1,4 @@
+import {configureCodexConversations} from './lib/codex-conversations.mjs';
 import {withRelaySource} from './lib/connection-observations.mjs';
 import {configureMindRecall,recallInput} from './lib/mind-recall.mjs';
 import {automationPolicy} from './lib/workroom-automation-store.mjs';
@@ -54,6 +55,8 @@ const staticFiles = new Map([['/', ['public/index.html', 'text/html']], ['/app.j
 staticFiles.set('/workroom.mjs', ['public/workroom.mjs', 'text/javascript']);
 staticFiles.set('/agent-workspace.mjs', ['public/agent-workspace.mjs', 'text/javascript']);
 staticFiles.set('/mind-workspace.mjs', ['public/mind-workspace.mjs', 'text/javascript']);
+staticFiles.set('/nims-chat.mjs', ['public/nims-chat.mjs', 'text/javascript']);
+staticFiles.set('/nims-chat-state.mjs', ['public/nims-chat-state.mjs', 'text/javascript']);
 staticFiles.set('/relay-conversation.mjs', ['public/relay-conversation.mjs', 'text/javascript']);
 staticFiles.set('/relay-task-progress.mjs', ['public/relay-task-progress.mjs', 'text/javascript']);
 staticFiles.set('/lead-policy.mjs', ['public/lead-policy.mjs', 'text/javascript']);
@@ -104,10 +107,11 @@ async function activity(registryPath) {
     return await readWorkerActivity({ registryPath, nowIso: new Date().toISOString(), staleAfterMs: 600000 });
   } catch { return snapshot('unavailable'); }
 }
-export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, mindRecallOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, rookEnrollment, projectSyncTestOptions, projectSyncOptions, projectCaptureOptions, nativeWorkerOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
+export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, activitySource = 'disposable_fixture', serviceConfig = {}, inferenceConfig, inferenceTestReader, nodeProbeTestOptions, mindRecallTestOptions, mindRecallOptions, localInferenceTestOptions, supervisedInferenceTestOptions, rookRuntimeTestOptions, rookEnrollment, projectSyncTestOptions, projectSyncOptions, projectCaptureOptions, nativeWorkerOptions, codexDesktopOptions, sessionTtlMs = 300000, sessionNow, relayEnabled = process.env.MESH_RELAY === '1' } = {}) {
   // Process configuration only. Standalone wins over ambient Relay enablement
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
+  const codexConversations=await configureCodexConversations(codexDesktopOptions,{standalone});
   if (rookEnrollment !== undefined && (standalone || rookRuntimeTestOptions !== undefined))
     throw Error('Native Rook enrollment cannot use a fixture runtime.');
   if([projectSyncOptions,projectSyncTestOptions,projectCaptureOptions].filter(v=>v!==undefined).length>1)throw Error('Conflicting project sync configuration.');
@@ -336,6 +340,16 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         return send(200,result);
       }
       if (route === '/api/commands' && ['GET', 'HEAD'].includes(req.method)) return send(200, { commands: commandChoices });
+      if(route==='/api/relay/codex/status'&&req.method==='GET')return send(200,{configured:Boolean(codexConversations),readOnly:true});
+      if(route==='/api/relay/codex/catalog'||route==='/api/relay/codex/history'){
+        if(req.method!=='POST')throw new TaskError(405,'Method not allowed.');
+        if(!codexConversations)throw new TaskError(503,'Nims project chats are not connected yet.');
+        let result;
+        try{result=route.endsWith('/catalog')?await codexConversations.catalog(context.body):await codexConversations.history(context.body);}
+        catch{throw new TaskError(503,'Nims desktop history is unavailable. No message was sent.');}
+        if(!current())return;
+        return send(200,result);
+      }
       if (route === '/api/relay' && ['GET', 'HEAD'].includes(req.method)) return send(200, await relay.snapshot());
       if (route === '/api/relay/shell' && ['GET', 'HEAD'].includes(req.method)) return send(200, { html: await relay.shell() });
       const relayAsset = /^\/api\/relay\/static\/([a-z.-]+)$/.exec(route)?.[1];
@@ -561,6 +575,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
     server.closeAllConnections(); await closed;
     let nativeCloseFailed=false;
     try { await nativeWorker?.close(); } catch { nativeCloseFailed=true; }
+    await codexConversations?.close();
     await rookRuntime?.close();await teamRunner?.close(); await relay.close(); await Promise.allSettled([...executions]);await localInference.close?.();await nativeProjectSync?.close();modelDatabase?.close(); store?.close();
     if(nativeCloseFailed)throw new Error('Native worker transport cleanup could not be confirmed.');
   } };

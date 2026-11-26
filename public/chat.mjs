@@ -1,3 +1,4 @@
+import {createNimsChatReader} from './nims-chat.mjs';
 import {createRelayConversation} from './relay-conversation.mjs';
 import {createRelayTaskProgress} from './relay-task-progress.mjs';
 
@@ -123,6 +124,7 @@ const toBottom = () => { if (chat) chat.scrollTop = chat.scrollHeight; };
 // Ordinary chat has one submit handler and uses the application's admitted request path.
 export function createRelayChat({request}) {
   if(!chat || !form) return {setAvailable(){},clear(){},refresh:async()=>{}};
+  const nativeReader=createNimsChatReader({root:document.getElementById('relay-nims-chats'),request});
   const taskProgress=createRelayTaskProgress({root:document.getElementById('relay-task-progress'),button:document.getElementById('relay-task-progress-open'),request,document});
   const select=document.getElementById('relay-chat-agent');
   const current=document.getElementById('relay-chat-current');
@@ -180,7 +182,7 @@ export function createRelayChat({request}) {
   setInterval(refresh,5000);
   if(panel)new MutationObserver(()=>{if(!panel.hidden){toBottom();refresh();}}).observe(panel,{attributes:true,attributeFilter:['hidden']});
   draw(core.state());
-  return {refresh,setAvailable(value,isBusy=false){busy=isBusy;taskProgress.setAvailable(value,isBusy);core.setAvailable(value);draw(core.state());},clear(){taskProgress.clear();core.setAvailable(false);draw(core.state());}};
+  return {refresh,setAvailable(value,isBusy=false){busy=isBusy;nativeReader.setAvailable(value);taskProgress.setAvailable(value,isBusy);core.setAvailable(value);draw(core.state());},clear(){nativeReader.clear();taskProgress.clear();core.setAvailable(false);draw(core.state());}};
 }
 // --- chat chrome ------------------------------------------------------------------
 // Two things the conversation needs to be usable: a width you can drag, and a scroll

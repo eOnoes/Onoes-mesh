@@ -244,3 +244,50 @@ preserving the same reading offset. Browser viewport emulation is not Eddie
 accepting the feature on his physical phone. No send or worker action occurred.
 This CSS-only change used browser layout checks; the earlier651full and2scroll
 test results remain separate. Evidence:data/relay-compact-status-browser-proof-20261114.json.
+
+
+## Native Nims conversation reader - November26,2026
+
+The candidate Relay panel browses actual local Codex project conversations using
+OpenAI's already installed codex-app-tools MCP server. It does not start a Codex
+engine, resume an independent writer, replace the desktop CLI, or create a second
+Nims identity. Codex owns the transcript; Mind receives deliberate handoffs.
+
+The reader is **disabled by default**. A trusted process profile may supply
+`codexDesktopOptions` with source `native_codex_desktop_readonly`, one reviewed
+Windows project directory, and the pinned `nodePath`, `serverPath`, SHA256 values,
+existing native `pipePath` and actual `callerThreadId`. Browser, CLI and HTTP
+requests cannot enroll or select a transport, host, caller context or filesystem
+path. Standalone mode refuses native enrollment. No credentials are copied.
+
+The first-party MCP adapter expects real caller-chat routing metadata. An omitted
+context returns InvalidParams; that alone is not a credential rejection. The local
+qualification supplied its actual current Codex chat ID. Persistent production
+enrollment and discovery after a desktop restart remain unqualified.
+
+Admitted routes:
+
+- `GET /api/relay/codex/status`: configuration state and read-only mode, not a claim
+  that Codex is currently reachable.
+- `POST /api/relay/codex/catalog`: native project/filtered conversation metadata;
+  accepts only the opaque next-page cursor.
+- `POST /api/relay/codex/history`: selected native thread and optional older-turn
+  or older-item cursor. The two native page formats are validated separately.
+
+The native caller and selected thread must match the one local project. Wrong
+thread item cursors and changed scope are refused. Only user/assistant messages
+reach the browser; reasoning and tool payloads do not. Native browser-activity
+markers become text labels. Responses are not mirrored into Mind or another
+conversation store. Titles/history clear on loss of admission, and stale responses
+cannot mix selections. Older items merge within their own turn. Native message
+truncation indicators remain visible.
+
+The transport allows only list_projects, list_threads and read_thread. It declares
+no sampling or elicitation capability, declines unsupported client requests, never
+auto-approves native actions, and does not restart Codex or resend messages.
+
+This is a read-only implementation milestone, not full Nims chat acceptance.
+Sending and New chat remain absent. Those must retain explicit user actions,
+native model/tool/approval behavior, exact conversation routing, and uncertain-send
+protection. Live rollout needs the reviewed native binding; native desktop restart
+reconnection and actual same-chat send/reply are still acceptance requirements.
