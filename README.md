@@ -14,7 +14,7 @@ with `Immutable pin: lib/task-store.mjs`. The historical pins and guard remain
 unchanged; a passing current behavioral check is not a passing historical-pin
 check. Do not regenerate those pins merely to obtain a green result.
 
-## Current work: Relay and Mind · updated November 25, 2026
+## Current work: Relay and Mind · updated November 26, 2026
 
 Start with [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay) or
 [Mind](https://emitchell.tail8c4a75.ts.net:8453/#mind). The active goal is reliable
@@ -48,10 +48,21 @@ private facts and admitted shared project context can cross those conversations
 through Mind; raw transcripts are not automatically ingested. One agent's private
 home is not another agent's readable memory.
 
-Next: complete Deep's normal-chat memory check, then qualify the remaining named
-agent identities and shared project context, including 3D-print plans/specs.
-Expand to laptop, cloud and AI-box runtimes after their real client bindings and
-access are established. Echo's team orchestration follows those connections.
+Next: install the reviewed native Nims chat connection in Relay after approval
+for its project-chat access and trusted startup update. The real new-chat and
+follow-up check passed; the live app does not yet include this connection.
+[RELAY-INTEGRATION.md](RELAY-INTEGRATION.md#native-nims-project-chats---november262026)
+describes the actual-project wrapper and its limits. Deep's bounded normal-chat
+memory check above is complete; do not repeat that check or the consumed Nims
+trial without a new grant.
+
+Then qualify the remaining named agent identities and shared project context,
+including 3D-print plans/specs. Remote client source preparation does not prove a
+live remote enrollment. An unresolved original cloud trial remains held for
+authoritative reconciliation; do not retry or clean it up merely because this
+goal continues. Expand to laptop and cloud after their real client bindings and
+access are established; the AI box is deferred until Eddie says it is ready.
+Echo's team orchestration follows those connections.
 The current private client packages use Windows account protection and loopback
 services; copying them to another host is not a supported remote enrollment.
 Phone access through Relay is distinct from an agent running on another device.
