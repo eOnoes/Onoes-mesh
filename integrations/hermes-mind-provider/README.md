@@ -428,3 +428,32 @@ reviewed snapshot, approved new access, same-target TLS/protocol verification
 and exact readback. The selected endpoint is not live merely because this
 planner or its tests exist. Keep the separately proposed Cyony Relay route and
 its approval independent from any Mind permission.
+## Cloud host profile preparation
+
+`cloud_host_profiles.py` prepares the existing v7 host view from exact reviewed
+v6 bytes. It retains Deep/Echo bindings, Nims's fixed handoff, original operator
+enrollment and the other existing projects. Its only added capabilities are
+Cyony's private home and context-cyony's read of shared Onoes-Mesh facts. A
+prepared view is not an owner approval; the native service still requires one.
+
+Twelve pure cases pass. `test_cloud_host_composed.py` adds one actual owned
+Windows v6 -> v7 -> v6 process case on a synthetic ledger: old private notes and
+handoff survive, new scopes require new approval, cross-actor reads fail, grant
+withdrawal preserves private access and rollback removes the added routes. Set
+MIND_SOURCE, MESH_SOURCE and MESH_CANDIDATE_SOURCE to the exact reviewed code.
+The case passed against both the current released adapter and the compatible
+artifact; these are two runs of one case, not two independent cases.
+
+The live enrollment still protects older core adapter bytes. Five differences
+were line endings; three were unrelated newer helper revisions. Do not broaden
+the native source allowlist. The compatible artifact retains all nine protected
+core files byte-for-byte and selects only the existing two host/HTTP upgrade
+seams plus the reviewed service controller. It passes the same composed case.
+The test fixture accepts an older operator module without assuming its newer
+operator-enrollment constant; runtime validation rules remain unchanged.
+
+Inactive actual profile views also pass the audited native runtime metadata
+checker (source hashes, owner permissions and database stat only); no approval,
+credential, SQLite connection or service is created by that check. The actual
+native curated files are under HERMES_HOME/memories, not directly under its
+root. Their contents and any import remain separately approved live work.

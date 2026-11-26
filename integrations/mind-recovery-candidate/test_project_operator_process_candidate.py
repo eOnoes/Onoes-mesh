@@ -37,7 +37,7 @@ class ProjectOperatorProcessTests(unittest.TestCase):
     def write(self):
         self.profile.write_text(json.dumps(self.value,indent=2),encoding='utf-8');self.sha=project.digest(self.profile)
         mode=self.value['mode']
-        decision=project.OPERATOR_DECISION if mode==project.OPERATOR_MODE else project.DECISION
+        decision=project.OPERATOR_DECISION if mode==getattr(project,"OPERATOR_MODE",None) else project.DECISION
         self.approval.write_text(json.dumps(dict(decision=decision,ownerSid=self.value['ownerSid'],profiles=[self.sha],
             storeId=self.value['binding']['store_id'],scopeId=project.SCOPE,projects=[item[0] for item in self.value['projects']],
             reviewRef=self.value['reviewRef'],actions=[mode])),encoding='utf-8')
