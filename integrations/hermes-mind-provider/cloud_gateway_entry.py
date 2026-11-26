@@ -8,10 +8,15 @@ import hashlib
 import importlib.util
 import json
 import os
+from contextlib import contextmanager
 from pathlib import Path
 import re
 import stat
 import sys
+import threading
+import traceback
+
+_WINDOW_SCOPES={}
 
 
 class EntryHeld(RuntimeError):
@@ -25,6 +30,41 @@ def require(ok):
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+@contextmanager
+def operation_scope(evidence,plan_sha256):
+    """One finite remote actor at a time, including after an uncertain SSH reply.
+
+    The lock inode is retained. Only this source-bound operation family uses
+    it; it is not evidence of machine-wide writer retirement. Nested stopped
+    checks on the same owner thread reuse its held descriptor.
+    """
+    import fcntl
+    root=Path(evidence)
+    require(os.name=='posix' and root.is_absolute() and root.resolve(strict=True)==root)
+    info=root.stat();require(info.st_uid==os.geteuid() and stat.S_ISDIR(info.st_mode)
+        and not stat.S_IMODE(info.st_mode)&0o077)
+    key=(os.getpid(),threading.get_ident(),str(root),plan_sha256)
+    path=root/'WINDOW-OPERATION.lock'
+    if key in _WINDOW_SCOPES:
+        fd,identity=_WINDOW_SCOPES[key]
+        require((path.stat().st_dev,path.stat().st_ino)==identity)
+        yield
+        return
+    fd=os.open(path,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600)
+    try:
+        state=os.fstat(fd);require(stat.S_ISREG(state.st_mode) and state.st_uid==os.geteuid()
+            and stat.S_IMODE(state.st_mode)==0o600 and state.st_nlink==1 and state.st_size==0
+            and (path.stat().st_dev,path.stat().st_ino)==(state.st_dev,state.st_ino))
+        try:fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError:raise EntryHeld('Another exact window operation remains active; preserve the hold') from None
+        _WINDOW_SCOPES[key]=(fd,(state.st_dev,state.st_ino))
+        try:yield
+        finally:
+            del _WINDOW_SCOPES[key]
+            fcntl.flock(fd,fcntl.LOCK_UN)
+    finally:os.close(fd)
 
 
 def private_file(path, *, limit=65536):
@@ -118,7 +158,7 @@ def require_qualification(plan, pin, *, original=False):
         require(candidate.resolve(strict=True) == candidate and digest(candidate) == expected)
 
 
-def run_phase(phase, plan_path, pin, authorization_path):
+def _run_phase(phase, plan_path, pin, authorization_path):
     require(phase in ('stop', 'verify-stopped', 'release', 'verify-running',
                      'rehold', 'verify-rollback-stopped', 'release-original', 'verify-original-running'))
     plan = approved_inputs(plan_path, pin, authorization_path)
@@ -189,6 +229,12 @@ def run_phase(phase, plan_path, pin, authorization_path):
             gate.close()
 
 
+def run_phase(phase,plan_path,pin,authorization_path):
+    plan=approved_inputs(plan_path,pin,authorization_path)
+    with operation_scope(plan['evidence'],pin):
+        return _run_phase(phase,plan_path,pin,authorization_path)
+
+
 def main():
     require(len(sys.argv) == 5)
     result = run_phase(*sys.argv[1:])
@@ -199,6 +245,9 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except Exception:
+    except Exception as error:
         print('Cloud phase held; preserve exact receipts. Do not repeat uncertain work.', file=sys.stderr)
+        print(json.dumps({'errorType':type(error).__name__,'frames':[
+            {'file':Path(f.filename).name,'function':f.name,'line':f.lineno}
+            for f in traceback.extract_tb(error.__traceback__)[-12:]],'messagesAndLocalsExcluded':True}),file=sys.stderr)
         raise SystemExit(1)

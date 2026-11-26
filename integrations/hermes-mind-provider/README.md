@@ -707,6 +707,35 @@ The finite window now materializes public client code before curated capture,
 because capture uses the frozen SDK validators. Private credential delivery is
 a separate later operation after enrollment and Windows startup. Thirteen
 fault/order/privacy/replay cases pass. Public files alone do not select memory
-configuration or enable access. Concrete cloud client/route qualification and
+configuration or enable access. The deployed private route and
 the enclosing cross-host installer remain outstanding; live enrollment remains
 unapproved and inactive.
+
+
+### Concrete cloud client and native operation exclusion
+
+`cloud_client_entry.py` now executes public materialization, approved two-file
+curated capture/export, private credential delivery, native portable switch and
+read-only qualification under the existing gateway's verified stopped state.
+The qualifier uses the actual configured provider over verified TLS and its
+dedicated MCP1.26 stdio reader to retrieve the current shared Nims handoff,
+revision and provenance. It starts no model and does not enroll a principal.
+
+The gateway and client entries share a private retained-inode kernel operation
+lock. Another participant blocks before a write; nested same-thread checks
+reuse the existing descriptor. This is this installer's scoped exclusion, not
+a machine-wide idle claim. Normal native startup remains the admission release;
+the authorized running intent is recorded before s6 can launch a child.
+
+Portable rollback uses the native backend's explicit file backup/restore
+capability and restores the original bytes/checksum atomically. Another native
+backend is refused before selection; unrelated settings are never rewritten.
+
+One complete owned no-network container case passed actual default-trust TLS,
+provider recall, dedicated MCP handoff read, operation-lock refusal, non-file
+backend refusal, native release/rehold, exact original configuration restore
+and original release. Both native boots observed running intent beforehand;
+the peer service was unchanged. The API used a synthetic POSIX SDK Ledger;
+Windows checkpoint/DPAPI owner proof is the separate native owner test. Earlier
+failed attempts remain diagnostics. This does not qualify the complete
+Windows-to-cloud installer, its deployed private route or live Cyony access.

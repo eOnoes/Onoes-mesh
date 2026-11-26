@@ -220,7 +220,15 @@ class NativeGateway:
         write_once(self.evidence/'GATEWAY-START-ATTEMPT.json',{'service':self.unit,
             'admissionRelease':'normal_native_start','automaticRetry':False})
         self._owned_marker();require(self.drain.clear_drain_request(home=self.home))
-        require(not os.path.lexists(self.marker));self._sources();self.manager.start(self.unit)
+        require(not os.path.lexists(self.marker));self._sources()
+        # Native start() requests s6 up BEFORE persisting running intent. A
+        # newly scheduled child can otherwise cache the previous stopped intent.
+        # Record the same authorized intent first; normal native start remains
+        # the only launcher and still records its usual post-request intent.
+        self.service_api._write_gateway_desired_state(self.unit,'running')
+        intent=self.status.read_runtime_status(self.home/'gateway_state.json')
+        require(intent and intent.get('desired_state')=='running')
+        self.manager.start(self.unit)
         deadline=time.monotonic()+seconds
         while True:
             up,pid=self._fields('up','pid');require(up in ('true','false'))

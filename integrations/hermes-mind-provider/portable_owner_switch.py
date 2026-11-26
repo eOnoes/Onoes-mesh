@@ -9,6 +9,8 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
+import tempfile
 from urllib.parse import urlsplit
 
 from owner_profile_switch import SwitchError,current_path,read_config,digest
@@ -19,6 +21,16 @@ TOOL='mcp__onoes_mind_mesh__read_project_context'
 
 def require(ok):
     if not ok:raise SwitchError('Portable Mind switch inputs changed or are not ready; preserve current files')
+
+
+def file_backend():
+    # A config.yaml beforeimage is authoritative only for native file mode.
+    # Refuse another selected backend before asking it to bootstrap/read/write.
+    require(os.environ.get('HERMES_CONFIG_BACKEND','').strip().lower() in ('','file'))
+    from hermes_cli.config_backend import get_config_backend
+    backend=get_config_backend()
+    require(backend.name=='file' and backend.supports_file_tooling())
+    return backend
 
 
 def private_document(path,pin):
@@ -117,6 +129,7 @@ def verify_plan(plan,*,profiles=True):
 
 def prepare_switch(*,home,home_profile,home_sha256,reader_profile,reader_sha256,reader_python,
                    agent_id,project_id,principal_id,expected_config_sha256):
+    file_backend()
     require(all(type(value) is str and re.fullmatch('[0-9a-f]{64}',value)
         for value in (home_sha256,reader_sha256,expected_config_sha256)))
     home=Path(home);path=current_path(home);raw,original=read_config(path)
@@ -133,7 +146,7 @@ def prepare_switch(*,home,home_profile,home_sha256,reader_profile,reader_sha256,
 def install_switch(plan,*,backup_directory,assert_quiescent):
     from hermes_cli.config import atomic_config_write
     from onoes_mind.posix_home_state import _directory,_read_private
-    verify_plan(plan);path=current_path(plan.home)
+    file_backend();verify_plan(plan);path=current_path(plan.home)
     require(callable(assert_quiescent) and assert_quiescent() is True)
     require(read_config(path)==(plan.original_raw,plan.original))
     root,identity=_directory(backup_directory);backup=root/'hermes-config-before-mind.yaml'
@@ -142,14 +155,13 @@ def install_switch(plan,*,backup_directory,assert_quiescent):
     with os.fdopen(descriptor,'wb') as stream:stream.write(plan.original_raw);stream.flush();os.fsync(stream.fileno())
     saved,_=_read_private(backup,1024*1024,identity);require(saved==plan.original_raw)
     require(assert_quiescent() is True);verify_plan(plan)
-    require(read_config(path)==(plan.original_raw,plan.original))
+    require(read_config(path)==(plan.original_raw,plan.original));file_backend()
     atomic_config_write(path,deepcopy(plan.proposed))
     raw,body=read_config(path);require(body==plan.proposed)
     return {**plan.metadata(),'activated':True,'installed_config_sha256':digest(raw),'backup_path':str(backup),'gateway_reloaded':False}
 
 
 def rollback_switch(plan,receipt,*,assert_quiescent):
-    from hermes_cli.config import atomic_config_replace
     from onoes_mind.posix_home_state import _directory,_read_private
     # New profile files can be unavailable precisely when rollback is needed.
     # The exact installed config, plan/receipt and original backup remain required.
@@ -164,6 +176,25 @@ def rollback_switch(plan,receipt,*,assert_quiescent):
     _,identity=_directory(backup.parent)
     saved,_=_read_private(backup,1024*1024,identity);require(saved==plan.original_raw)
     require(assert_quiescent() is True and read_config(path)==(raw,body))
-    atomic_config_replace(path,deepcopy(plan.original))
+    # A document rewrite preserves values but changes comments/format/checksum.
+    # Native file tooling explicitly supports file backup/restore. Use that
+    # capability only for this already file-bound plan, preserving its exact
+    # original bytes instead of routing a raw write to a database backend.
+    file_backend()
+    info=path.stat();require(info.st_uid==os.geteuid() and not stat.S_IMODE(info.st_mode)&0o022)
+    fd,name=tempfile.mkstemp(prefix='.mind-config-restore-',dir=path.parent)
+    staged=Path(name)
+    with os.fdopen(fd,'wb') as stream:
+        os.fchmod(stream.fileno(),stat.S_IMODE(info.st_mode))
+        stream.write(plan.original_raw);stream.flush();os.fsync(stream.fileno())
+    # Keep a failed owned stage for inspection; never overwrite another file.
+    require(staged.resolve(strict=True)==staged and staged.read_bytes()==plan.original_raw
+        and assert_quiescent() is True and read_config(path)==(raw,body))
+    file_backend()
+    os.replace(staged,path)
+    parent_fd=os.open(path.parent,os.O_RDONLY|os.O_DIRECTORY)
+    try:os.fsync(parent_fd)
+    finally:os.close(parent_fd)
     restored,body=read_config(path);require(body==plan.original)
+    require(restored==plan.original_raw)
     return dict(restored=True,restored_config_sha256=digest(restored),gateway_reloaded=False)

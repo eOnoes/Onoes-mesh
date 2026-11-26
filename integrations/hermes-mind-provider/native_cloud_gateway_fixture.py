@@ -25,7 +25,7 @@ def json_read(path):
     except (FileNotFoundError,json.JSONDecodeError):return {}
 
 
-def main():
+def main(driver=None):
     global ROOT
     ROOT=Path(tempfile.mkdtemp(prefix='mesh-native-gateway-'))
     HOME=ROOT/'home';HOME.mkdir(mode=0o700)
@@ -53,6 +53,9 @@ def main():
             command+=' >> '+shlex.quote(str(ROOT/'gateway.log'))+' 2>&1'
         else:command='exec /bin/sleep 10000'
         script='#!/bin/sh\nexport HERMES_S6_SUPERVISED_CHILD=1 HERMES_SUPERVISED_CHILD=1\n'
+        if name=='gateway-default':
+            observation="import json;from pathlib import Path;p=Path("+repr(str(HOME/'gateway_state.json'))+");v=json.loads(p.read_text());f=Path("+repr(str(ROOT/'boot-intents.jsonl'))+").open('a');f.write(json.dumps({'desired_state':v.get('desired_state')})+'\\n');f.close()"
+            script+='/opt/hermes/.venv/bin/python3 -I -B -c '+shlex.quote(observation)+'\n'
         script+='cd '+shlex.quote(str(HOME))+'\n'+command+'\n'
         (directory/'run').write_text(script);(directory/'run').chmod(0o700)
         (directory/'finish').write_text('#!/bin/sh\n[ "$1" = 0 ] && exit 125\nexit 0\n')
@@ -75,6 +78,13 @@ def main():
             'gateway/status.py','gateway/drain_control.py','hermes_cli/service_manager.py',
             'gateway/run.py','gateway/run_shutdown.py','gateway/run_bootstrap.py','gateway/run_inbound.py')}
         slot_pins={name:digest(tree/'gateway-default'/name) for name in ('run','finish')}
+        if driver is not None:
+            # Optional composed client driver shares only this owned fixture.
+            # The normal source-bound native lifecycle case remains unchanged.
+            driver(root=ROOT,home=HOME,evidence=evidence,tree=tree,manager=manager,
+                initial=initial,peer_pid=peer_pid,peerhome=peerhome,peer_state=peer_state,
+                source_pins=pins,slot_pins=slot_pins)
+            return
         gate=NativeGateway(home=HOME,evidence=evidence,window_id='synthetic-window',plan_sha256='a'*64,native_source='/opt/hermes',
             source_pins=pins,slot_pins=slot_pins,manager=manager,api_port=8642)
         # Foreign maintenance is never overwritten or cleared by this driver.
