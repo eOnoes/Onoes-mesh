@@ -755,3 +755,19 @@ foreign definition changes blocked pause/restore. All test tasks were removed.
 This qualifies the task-control primitive only: the positive cold Windows entry
 and complete cross-host installation/rollback remain outstanding. No live task,
 app, credential, memory permission or cloud configuration changed.
+
+
+### Concrete child-phase transport (inactive installer component)
+
+`cloud_phase_runner.py` constructs the existing cold Windows owner/service,
+backup and cloud gateway/client commands. It keeps SDK lifetimes separate,
+binds the approved SSH recipe and immutable container ID, and conveys private
+stdin/stdout without copying it into general journals. Each attempt is one-shot;
+transport timeout never proves remote-writer retirement. Noninteractive phases
+cannot consume terminal input. It adds no service, scheduler or worker.
+
+Seven local real-child checks pass for private-byte transport, no-input phases,
+replay prevention, nonzero exit, uncertain timeout and admission boundaries.
+Those tests make no remote or model call. The command bindings themselves and
+complete enclosing adapter/owner entry are not end-to-end qualified. This is an
+inactive component, not a standalone installer or new access authorization.
