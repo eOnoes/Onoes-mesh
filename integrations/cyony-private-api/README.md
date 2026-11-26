@@ -1,7 +1,8 @@
 # Existing Hermes API: private route candidate
 
 This package prepares two additions to an existing Docker Compose service and
-one subpath on its existing private Tailscale HTTPS listener. It has no live
+one subpath on its existing private Tailscale HTTPS listener, plus the matching
+three-field change to Relay's existing Cyony peer. It has no live
 installer and never enrolls an agent, reads credentials or starts a model.
 
 The route reuses the native Hermes Runs API and Relay's existing Hermes client.
@@ -30,12 +31,19 @@ unchanged mount it added, preserving other newly added routes. Actual apply
 must recheck the current handler before using the generated path-specific
 command; never use `tailscale serve reset` or replace a whole stale config.
 
+`relay_config_candidate` prepares only Cyony's backend, HTTPS URL and new
+credential-file reference. It preserves the other agents, budgets and settings,
+rejects reuse of the old A2A credential, refuses inline/environment credentials
+and requires the new file reference to stay inside the reviewed local `.private`
+directory. It neither reads nor creates that key. Relay rollback requires the
+exact proposed bytes; a concurrent config edit is retained for review.
+
 ## Verification
 
 With PyYAML installed, from this directory:
 
 ```text
-python -B -m unittest test_route_candidate -v
+python -B -m unittest test_route_candidate test_relay_config_candidate -v
 ```
 
 The optional Docker rehearsal uses an **already present** `node:22-alpine`
