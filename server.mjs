@@ -55,6 +55,7 @@ const staticFiles = new Map([['/', ['public/index.html', 'text/html']], ['/app.j
 staticFiles.set('/workroom.mjs', ['public/workroom.mjs', 'text/javascript']);
 staticFiles.set('/agent-workspace.mjs', ['public/agent-workspace.mjs', 'text/javascript']);
 staticFiles.set('/mind-workspace.mjs', ['public/mind-workspace.mjs', 'text/javascript']);
+staticFiles.set('/nims-send-state.mjs', ['public/nims-send-state.mjs', 'text/javascript']);
 staticFiles.set('/nims-chat.mjs', ['public/nims-chat.mjs', 'text/javascript']);
 staticFiles.set('/nims-chat-state.mjs', ['public/nims-chat-state.mjs', 'text/javascript']);
 staticFiles.set('/relay-conversation.mjs', ['public/relay-conversation.mjs', 'text/javascript']);
@@ -111,7 +112,6 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   // Process configuration only. Standalone wins over ambient Relay enablement
   // and never constructs the native node reader or imports inference workers.
   const standalone = process.env.MESH_STANDALONE === '1';
-  const codexConversations=await configureCodexConversations(codexDesktopOptions,{standalone});
   if (rookEnrollment !== undefined && (standalone || rookRuntimeTestOptions !== undefined))
     throw Error('Native Rook enrollment cannot use a fixture runtime.');
   if([projectSyncOptions,projectSyncTestOptions,projectCaptureOptions].filter(v=>v!==undefined).length>1)throw Error('Conflicting project sync configuration.');
@@ -186,6 +186,7 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
   if (configuredRegistry && !configuredRegistry.startsWith(directory + path.sep)) throw new Error('Registry must be in the owned synthetic subtree.');
   const manager = createTrialSessionManager({ ttlMs: sessionTtlMs, maxSessions: 32, ...(sessionNow ? { now: sessionNow } : {}) });
   await mkdir(directory, { recursive: true });
+  const codexConversations=await configureCodexConversations(codexDesktopOptions,{standalone,receiptFilename:path.join(directory,'codex-requests.sqlite')});
   let store;
   const executions = new Set();
   const activeRuns = new Map();
@@ -340,13 +341,24 @@ export async function startApp({ port = 0, dataDir = 'data/mesh', registryPath, 
         return send(200,result);
       }
       if (route === '/api/commands' && ['GET', 'HEAD'].includes(req.method)) return send(200, { commands: commandChoices });
-      if(route==='/api/relay/codex/status'&&req.method==='GET')return send(200,{configured:Boolean(codexConversations),readOnly:true});
+      if(route==='/api/relay/codex/status'&&req.method==='GET')return send(200,{configured:Boolean(codexConversations),readOnly:codexConversations?.readOnly??true});
       if(route==='/api/relay/codex/catalog'||route==='/api/relay/codex/history'){
         if(req.method!=='POST')throw new TaskError(405,'Method not allowed.');
         if(!codexConversations)throw new TaskError(503,'Nims project chats are not connected yet.');
         let result;
         try{result=route.endsWith('/catalog')?await codexConversations.catalog(context.body):await codexConversations.history(context.body);}
         catch{throw new TaskError(503,'Nims desktop history is unavailable. No message was sent.');}
+        if(!current())return;
+        return send(200,result);
+      }
+      if(['/api/relay/codex/send','/api/relay/codex/new','/api/relay/codex/receipt'].includes(route)){
+        if(req.method!=='POST')throw new TaskError(405,'Method not allowed.');
+        if(!codexConversations||codexConversations.readOnly)throw new TaskError(503,'Nims messaging is not enabled.');
+        let result;
+        try{
+          result=route.endsWith('/receipt')?{receipt:codexConversations.receipt(context.body)}
+            :{receipt:await (route.endsWith('/new')?codexConversations.create:codexConversations.send)(context.body,current)};
+        }catch(error){throw new TaskError([400,403,409].includes(error.status)?error.status:503,error.status?error.message:'Nims could not confirm this request. Check its receipt before trying again.');}
         if(!current())return;
         return send(200,result);
       }

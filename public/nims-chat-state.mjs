@@ -1,13 +1,14 @@
 const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
-export function createNimsChatState({request,onChange=()=>{}}){
+import {createNimsSendState} from './nims-send-state.mjs';
+export function createNimsChatState({request,onChange=()=>{},storage,makeId,hash}){
   let available=false,epoch=0,busy=false,configured=false,project=null,conversations=[],listCursor=null,selected=null,groups=[],turnCursor=null;
-  let note='Connect to browse Nims project chats.';
+  let note='Connect to browse Nims project chats.',readOnly=true,sender;
   const state=()=>({available,busy,configured,project,conversations:[...conversations],selected:selected&&{...selected},
-    messages:groups.flatMap(group=>group.messages),hasOlder:Boolean(turnCursor||groups.some(g=>g.olderItemCursor)),
-    moreConversations:Boolean(listCursor),note,readOnly:true});
+    ...sender?.state(),messages:[...groups.flatMap(group=>group.messages),...sender?.queuedMessages()??[]],hasOlder:Boolean(turnCursor||groups.some(g=>g.olderItemCursor)),
+    moreConversations:Boolean(listCursor),note,readOnly});
   const publish=()=>onChange(state());
   const active=token=>available&&token===epoch;
-  function clear(){++epoch;busy=false;configured=false;project=null;conversations=[];listCursor=null;selected=null;groups=[];turnCursor=null;note='Connect to browse Nims project chats.';publish();}
+  function clear(){++epoch;busy=false;configured=false;project=null;conversations=[];listCursor=null;selected=null;groups=[];turnCursor=null;note='Connect to browse Nims project chats.';readOnly=true;sender?.setAvailable(false);publish();}
   function merge(result,mode){
     const incoming=result.groups;
     if(!Array.isArray(incoming)||result.conversation?.id!==selected?.id)throw Error('Native conversation identity changed.');
@@ -22,25 +23,33 @@ export function createNimsChatState({request,onChange=()=>{}}){
     groups=mode==='olderTurns'?[...unseen,...groups]:[...groups,...unseen];
     if(mode!=='olderItems')turnCursor=result.olderTurnCursor;
     selected=result.conversation;
-    note=`${selected.title} · ${selected.status}. Browsing the actual Codex chat. Sending and new chats are not enabled in this preview.`;
+    sender?.synchronize(groups.flatMap(group=>group.messages));
+    note=`${selected.title} · ${selected.status}${readOnly?' · read-only preview':''}.`;
   }
   async function read(input,mode){
-    if(!available||busy||!selected)return;
+    if(!available||busy||!selected||sender?.state().writing)return;
     const token=epoch;busy=true;publish();
     try{const result=await request('/api/relay/codex/history',{method:'POST',body:JSON.stringify(input)});if(!active(token))return;merge(result,mode);}
     catch(error){if(active(token))note=`History unavailable; the displayed record may be stale. ${error.message}`;}
     finally{if(active(token)){busy=false;publish();}}
   }
-  return {
-    state,
-    setAvailable(value){if(available===value)return;available=value;if(!value)clear();else{note='Open Nims project chats to check the desktop connection.';publish();}},
+  sender=createNimsSendState({request,storage,makeId,hash,
+    getContext:()=>({available,readOnly,selected,project,busy,nativeMessages:groups.flatMap(group=>group.messages)}),onChange:publish,
+    async onAccepted(kind,receipt){
+      if(kind==='new'){await api.catalog();if(receipt.nativeThreadId&&conversations.some(c=>c.id===receipt.nativeThreadId))await api.select(receipt.nativeThreadId);}
+      else if(selected?.id===receipt.targetId)await api.refresh();
+    }});
+  const api={
+    state,send:sender.send,create:sender.create,startNew:sender.startNew,cancelNew:sender.cancelNew,
+    setDraft:sender.setDraft,setNewTitle:sender.setNewTitle,setNewText:sender.setNewText,recover:sender.recover,
+    setAvailable(value){if(available===value)return;available=value;if(!value)clear();else{note='Open Nims project chats to check the desktop connection.';sender.setAvailable(true);publish();}},
     clear(){available=false;clear();},
     async catalog(more=false){
       if(!available||busy)return;
       const token=epoch;busy=true;publish();
       try{
         const status=await request('/api/relay/codex/status');if(!active(token))return;
-        configured=status.configured===true;
+        configured=status.configured===true;readOnly=status.readOnly!==false;
         if(!configured){note='Nims project chats are not connected yet.';return;}
         const result=await request('/api/relay/codex/catalog',{method:'POST',body:JSON.stringify(more&&listCursor?{cursor:listCursor}:{})});
         if(!active(token))return;
@@ -49,12 +58,13 @@ export function createNimsChatState({request,onChange=()=>{}}){
         project=result.project;listCursor=result.nextCursor;
         const combined=more?[...conversations,...result.conversations]:result.conversations;
         conversations=[...new Map(combined.map(c=>[c.id,c])).values()];
-        note=selected?note:'Choose a native Nims conversation. Nothing is sent when you open it.';
+        note=selected?note:'Choose a Nims conversation. Opening it does not send anything.';
+        await sender.recover();
       }catch(error){if(active(token))note=`Nims desktop connection unavailable. ${error.message}`;}
       finally{if(active(token)){busy=false;publish();}}
     },
     async select(id){
-      if(!available||!uuid(id)||!conversations.some(c=>c.id===id))return;
+      if(!available||sender.state().writing||!uuid(id)||!conversations.some(c=>c.id===id))return;
       ++epoch;busy=false;selected=conversations.find(c=>c.id===id);groups=[];turnCursor=null;note='Reading the selected native conversation…';publish();
       await read({threadId:id},'latest');
     },
@@ -66,4 +76,5 @@ export function createNimsChatState({request,onChange=()=>{}}){
       return turnCursor?read({threadId:selected.id,cursor:turnCursor},'olderTurns'):Promise.resolve();
     }
   };
+  return api;
 }

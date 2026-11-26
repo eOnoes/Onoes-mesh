@@ -70,3 +70,17 @@ test('native browser activity markers render as a label while user text remains 
   const {api}=fixture((name,args)=>args.includeTurns?{thread:thread(current),page:{nextCursor:null},turns:[{id:'turn',items:[{id:'u',type:'userMessage',content:[{type:'text',text:marker}]},{id:'a',type:'agentMessage',phase:'commentary',text:marker}]}]}:{thread:thread(args.threadId)});
   const result=await api.history({threadId:current});assert.equal(result.messages[0].text,marker);assert.equal(result.messages[1].text,'Browser activity: Checked the browser');
 });
+
+test('native wrapped prompts require the verified caller, exact tool envelope and matching own receipt',async()=>{
+ const native=(text,extra={})=>({type:'functionCallOutput',namespace:'codex_app',name:'send_message_to_thread',id:text,
+  output:{text:'<codex_delegation>\n  <source_thread_id>'+current+'</source_thread_id>\n  <input>'+text+'</input>\n</codex_delegation>',truncated:false},...extra});
+ const allowed=native('Authorized <literal> prompt');
+ const foreign=native('Other caller');foreign.output.text=foreign.output.text.replace(current,other);
+ const truncated=native('Truncated');truncated.output.truncated=true;
+ const calls=[];
+ const reader={async dispatch(){throw Error('Writes forbidden in this reader guard');},async read(name,args){calls.push(args);return args.includeTurns?{thread:thread(current),page:{},turns:[{id:'turn',items:[allowed,native('Unrecorded'),foreign,truncated,native('Shell output',{namespace:'shell'}),native('Other tool',{name:'read_file'}),{type:'reasoning',text:'private'}]}]}:{thread:thread(args.threadId)};}};
+ const api=createCodexConversations({reader,projectDirectory:cwd,callerThreadId:current,requestStore:{knowsNativePrompt(scope,id,name,text){return id===current&&text===allowed.output.text.match(/<input>([\s\S]*)<\/input>/)[1];}}});
+ const page=await api.history({threadId:current});
+ assert.deepEqual(page.messages.map(m=>[m.role,m.text,m.viaRelay]),[['user','Authorized <literal> prompt',true]]);
+ assert.equal(calls.at(-1).includeOutputs,true);
+});

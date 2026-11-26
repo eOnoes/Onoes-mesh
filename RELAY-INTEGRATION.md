@@ -246,48 +246,77 @@ This CSS-only change used browser layout checks; the earlier651full and2scroll
 test results remain separate. Evidence:data/relay-compact-status-browser-proof-20261114.json.
 
 
-## Native Nims conversation reader - November26,2026
+## Native Nims project chats - November26,2026
 
-The candidate Relay panel browses actual local Codex project conversations using
-OpenAI's already installed codex-app-tools MCP server. It does not start a Codex
-engine, resume an independent writer, replace the desktop CLI, or create a second
-Nims identity. Codex owns the transcript; Mind receives deliberate handoffs.
+Relay can wrap the existing local Codex project conversations using the installed
+first-party app-tools MCP server. Codex remains the conversation authority. This
+does not create a second Nims identity, model process or transcript database.
+Mind receives deliberate handoffs rather than a copy of the entire conversation.
 
-The reader is **disabled by default**. A trusted process profile may supply
-`codexDesktopOptions` with source `native_codex_desktop_readonly`, one reviewed
-Windows project directory, and the pinned `nodePath`, `serverPath`, SHA256 values,
-existing native `pipePath` and actual `callerThreadId`. Browser, CLI and HTTP
-requests cannot enroll or select a transport, host, caller context or filesystem
-path. Standalone mode refuses native enrollment. No credentials are copied.
+The connection is disabled by default and refused in standalone mode. Enrollment
+requires trusted `codexDesktopOptions`: one reviewed Windows project directory,
+actual caller-chat ID, installed Node/server paths and SHA256 pins, and the local
+desktop endpoint. Neither HTTP nor browser storage can enroll a connection or
+override host, caller, model, thinking, approval policy or project directory.
 
-The first-party MCP adapter expects real caller-chat routing metadata. An omitted
-context returns InvalidParams; that alone is not a credential rejection. The local
-qualification supplied its actual current Codex chat ID. Persistent production
-enrollment and discovery after a desktop restart remain unqualified.
+Two explicit profile modes are available:
+
+- `native_codex_desktop_readonly`: conversation list and history only.
+- `native_codex_desktop_messaging`: adds deliberate Send and New chat actions.
+
+The optional transport setting `discovery: "single_local_codex_desktop"` looks
+only in the local Windows named-pipe namespace. It retains the reviewed instance
+when present; otherwise exactly one Codex desktop candidate must exist. Missing
+or ambiguous instances are refused. A subsequent read can reconnect after a
+failed connection, rechecking source pins, caller and project. This does not
+restart Codex, retry a failed native write, or establish another access route.
+An actual desktop restart remains a separate acceptance check; synthetic peer
+retirement/reconnection does not prove that owner workflow.
 
 Admitted routes:
 
-- `GET /api/relay/codex/status`: configuration state and read-only mode, not a claim
-  that Codex is currently reachable.
-- `POST /api/relay/codex/catalog`: native project/filtered conversation metadata;
-  accepts only the opaque next-page cursor.
-- `POST /api/relay/codex/history`: selected native thread and optional older-turn
-  or older-item cursor. The two native page formats are validated separately.
+- GET `/api/relay/codex/status`: configured mode, not a reachability claim.
+- POST `/api/relay/codex/catalog`: approved project and native conversations.
+- POST `/api/relay/codex/history`: one selected conversation and opaque older
+  turn/item cursor. Both first-party page formats are identity-checked.
+- POST `/api/relay/codex/send`: request ID, selected thread ID and text.
+- POST `/api/relay/codex/new`: request ID, approved project ID, title and text.
+- POST `/api/relay/codex/receipt`: lookup only; never dispatches work.
 
-The native caller and selected thread must match the one local project. Wrong
-thread item cursors and changed scope are refused. Only user/assistant messages
-reach the browser; reasoning and tool payloads do not. Native browser-activity
-markers become text labels. Responses are not mirrored into Mind or another
-conversation store. Titles/history clear on loss of admission, and stale responses
-cannot mix selections. Older items merge within their own turn. Native message
-truncation indicators remain visible.
+The normal admitted cookie/CSRF checks apply, including a fresh access check
+immediately before native dispatch. Native caller and target must be in the one
+reviewed local project. User and assistant messages remain separate; reasoning,
+tools and ordinary native output payloads are excluded. For messaging only, the
+reader also requests native outputs to recognize the exact codex_app delegation
+envelope. Only this verified caller plus a matching own delivery receipt can
+produce a “YOU · via Relay” message; arbitrary outputs stay hidden. Message bodies
+remain in Codex and are rendered literally. Older
+pages preserve reading position. Each conversation has a separate in-memory
+draft; opening or switching a chat never sends. New chat requires an initial
+message and explicit Create. It preserves native defaults and uses the existing
+project without creating a worktree. A setup-only client ID is not a ready chat ID.
+Approvals that Codex requires still belong to its native desktop interface.
 
-The transport allows only list_projects, list_threads and read_thread. It declares
-no sampling or elicitation capability, declines unsupported client requests, never
-auto-approves native actions, and does not restart Codex or resend messages.
+Messaging creates `codex-requests.sqlite` inside the existing owned app-data
+directory. It contains request IDs, destination, payload hash, timestamps and
+delivery state only, never message bodies or credentials. A claim commits before
+the native call. Repeated IDs return their saved outcome; unresolved identical
+payloads cannot bypass the guard using a new ID. Lost replies and restarts remain
+unconfirmed. An accepted receipt means Codex acknowledged the request, not that
+the work is finished. There is no timeout-based release or automatic resend.
 
-This is a read-only implementation milestone, not full Nims chat acceptance.
-Sending and New chat remain absent. Those must retain explicit user actions,
-native model/tool/approval behavior, exact conversation routing, and uncertain-send
-protection. Live rollout needs the reviewed native binding; native desktop restart
-reconnection and actual same-chat send/reply are still acceptance requirements.
+Browser session storage keeps only request metadata for checking uncertain sends;
+drafts and queued text are memory-only and clear when access ends. If receipt
+storage fails, reading remains available but sending is blocked. A later session
+checks saved receipts without sending. The existing manual/milestone backup
+includes an online WAL-safe receipt snapshot and isolated readback when the
+journal exists. Keep the current journal when restoring older app/task data;
+never overwrite newer receipts or interpret missing history as permission to retry.
+
+Source qualification covers the real first-party reader plus synthetic native
+messaging through the actual Mesh HTTP/UI and SQLite receipts. One owner-approved real native chat and one follow-up passed through the actual
+Mesh HTTP routes. Both native user prompts and both replies were read back from
+that same chat, without retries or a second transcript store. Persistent production
+enrollment, same-current-chat steering, actual desktop restart and owner phone
+acceptance remain pending.
+No live reader/messaging profile is installed by this source milestone.
