@@ -739,3 +739,19 @@ the peer service was unchanged. The API used a synthetic POSIX SDK Ledger;
 Windows checkpoint/DPAPI owner proof is the separate native owner test. Earlier
 failed attempts remain diagnostics. This does not qualify the complete
 Windows-to-cloud installer, its deployed private route or live Cyony access.
+
+
+### Exact maintenance-task flag control
+
+`cloud_windows_task.py` snapshots, pauses and restores an exact hash-bound
+Windows scheduled task. It preserves all other task settings, retains private
+original and attempt receipts, refuses drift/replay, and never registers,
+starts, stops or reschedules a task. The enclosing approved installer must bind
+it to Mesh's existing recovery task; the helper grants no owner authority.
+
+Six native tests passed using uniquely named disposable tasks with no triggers
+and no action execution. Both originally enabled and disabled states restored;
+foreign definition changes blocked pause/restore. All test tasks were removed.
+This qualifies the task-control primitive only: the positive cold Windows entry
+and complete cross-host installation/rollback remain outstanding. No live task,
+app, credential, memory permission or cloud configuration changed.
