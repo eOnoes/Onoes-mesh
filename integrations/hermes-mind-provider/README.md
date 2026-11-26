@@ -281,3 +281,42 @@ MemoryManager with disposable profiles, real local TLS and synthetic canonical
 homes. Set `MIND_SOURCE` and `HERMES_SOURCE` to the reviewed code and run it on
 Linux. The existing `test_provider.py` remains the native Windows regression.
 No model call, real profile or live ledger belongs in either test.
+
+## Shared-project reader on the canonical host (inactive source)
+
+The optional v7 service profile extends the existing private-home/handoff
+listener with separately enrolled read-only project readers. It does not add a
+listener, writer, ledger, scheduler or automatic enrollment. Existing v1-v6
+profiles retain their original behavior. A live rollout needs separately
+reviewed source/profile changes and explicit access approval.
+
+The profile adds `projectReaderBindings`: sorted, unique rows containing an
+`AgentContextBinding`, the absolute private `toolGrantPath`, and its exact
+`toolReviewRef`. Each reader must bind the same canonical database identity as
+the writer. Its project may differ from the writer's permitted capture projects:
+read permission must not imply a new write permission. The grant file belongs
+outside the canonical data and source trees.
+
+Approval must include `run_project_reads` and the exact `projectReads` descriptor
+from `project_read_approval`, alongside existing home and handoff approvals.
+Running receipts expose only the bound principal, project, shared scope and
+fingerprint. Credentials and grant-file paths are not client options.
+
+Startup opens query-only readers after acquiring the existing canonical writer
+lease. Each request checks its purpose-bound reader credential and current
+separate `read_project_context` grant, including private-file qualification.
+Shutdown retires listeners before closing readers and the canonical writer,
+then releases the lifetime lease. A failed reader close retains the lease.
+
+`test_shared_project_service.py` uses synthetic enrollment and exact owned
+processes to check v7 admission, current shared reads, grant withdrawal, restart
+and rollback to the v6 private-home/handoff surface. Set `MIND_SOURCE` and
+`MESH_SOURCE` explicitly. The separate SDK HTTP/MCP suites qualify protocol and
+scope behavior; this host test does not establish cloud TLS, native agent
+version compatibility or normal-model acceptance. Use Mind source `4a7c3e3`
+or later; do not modify an immutable deployed SDK to obtain these modules.
+
+A separate isolated protocol check pairs an MCP 2.3 client with the pinned
+1.26 reader process over synthetic local TLS. It verifies the current handoff
+and grant/profile withdrawal using the v2 client result API (`is_error`).
+This does not qualify Cyony's native Hermes tool adapter or grant live access.

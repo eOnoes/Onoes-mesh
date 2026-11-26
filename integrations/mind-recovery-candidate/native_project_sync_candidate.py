@@ -263,7 +263,7 @@ class ProjectServiceLease:
 class NativeProjectSyncHost:
     """Own one protected writer/listener; no discovery, setup or auto recovery."""
     def __init__(self, *, binding, history_path, authority, audit_key, deletion_key,
-                 credential_path, project_ids, review_ref, agent_home_bindings=(), agent_home_port=0, handoff_binding=None):
+                 credential_path, project_ids, review_ref, agent_home_bindings=(), agent_home_port=0, handoff_binding=None, project_reader_bindings=()):
         require(type(agent_home_bindings) is tuple and len(agent_home_bindings) <= 5)
         require(type(agent_home_port) is int and 0 <= agent_home_port <= 65535
                 and (agent_home_bindings or agent_home_port == 0))
@@ -274,6 +274,23 @@ class NativeProjectSyncHost:
                     and handoff_binding.store.scope_id == 'project/onoes-mind/shared'
                     and all(getattr(handoff_binding.store,key) == getattr(binding,key) for key in
                         ('database_path','store_id','environment','authority_ref','file_device','file_inode')))
+        require(type(project_reader_bindings) is tuple and len(project_reader_bindings) <= 8
+                and (not project_reader_bindings or bool(agent_home_bindings)))
+        if project_reader_bindings:
+            from onoes_mind.agent_context import AgentContextBinding
+            from onoes_mind.project_tool_grant import ReviewedProjectToolGrant,TOOL_NAME
+            principals=[]
+            for row in project_reader_bindings:
+                require(type(row) is tuple and len(row)==2)
+                selected,grant=row
+                require(isinstance(selected,AgentContextBinding) and isinstance(grant,ReviewedProjectToolGrant)
+                        and grant.binding==selected and grant.tool_name==TOOL_NAME
+                        and all(getattr(selected.store,key)==getattr(binding,key) for key in
+                            ('database_path','store_id','environment','authority_ref','file_device','file_inode')))
+                principals.append(selected.principal_id)
+            require(principals==sorted(set(principals)))
+        self.project_reader_bindings = project_reader_bindings
+        self.project_readers = []
         self.handoff_binding = handoff_binding
         self.binding = binding
         self.history_path, self.authority = history_path, authority
@@ -308,6 +325,21 @@ class NativeProjectSyncHost:
                 if self.handoff_binding is not None:
                     from onoes_mind.handoff_channel import HandoffChannel
                     options['handoff_channel'] = HandoffChannel(self.ledger,self.handoff_binding)
+                if self.project_reader_bindings:
+                    from onoes_mind.agent_context import ProjectContextReader
+                    from onoes_mind.project_context_http import ProjectReadEndpoint
+                    from onoes_mind.project_tool_grant import TOOL_NAME
+                    endpoints=[]
+                    for selected,grant in self.project_reader_bindings:
+                        qualify_private_storage(grant.path,kind='file')
+                        require(grant(selected,TOOL_NAME) is True)
+                        reader=ProjectContextReader(selected.store.database_path,binding=selected)
+                        self.project_readers.append(reader)
+                        def current_grant(bound,name,grant=grant):
+                            qualify_private_storage(grant.path,kind='file')
+                            return grant(bound,name)
+                        endpoints.append(ProjectReadEndpoint(reader,current_grant))
+                    options['project_readers']=tuple(endpoints)
                 self.home_server = AgentHomeServer(homes,writer_lock=self.writer_lock,port=self.home_port,**options)
             self.server.start()
             if self.home_server is not None:self.home_server.start()
@@ -328,6 +360,14 @@ class NativeProjectSyncHost:
         from onoes_mind.agent_home_http import home_binding_sha256
         return dict(baseUrl=self.home_server.base_url, agents={
             actor:home_binding_sha256(home.binding) for actor,home in self.home_server.homes.items()})
+
+    def project_read_options(self):
+        require(self.status()['ready'] and self.home_server is not None and bool(self.project_reader_bindings))
+        from onoes_mind.project_context_http import context_binding_sha256
+        return dict(baseUrl=self.home_server.base_url,readers={
+            reader.context_binding.principal_id:dict(bindingSha256=context_binding_sha256(reader.context_binding),
+                projectId=reader.context_binding.project_id,scopeId=reader.context_binding.store.scope_id)
+            for reader in self.project_readers})
 
     def handoff_options(self):
         """Non-secret descriptor for the explicit owner-only record refresh."""
@@ -355,6 +395,8 @@ class NativeProjectSyncHost:
             self.home_server.close(); self.home_server = None
         if self.server is not None:
             self.server.close(); self.server = None
+        while self.project_readers:
+            self.project_readers[-1].close(); self.project_readers.pop()
         if self.ledger is not None:
             self.ledger.close(); self.ledger = self.events = None
         if self.lease is not None:

@@ -23,6 +23,7 @@ REVIEWED_RELEASE_SCHEMA = 'onoes-mind-project-service/v3'
 RELOCATED_MESH_SCHEMA = 'onoes-mind-project-service/v4'
 AGENT_HOME_SCHEMA = 'onoes-mind-project-service/v5'
 HANDOFF_SCHEMA = 'onoes-mind-project-service/v6'
+PROJECT_READ_SCHEMA = 'onoes-mind-project-service/v7'
 
 
 class ServiceProcessError(RuntimeError):
@@ -103,7 +104,7 @@ def home_approval(p):
 
 
 def profile_agent_homes(p,binding):
-    if p['schema'] not in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA):return ()
+    if p['schema'] not in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA,PROJECT_READ_SCHEMA):return ()
     home_approval(p)
     from onoes_mind.agent_home import AgentHomeBinding
     from onoes_mind.recall_binding import RecallBinding
@@ -117,7 +118,7 @@ def profile_agent_homes(p,binding):
 
 def handoff_approval(p):
     """Exact target and same existing listener; import no unverified SDK here."""
-    require(p.get('schema') == HANDOFF_SCHEMA)
+    require(p.get('schema') in (HANDOFF_SCHEMA,PROJECT_READ_SCHEMA))
     home_approval(p)
     row = p.get('handoffBinding')
     require(type(row) is dict and set(row) == {'store','record_id','handoff_id','project_id','author'}
@@ -132,7 +133,7 @@ def handoff_approval(p):
 
 
 def profile_handoff(p,binding,base):
-    if p['schema'] != HANDOFF_SCHEMA:return None
+    if p['schema'] not in (HANDOFF_SCHEMA,PROJECT_READ_SCHEMA):return None
     handoff_approval(p)
     from onoes_mind.handoff_channel import HandoffBinding
     from onoes_mind.recall_binding import RecallBinding
@@ -143,6 +144,62 @@ def profile_handoff(p,binding,base):
             and all(getattr(selected.store,key)==getattr(binding,key) for key in
                 ('database_path','store_id','environment','authority_ref','file_device','file_inode')))
     return selected
+
+
+def project_read_approval(p):
+    """Exact endpoint/grant selection; do not import an unverified SDK."""
+    require(p.get('schema') == PROJECT_READ_SCHEMA)
+    home_approval(p)
+    rows=p.get('projectReaderBindings')
+    require(type(rows) is list and 1 <= len(rows) <= 8)
+    readers={}
+    names=[]
+    for row in rows:
+        require(type(row) is dict and set(row)=={'binding','toolGrantPath','toolReviewRef'})
+        b=row['binding']
+        require(type(b) is dict and set(b)=={'store','principal_id','project_id'} and type(b['store']) is dict
+                and type(b['principal_id']) is str and re.fullmatch(r'context-[a-z][a-z0-9_-]{0,47}',b['principal_id'])
+                and type(b['project_id']) is str and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,95}',b['project_id'])
+                and type(row['toolGrantPath']) is str and type(row['toolReviewRef']) is str
+                and 1 <= len(row['toolReviewRef']) <= 256 and row['toolReviewRef'].strip()==row['toolReviewRef']
+                and not re.search(r'[\x00-\x1f\x7f]',row['toolReviewRef']))
+        path=Path(row['toolGrantPath'])
+        require(path.is_absolute() and '..' not in path.parts and path==Path(os.path.normpath(path)))
+        names.append(b['principal_id'])
+        raw=json.dumps(b,ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+        readers[b['principal_id']]=dict(bindingSha256=hashlib.sha256(raw).hexdigest(),
+            projectId=b['project_id'],scopeId=b['store'].get('scope_id'),
+            toolGrantPath=str(path),toolReviewRef=row['toolReviewRef'])
+    require(names==sorted(set(names)))
+    return dict(decision='approve_exact_shared_project_readers',port=p['agentHomePort'],readers=readers)
+
+
+def profile_project_readers(p,binding,base):
+    if p['schema'] != PROJECT_READ_SCHEMA:return ()
+    project_read_approval(p)
+    from onoes_mind.agent_context import AgentContextBinding
+    from onoes_mind.recall_binding import RecallBinding
+    from onoes_mind.project_tool_grant import ReviewedProjectToolGrant,TOOL_NAME
+    rows=[]
+    for row in p['projectReaderBindings']:
+        fields=dict(row['binding']);fields['store']=RecallBinding(**fields['store'])
+        selected=AgentContextBinding(**fields)
+        require(all(getattr(selected.store,key)==getattr(binding,key) for key in
+                    ('database_path','store_id','environment','authority_ref','file_device','file_inode')))
+        path=Path(row['toolGrantPath'])
+        require(not path.is_relative_to(Path(binding.database_path).parent)
+                and not path.is_relative_to(Path(base['runtime']['mindSource']))
+                and not path.is_relative_to(HERE))
+        grant=ReviewedProjectToolGrant(path,selected,row['toolReviewRef'],TOOL_NAME)
+        rows.append((selected,grant))
+    return tuple(rows)
+
+
+def project_read_options(p):
+    target=project_read_approval(p)
+    return dict(baseUrl=f"http://127.0.0.1:{p['agentHomePort']}",readers={
+        principal:{key:row[key] for key in ('bindingSha256','projectId','scopeId')}
+        for principal,row in target['readers'].items()})
 
 
 def checked_service_runtime(p, profile_path, expected_sha, approval_path, operator):
@@ -163,14 +220,16 @@ def checked_service_runtime(p, profile_path, expected_sha, approval_path, operat
         approval_bytes = source.read(65537)
     require(len(approval_bytes) <= 65536)
     a = json.loads(approval_bytes, object_pairs_hook=unique)
-    home = p['schema'] in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA)
-    handoff = p['schema'] == HANDOFF_SCHEMA
-    require(set(a) == {'decision','ownerSid','profiles','storeId','scopeId','projects','reviewRef','actions'} | ({'agentHomes'} if home else set()) | ({'handoffRefresh'} if handoff else set())
+    home = p['schema'] in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA,PROJECT_READ_SCHEMA)
+    handoff = p['schema'] in (HANDOFF_SCHEMA,PROJECT_READ_SCHEMA)
+    project_reads = p['schema'] == PROJECT_READ_SCHEMA
+    require(set(a) == {'decision','ownerSid','profiles','storeId','scopeId','projects','reviewRef','actions'} | ({'agentHomes'} if home else set()) | ({'handoffRefresh'} if handoff else set()) | ({'projectReads'} if project_reads else set())
             and a['decision'] == operator.DECISION and a['ownerSid'] == old['ownerSid']
             and type(a['actions']) is list and 'run_service' in a['actions']
-            and set(a['actions']) <= {'run_service','run_mesh_sync'} | ({'run_agent_homes'} if home else set()) | ({'run_handoff_refresh'} if handoff else set())
+            and set(a['actions']) <= {'run_service','run_mesh_sync'} | ({'run_agent_homes'} if home else set()) | ({'run_handoff_refresh'} if handoff else set()) | ({'run_project_reads'} if project_reads else set())
             and (not home or ('run_agent_homes' in a['actions'] and a['agentHomes'] == home_approval(p)))
             and (not handoff or ('run_handoff_refresh' in a['actions'] and a['handoffRefresh'] == handoff_approval(p)))
+            and (not project_reads or ('run_project_reads' in a['actions'] and a['projectReads'] == project_read_approval(p)))
             and type(a['profiles']) is list and expected_sha in a['profiles']
             and p['serviceRuntimeProfileSha256'] not in a['profiles']
             and a['storeId'] == old['binding']['store_id'] and a['scopeId'] == operator.SCOPE
@@ -182,7 +241,7 @@ def checked_service_runtime(p, profile_path, expected_sha, approval_path, operat
     old_shell = Path(old_runtime['pwsh'])
     new_shell = Path(new_runtime['pwsh'])
     expected_runtime = {**old_runtime, 'pwsh': str(new_shell)}
-    if p['schema'] in (REVIEWED_RELEASE_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA):
+    if p['schema'] in (REVIEWED_RELEASE_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA, PROJECT_READ_SCHEMA):
         previous_source = Path(old_runtime['mindSource'])
         released_source = Path(new_runtime['mindSource'])
         require(released_source.is_absolute() and released_source.resolve(strict=True) == released_source
@@ -193,11 +252,11 @@ def checked_service_runtime(p, profile_path, expected_sha, approval_path, operat
     old_pins = {Path(k): v for k, v in old['sourceHashes'].items()}
     new_pins = {Path(k): v for k, v in view['sourceHashes'].items()}
     require(new_pins.get(new_shell) == old_pins.pop(old_shell))
-    if p['schema'] in (REVIEWED_RELEASE_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA):
+    if p['schema'] in (REVIEWED_RELEASE_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA, PROJECT_READ_SCHEMA):
         require(pinned_migrations(previous_source, old_pins) == pinned_migrations(released_source, new_pins))
         previous_package = previous_source / 'onoes_mind'
         old_pins = {path: pin for path, pin in old_pins.items() if not path.is_relative_to(previous_package)}
-    if p['schema'] in (RELOCATED_MESH_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA):
+    if p['schema'] in (RELOCATED_MESH_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA, PROJECT_READ_SCHEMA):
         old_pins = relocate_mesh_source_pins(old_pins, new_pins, p['enrolledMeshSourceDirectory'],home_upgrade=home)
     require(all(new_pins.get(k) == v for k, v in old_pins.items()))
     base, binding = operator.checked_profile(view_path, p['serviceRuntimeProfileSha256'])
@@ -217,15 +276,16 @@ def checked_profile(path,expected_sha,approval_path=None,*,preview=False):
     require(len(raw)<=65536 and hashlib.sha256(raw).hexdigest()==expected_sha)
     p=json.loads(raw,object_pairs_hook=unique)
     require(type(p) is dict and p.get('schema') in
-            (SCHEMA, RELOCATED_RUNTIME_SCHEMA, REVIEWED_RELEASE_SCHEMA, RELOCATED_MESH_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA))
+            (SCHEMA, RELOCATED_RUNTIME_SCHEMA, REVIEWED_RELEASE_SCHEMA, RELOCATED_MESH_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA, PROJECT_READ_SCHEMA))
     separate_runtime = p['schema'] != SCHEMA
     if preview and not separate_runtime:
         approval_path = None
     extra = {'serviceRuntimeProfilePath','serviceRuntimeProfileSha256'} if separate_runtime else set()
-    if p['schema'] in (RELOCATED_MESH_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA):
+    if p['schema'] in (RELOCATED_MESH_SCHEMA, AGENT_HOME_SCHEMA, HANDOFF_SCHEMA, PROJECT_READ_SCHEMA):
         extra.add('enrolledMeshSourceDirectory')
-    if p['schema'] in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA):extra.update(('agentHomeBindings','agentHomePort'))
-    if p['schema'] == HANDOFF_SCHEMA:extra.add('handoffBinding')
+    if p['schema'] in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA,PROJECT_READ_SCHEMA):extra.update(('agentHomeBindings','agentHomePort'))
+    if p['schema'] in (HANDOFF_SCHEMA,PROJECT_READ_SCHEMA):extra.add('handoffBinding')
+    if p['schema'] == PROJECT_READ_SCHEMA:extra.add('projectReaderBindings')
     require(set(p)=={'schema','sourceHashes','operatorProfilePath','operatorProfileSha256',
         'attemptPath','readyPath','stopPath'} | extra)
     required={Path(__file__).resolve(),HERE/'project_operator_process_candidate.py'}
@@ -242,6 +302,7 @@ def checked_profile(path,expected_sha,approval_path=None,*,preview=False):
     require(base['mode'] in ('first_setup','replace','add_project'))
     profile_agent_homes(p,binding)
     profile_handoff(p,binding,base)
+    profile_project_readers(p,binding,base)
     from onoes_mind.enrollment_store import qualify_private_storage
     from checkpoint_candidate import read_plain
     import recall_process_candidate as roles
@@ -393,10 +454,12 @@ def service_role(p,base,binding,profile_sha):
             host=NativeProjectSyncHost(binding=binding,history_path=base['historyPath'],authority=authority,**keys,
                 credential_path=base['credentialPath'],project_ids=tuple(v[0] for v in base['projects']),review_ref=base['reviewRef'],
                 agent_home_bindings=profile_agent_homes(p,binding),agent_home_port=p.get('agentHomePort',0),
-                handoff_binding=profile_handoff(p,binding,base))
+                handoff_binding=profile_handoff(p,binding,base),
+                project_reader_bindings=profile_project_readers(p,binding,base))
             host.start();address,port=host.server.address
-            if p['schema'] in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA):record['agentHomes'] = host.agent_home_options()
-            if p['schema'] == HANDOFF_SCHEMA:record['handoffRefresh'] = host.handoff_options()
+            if p['schema'] in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA,PROJECT_READ_SCHEMA):record['agentHomes'] = host.agent_home_options()
+            if p['schema'] in (HANDOFF_SCHEMA,PROJECT_READ_SCHEMA):record['handoffRefresh'] = host.handoff_options()
+            if p['schema'] == PROJECT_READ_SCHEMA:record['projectReads'] = host.project_read_options()
             require(address=='127.0.0.1');record.update(state='running',baseUrl=f'http://127.0.0.1:{port}/');save()
             while True:
                 if os.path.lexists(stop):
@@ -429,12 +492,15 @@ def service_state(profile_path,profile_sha,approval_path):
         and record.get('creationTicks')==attempt.get('creationTicks') and record.get('storeId')==binding.store_id
         and record.get('environment')==binding.environment and record.get('scopeId')=='project/onoes-mind/shared'
         and record.get('projects')==[v[0] for v in base['projects']])
+    require(p['schema'] == PROJECT_READ_SCHEMA or 'projectReads' not in record)
+    if p['schema'] == PROJECT_READ_SCHEMA and (record.get('state') == 'running' or 'projectReads' in record):
+        require(record.get('projectReads') == project_read_options(p))
     stop_target(p,record['runId'])
     live=roles.same_process_alive(record['pid'],record['creationTicks'])
-    if p['schema'] in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA) and (record.get('state') == 'running' or 'agentHomes' in record):
+    if p['schema'] in (AGENT_HOME_SCHEMA,HANDOFF_SCHEMA,PROJECT_READ_SCHEMA) and (record.get('state') == 'running' or 'agentHomes' in record):
         require(record.get('agentHomes') == dict(baseUrl=f"http://127.0.0.1:{p['agentHomePort']}",
                 agents=home_approval(p)['bindings']))
-    if p['schema'] == HANDOFF_SCHEMA and (record.get('state') == 'running' or 'handoffRefresh' in record):
+    if p['schema'] in (HANDOFF_SCHEMA,PROJECT_READ_SCHEMA) and (record.get('state') == 'running' or 'handoffRefresh' in record):
         target=handoff_approval(p)
         require(record.get('handoffRefresh') == dict(baseUrl=f"http://127.0.0.1:{p['agentHomePort']}",
                 bindingSha256=target['bindingSha256'],recordId=target['recordId'],
