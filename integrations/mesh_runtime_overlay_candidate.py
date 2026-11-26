@@ -16,7 +16,7 @@ STARTUP_HELPERS=frozenset({
     'integrations/mesh_native_pair.py',
     'integrations/mesh_launcher_window.py',
 })
-MANAGED_WRITER_ATTEMPT = re.compile(r'mesh-[a-z0-9-]+-[0-9]{8}-writer-attemptPath\.json')
+MANAGED_WRITER_ATTEMPT = re.compile(r'mesh-[a-z0-9-]+-[0-9]{8}-writer(?:-service)?-attemptPath\.json')
 EXISTING_UI_FILES = frozenset({'public/app.js', 'public/index.html', 'public/styles.css', 'shared/tokens.css'})
 
 

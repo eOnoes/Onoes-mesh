@@ -116,8 +116,23 @@ class MeshOverlayTests(unittest.TestCase):
             self.assertRaises(RuntimeError,overlay.checked,p)
 
     def test_managed_writer_requires_its_original_receipt_for_install_and_rollback(self):
+        self.assert_managed_writer_receipt('mesh-runtime-recovery-20261121-writer-attemptPath.json')
+
+    def test_current_home_writer_service_filename_keeps_all_terminal_and_identity_checks(self):
+        self.assert_managed_writer_receipt('mesh-deep-home-20261125-writer-service-attemptPath.json')
+
+    def test_nearby_writer_service_names_do_not_broaden_receipt_selection(self):
+        for name in ('mesh-deep-home-20261125-reader-service-attemptPath.json',
+                     'mesh-deep-home-20261125-writer-service-attemptPath.json.extra',
+                     'mesh-deep-home-writer-service-attemptPath.json',
+                     'unrelated-20261125-writer-service-attemptPath.json'):
+            p=copy.deepcopy(self.plan);p['runtime']['serviceAttemptPath']=str(self.ops/name)
+            self.assertRaises(RuntimeError,overlay.checked,p)
+        self.assertFalse((self.root/'journal').exists())
+
+    def assert_managed_writer_receipt(self,name):
         runtime=self.plan['runtime']
-        attempt=self.ops/'mesh-runtime-recovery-20261121-writer-attemptPath.json'
+        attempt=self.ops/name
         runtime['serviceAttemptPath']=str(attempt)
         self.assertRaises(RuntimeError,overlay.apply_overlay,self.plan,self.approve())
         observed=overlay.roles()
