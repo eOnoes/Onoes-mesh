@@ -15,9 +15,12 @@ that Echo has read it.
 Deep's Relay a2a profile now has a separate private home and read-only shared
 Mesh context under the approved connection. Actual authenticated private/shared
 MCP reads and the post-configuration native gateway generation are qualified.
-Normal model-driven private writes and continuity remain pending acceptance.
-This does not grant Deep access to Echo's private home, enroll separate Deep web
-profiles, import chat history or authorize other agents.
+One approved model-driven Relay message saved/recalled a harmless private note
+and retrieved the current shared Nims handoff. An independently inspected write
+receipt and fresh private MCP read matched the response, with one send and one
+write attempt. Other native conversations/devices remain unverified. This does
+not grant Deep access to Echo's private home, enroll separate Deep web profiles,
+import chat history or authorize other agents.
 
 An agent home holds selected durable facts, preferences and corrections. A
 channel retains its own conversation history. Shared project records hold

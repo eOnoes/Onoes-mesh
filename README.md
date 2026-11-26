@@ -36,9 +36,11 @@ Verified on the current deployment:
 - Deep's Relay connection has its own private Mind home and a separate read-only
   shared Onoes-Mesh reader. The approved connection is installed; actual private
   and shared MCP reads, the current Nims handoff and the new native gateway
-  generation passed qualification. Deep's use of those tools in a normal chat,
-  including a private write, still needs acceptance. This enrollment targets the
-  Relay a2a profile; it does not enroll every separate Deep interface.
+  generation passed qualification. One owner-approved normal Relay message then
+  saved and recalled a harmless private note and retrieved the current Nims
+  handoff. The saved write receipt and a separate fresh MCP read matched Deep's
+  response. This proves that bounded task; other conversations/devices remain
+  unverified. Enrollment targets the Relay a2a profile, not every Deep interface.
 
 Mind is the canonical ledger, not a second copy of each channel's conversation
 database. Relay and Telegram retain separate conversations. Deliberately saved
