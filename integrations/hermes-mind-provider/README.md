@@ -457,3 +457,32 @@ checker (source hashes, owner permissions and database stat only); no approval,
 credential, SQLite connection or service is created by that check. The actual
 native curated files are under HERMES_HOME/memories, not directly under its
 root. Their contents and any import remain separately approved live work.
+
+## Inactive offline cloud client
+
+`cloud_client_package.py` builds a fingerprinted ZIP of public SDK/plugin code,
+two credential-free Cyony profiles and isolated MCP 1.26 dependencies. It checks
+the independently supplied outer ZIP fingerprint before reading its manifest,
+then checks every payload hash. It excludes custody, intent keys and the Hermes
+configuration. Preparation does not grant access or activate a provider.
+
+The POSIX materializer requires the exact reviewed interpreter and native
+package directory, a current-user-owned home and unused installation roots.
+It installs private files and a dedicated reader environment without pip or
+network access. Native MCP 2.3 and existing configuration remain unchanged.
+An existing installation is refused; a partial failure requires inspection
+before continuing, rather than an automatic overwrite or retry.
+
+Eleven pure cases verify package integrity and refusal conditions.
+`test_native_client_package.py` adds one complete disposable Hermes case:
+serialize/reload/install the package, save a synthetic private note through the
+real memory provider, discover and dispatch the shared-context tool, check Nims
+author/revision/next action and provenance, then restore the original config.
+Its local test CA is confined to a separate fixture startup file; no production
+profile or package overrides certificate verification. No model is called.
+
+The actual prepared 207-file bundle also passed code-only installation in the
+matching isolated image, using its exact observed interpreter. That check made
+no memory calls and created no credentials or config. These results qualify the
+package, not deployed enrollment. Live permissions, curated import, transport
+configuration and gateway maintenance remain separately reviewed operations.
