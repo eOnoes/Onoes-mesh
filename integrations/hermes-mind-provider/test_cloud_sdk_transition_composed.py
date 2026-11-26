@@ -55,6 +55,23 @@ def put(path,body):
     qualify_private_storage(path,kind='file');return launch.digest(path)
 
 
+def close_owned_handles(held):
+    for child in reversed(held):
+        if isinstance(child,subprocess.Popen):
+            if child.poll() is None:child.terminate()
+            child.wait(30)
+        elif hasattr(child,'close'):child.close()
+
+
+def cutover_control(root,held):
+    import _cloud_fixture_mind_roles as controls
+    import cloud_windows_cutover as cutover
+    pin=read(WS.parent/'FIXTURE-NATIVE-CONTROLS.json')
+    assert Path(controls.__file__).resolve()==Path(pin['path'])
+    assert launch.digest(controls.__file__)==pin['sha256']
+    return cutover,controls.MindRoles(evidence=root,retained=held)
+
+
 @unittest.skipUnless(os.name=='nt','Actual owned Windows startup')
 class CloudStartupComposedTests(unittest.TestCase):
     def test_native_startup_qualifies_new_host_current_handoff_and_existing_board(self):
@@ -186,9 +203,22 @@ class CloudStartupComposedTests(unittest.TestCase):
             view=str(view),ownerProfile=str(owner.profile),managed=str(managed),readerProfile=str(case.reader.reader),
             tokens=tokens,doc=doc,store=asdict(store),homes={n:asdict(v) for n,v in homes.items()},
             reader=asdict(reader),port=port,p=p,oldSdk=str(MIND))
+        if os.environ.get('MESH_CLOUD_WINDOW_BEFOREIMAGE')=='1':
+            held=[];self.addCleanup(close_owned_handles,held)
+            cutover,control=cutover_control(root,held)
+            with MeshLauncherWindow(WS,launch.digest(WS/'integrations/restart-workroom-preview.ps1')) as window:
+                initial=cutover.start_selection(window=window,startup=startup,roles=roles,writer=service,
+                    reader=reader_service,control=control,retained=held,startup_path=paths['startup'],
+                    startup_sha=launch.digest(paths['startup']),evidence=root,label='old')
+                retired=cutover.retire_selection(window=window,startup=startup,roles=roles,writer=service,
+                    reader=reader_service,control=control,retained=held,startup_path=paths['startup'],
+                    startup_sha=launch.digest(paths['startup']),evidence=root,label='old',
+                    expected_owner_sha256=initial['ownerSha256'])
+            packet['originalOwnerSha256']=retired['ownerSha256']
+            (WS.parent/'WINDOWS-OLD-RETIRED.json').write_text(json.dumps(retired))
         packet_path=root/'synthetic-sdk-transition.json';put(packet_path,packet)
-        # This fresh copied workspace has no pre-existing public owner receipt.
-        # A real installer must preserve/restore its own exact beforeimage.
+        # The active slot is clear. In beforeimage mode, the original real
+        # published receipt is preserved by retire_selection for cold restore.
         self.assertFalse((WS.parent/'workroom-ab-preview-process.json').exists())
         for direction,sdk in (('forward',os.environ['MIND_NEW_SOURCE']),('inverse',str(MIND))):
             if direction=='inverse':
@@ -278,11 +308,7 @@ def child_phase(direction,packet_path):
         (WS.parent/'NATIVE-PROFILE-VIEWS.json').write_text(json.dumps(profile_evidence,indent=2))
         checked,*_=startup.checked_startup(proposed['startup'],launch.digest(proposed['startup']))
         held=[]
-        def stop_new():
-            for child in reversed(held):
-                if hasattr(child,'poll') and hasattr(child,'terminate'):
-                    if child.poll() is None:child.terminate()
-                    child.wait(30)
+        def stop_new():close_owned_handles(held)
         self.addCleanup(stop_new)
         # First activation belongs to the explicit owner installer. Recurring
         # recovery deliberately refuses a writer with no prior attempt receipt.
@@ -331,10 +357,20 @@ def child_phase(direction,packet_path):
         assert_sdk(MIND)
         (WS.parent/'SDK-FORWARD.json').write_text(json.dumps({'passed':True,'sdk':str(MIND),'sameCredential':True,'sameBinding':True,'syntheticOnly':True}))
         print('Cloud startup: connected, same board and current handoff verified',flush=True)
+        if os.environ.get('MESH_CLOUD_WINDOW_BEFOREIMAGE')=='1':
+            cutover,control=cutover_control(root,held)
+            with MeshLauncherWindow(WS,launch.digest(WS/'integrations/restart-workroom-preview.ps1')) as window:
+                _,native_handoff,_,_=startup.checked_startup(proposed['startup'],launch.digest(proposed['startup']))
+                new_owner=startup.owner_record(window,native_handoff,startup.profiles(native_handoff),roles)
+                retired=cutover.retire_selection(window=window,startup=startup,roles=roles,writer=service,
+                    reader=reader_service,control=control,retained=held,startup_path=proposed['startup'],
+                    startup_sha=launch.digest(proposed['startup']),evidence=root,label='new',
+                    expected_owner_sha256=new_owner['receiptSha256'])
+            (WS.parent/'WINDOWS-NEW-RETIRED.json').write_text(json.dumps(retired))
 
     finally:
         if not self.doCleanups():raise AssertionError('Owned phase cleanup failed')
-    if direction=='forward':retire_forward_owner()
+    if direction=='forward' and os.environ.get('MESH_CLOUD_WINDOW_BEFOREIMAGE')!='1':retire_forward_owner()
 
 
 def retire_forward_owner():
@@ -369,13 +405,24 @@ def retire_forward_owner():
 def inverse(self,case,packet,paths,baseline_path,managed,reader_profile):
     held=[]
     try:
-        child,_=reader_service.launch_service(managed,launch.digest(managed),paths['connected-approval']);held.append(child)
-        case.wait_for(lambda: reader_service.service_state(managed,launch.digest(managed),paths['connected-approval'])['ready'],child)
-        child,_=service.launch_service(baseline_path,launch.digest(baseline_path),paths['writer-approval']);held.append(child)
-        case.wait_for(lambda: service.service_state(baseline_path,launch.digest(baseline_path),paths['writer-approval'])['ready'],child)
-        with MeshLauncherWindow(WS,launch.digest(WS/'integrations/restart-workroom-preview.ps1')) as window:
-            result,children=startup.ensure_capture_first(window,approval_path=paths['startup'],approval_sha=launch.digest(paths['startup']))
-            held.extend(children);self.assertEqual(result.get('startupMode'),'connected',result)
+        if os.environ.get('MESH_CLOUD_WINDOW_BEFOREIMAGE')=='1':
+            cutover,control=cutover_control(Path(packet['root']),held)
+            with MeshLauncherWindow(WS,launch.digest(WS/'integrations/restart-workroom-preview.ps1')) as window:
+                restored=cutover.restore_owner_beforeimage(window=window,startup=startup,roles=roles,
+                    startup_path=paths['startup'],startup_sha=launch.digest(paths['startup']),
+                    evidence=Path(packet['root']),expected_owner_sha256=packet['originalOwnerSha256'])
+                result=cutover.start_selection(window=window,startup=startup,roles=roles,writer=service,
+                    reader=reader_service,control=control,retained=held,startup_path=paths['startup'],
+                    startup_sha=launch.digest(paths['startup']),evidence=Path(packet['root']),label='restored')
+            (WS.parent/'WINDOWS-OWNER-RESTORED.json').write_text(json.dumps(restored))
+        else:
+            child,_=reader_service.launch_service(managed,launch.digest(managed),paths['connected-approval']);held.append(child)
+            case.wait_for(lambda: reader_service.service_state(managed,launch.digest(managed),paths['connected-approval'])['ready'],child)
+            child,_=service.launch_service(baseline_path,launch.digest(baseline_path),paths['writer-approval']);held.append(child)
+            case.wait_for(lambda: service.service_state(baseline_path,launch.digest(baseline_path),paths['writer-approval'])['ready'],child)
+            with MeshLauncherWindow(WS,launch.digest(WS/'integrations/restart-workroom-preview.ps1')) as window:
+                result,children=startup.ensure_capture_first(window,approval_path=paths['startup'],approval_sha=launch.digest(paths['startup']))
+                held.extend(children);self.assertEqual(result.get('startupMode'),'connected',result)
         connected=read(paths['connected'])
         def listening():
             for line in Path(connected['stdoutPath']).read_text().splitlines():
@@ -396,10 +443,7 @@ def inverse(self,case,packet,paths,baseline_path,managed,reader_profile):
             'sameBoard':True,'sameReaderEnrollment':True,'sameSharedHandoff':True,'syntheticOnly':True}))
         print('SDK inverse: original reader, host and saved card verified',flush=True)
     finally:
-        for child in reversed(held):
-            if hasattr(child,'poll'):
-                if child.poll() is None:child.terminate()
-                child.wait(30)
+        close_owned_handles(held)
 
 
 if __name__=='__main__':

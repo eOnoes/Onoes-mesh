@@ -609,3 +609,45 @@ read-only reader returned the same shared Nims handoff with provenance through
 Mesh HTTP. The two initial failed inverse attempts are retained as diagnostics;
 they are not additional passing cases. This is one disposable composed case,
 not deployed cloud acceptance. Both SDKs retain identical migration bytes.
+
+## Finite cloud installation candidate
+
+`cloud_install_window.py` encloses the native operations in one write-once
+window. It qualifies the installed client while the cloud gateway is stopped,
+then deliberately releases normal native startup. Failures must rehold and
+reconcile actors before revoking new access or restoring source/configuration.
+Unknown retirement leaves a held result. Earlier evidence prevents replay;
+operation results and raw exception messages are not copied into its journal.
+Ten fault/privacy/replay cases pass, together with the existing 31 profile cases.
+These callback-contract tests do not qualify a live installer or new permission.
+
+`cloud_windows_cutover.py` supplies concrete cold-process Windows operations,
+reusing the native controllers, original MindRoles control and launcher window.
+The extended `test_cloud_sdk_transition_composed.py` beforeimage mode passed one
+complete owned Windows case: start/publish the original selection, retire its
+exact owner and peers, cold new-SDK startup and retirement, restore the exact
+original published receipt, then cold old-SDK startup and saved-card/shared
+handoff readback. This includes the real original beforeimage, rather than only
+an originally empty receipt slot. It changes no production selection or guard.
+
+The source-bound cloud gateway adapter and the complete cross-host enclosing
+installation/rollback remain separate qualification work. No cloud enrollment,
+route, credential delivery or activation follows from these local passes.
+
+`cloud_native_gateway.py` now qualifies the scoped native cloud lifecycle in a
+no-network container without host mounts or model calls. It verifies native
+source, the exact service/profile owner and a fresh acknowledged drain with
+the complete native work count. Optional display details never replace that
+count. A retained kernel process handle, wanted-down state and clean exit prove
+retirement; a service readiness notification is not used as proof of death.
+The same native stopped intent is finalized after retirement, avoiding a late
+gateway status flush restoring its cached running intent. The native code stays
+unchanged. The no-signal value follows [s6's status contract](https://skarnet.org/software/s6/s6-svstat.html).
+
+Its private, plan-bound stop receipt can be reopened by a cold process; pending
+start evidence blocks replay. The native fixture passed foreign-marker and
+changed-source refusal, kernel retirement, cold receipt resume and normal
+restart, with another service's PID/intent unchanged. This is one native case;
+the earlier failed interface attempts remain diagnostics. The standalone
+`native_cloud_gateway_fixture.py` is inert when imported. The cross-host
+installation, credentials, route and live gateway remain unactivated.
