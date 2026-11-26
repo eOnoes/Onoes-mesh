@@ -248,3 +248,36 @@ automatically. A recorded receipt proves a past commit, not the current handoff;
 use --read for current state. Input edits, different source/profile pins and
 out-of-folder files are refused. No live profile or activation is installed by
 copying this client. Actual enrollment/runtime approval is separate.
+
+## Portable Hermes private home (inactive)
+
+On POSIX, registration selects `PortableOnoesMindProvider`; Windows keeps the
+existing Windows provider and v1 profile. The portable implementation reuses the
+same prompts, selected-fact prefetch and tool schema. Writes go through Mind's
+existing `AgentHomeSession`, using its remote HTTPS client and POSIX encrypted
+delivery journal. There is no automatic resend or local recall fallback.
+
+The exact owner-pinned profile schema is `onoes-mind-hermes-provider/posix-v1`.
+It pins the Hermes home, stable agent, complete SDK source hashes, home-binding
+fingerprint, private credential file, separate journal key and directory, one
+Tailscale HTTPS endpoint, review reference and context budget. It carries no
+database path or credential value. The existing native-memory and user-profile
+flags must both be false. Profile/custody permissions and current source/profile
+pins are checked, and subagent/cron/flush contexts cannot use the primary home.
+
+Provisioning the profile, a dedicated agent credential and a separate encrypted
+intent key is an operator action outside plugin startup. Copying these source
+files grants no memory access and does not publish an endpoint. Use Mind source
+`553defc` or later with the portable client/state modules and `cryptography`.
+Do not copy Windows DPAPI envelopes to Linux or edit an immutable deployed SDK.
+
+The optional shared-project tool remains a reference to the separately enrolled
+reader. This provider does not itself grant or implement remote shared-context
+access. Cloud-side runtime/version matching, reviewed enrollment and actual
+normal-agent acceptance still have to be proved before a live rollout.
+
+`test_portable_provider.py` exercises Hermes's actual plugin loader and
+MemoryManager with disposable profiles, real local TLS and synthetic canonical
+homes. Set `MIND_SOURCE` and `HERMES_SOURCE` to the reviewed code and run it on
+Linux. The existing `test_provider.py` remains the native Windows regression.
+No model call, real profile or live ledger belongs in either test.

@@ -225,4 +225,8 @@ class OnoesMindProvider(MemoryProvider):
 
 
 def register(ctx):
-    ctx.register_memory_provider(OnoesMindProvider())
+    if os.name == 'posix':
+        from .portable import PortableOnoesMindProvider
+        ctx.register_memory_provider(PortableOnoesMindProvider())
+    else:
+        ctx.register_memory_provider(OnoesMindProvider())
