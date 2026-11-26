@@ -538,3 +538,42 @@ These are component/operation proofs on disposable data. The enclosing live
 installer still needs fresh backups, approved host/route/gateway changes,
 maintained admission and writer quiescence, exact protected delivery receipts,
 normal startup restoration and end-to-end acceptance before claiming enrollment.
+
+## Inactive startup views
+
+`cloud_startup_profiles.py` prepares eight linked capture/connected startup
+views from exact original bytes. It retains the existing reader, settings,
+shared card fields, data locations and Nims target. It updates the reviewed
+host/grant links, the controller fingerprints in both launch modes and their
+nested hashes, with new exclusive attempt/output paths. Raw originals remain
+available for the enclosing installer's rollback. It writes or selects nothing.
+
+Ten pure cases pass, covering the complete hash graph and refusal of changed
+originals, broken links, incorrect descriptors, stale source pins, occupied
+attempt paths or reused profile targets. The actual inactive draft also showed
+that the installed controller is v6: selecting a v7 profile alone is insufficient.
+Two public native files need the reviewed upgrade; the HTTP seam already matches.
+The existing nine protected core files stay exact. Proposed grant contents do
+not authorize enrollment. Copied-workspace native startup qualification remains
+separate from this pure preparation check.
+
+`test_cloud_startup_composed.py` passed one complete owned Windows rehearsal in
+an explicitly named copied workspace: the deployed app baseline, two-file host
+upgrade, exact nested startup preflight, explicit new-writer first activation,
+capture-to-connected transition, private-home authentication, shared Nims
+document/provenance and reopening the original saved card through Mesh HTTP.
+The unchanged reader stays running. Originals remain byte-for-byte intact.
+Only disposable ledgers, credentials and owned processes are used; no models.
+
+The copy must include the installed Koffi package and its matching Windows
+native optional package. The peer checks fail before HTTP without that complete
+dependency closure. Verify the native self-peer prerequisite before starting
+test services. The baseline fixture must also match the deployed launcher API;
+using a newer optional worker fixture against the old API is not qualification.
+These dependencies/fixtures are test preparation, not production guard changes.
+
+This composed case uses one SDK root for the roles. The actual proposed writer
+SDK differs from the current reader/capture SDK. Native source-origin checks
+must remain enforced: prepare aligned same-grant reader/capture runtime views
+and qualify that old-to-new SDK transition before the enclosing live installer
+or activation review. The single-SDK pass does not qualify the mixed-root plan.
