@@ -157,3 +157,94 @@ def prepare_startup(*,originals,original_paths,original_sha256,new_paths,
         memoryApprovalPath=str(after['memory']),memoryApprovalSha256=digest(encoded(proposed['memory'])))
     return PreparedStartup(MappingProxyType(dict(originals)),MappingProxyType({n:encoded(v) for n,v in proposed.items()}),
         MappingProxyType({n:str(p) for n,p in after.items()}),str(service_path),expected_service_sha256)
+
+
+def prepare_aligned_startup(*,reader_originals,reader_paths,reader_sha256,new_reader_paths,
+                            sdk_runtime,capture_source_hashes,reader_source_hashes,
+                            reader_launch_paths,**startup_inputs):
+    """Prepare a same-grant reader/capture SDK refresh; never select or launch it.
+
+    Original enrollment receipts, credentials and binding are retained byte for
+    byte. Only SDK source pins and fresh process-state paths change. Native
+    controllers must still verify the full proposed files before activation.
+    """
+    base=prepare_startup(**startup_inputs)
+    names={'reader-runtime','reader-service'}
+    require(all(type(v) is dict and set(v)==names for v in
+        (reader_originals,reader_paths,reader_sha256,new_reader_paths)))
+    old={}
+    for n,raw in reader_originals.items():
+        require(type(raw) is bytes and digest(raw)==reader_sha256[n])
+        old[n]=json.loads(raw,object_pairs_hook=unique)
+    role=old['reader-runtime'];managed=old['reader-service']
+    require(role['schema']=='onoes-mind-native-role/v1' and role['role']=='reader'
+        and managed['schema']=='onoes-mind-reader-service/v1')
+    root=absolute(base.paths['startup']).parent
+    before={n:absolute(p) for n,p in reader_paths.items()}
+    after={n:absolute(p) for n,p in new_reader_paths.items()}
+    occupied={absolute(p) for p in [*startup_inputs['original_paths'].values(),
+        *base.paths.values(),base.service_path,*reader_paths.values(),*new_reader_paths.values()]}
+    require(len(occupied)==21 and all(p.parent==root for p in [*before.values(),*after.values()]))
+    require(managed['readerProfilePath']==str(before['reader-runtime'])
+        and managed['readerProfileSha256']==reader_sha256['reader-runtime'])
+    original={n:json.loads(b,object_pairs_hook=unique) for n,b in base.originals.items()}
+    connected=original['connected'];memory=original['memory'];approval=original['connected-approval']
+    require(connected['readerProfile']==str(before['reader-runtime'])
+        and connected['readerProfileSha256']==reader_sha256['reader-runtime']
+        and memory['readerServiceProfile']==str(before['reader-service'])
+        and memory['readerServiceSha256']==reader_sha256['reader-service']
+        and all(approval['profiles'].count(reader_sha256[n])==1 for n in names))
+    host=json.loads(startup_inputs['service_raw'],object_pairs_hook=unique)
+    require(host['serviceRuntimeProfileSha256']==digest(encoded(sdk_runtime)))
+    runtime=sdk_runtime['runtime'];new_sdk=absolute(runtime['mindSource'])
+    proposed={n:json.loads(b) for n,b in base.files.items()}
+    proposed.update(deepcopy(old))
+    # No executable, native helper, credential, scope or authority substitution.
+    for name,pins in (('capture',capture_source_hashes),('reader-runtime',reader_source_hashes)):
+        current=proposed[name];old_sdk=absolute(current['runtime']['mindSource'])
+        require(old_sdk!=new_sdk and current['runtime'].keys()==runtime.keys()
+            and all(current['runtime'][k]==runtime[k] for k in runtime if k!='mindSource')
+            and type(pins) is dict and all(type(h) is str and len(h)==64
+                and all(c in '0123456789abcdef' for c in h) for h in pins.values()))
+        previous={str(absolute(p)):h for p,h in current['sourceHashes'].items() if not absolute(p).is_relative_to(old_sdk)}
+        unchanged={str(absolute(p)):h for p,h in pins.items() if not absolute(p).is_relative_to(new_sdk)}
+        require(previous==unchanged and str(new_sdk/'onoes_mind/__init__.py') in pins
+            and all(not absolute(p).is_relative_to(old_sdk) for p in pins))
+        current['runtime']=deepcopy(runtime);current['sourceHashes']=deepcopy(pins)
+    require(type(reader_launch_paths) is dict and set(reader_launch_paths)==names
+        and set(reader_launch_paths['reader-runtime'])=={'readyPath','stopPath'}
+        and set(reader_launch_paths['reader-service'])=={'attemptPath','stopPath'})
+    old_states={absolute(v) for n in ('capture','connected') for k,v in original[n].items()
+        if k in ('attemptPath','stdoutPath','stderrPath')}
+    old_states.update(absolute(role[k]) for k in ('readyPath','stopPath','credentialPath','terminalPath','outcomePath'))
+    old_states.update(absolute(managed[k]) for k in ('attemptPath','stopPath'))
+    new_states={absolute(v) for n in ('capture','connected') for v in startup_inputs['launch_paths'][n].values()}
+    for name,paths in reader_launch_paths.items():
+        for key,value in paths.items():
+            p=absolute(value)
+            require(p.parent==root and p not in occupied|old_states|new_states)
+            new_states.add(p);proposed[name][key]=str(p)
+    paths={**dict(base.paths),**{n:str(p) for n,p in after.items()}}
+    reader_pin=digest(encoded(proposed['reader-runtime']))
+    proposed['reader-service'].update(readerProfilePath=paths['reader-runtime'],readerProfileSha256=reader_pin)
+    service_pin=digest(encoded(proposed['reader-service']))
+    proposed['connected'].update(readerProfile=paths['reader-runtime'],readerProfileSha256=reader_pin)
+    connected_pin=digest(encoded(proposed['connected']))
+    replacement={reader_sha256['reader-runtime']:reader_pin,reader_sha256['reader-service']:service_pin,
+        digest(base.files['connected']):connected_pin}
+    proposed['connected-approval']['profiles']=[replacement.get(p,p) for p in proposed['connected-approval']['profiles']]
+    proposed['writer-approval']['profiles']=[connected_pin if p==digest(base.files['connected']) else p
+        for p in proposed['writer-approval']['profiles']]
+    capture_pin=digest(encoded(proposed['capture']))
+    proposed['capture-approval']['profileSha256']=capture_pin
+    proposed['handoff']['capture'].update(profileSha256=capture_pin,
+        approvalSha256=digest(encoded(proposed['capture-approval'])))
+    proposed['handoff']['connected'].update(profileSha256=connected_pin,
+        approvalSha256=digest(encoded(proposed['connected-approval'])),
+        projectApprovalSha256=digest(encoded(proposed['writer-approval'])))
+    proposed['memory'].update(profileSha256=connected_pin,readerServiceProfile=paths['reader-service'],readerServiceSha256=service_pin)
+    proposed['startup'].update(handoffApprovalSha256=digest(encoded(proposed['handoff'])),
+        memoryApprovalSha256=digest(encoded(proposed['memory'])))
+    return PreparedStartup(MappingProxyType({**dict(base.originals),**reader_originals}),
+        MappingProxyType({n:encoded(v) for n,v in proposed.items()}),MappingProxyType(paths),
+        base.service_path,base.service_sha256)

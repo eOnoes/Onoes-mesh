@@ -577,3 +577,35 @@ SDK differs from the current reader/capture SDK. Native source-origin checks
 must remain enforced: prepare aligned same-grant reader/capture runtime views
 and qualify that old-to-new SDK transition before the enclosing live installer
 or activation review. The single-SDK pass does not qualify the mixed-root plan.
+
+`prepare_aligned_startup` extends that graph with two same-grant reader views.
+It moves capture and reader SDK pins to the writer's exact runtime while
+retaining the reader binding, credential path, original enrollment/terminal
+proof, owner and scope. Non-SDK helper pins and executables cannot change as
+part of this alignment. Fresh state paths and all parent hashes are sealed
+together; the original ten files remain available unchanged for rollback.
+The planner writes nothing and cannot activate or enroll a reader.
+
+Nineteen startup cases and twelve host-conversion cases pass together. The
+two-SDK native rehearsal in `test_cloud_sdk_transition_composed.py` uses separate
+cold Python processes for forward and inverse operation, keeping the native
+module-origin checks intact. Its existing deployed-app baseline, original SDK,
+new SDK and saved board use only disposable profiles/data and exact child
+handles. Explicit reader/writer activation precedes recurring recovery; the
+recovery controller is not changed to start unknown actors.
+
+Rollback must also restore the selected public ownership receipt, alongside the
+private profiles. Startup intentionally refuses a receipt belonging to another
+profile set. The copied workspace begins with no public receipt: after the
+forward child exits, the caller holds the existing launcher window, validates
+its exact PID/birth and attempt, archives its attempt/output files and receipt,
+then restores that originally absent slot. A live installer instead preserves
+and restores its reviewed original beforeimage. Never remove an unknown or
+living owner's receipt to make a profile switch pass.
+
+The complete cold-process SDK transition and inverse passed on Windows. After
+returning to the original SDK, the same saved card reopened and the original
+read-only reader returned the same shared Nims handoff with provenance through
+Mesh HTTP. The two initial failed inverse attempts are retained as diagnostics;
+they are not additional passing cases. This is one disposable composed case,
+not deployed cloud acceptance. Both SDKs retain identical migration bytes.

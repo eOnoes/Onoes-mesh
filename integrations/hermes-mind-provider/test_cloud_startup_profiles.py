@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from cloud_startup_profiles import NAMES,StartupConflict,prepare_startup,encoded,digest
+from cloud_startup_profiles import NAMES,StartupConflict,prepare_startup,prepare_aligned_startup,encoded,digest
 
 
 @pytest.fixture
@@ -102,3 +102,90 @@ def test_changed_or_expanded_inputs_refuse_before_any_view_is_selected(graph,cas
     elif case=='old-target':graph['new_paths']['startup']=graph['original_paths']['startup']
     else:graph['expected_service_sha256']='0'*64
     with pytest.raises(StartupConflict):prepare_startup(**graph)
+
+
+@pytest.fixture
+def aligned(graph):
+    root=__import__('pathlib').Path(graph['original_paths']['startup']).parent
+    old_sdk=root.parent/'old-sdk';new_sdk=root.parent/'new-sdk'
+    runtime={'mindSource':str(old_sdk),'python':str(root.parent/'python.exe'),'pwsh':str(root.parent/'pwsh.exe')}
+    native=str(root.parent/'native/recall_process_candidate.py')
+    sdk_file=lambda base:str(base/'onoes_mind/__init__.py')
+    role={'schema':'onoes-mind-native-role/v1','role':'reader','runtime':runtime,
+        'sourceHashes':{native:'1'*64,sdk_file(old_sdk):'2'*64},
+        'binding':{'scope_id':'shared','store_id':'same-store'},'credentialPath':str(root/'same.dpapi'),
+        'operatorProfileSha256':'8'*64,'operationId':'original-enrollment','ownerSid':'original-owner',
+        'reviewRef':'original-review','outcomePath':str(root/'outcome.json'),'terminalPath':str(root/'terminal.json'),
+        'readyPath':str(root/'old-ready.json'),'stopPath':str(root/'old-stop.json')}
+    reader_paths={n:str(root/('old-'+n+'.json')) for n in ('reader-runtime','reader-service')}
+    managed={'schema':'onoes-mind-reader-service/v1','readerProfilePath':reader_paths['reader-runtime'],
+        'readerProfileSha256':digest(encoded(role)),'sourceHashes':{native:'1'*64},
+        'attemptPath':str(root/'old-service-attempt.json'),'stopPath':str(root/'old-service-stop.json')}
+    reader_raw={'reader-runtime':encoded(role),'reader-service':encoded(managed)}
+    bodies={n:json.loads(b) for n,b in graph['originals'].items()}
+    bodies['capture']['runtime']=deepcopy(runtime)
+    bodies['capture']['sourceHashes'][sdk_file(old_sdk)]='2'*64
+    bodies['capture-approval']['profileSha256']=digest(encoded(bodies['capture']))
+    bodies['connected'].update(readerProfile=reader_paths['reader-runtime'],readerProfileSha256=digest(encoded(role)))
+    cp=digest(encoded(bodies['connected']))
+    bodies['writer-approval']['profiles']=['b'*64,cp]
+    bodies['connected-approval']['profiles']=[digest(b) for b in reader_raw.values()]+[cp]
+    for name in ('capture','connected'):
+        bodies['handoff'][name].update(profileSha256=digest(encoded(bodies[name])),
+            approvalSha256=digest(encoded(bodies[name+'-approval'])))
+    bodies['handoff']['connected']['projectApprovalSha256']=digest(encoded(bodies['writer-approval']))
+    bodies['memory'].update(profileSha256=cp,readerServiceProfile=reader_paths['reader-service'],
+        readerServiceSha256=digest(encoded(managed)))
+    bodies['startup'].update(handoffApprovalSha256=digest(encoded(bodies['handoff'])),
+        memoryApprovalSha256=digest(encoded(bodies['memory'])))
+    graph['originals']={n:encoded(v) for n,v in bodies.items()}
+    graph['original_sha256']={n:digest(b) for n,b in graph['originals'].items()}
+    sdk_runtime={'runtime':{**runtime,'mindSource':str(new_sdk)}}
+    host=json.loads(graph['service_raw']);host['serviceRuntimeProfileSha256']=digest(encoded(sdk_runtime))
+    graph.update(service_raw=encoded(host),expected_service_sha256=digest(encoded(host)))
+    cap_pins=deepcopy(bodies['capture']['sourceHashes']);del cap_pins[sdk_file(old_sdk)]
+    cap_pins[sdk_file(new_sdk)]='3'*64
+    cap_pins[next(iter(graph['source_replacements']))]='f'*64
+    return dict(**graph,reader_originals=reader_raw,reader_paths=reader_paths,
+        reader_sha256={n:digest(b) for n,b in reader_raw.items()},
+        new_reader_paths={n:str(root/('new-'+n+'.json')) for n in reader_raw},sdk_runtime=sdk_runtime,
+        capture_source_hashes=cap_pins,reader_source_hashes={native:'1'*64,sdk_file(new_sdk):'3'*64},
+        reader_launch_paths={n:{k:str(root/('new-'+n+'-'+k+'.json')) for k in fields}
+            for n,fields in {'reader-runtime':('readyPath','stopPath'),'reader-service':('attemptPath','stopPath')}.items()})
+
+
+def test_reader_sdk_alignment_preserves_original_authority_and_seals_every_parent(aligned):
+    before=deepcopy(aligned);plan=prepare_aligned_startup(**aligned)
+    assert aligned==before and len(plan.files)==10 and len(plan.originals)==10
+    v={n:json.loads(b) for n,b in plan.files.items()};old=json.loads(aligned['reader_originals']['reader-runtime'])
+    for k,value in old.items():
+        if k not in ('runtime','sourceHashes','readyPath','stopPath'):assert v['reader-runtime'][k]==value
+    assert v['reader-service']['sourceHashes']==json.loads(aligned['reader_originals']['reader-service'])['sourceHashes']
+    assert v['capture']['runtime']==v['reader-runtime']['runtime']==aligned['sdk_runtime']['runtime']
+    assert v['connected']['readerProfileSha256']==digest(plan.files['reader-runtime'])
+    assert v['reader-service']['readerProfileSha256']==digest(plan.files['reader-runtime'])
+    assert v['memory']['readerServiceSha256']==digest(plan.files['reader-service'])
+    assert all(digest(plan.files[n]) in v['connected-approval']['profiles'] for n in ('reader-runtime','reader-service','connected'))
+    assert digest(plan.files['connected']) in v['writer-approval']['profiles']
+    assert v['handoff']['connected']['profileSha256']==digest(plan.files['connected'])
+    assert v['handoff']['connected']['approvalSha256']==digest(plan.files['connected-approval'])
+    assert v['handoff']['connected']['projectApprovalSha256']==digest(plan.files['writer-approval'])
+    assert v['capture-approval']['profileSha256']==digest(plan.files['capture'])
+    assert v['handoff']['capture']['profileSha256']==digest(plan.files['capture'])
+    assert v['handoff']['capture']['approvalSha256']==digest(plan.files['capture-approval'])
+    assert v['startup']['handoffApprovalSha256']==digest(plan.files['handoff'])
+    assert v['startup']['memoryApprovalSha256']==digest(plan.files['memory'])
+
+
+@pytest.mark.parametrize('case',['raw-reader','foreign-native-source','old-sdk','wrong-writer',
+    'duplicate-state','enrollment-state','overwrite-original','capture-native-drift'])
+def test_reader_alignment_refuses_mixed_sdk_changed_helpers_or_reused_state(aligned,case):
+    if case=='raw-reader':aligned['reader_originals']['reader-runtime']+=b' '
+    elif case=='foreign-native-source':aligned['reader_source_hashes'][next(iter(aligned['reader_source_hashes']))]='9'*64
+    elif case=='old-sdk':aligned['reader_source_hashes'].update(json.loads(aligned['reader_originals']['reader-runtime'])['sourceHashes'])
+    elif case=='wrong-writer':aligned['sdk_runtime']['runtime']['mindSource']+='other'
+    elif case=='duplicate-state':aligned['reader_launch_paths']['reader-service']['stopPath']=aligned['reader_launch_paths']['reader-runtime']['stopPath']
+    elif case=='enrollment-state':aligned['reader_launch_paths']['reader-runtime']['readyPath']=json.loads(aligned['reader_originals']['reader-runtime'])['terminalPath']
+    elif case=='overwrite-original':aligned['new_reader_paths']['reader-runtime']=aligned['reader_paths']['reader-runtime']
+    else:aligned['capture_source_hashes'][next(iter(aligned['source_replacements']))]='0'*64
+    with pytest.raises(StartupConflict):prepare_aligned_startup(**aligned)
