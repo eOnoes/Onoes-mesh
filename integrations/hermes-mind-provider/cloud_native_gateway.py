@@ -28,7 +28,8 @@ def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def write_once(path,value):
-    with path.open('xb') as stream:
+    descriptor=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+    with os.fdopen(descriptor,'wb') as stream:
         stream.write(json.dumps(value,sort_keys=True,allow_nan=False).encode())
         stream.flush();os.fsync(stream.fileno())
 

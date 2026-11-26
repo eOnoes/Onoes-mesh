@@ -69,7 +69,8 @@ def main():
             return identity if identity and state and state.get('gateway_state') in ('running','degraded') else None
         initial=wait(ready)
         peer_pid=manager._supervised_pid('gateway-other');peer_state=(peerhome/'gateway_state.json').read_bytes()
-        evidence=ROOT/'evidence';evidence.mkdir(mode=0o700)
+        evidence=HOME/'cloud-window-evidence';evidence.mkdir(mode=0o700)
+        (evidence/'rollback').mkdir(mode=0o700)
         pins={name:digest(Path('/opt/hermes')/name) for name in (
             'gateway/status.py','gateway/drain_control.py','hermes_cli/service_manager.py',
             'gateway/run.py','gateway/run_shutdown.py','gateway/run_bootstrap.py','gateway/run_inbound.py')}
@@ -94,39 +95,75 @@ def main():
             else:raise AssertionError('Changed service source accepted')
             assert not marker.exists() and not (evidence/'GATEWAY-STOP-ATTEMPT.json').exists()
         finally:run.write_bytes(original)
-        stopped=gate.quiesce_and_stop(seconds=30)
-        assert stopped['kernelRetirementConfirmed'] and gate.assert_stopped()
+        # Exercise the actual separate-process installer entry, not just the
+        # in-process control object. This fixture tests lifecycle only; the full
+        # Mind/client qualification belongs to the enclosing installer proof.
+        gate.close();gate=None
+        entry=Path('/tmp/fixture/cloud_gateway_entry.py')
+        release_files=[HOME/'config.yaml',HOME/'fixture-home-profile.json',HOME/'fixture-reader-profile.json']
+        original_config=(HOME/'config.yaml').read_bytes()
+        proposed_config=json.dumps({**json.loads(original_config),'mesh_fixture_revision':1}).encode()
+        for p in release_files[1:]:p.write_text('{}');p.chmod(0o600)
+        pins['hermes_constants.py']=digest(Path('/opt/hermes/hermes_constants.py'))
+        plan={'schema':'onoes-cloud-native-window/v1','agentId':'cyony','service':'gateway-default',
+            'windowId':'synthetic-window','home':str(HOME),'evidence':str(evidence),
+            'nativeSource':'/opt/hermes','scandir':str(tree),'python':str(Path(sys.executable).resolve()),
+            'modelCalls':0,'sourcePins':pins,'slotPins':slot_pins,'apiPort':8642,
+            'stopSeconds':30,'startSeconds':120,
+            'entryPins':{p.name:digest(p) for p in (entry,Path('/tmp/fixture/cloud_native_gateway.py'))},
+            'releasePins':{str(p):(hashlib.sha256(proposed_config).hexdigest() if p==HOME/'config.yaml' else digest(p)) for p in release_files},
+            'originalReleasePins':{str(HOME/'config.yaml'):hashlib.sha256(original_config).hexdigest()}}
+        plan_path=evidence/'PLAN.json';plan_path.write_text(json.dumps(plan));plan_path.chmod(0o600)
+        pin=digest(plan_path)
+        authorization=evidence/'AUTHORIZATION.json'
+        auth={'schema':'onoes-cloud-native-window-authorization/v1','planSha256':pin,
+            'decision':'approve_scoped_cloud_mind_window','owner':'Eddie'}
+        authorization.write_text(json.dumps({**auth,'decision':'NOT_APPROVED'}));authorization.chmod(0o600)
+        def phase(name,expected=0):
+            done=subprocess.run([sys.executable,'-I','-B',str(entry),name,str(plan_path),pin,str(authorization)],
+                capture_output=True,text=True,timeout=155)
+            if done.returncode!=expected:raise AssertionError('Cloud entry failed: '+done.stderr[-1000:])
+            return json.loads(done.stdout) if not done.returncode else None
+        phase('stop',1)
+        assert not (evidence/'GATEWAY-STOP-ATTEMPT.json').exists()
+        assert manager._supervised_pid('gateway-default')==initial[0]
+        authorization.write_text(json.dumps(auth))
+        stopped=phase('stop')
+        assert stopped['kernelRetirementConfirmed'] and phase('verify-stopped')['verified']
+        (HOME/'config.yaml').write_bytes(proposed_config)
         assert marker.exists() and manager._supervised_pid('gateway-other')==peer_pid
         assert (peerhome/'gateway_state.json').read_bytes()==peer_state
-        gate.close();gate=None
-        binding={'home':str(HOME),'evidence':str(evidence),'window_id':'synthetic-window','plan_sha256':'a'*64,
-            'native_source':'/opt/hermes','source_pins':pins,'slot_pins':slot_pins,'api_port':8642,'scandir':str(tree)}
-        binding_path=ROOT/'resume-binding.json';binding_path.write_text(json.dumps(binding))
-        resume=r'''
-import json,sys
-from pathlib import Path
-sys.path[:0]=['/opt/hermes','/tmp/fixture']
-data=json.loads(Path(sys.argv[1]).read_bytes());scan=data.pop('scandir')
-from hermes_constants import set_hermes_home_override
-set_hermes_home_override(Path(data['home']))
-from hermes_cli.service_manager import S6ServiceManager
-from cloud_native_gateway import NativeGateway
-gate=NativeGateway.resume_stopped(manager=S6ServiceManager(scandir=Path(scan)),**data)
-try:result=gate.release_and_start(seconds=120)
-finally:gate.close()
-Path(sys.argv[2]).write_text(json.dumps(result))
-'''
-        done=subprocess.run([sys.executable,'-I','-B','-c',resume,str(binding_path),str(ROOT/'RESUMED.json')],
-            capture_output=True,text=True,timeout=150)
-        if done.returncode:
-            raise AssertionError('Cold release failed: '+done.stderr[-2000:])
-        started=json_read(ROOT/'RESUMED.json')
+        phase('release',1)
+        assert not (evidence/'GATEWAY-START-ATTEMPT.json').exists() and marker.exists()
+        qualification=evidence/'HELD-QUALIFICATION.json'
+        qualification.write_text(json.dumps({'schema':'onoes-cloud-held-qualification/v1',
+            'planSha256':pin,'verified':True,'hostReadback':True,'clientReadback':True,
+            'sharedMcpReadback':True,'modelCalls':0}));qualification.chmod(0o600)
+        changed=release_files[1];original=changed.read_bytes();changed.write_bytes(b'{"changed":true}')
+        phase('release',1)
+        assert not (evidence/'GATEWAY-START-ATTEMPT.json').exists() and marker.exists()
+        changed.write_bytes(original)
+        started=phase('release')
+        assert phase('verify-running')['verified']
         assert started['pid']!=initial[0] and not marker.exists()
+        held=phase('rehold')
+        assert held['pid']==started['pid'] and phase('verify-rollback-stopped')['verified']
+        phase('release-original',1)
+        assert marker.exists() and not (evidence/'rollback/GATEWAY-START-ATTEMPT.json').exists()
+        (HOME/'config.yaml').write_bytes(original_config)
+        original_qualification=evidence/'ORIGINAL-HELD-QUALIFICATION.json'
+        original_qualification.write_bytes(qualification.read_bytes());original_qualification.chmod(0o600)
+        restored=phase('release-original')
+        assert restored['pid']!=started['pid'] and phase('verify-original-running')['verified']
+        assert (HOME/'config.yaml').read_bytes()==original_config and not marker.exists()
         assert manager._supervised_pid('gateway-other')==peer_pid
         assert (peerhome/'gateway_state.json').read_bytes()==peer_state
         print(json.dumps({'nativeGateway':True,'nativeS6':True,'kernelRetirement':True,
             'foreignMarkerRefused':True,'changedSourceRefused':True,'peerUnchanged':True,
-            'normalReleaseRestart':True,'coldReceiptResume':True,'modelCalls':0,'liveChanges':False}),flush=True)
+            'normalReleaseRestart':True,'coldReceiptResume':True,'ownerEntry':True,
+            'unapprovedPlanRefused':True,'unqualifiedReleaseRefused':True,'changedReleaseFileRefused':True,
+            'exactReleasedOwnerReheld':True,'coldOriginalRelease':True,'originalConfigRestored':True,
+            'mindQualification':'SYNTHETIC_LIFECYCLE_FIXTURE_ONLY','modelCalls':0,'liveChanges':False}),flush=True)
     finally:
         if gate:gate.close()
         for name in ('gateway-default','gateway-other'):
@@ -145,7 +182,7 @@ if __name__=='__main__':
         log=(ROOT/'gateway.log').read_text(errors='replace') if ROOT is not None and (ROOT/'gateway.log').exists() else 'No gateway log'
         for name in ('API_SERVER_KEY','OPENAI_API_KEY'):
             if os.environ.get(name):log=log.replace(os.environ[name],'<synthetic-key>')
-        observation=json_read(ROOT/'evidence/GATEWAY-STOP-HELD.json') if ROOT is not None else {}
+        observation=json_read(ROOT/'home/cloud-window-evidence/GATEWAY-STOP-HELD.json') if ROOT is not None else {}
         print(json.dumps({'type':type(error).__name__,'frames':[{'file':Path(f.filename).name,'function':f.name,'line':f.lineno}
             for f in traceback.extract_tb(error.__traceback__)],'stopObservation':observation,'ownedGatewayLog':log[-5000:]}),flush=True)
         raise SystemExit(1)

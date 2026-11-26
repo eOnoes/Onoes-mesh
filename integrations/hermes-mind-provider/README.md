@@ -630,8 +630,8 @@ original published receipt, then cold old-SDK startup and saved-card/shared
 handoff readback. This includes the real original beforeimage, rather than only
 an originally empty receipt slot. It changes no production selection or guard.
 
-The source-bound cloud gateway adapter and the complete cross-host enclosing
-installation/rollback remain separate qualification work. No cloud enrollment,
+The complete cross-host enclosing installation/rollback remains separate
+qualification work. No cloud enrollment,
 route, credential delivery or activation follows from these local passes.
 
 `cloud_native_gateway.py` now qualifies the scoped native cloud lifecycle in a
@@ -651,3 +651,35 @@ restart, with another service's PID/intent unchanged. This is one native case;
 the earlier failed interface attempts remain diagnostics. The standalone
 `native_cloud_gateway_fixture.py` is inert when imported. The cross-host
 installation, credentials, route and live gateway remain unactivated.
+
+
+### Cold owner entry points and exact source selection
+
+`cloud_gateway_entry.py` provides finite stop, stopped verification, release and
+running verification commands. It checks the exact owner authorization, pinned
+entry/native/service files and private evidence before native imports or service
+actions. Deliberate release additionally requires the same window's held
+qualification and unchanged selected files. Conditional rollback uses a separate
+generation: rehold only the exact owner that this window started, restore the
+original configuration, qualify it while stopped and release the original.
+Missing results and pending starts remain held, without retries.
+
+The isolated native fixture passed that actual separate-process entry, including
+unapproved-plan, unqualified-release and changed-file refusal; kernel retirement,
+cold restart, exact new-owner rehold and original configuration/release; peer
+unchanged. This is a lifecycle fixture with synthetic qualification evidence, not
+a live Mind/client or cross-host installation test. No model request is made.
+
+`cloud_windows_entry.py` provides cold-SDK inspect/retire/start/restore commands
+around the qualified native Windows controls. It independently requires the
+existing recovery task to be disabled with the exact reviewed definition before
+process actions. It creates or changes no task. Inert import and a real read-only
+refusal check passed; successful enclosing Windows entry acceptance is NOT RUN.
+
+`cloud_source_selection.py` limits source selection to the two reviewed runtime
+seams and the existing hidden recovery wrapper. All three original byte images
+are durable before replacement using the original Windows primitive. Seven
+owned-file cases pass native replacement, UTF-8/both UTF-16 orders, partial
+failure recovery, drift refusal and admission/replay limits. This preserves the
+existing recovery task rather than introducing a scheduler. The complete
+cross-host adapter/entry and installed-path acceptance remain outstanding.
