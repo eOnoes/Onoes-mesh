@@ -22,6 +22,8 @@ import recall_process_candidate as roles
 import project_backup_entry as backup
 from cloud_curated_transfer import capture,encode,identity
 from cloud_owner_entry import ACCESS
+from cloud_phase_runner import NativePhases
+from cloud_install_entry import CombinedWindow
 from test_cloud_curated_transfer import private_dir
 from onoes_mind.agent_home import AgentHome,AgentHomeBinding,WindowsAgentHomeCustody,enroll_agent_home
 from onoes_mind.agent_context import AgentContextBinding,ProjectContextReader
@@ -122,7 +124,22 @@ class CloudOwnerEntryTests(unittest.TestCase):
         put(backup_profile,b);backup_sha=sha(backup_profile)
         put(backup_approval,dict(decision=backup.DECISION,ownerSid=b['ownerSid'],profileSha256=backup_sha,
             storeId=store.store_id,environment=store.environment,reviewRef=b['reviewRef']))
-        backup_result=backup.run_backup(backup_profile,backup_sha,backup_approval)
+        # Exercise the concrete parent transport, including the real backup
+        # CLI. The fixture's own master contract grants no live access.
+        parent_evidence=private_dir(root/'parent-phase-evidence')
+        master={'schema':'onoes-cloud-install-window/v1','agentId':'cyony',
+            'readerPrincipal':'context-cyony','sharedProject':'onoes-mesh','modelCalls':0,
+            'maintenanceTask':'ONOes Mesh Workroom Recovery','python':str(Path(sys.executable).resolve()),
+            'pythonSha256':sha(Path(sys.executable).resolve()),'backups':{'before':{
+                'entryPath':str(Path(backup.__file__)),'entrySha256':sha(backup.__file__),
+                'profilePath':str(backup_profile),'profileSha256':backup_sha,
+                'approvalPath':str(backup_approval),'approvalSha256':sha(backup_approval),
+                'resultPath':b['resultPath']}}}
+        def parent():
+            pin=hashlib.sha256(json.dumps(master,sort_keys=True).encode()).hexdigest()
+            return NativePhases(master,pin,{'schema':'onoes-cloud-install-authorization/v1','owner':'Eddie',
+                'decision':'approve_cyony_private_home_and_mesh_reader','planSha256':pin},parent_evidence)
+        backup_result=parent().backup('before',label='owned-real-backup')
         self.assertEqual(backup_result['archiveRehearsal'],'PASS')
         self.assertEqual(backup.verify_completed_archive(backup_profile,backup_sha)['status'],'archive_verified')
         # Synthetic curated transfer only; this does not contact Cyony or read
@@ -159,15 +176,33 @@ class CloudOwnerEntryTests(unittest.TestCase):
         auth_path=root/'owner-authorization.json'
         put(auth_path,{'schema':'onoes-cloud-owner-operation-authorization/v1','owner':'Eddie',
             'decision':'approve_cyony_private_home_and_mesh_reader','planSha256':pin})
+        master['owner']={'entryPath':str(entry),'entrySha256':sha(entry),'planPath':str(plan_path),
+            'planSha256':pin,'authorizationPath':str(auth_path)}
         def operation(action):
             log=WS.parent/('owner-'+action+'.log')
-            with log.open('xb') as output:
-                done=subprocess.run([sys.executable,'-I','-B',str(entry),action,str(plan_path),pin,str(auth_path)],
-                    stdout=output,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW)
-            self.assertEqual(done.returncode,0,'Owner child held; retain its password-free failure evidence')
-            return json.loads(log.read_text().strip().splitlines()[-1])
+            result=parent().local('owner',action,label='owned-owner-'+action)
+            put(log,result)
+            return result
         print('Owner fixture: actual cold entry admission',flush=True)
         self.assertTrue(operation('admit')['verified'])
+        # Real DPAPI custody -> the enclosing adapter's private delivery bytes.
+        # Only the remote endpoint is replaced by an owned capture sink; no
+        # SSH or real agent access occurs. Binding review refs deliberately
+        # differ from the original operator's store metadata in this fixture.
+        window=CombinedWindow.__new__(CombinedWindow)
+        window.owner_body=plan;window.root={'owner':evidence,'private':private_dir(root/'parent-private')}
+        window.pin='a'*64;captured=[]
+        def private_sink(phase,label,stdin=None):
+            self.assertEqual(phase,'deliver');captured.append(json.loads(stdin));return {'verified':True}
+        window.client=private_sink
+        self.assertTrue(window.deliver_client()['verified'])
+        self.assertEqual(len(captured),1)
+        self.assertEqual(captured[0]['homeToken'],WindowsAgentHomeCustody(private,homes['cyony']).read())
+        self.assertEqual(captured[0]['readerToken'],WindowsReaderCustody(shared,reader).read())
+        import base64
+        self.assertEqual(len(base64.b64decode(captured[0]['intentKeyBase64'],validate=True)),32)
+        self.assertTrue((window.root['private']/'NEW-CLIENT-INTENT.dpapi').exists())
+        captured.clear()
         with closing(ProjectContextReader(store.database_path,binding=reader)) as current:
             self.assertEqual(current.authenticate(WindowsReaderCustody(shared,reader).read()),'context-cyony')
         # Use the same authoritative writer APIs for readback after the child
@@ -197,6 +232,8 @@ class CloudOwnerEntryTests(unittest.TestCase):
         self.assertTrue(all((saved/'memories'/n).read_bytes()==raw for n,raw in snapshot.files.items()))
         result={'passed':True,'realEncryptedBackup':True,'realArchiveVerification':True,'nativeWriterLease':True,
             'actualColdOwnerEntry':True,'curatedImportReadback':True,'exactRevocation':True,
-            'existingEchoDeepCustodyUnchanged':True,'canonicalImportRetained':True,'liveChanges':False,'modelCalls':0}
+            'existingEchoDeepCustodyUnchanged':True,'canonicalImportRetained':True,'liveChanges':False,'modelCalls':0,
+            'actualParentBackupTransport':True,'actualParentColdOwnerTransport':True,
+            'actualParentProtectedDeliveryPayload':True,'remoteDelivery':'NOT_RUN_LOCAL_PRIVATE_SINK_ONLY'}
         put(WS.parent/'OWNER-COMPOSED.json',result)
         print(json.dumps(result),flush=True)

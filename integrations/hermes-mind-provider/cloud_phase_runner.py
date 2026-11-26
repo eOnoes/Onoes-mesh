@@ -88,13 +88,31 @@ class NativePhases:
             value['planSha256'],value['authorizationPath']],evidence=self.evidence,label=label)
 
     def backup(self,which,*,label):
+        from onoes_mind.enrollment_store import qualify_private_storage
         require(which in ('before','after'))
         value=self.plan['backups'][which];python=Path(self.plan['python']);entry=Path(value['entryPath'])
         require(entry.name=='project_backup_entry.py' and entry.is_absolute() and entry.resolve(strict=True)==entry
             and digest(entry)==value['entrySha256'] and digest(value['profilePath'])==value['profileSha256']
+            and digest(value['approvalPath'])==value['approvalSha256']
+            and python.is_absolute() and python.resolve(strict=True)==python
             and digest(python)==self.plan['pythonSha256'])
-        return execute_once([str(python),'-I','-B',str(entry),'--profile',value['profilePath'],
-            '--sha',value['profileSha256']],evidence=self.evidence,label=label,timeout=600)
+        profile=qualify_private_storage(Path(value['profilePath']),kind='file')
+        qualify_private_storage(Path(value['approvalPath']),kind='file')
+        body=json.loads(profile.read_bytes())
+        require(body['archiveCredentialMode']=='windows-local' and body['resultPath']==value['resultPath']
+            and not os.path.lexists(body['resultPath']) and not os.path.lexists(body['attemptPath']))
+        # The existing native CLI intentionally prints prose. Execute its real
+        # --run action, then qualify its own protected result rather than
+        # interpreting a preview or the words "Backup COMPLETE" as evidence.
+        execute_once([str(python),'-I','-B',str(entry),'--profile',value['profilePath'],
+            '--sha',value['profileSha256'],'--approval',value['approvalPath'],'--run'],
+            evidence=self.evidence,label=label,timeout=600,private_stdout=True)
+        result_path=qualify_private_storage(Path(body['resultPath']),kind='file')
+        result=json.loads(result_path.read_bytes())
+        require(result['profileSha256']==value['profileSha256'] and result['status']=='backup_complete_inactive'
+            and result['archiveRehearsal']=='PASS' and result['archive']==body['encryptedBackup']
+            and digest(result['archive'])==result['archiveSha256'] and result['serviceStarted'] is False)
+        return result
 
     def remote(self,kind,phase,*,label,stdin=None):
         require(kind in ('gateway','client') and phase in (self.GATEWAY if kind=='gateway' else self.CLIENT)

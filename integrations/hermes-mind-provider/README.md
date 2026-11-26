@@ -771,3 +771,30 @@ replay prevention, nonzero exit, uncertain timeout and admission boundaries.
 Those tests make no remote or model call. The command bindings themselves and
 complete enclosing adapter/owner entry are not end-to-end qualified. This is an
 inactive component, not a standalone installer or new access authorization.
+
+
+### Enclosing owner window: local proof, cloud qualification pending
+
+`cloud_install_entry.py` wires the finite installer to the existing task, cold
+Windows phases, canonical owner entry, backups, exact source selection, private
+route and cloud client/gateway operations. It has no default owner approval or
+live plan. Unknown transport and partial startup hold before compensation;
+the original recovery-task setting returns only after complete new/original
+health. It adds no supervisor, scheduler, model call or database write path.
+
+The real Windows backup command now passes --run and its pinned approval, then
+checks the protected native result and recovered archive instead of prose.
+One owned native case passed parent backup, cold enrollment/revocation and
+exact-binding DPAPI payload assembly with a local private capture sink. Another
+native case used a trigger-free task, launcher mutex, three owned process
+birth identities and actual file replacement: live main/peers blocked writes;
+after retirement all three files selected/restored exactly. Fourteen final cold
+admission/rollback refusal checks passed. Existing agent custody stayed intact.
+
+These are local component proofs, NOT full installer acceptance. The hard-bound
+production cold Windows entry, deployed private route and complete cross-host
+window remain unqualified. The new original-held client/schema change is still
+a separate unqualified development candidate; do not activate this entry with
+the older client. Cloud testing remains stopped after an uncertain SSH attempt
+until the existing route and that exact test actor are reconciled. No new trial,
+route, live credential or agent access follows from publishing this source.
