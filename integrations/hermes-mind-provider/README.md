@@ -486,3 +486,34 @@ matching isolated image, using its exact observed interpreter. That check made
 no memory calls and created no credentials or config. These results qualify the
 package, not deployed enrollment. Live permissions, curated import, transport
 configuration and gateway maintenance remain separately reviewed operations.
+
+## Finite cloud enrollment and curated notes
+
+`cloud_enrollment.py` is an owner-process helper around Mind's supported private
+home and project-reader enrollment APIs. It refuses either preexisting Cyony
+identity before issuing access and requires a protected receipt for the first
+commit before beginning the second. Failed or uncertain custody/receipt saves
+stop the sequence. The caller supplies the approved plan, exclusive writer
+lease, encrypted backups and private custodian; the helper opens none of them.
+
+Conditional revocation accepts only that attempt's trusted receipt and unchanged
+credential/grant/epoch fingerprints. Both identities are checked before either
+is revoked. Another credential, changed scope or epoch, different project or
+another attempt holds recovery. Existing identities, memory and custody are
+retained. Ten disposable-ledger cases verify these paths on Windows and Linux.
+
+`cloud_curated_transfer.py` captures only the explicitly approved MEMORY.md and
+USER.md, checks file identities, private file permissions, credential-like text
+and a combined size bound, then supplies fingerprinted private transport bytes.
+Transport bytes contain private notes and must never be printed or put in Git.
+The metadata descriptor omits text. Keep its original host/path/file identities
+with the protected owner receipt for remote-source provenance.
+
+Canonical-host staging uses owner-prepared private directories and the existing
+Mind curated importer, including its original file hashes, stable event and
+replay behavior. There is no direct database insertion or transcript ingestion.
+Windows staging requires exact explicit operator/SYSTEM/Administrators rules;
+it does not change permissions or accept Python's OWNER RIGHTS substitute.
+Seven synthetic cases qualify import/readback, preserved originals, replay,
+changed-source/transport denial, secret rejection and the transfer size bound.
+These helpers do not activate cloud enrollment, move real notes or call models.
