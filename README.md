@@ -14,17 +14,60 @@ with `Immutable pin: lib/task-store.mjs`. The historical pins and guard remain
 unchanged; a passing current behavioral check is not a passing historical-pin
 check. Do not regenerate those pins merely to obtain a green result.
 
-## Current working preview · updated November 23, 2026
+## Current work: Relay and Mind · updated November 25, 2026
 
-Open https://emitchell.tail8c4a75.ts.net:8453/#workroom for the current work. The active goal is **Finish Onoes-Mesh - all assessed stages**, task c2a77ea9-05bb-4b63-85c7-c2d8e9fb2547. Its ordered backlog, current evidence and blockers are in the installed working copy's local-only `WORKROOM-AB-CHECKPOINT.md` and `data/relay-directory-integration-checkpoint-20261114.json`; these private records are not included in a fresh Git checkout. [MESH-REPO-INDEX.md](MESH-REPO-INDEX.md) identifies the current worktree, database and process receipts.
+Start with [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay) or
+[Mind](https://emitchell.tail8c4a75.ts.net:8453/#mind). The active goal is reliable
+Relay chat and one canonical Mind memory home for each regular agent, beginning
+with Eddie's phone and Echo's PC. Workroom, Rook and Inference development and
+automatic assignments are parked. Historical Workroom release counts below do
+not describe completion of this newer goal.
 
-The current preview uses data/workroom-preview/tasks.sqlite with Tailscale owner admission, local task sessions, CSRF and revision checks. The original8446 deployment and historical owner data are separate and remain protected. Read the older operating details below as historical qualification records, not instructions to overwrite a current store or start a default server.
+Verified on the current deployment:
 
-Current facts: independent review and changes-requested / correction / fresh review loops are verified in bounded trials, with deliberate completion and preserved provenance. Permission denial and same-session recovery are proven. The Agent workspace lists observed Relay peers and links their saved task handoffs; it does not infer coding capabilities or start jobs. Overview identifies the running build and selected store. [RELEASE-OPERATIONS.md](RELEASE-OPERATIONS.md) names the canonical current installation, startup and rollback. Verified source/data backups are under E:/App-Backups/ONOes-Mesh. Eddie confirmed basic phone card/recovery checks and main-PC Nemotron load/chat/unload. The first local release remains 18/21: production-team qualification, an unassisted production workflow and final deployed release acceptance remain open. Automatic assignments and Rook remain off. The approved shared-facts Mind reader and limited, explicitly linked Workroom updates are connected; private agent memory and cross-channel conversation sharing are not enabled. Off-device backup and automatic backup scheduling are deferred. This is a private release candidate.
+- Eddie confirmed phone Relay sends, replies, reload persistence and separate
+  older-message history with Echo.
+- Nims publishes a structured handoff to one stable Mind record. Echo retrieved
+  a current revision through its actual Relay tool call, cited its source and
+  explained the next action. Later publications do not prove Echo read them.
+- Echo's default Hermes profile uses its own private Mind home; the approved
+  finite MEMORY.md/USER.md import retained both originals. Shared project recall
+  uses a separately authorized read-only reader.
+- Deep's Relay connection has its own private Mind home and a separate read-only
+  shared Onoes-Mesh reader. The approved connection is installed; actual private
+  and shared MCP reads, the current Nims handoff and the new native gateway
+  generation passed qualification. Deep's use of those tools in a normal chat,
+  including a private write, still needs acceptance. This enrollment targets the
+  Relay a2a profile; it does not enroll every separate Deep interface.
 
-The Mind workspace can retrieve a selected saved Workroom task with source revisions and recorded review status under MIND-CONTRACT.md. The separately approved canonical Onoes-Mind reader and limited project-sync connection now also exist; their runtime profiles and current checkpoint define the exact scope. This does not authorize sharing every card or chat, and it does not create a second memory authority. Ordinary Relay chat/session/retry/privacy acceptance and the bounded compatibility decision are recorded under RELAY-INTEGRATION.md. Use [remaining owner checks](NEXT-OWNER-CHECKS.md) for confirmed phone checks and the next acceptance gate; use [the quick start](MESH-QUICK-START.md) for card and review instructions. The older foundation records below retain their original addresses and evidence; they are not current startup instructions.
+Mind is the canonical ledger, not a second copy of each channel's conversation
+database. Relay and Telegram retain separate conversations. Deliberately saved
+private facts and admitted shared project context can cross those conversations
+through Mind; raw transcripts are not automatically ingested. One agent's private
+home is not another agent's readable memory.
 
-The installed phone release includes Workroom Help, direct card links, reconnect fixes and the Inference entry for Tripp's rebuilt PC. The Relay maintenance notice in commit `bde5603` passed a phone-width check on a restored copy and awaits installation. The running board continues to hold new agent sends for maintenance. [Current owner checks](NEXT-OWNER-CHECKS.md)
+Next: complete Deep's normal-chat memory check, then qualify the remaining named
+agent identities and shared project context, including 3D-print plans/specs.
+Expand to laptop, cloud and AI-box runtimes after their real client bindings and
+access are established. Echo's team orchestration follows those connections.
+The current private client packages use Windows account protection and loopback
+services; copying them to another host is not a supported remote enrollment.
+Phone access through Relay is distinct from an agent running on another device.
+
+The installed copy's local-only `WORKROOM-AB-CHECKPOINT.md` records exact runtime
+paths, current receipts, confirmed acceptance and remaining limits. It is not
+included in a fresh Git checkout. [MIND-CONTRACT.md](MIND-CONTRACT.md) explains
+memory ownership and [RELAY-INTEGRATION.md](RELAY-INTEGRATION.md) records chat
+integration. [RELEASE-OPERATIONS.md](RELEASE-OPERATIONS.md) and the private current
+checkpoint identify the reviewed launcher; do not use an old foundation command
+to replace the current app or select another store. Existing startup safeguards
+and the eight unresolved historical job holds remain in place.
+
+Manual and milestone backups stay under the existing E: App-Backups root. Current
+Windows-local encrypted Mind archives require the original Windows account and
+its protection keys; they are not a portable replacement for the earlier
+password-protected recovery archives. No automatic backup schedule, agent access
+grant or service activation follows from these instructions.
 
 ## Historical foundation and qualification records
 

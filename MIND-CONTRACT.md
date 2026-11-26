@@ -1,3 +1,38 @@
+## Canonical agent homes: current boundary | November 25, 2026
+
+The current direction is Relay first, then canonical private agent homes and
+deliberately shared project context in this one Mind ledger. Workroom, Rook and
+Inference are parked. Earlier dated plans below remain historical evidence;
+they do not override the current private deployment record or authorize access.
+
+Echo's default Hermes profile has its own private home and a separate shared
+Mesh reader. Its finite approved saved-memory/preferences import kept the
+original files. Nims's supported JSON handoff publishes revisions to one stable
+shared record; Echo has demonstrated actual tool-based pickup and source/next-
+action reporting through Relay. A newer Nims revision alone does not establish
+that Echo has read it.
+
+Deep's Relay a2a profile now has a separate private home and read-only shared
+Mesh context under the approved connection. Actual authenticated private/shared
+MCP reads and the post-configuration native gateway generation are qualified.
+Normal model-driven private writes and continuity remain pending acceptance.
+This does not grant Deep access to Echo's private home, enroll separate Deep web
+profiles, import chat history or authorize other agents.
+
+An agent home holds selected durable facts, preferences and corrections. A
+channel retains its own conversation history. Shared project records hold
+deliberately admitted context and provenance; they are not an unrestricted
+mirror of agent-private memory. Use current record/revision/source information,
+not a remembered old handoff, when taking work over.
+
+Remaining hosts and identities need their actual runtime, client, permitted
+scope and transport verified. Current local clients depend on Windows-protected
+custody, local write journals and loopback endpoints. Do not copy credentials,
+expose the local writer or create another ledger to make a remote client work.
+Browser access to Relay from a phone/laptop does not by itself enroll a remote
+agent. Laptop/cloud/AI-box completion remains unproven; Echo orchestration is a
+later step.
+
 ## Relay and Mind handoff | November 24, 2026
 
 The first live Nims-to-Mind-to-Echo handoff works on Echo's PC through Relay. Eddie confirmed ordinary Relay messages survive phone reload. The owner-approved setup then admitted one structured Nims handoff through Mind's supported write interface, enrolled a dedicated project-bound Echo reader, and added one MCP server to the default Hermes profile.
