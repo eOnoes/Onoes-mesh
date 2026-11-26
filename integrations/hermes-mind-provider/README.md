@@ -320,3 +320,32 @@ A separate isolated protocol check pairs an MCP 2.3 client with the pinned
 1.26 reader process over synthetic local TLS. It verifies the current handoff
 and grant/profile withdrawal using the v2 client result API (`is_error`).
 This does not qualify Cyony's native Hermes tool adapter or grant live access.
+
+## Cyony exact native runtime rehearsal (not activated)
+
+The pinned public image `nousresearch/hermes-agent@sha256:adb7890916de63245523492be8f68f9d2095fecbec4e2a6dab7960381f0fc002`
+was matched to the running cloud agent: Python3.14.9, UID10000, MCP2.3.0,
+cryptography50.0.2, pydantic2.14.1 and eight memory/MCP source fingerprints.
+Ten portable-provider cases passed in that exact image with synthetic homes,
+canonical stores and local TLS. No live cloud profile or model was used.
+
+`test_native_shared_reader.py` composes the actual memory-provider loader and
+MemoryManager with Hermes's real MCP discovery, model-facing definitions and
+registry dispatch. One composed case verifies the current Nims JSON handoff and
+provenance, private/shared separation, denied caller scope overrides, current
+grant withdrawal, changed-profile denial, private continuity and scoped teardown.
+All these phases passed together; they are one test, not separate case counts.
+
+The fixture keeps native MCP2.3 unchanged and creates a separate disposable
+MCP1.26 reader child. Mount its pinned pure package at `/reader-deps` and the
+verified `pydantic-settings==2.13.1` child dependency at `/reader-extra`.
+The latter is absent from the native image: do not downgrade or modify the
+native gateway to supply it. `MIND_SOURCE` and `HERMES_SOURCE` select reviewed
+SDK and actual image source as in the portable-provider tests. The test requires
+POSIX and uses no live credentials, model calls or external network.
+
+Native MCP discovery/cleanup is profile scoped. Retire the selected connection
+with its explicit registry scope and name; an unscoped name-only shutdown does
+not close another profile's reader. The rehearsal leaves no registered reader.
+Source and fixture success do not approve a live endpoint, enrollment, cloud
+configuration, gateway restart or normal-agent acceptance task.
