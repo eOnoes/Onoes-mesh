@@ -98,7 +98,7 @@ def codex_frame_fields(profile):
     require(re.fullmatch(r'\\\\\.\\pipe\\[A-Za-z0-9_.-]{1,180}',transport['pipePath']))
     if 'discovery' in transport:
         require(transport['discovery']=='single_local_codex_desktop'
-            and re.fullmatch(r'\\\\\.\\pipe\\codex-app-tools-[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}',transport['pipePath']))
+            and (transport['pipePath'].endswith(r'\codex-app-tools') or re.fullmatch(r'\\\\\.\\pipe\\codex-app-tools-[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}',transport['pipePath'])))
     return {'codexDesktopOptions':json.loads(json.dumps(value))}
 
 

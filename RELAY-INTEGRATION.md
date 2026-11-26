@@ -265,8 +265,10 @@ Two explicit profile modes are available:
 - `native_codex_desktop_messaging`: adds deliberate Send and New chat actions.
 
 The optional transport setting `discovery: "single_local_codex_desktop"` looks
-only in the local Windows named-pipe namespace. It retains the reviewed instance
-when present; otherwise exactly one Codex desktop candidate must exist. Missing
+only in the local Windows named-pipe namespace. A reviewed fixed namespace
+`\\.\pipe\codex-app-tools` requires exactly one desktop candidate and stores no
+per-instance endpoint. A previously reviewed explicit instance is retained when
+present; otherwise exactly one Codex desktop candidate must exist. Missing
 or ambiguous instances are refused. A subsequent read can reconnect after a
 failed connection, rechecking source pins, caller and project. This does not
 restart Codex, retry a failed native write, or establish another access route.

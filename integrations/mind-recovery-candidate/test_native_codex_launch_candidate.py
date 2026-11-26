@@ -9,6 +9,10 @@ class NativeCodexFrameTests(unittest.TestCase):
         return {'codexDesktopOptions':dict(source='native_codex_desktop_messaging',projectDirectory='C:/Owned/Project',transport=dict(
             nodePath=str(Path(sys.executable).resolve()),serverPath=str(Path(__file__).resolve()),nodeSha256='a'*64,serverSha256='b'*64,
             pipePath='\\\\.\\pipe\\codex-app-tools-11111111-1111-4111-8111-111111111111',callerThreadId='11111111-1111-4111-8111-111111111111',discovery='single_local_codex_desktop'))}
+    def test_persistent_namespace_needs_no_saved_desktop_instance_id(self):
+        profile=self.profile();profile['codexDesktopOptions']['transport']['pipePath']=r'\\.\pipe\codex-app-tools'
+        self.assertEqual(launch.codex_frame_fields(profile),profile)
+
     def test_optional_default_is_unchanged_and_returned_frame_is_a_copy(self):
         self.assertEqual(launch.codex_frame_fields({}),{})
         profile=self.profile();body=launch.codex_frame_fields(profile);self.assertEqual(body,profile)

@@ -67,3 +67,10 @@ test('after a failed synthetic native call a later read may reconnect, but the w
   assert.deepEqual(result.turns[0].items,[],'the new synthetic peer received no replay of the earlier write');
  }finally{await client.close();}
 });
+
+test('a persistent local namespace discovers one instance and refuses two without saving an endpoint',async()=>{
+ const {resolveCodexDesktopPipe,CODEX_DESKTOP_NAMESPACE}=await import('../lib/codex-desktop-pipe.mjs');
+ const a='codex-app-tools-11111111-1111-4111-8111-111111111111',b='codex-app-tools-22222222-2222-4222-8222-222222222222';
+ const selected=await resolveCodexDesktopPipe(CODEX_DESKTOP_NAMESPACE,{list:async()=>[a]});assert.ok(selected.endsWith(a));
+ await assert.rejects(resolveCodexDesktopPipe(CODEX_DESKTOP_NAMESPACE,{list:async()=>[a,b]}),/unavailable or ambiguous/);
+});
