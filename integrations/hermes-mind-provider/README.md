@@ -398,3 +398,33 @@ container recreation as an active hold. A live plan must verify exact owner and
 current drain/work state, keep its window bounded, preserve other writers and
 qualify normal gateway retirement separately. Do not infer safe hot replacement
 from the provider cache signature or use an idle snapshot as a maintained hold.
+## Scoped native service lifecycle
+
+`test_native_service_lifecycle.py` exercises the actual image's S6ServiceManager
+and /command tools in a temporary unprivileged supervision tree. A worker holds
+its exit after TERM: the native stop request and desired-state update complete
+while its exact old PID still runs. Only after clean planned exit and old-process
+retirement is a successor started. A second profile's PID and saved intent stay
+unchanged. A missing service refuses without changing the selected intent.
+
+Both cases pass. This is native control qualification with harmless workers,
+not proof of a real gateway's transcript flush or every background child. The
+fixture needs executable temporary service scripts; Docker tmpfs otherwise
+mounts noexec. Keep that exception confined to the disposable s6 fixture. Never
+point the test at the real /run/hermes-service tree.
+
+## Proposed private Mind path
+
+`private_mind_route.py` is a pure configuration planner for `/mind-agents/` on
+Mesh's existing HTTPS8453 listener, targeting the existing loopback19124 host.
+It retains Mesh's root4320 route and every unrelated route/listener, refuses a
+changed snapshot, occupied/ambiguous mount or Funnel on its selected listener,
+and rolls back only its unchanged added path. No reset or global replacement.
+It makes no network, credential, service or Tailscale change itself.
+
+Eleven local cases and a preview/inverse against the captured Windows config
+passed. That captured config is historical; live installation requires a fresh
+reviewed snapshot, approved new access, same-target TLS/protocol verification
+and exact readback. The selected endpoint is not live merely because this
+planner or its tests exist. Keep the separately proposed Cyony Relay route and
+its approval independent from any Mind permission.
