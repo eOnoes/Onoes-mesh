@@ -1,26 +1,25 @@
 # Remaining owner checks
 
-## Current owner checks · November 23, 2026
+## Current owner checks · November 26, 2026
 
-| Where | What you can do |
-| --- | --- |
-| Phone · Workroom | Open the board to create, edit or move a card. The guide and direct card links are installed. The phone checks for dragging, review, reload, rotation and reconnect have passed. [Open Workroom](https://emitchell.tail8c4a75.ts.net:8453/#workroom) |
-| Phone · Relay | Open Echo to read the conversation and load older messages. The installed composer shows the maintenance pause and lets you draft. Send becomes available after maintenance. A crew-folder handoff has no confirmed pickup time. [Open Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay) |
-| 3D Print Pilot | Approve the prepared link when ready to share this one card with Mind. The reviewed Windows-local backup option removes the password prompts for this pilot. The existing shared Mesh card is connected to Mind. The print pilot is still private to Workroom. |
-| At the PC · supervised work | Arrange a quiet recovery window for the historical job holds. After recovery and route qualification, start one real card from the phone with Echo building and Nims reviewing. Rook activation follows that check. |
-| Inference · other machines | Open **Other machines → Check machine status** for Tripp’s desktop. Read Strata and Ollama separately, then expand **Individual GPUs** to see utilization and temperature for each card. [Open Inference](https://emitchell.tail8c4a75.ts.net:8453/#inference) |
+Current phase: Relay for Echo/Nims, and Onoes-Mind for Echo/Nims/Cyony. Eddie's phone and Echo's PC come first. Tripp is explicitly deferred. Workroom, Rook, Inference, the eight old holds and orchestration stay parked. No restart or quiet window is requested now.
 
-Tripp’s desktop has an RTX 3060 and an RTX 4080 SUPER. The overview shows the busiest GPU’s usage and the hottest GPU’s temperature, which can come from different cards. During the installed phone-width check, Strata reported `inkling` loaded. Model names and readings expire after 30 seconds. **LAN · Connection denied** means the check could not reach Tripp’s PC with the available connection.
+| Where | Status | What to do / note |
+| --- | --- | --- |
+| Phone · Relay | One pending physical-phone check | Open [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay), expand Nims project chats, select **Onoes-Mesh build**, open history, then switch back to Echo. Load older history if needed. No message needed. Keep Codex desktop running. |
+| Phone · Echo chat | Already accepted | Send, reply, reload and separate older history passed. Do not repeat. Echo uses its private Mind home and the scoped shared project reader. |
+| Mind screen (optional) | Shared handoff check passed | [Open Mind](https://emitchell.tail8c4a75.ts.net:8453/#mind) if useful. No repeat of that check is needed. |
+| Cyony · cloud host | Awaiting Eddie's assistance decision | Smart Stop is in place after the three current remote diagnostics timed out, following an initial working route. No probes, retries, enrollments or grants. |
 
-The main-PC Nemotron load, chat and unload check already passed from the phone. The release guide covers startup, recovery and the remaining supervised job check. [Release operations](RELEASE-OPERATIONS.md)
+The Relay Nims chats are native project chats installed in Relay, using this existing Codex project. The hosted browser checks at phone and desktop widths passed; they do not replace the physical-phone acceptance above. Do not expect every owner prompt to load at first: automatic loading checks at most two earlier item pages, followed by manual older history.
 
-The phone update is installed. **Individual GPUs** gives each card its own usage meter and eight-segment temperature ring. **GPU peaks** in the overview shows the maximum usage and temperature across the cards. The live private route rendered both of Tripp’s cards in a phone-width browser. The rehearsed browser-file replacement and rollback kept Mesh running. When readings expire after 30 seconds, tap **Check machine status** for a fresh sample.
+Nims's current handoff was already retrieved by Echo through the configured Mind MCP: document revision 35 / canonical record revision 60, matching author, provenance and next action. That check is done; no further model call is needed, and this does not mean future revisions are read.
 
-The combined phone release is installed. A phone-width browser on the private route opened the existing shared card from Mind, reloaded it, and returned to Mind with Back. The release-copy checks also covered Agent links, saving the brief and progress together, and displaying clarification questions on cards. In Inference, tap a shortened Ollama name to see its exact tags. A count in parentheses means multiple tags share that name.
+Cyony: the local client/rollback check and 45 entry/transport tests passed, but the three current remote diagnostics timed out after the initial route worked. Smart Stop is in place, awaiting Eddie's assistance decision. New Cyony private-home/shared-reader access, curated import and private route remain OFF/unapproved.
 
-The design check caught a missing default for the temperature rings in `shared/tokens.css`. The installer now requires an exact match on that existing stylesheet. Both complete and interrupted rollback restored all 446 original files on the release copy. The installation preserved all 22 checked board tables and the same Mind reader. The post-install backup restored successfully and included all 104 app files named by the active startup profile.
+Keep the existing Deep functionality; no expansion. Relay and Telegram are not one conversation: Mind shares deliberately saved context, not raw chat mirroring.
 
-For future combined releases, run the design check and app suite against the assembled copy before preparing the Windows startup records.
+Everything below this line is historical/deferred evidence from earlier phases and installations. It is not the current checklist or authorization to resume parked services.
 
 ## Sharing the first print project
 
