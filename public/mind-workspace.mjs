@@ -101,10 +101,39 @@ function workroomFact(record) {
  }
 }
 
+// Read-only presentation of an already shared agent-handoff claim. No ingestion, authority or dispatch.
+function agentHandoff(record) {
+ if (record.kind !== 'project_fact' || record.source_class !== 'agent_handoff' || typeof record.claim !== 'string') return null;
+ let handoff;
+ try {
+  handoff = JSON.parse(record.claim);
+ } catch {
+  return null;
+ }
+ if (!handoff || typeof handoff !== 'object' || Array.isArray(handoff)) return null;
+ if (handoff.schema !== 'onoes-handoff/v1') return null;
+ if (typeof record.project_id !== 'string' || !record.project_id.trim() || record.project_id.length > 96) return null;
+ if (handoff.project_id !== record.project_id) return null;
+ if (typeof handoff.handoff_id !== 'string' || !handoff.handoff_id.trim() || handoff.handoff_id.length > 128) return null;
+ if (typeof handoff.author !== 'string' || !/^[a-z][a-z0-9_-]*$/.test(handoff.author) || handoff.author.length > 48) return null;
+ if (!Number.isSafeInteger(handoff.revision) || handoff.revision <= 0) return null;
+ if (typeof handoff.next_action !== 'string' || !handoff.next_action.trim() || handoff.next_action.length > 4096) return null;
+ for (const [key, max] of [['objective',4096], ['recipient',96]]) {
+  if (handoff[key] !== undefined && (typeof handoff[key] !== 'string' || handoff[key].length > max)) return null;
+ }
+ for (const key of ['completed', 'remaining']) {
+  if (handoff[key] === undefined) continue;
+  if (!Array.isArray(handoff[key]) || handoff[key].length > 32) return null;
+  for (const item of handoff[key]) if (typeof item !== 'string' || item.length > 4096) return null;
+ }
+ return handoff;
+}
+
 function renderRecallRecord(record, node, sourceLinks) {
  const card = node('article');
  card.className = 'box section-gap';
  const fact = workroomFact(record);
+ const handoff = fact ? null : agentHandoff(record);
  if (fact) {
   const title = node('h3', fact.title);
   title.style.overflowWrap = 'anywhere';
@@ -123,6 +152,27 @@ function renderRecallRecord(record, node, sourceLinks) {
    sourceLinks.set(link, fact.cardId);
    card.append(link);
   }
+ } else if (handoff) {
+  const heading = node('h3', 'Project handoff');
+  heading.style.overflowWrap = 'anywhere';
+  card.append(heading);
+  const meta = node('p', `Project ${handoff.project_id} · recorded author ${handoff.author}${typeof handoff.recipient === 'string' ? ` · recorded recipient ${handoff.recipient}` : ''} · Document revision ${handoff.revision} · handoff ID ${handoff.handoff_id}`);
+  meta.style.whiteSpace = 'pre-wrap';
+  card.append(meta);
+  if (typeof handoff.objective === 'string') {
+   const body = node('p', handoff.objective);
+   body.style.whiteSpace = 'pre-wrap';
+   card.append(node('strong', 'Objective'), body);
+  }
+  const action = node('p', handoff.next_action);
+  action.style.whiteSpace = 'pre-wrap';
+  card.append(node('strong', 'Next action'), action);
+  for (const [key, listLabel] of [['completed','Completed (reported)'], ['remaining','Remaining work']]) {
+   if (!Array.isArray(handoff[key])) continue;
+   card.append(node('strong', listLabel));
+   if (!handoff[key].length) card.append(node('p','None recorded.'));
+   for (const item of handoff[key]) { const body = node('p', item); body.style.whiteSpace = 'pre-wrap'; card.append(body); }
+  }
  } else {
   card.append(node('p', record.claim));
  }
@@ -130,7 +180,7 @@ function renderRecallRecord(record, node, sourceLinks) {
  source.append(node('summary','Source details'), node('p',`Record ${record.record_id} · project ${record.project_id} · scope ${record.scope_id}`),
   node('p',`Source class ${record.source_class} · observed ${record.observed_at || 'not recorded'} · hash ${record.payload_hash}`));
  for (const item of record.provenance || []) source.append(node('p', `${item.type}: ${item.ref} · ${item.content_hash}`));
- if (fact) source.append(node('p', record.claim));
+ if (fact || handoff) source.append(node('p', record.claim));
  card.append(source);
  return card;
 }
