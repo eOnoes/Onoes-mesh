@@ -798,3 +798,23 @@ a separate unqualified development candidate; do not activate this entry with
 the older client. Cloud testing remains stopped after an uncertain SSH attempt
 until the existing route and that exact test actor are reconciled. No new trial,
 route, live credential or agent access follows from publishing this source.
+
+
+## Current Cyony connection status
+
+The owner successfully approved the existing Echo-PC to Cyony SSH connection
+from his phone. The expected host/account and the current running container
+and native gateway were then verified read-only, and six public gateway
+source hashes still match the prepared image. The earlier authentication
+stop is resolved for that verified route. The inactive cloud_phase_runner
+source now pins exactly the existing verified dedicated-key recipe with
+strict host checking, no forwarding and host-key updates disabled, and never
+accepts a caller-rehashed different recipe. Forty-six focused local
+transport/installer/window tests pass, plus a no-execution composition check
+using the actual verified recipe. No production installer, new memory
+identity, credential, private endpoint or gateway restart was enabled by
+those checks, and Mind enrollment remains inactive. The production cold
+Windows entry, deployed private TLS route and complete cross-host
+installation/rollback remain unqualified; the old remote test retirement
+remains unresolved. A zero-active-agent snapshot is not a drain or
+retirement proof. Remaining acceptance gates stay in place.

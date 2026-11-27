@@ -7,9 +7,9 @@ Private stdin/stdout is never copied into generic phase journals.
 import hashlib,json,os,re,shlex,subprocess
 from pathlib import Path
 
-# Existing approved source-only SSH recipe on Eddie's PC. A new owner plan
+# Existing pinned route verified from Eddie's PC after owner phone verification. A new owner plan
 # cannot silently substitute another authentication or forwarding recipe.
-APPROVED_SSH_SHA256='ed8d5a8a2db5e1d56b6041257be0002ed11f4bf315f8b694921ea168a51cd937'
+APPROVED_SSH_SHA256='23db00dd522117cfed33720aec1ebd99288c0f9c07b2e5805a9c1a48350e5f98'
 
 
 class PhaseTransportHeld(RuntimeError):pass
@@ -128,8 +128,8 @@ class NativePhases:
         options={ssh[i+1] for i,a in enumerate(ssh[:-1]) if a=='-o'}
         require({'BatchMode=yes','StrictHostKeyChecking=yes','ForwardAgent=no','ForwardX11=no',
             'ClearAllForwardings=yes','PasswordAuthentication=no','KbdInteractiveAuthentication=no',
-            'IdentityAgent=none','IdentityFile=none','IdentitiesOnly=yes','PreferredAuthentications=none'}<=options
-            and '-T' in ssh and not any(a in ssh for a in ('-L','-R','-D','-A','-X','-Y','-tt')))
+            'IdentityAgent=none','IdentitiesOnly=yes','PreferredAuthentications=publickey','UpdateHostKeys=no'}<=options
+            and '-T' in ssh and '-i' in ssh and not any(a in ssh for a in ('-n','-L','-R','-D','-A','-X','-Y','-tt')))
         entry=value['entryPath'];expected='cloud_gateway_entry.py' if kind=='gateway' else 'cloud_client_entry.py'
         require(entry.startswith('/opt/data/') and Path(entry).name==expected
             and re.fullmatch('[a-f0-9]{64}',value['planSha256']))
