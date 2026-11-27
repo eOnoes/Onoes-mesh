@@ -175,6 +175,34 @@ def file_map(folder):
     return result
 
 
+def file_tool_stop_reason(row, workspace, allowed, readable):
+    """Pure path decision for read/write/edit tool_call events.
+
+    None means non-file-call events and admitted access. A malformed call
+    (absent/non-dict input, missing/non-string/blank file_path) is reported
+    exactly as malformed arguments so the diagnosis matches DSH validation.
+    """
+    if row.get('type') != 'tool_call' or row.get('tool') not in ('read', 'write', 'edit'):
+        return None
+    raw = row.get('input')
+    if type(raw) is not dict:
+        return 'malformed file tool arguments'
+    raw_path = raw.get('file_path')
+    if type(raw_path) is not str or not raw_path.strip():
+        return 'malformed file tool arguments'
+    try:
+        target = Path(raw_path)
+        if not target.is_absolute():
+            target = workspace / target
+        name = target.resolve().relative_to(workspace).as_posix().casefold()
+        admitted = readable if row['tool'] == 'read' else allowed
+        if name not in admitted:
+            return 'file access outside admitted task files'
+    except (TypeError, ValueError, OSError):
+        return 'file access outside admitted task files'
+    return None
+
+
 def prompt_for(task, originals, failure=None):
     selected = list(originals)
     context = []
@@ -211,6 +239,10 @@ def call_dsh(runtime, workspace, evidence, prompt, attempt):
     allowed = {s.casefold() for s in runtime['task_allowed_files']}
     readable = {s.casefold() for s in runtime['task_selected_files']}
     tools, seconds = (12, 180) if attempt == 1 else (8, 120)
+    prompt += ('\nActual tool budget: ' + str(tools) + ' tool calls and ' + str(seconds) +
+               ' seconds for this attempt. Every read, write and edit counts against this budget. '
+               'Stop as soon as the requested edits are complete; no redundant final readback or '
+               'verification pass is required because the coordinator independently verifies the files.\n')
     env = {k: v for k, v in os.environ.items() if k.upper() in
            {'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATH', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PROGRAMW6432', 'PATHEXT', 'SYSTEMDRIVE'}}
     temp = evidence / ('scratch-' + str(attempt))
@@ -244,18 +276,9 @@ def call_dsh(runtime, workspace, evidence, prompt, attempt):
                     row = json.loads(line)
                 except ValueError:
                     continue
-                if row.get('type') == 'tool_call' and row.get('tool') in ('read', 'write', 'edit'):
-                    raw_path = row.get('input', {}).get('file_path')
-                    try:
-                        target = Path(raw_path)
-                        if not target.is_absolute():
-                            target = workspace / target
-                        name = target.resolve().relative_to(workspace).as_posix().casefold()
-                        admitted = readable if row['tool'] == 'read' else allowed
-                        if name not in admitted:
-                            stopped = 'file access outside admitted task files'
-                    except (TypeError, ValueError, OSError):
-                        stopped = 'file access outside admitted task files'
+                stop = file_tool_stop_reason(row, workspace, allowed, readable)
+                if stop:
+                    stopped = stop
                 stopped = guard.observe(row) or stopped
         try:
             while child.poll() is None:
