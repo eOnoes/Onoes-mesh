@@ -141,17 +141,18 @@ export function createRelayChat({request}) {
     if(signature!==lastAgents){
       lastAgents=signature;select.replaceChildren();
       const empty=document.createElement('option');empty.value='';empty.textContent='Choose an agent…';select.append(empty);
-      for(const peer of state.agents){const option=document.createElement('option');option.value=peer.id;option.textContent=`${peer.name} · ${peer.status}${peer.sessionId?'':' · no conversation'}`;option.disabled=!peer.sessionId;select.append(option);}
+      for(const peer of state.agents){const option=document.createElement('option');option.value=peer.id;if(peer.id==='nims'){option.textContent='Nims · use project chats above';option.disabled=true;}else{option.textContent=`${peer.name} · ${peer.status}${peer.sessionId?'':' · no conversation'}`;option.disabled=!peer.sessionId;}select.append(option);}
     }
+    const legacyNims=state.destination?.agentId==='nims';
     select.value=state.destination?.agentId || '';
     destination.textContent=state.destination ? `Destination: ${state.destination.name} (${state.destination.agentId}) · conversation ${state.destination.sessionId} · ${state.live?'current observation':'not confirmed current'}${state.observedAt?' · checked '+state.observedAt:''}` : 'Choose a destination. No agent is selected automatically.';
-    status.textContent=state.note;
+    status.textContent=legacyNims?'For Nims, use project chats above. This older Relay conversation is read-only.':state.note;
     if(composer.value!==state.draft)composer.value=state.draft;
-    composer.placeholder=state.destination?`${agentName} · type a message…`:'Choose an agent before writing a message';
-    composer.disabled=busy||!state.available||state.initializing||state.sending||!state.destination;
-    send.disabled=busy||!state.canSend||!state.draft.trim();
+    composer.placeholder=legacyNims?'Open Nims project chats above to message Nims':state.destination?`${agentName} · type a message…`:'Choose an agent before writing a message';
+    composer.disabled=busy||!state.available||state.initializing||state.sending||!state.destination||legacyNims;
+    send.disabled=busy||!state.canSend||!state.draft.trim()||legacyNims;
     select.disabled=busy||!state.available||state.initializing||state.sending;
-    current.disabled=select.disabled||!state.destination;
+    current.disabled=select.disabled||!state.destination||legacyNims;
     refreshButton.disabled=busy||!state.available||state.initializing||state.sending;
     if(olderButton){olderButton.hidden=!state.hasOlder;olderButton.disabled=busy||!state.available||state.loadingOlder||state.sending;olderButton.textContent=state.loadingOlder?'Loading older messages…':'Load older messages';}
     attach.disabled=true;
