@@ -50,7 +50,7 @@
 <div class="cmp-box">
 <span class="cmp-slot"><button id="relay-add-files" class="cmp-add" type="button" disabled title="Attachments unavailable in Mesh" aria-label="Attachments unavailable">+</button></span>
 <label class="sr-only" for="relay-text">Message</label>
-<textarea id="relay-text" maxlength="4000" required disabled placeholder="Echo · type a message…"></textarea>
+<textarea id="relay-text" aria-describedby="relay-chat-status" required disabled placeholder="Echo · type a message…"></textarea>
 <span class="cmp-slot"><button id="relay-send" type="submit" class="cmp-send" disabled aria-label="send">&#8593;</button></span>
 </div>
 <label hidden class="sr-only" for="relay-message-id">Stable message id (keep for retries)</label>

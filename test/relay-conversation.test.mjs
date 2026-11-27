@@ -242,3 +242,71 @@ test('A maintenance pause preserves an earlier uncertain message and its origina
   assert.match(f.core.state().note, /earlier receipt is saved/);
   assert.equal(f.calls.filter(call => call.options?.method === 'POST').length, 1);
 });
+
+test('Oversized drafts stay complete and cannot dispatch', async () => {
+  const f=fixture(); await f.ready();
+  const originalHistory=f.core.state().messages;
+  const oversized='a'.repeat(4000)+'VISIBLE SUFFIX';
+  f.core.setDraft(oversized);
+  assert.equal(f.core.state().draft,oversized);
+  assert.equal(f.core.state().canSend,false);
+  assert.match(f.core.state().note,/4014\/4000.*shorten/i);
+  const calls=f.calls.length;
+  await f.core.send();
+  assert.equal(f.calls.length,calls,'oversized send must not request preflight or delivery');
+  assert.equal(f.storage.size,0); assert.equal(f.receipts.size,0);
+  assert.deepEqual(f.core.state().messages,originalHistory);
+  await f.core.refresh();
+  assert.equal(f.core.state().draft,oversized);
+  assert.match(f.core.state().note,/4014\/4000/);
+  const valid='b'.repeat(3990)+'END MARKER';
+  assert.equal(valid.length,4000);
+  f.core.setDraft(valid);
+  assert.equal(f.core.state().canSend,true);
+  assert.doesNotMatch(f.core.state().note,/4014\/4000|shorten/i);
+  await f.core.send();
+  assert.equal([...f.receipts.values()][0].text,valid);
+  assert.equal(f.receipts.size,1); assert.equal(f.core.state().draft,'');
+});
+
+test('UTF16 limit includes surrogate pairs without splitting a draft', async () => {
+  const f=fixture(); await f.ready();
+  const oversized='a'.repeat(3999)+'😀';
+  assert.equal(oversized.length,4001);
+  f.core.setDraft(oversized);
+  assert.equal(f.core.state().draft,oversized);
+  assert.equal(f.core.state().canSend,false);
+  const before=f.calls.length; await f.core.send(); assert.equal(f.calls.length,before);
+  const valid='a'.repeat(3998)+'😀';
+  assert.equal(valid.length,4000); f.core.setDraft(valid);
+  assert.equal(f.core.state().canSend,true); await f.core.send();
+  assert.equal([...f.receipts.values()][0].text,valid);
+});
+
+test('Oversized edits retain an uncertain receipt for its exact original retry', async () => {
+  let lose=true;
+  const f=fixture({intercept:(_route,options)=>{
+    if(options?.method==='POST'&&lose){lose=false;throw Error('acknowledgement lost');}
+  }});
+  await f.ready(); f.core.setDraft('exact original'); await f.core.send();
+  const saved=f.storage.get(RECEIPT_KEY), receipt=JSON.parse(saved);
+  f.core.setDraft('x'.repeat(4001));
+  const before=f.calls.length; await f.core.send();
+  assert.equal(f.calls.length,before); assert.equal(f.storage.get(RECEIPT_KEY),saved);
+  assert.equal(f.core.state().pending.id,receipt.id);
+  f.core.setDraft('exact original'); await f.core.send();
+  assert.equal([...f.receipts.keys()][0],receipt.id); assert.equal(f.storage.size,0);
+});
+
+test('Length warning follows the selected draft and preserves maintenance and privacy boundaries', async () => {
+  const f=fixture();
+  f.setHistory({messages:[],meshDispatchState:'paused'}); await f.ready();
+  f.core.setDraft('e'.repeat(4001));
+  assert.match(f.core.state().note,/maintenance/); assert.match(f.core.state().note,/4001\/4000/);
+  await f.core.select('deep'); f.core.setDraft('short deep draft');
+  assert.doesNotMatch(f.core.state().note,/4001\/4000|shorten/i);
+  await f.core.select('echo'); assert.equal(f.core.state().draft,'e'.repeat(4001));
+  assert.match(f.core.state().note,/4001\/4000/);
+  await f.core.setAvailable(false); assert.equal(f.core.state().draft,'');
+  assert.doesNotMatch(f.core.state().note,/4001\/4000|shorten/i);
+});

@@ -24,10 +24,12 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
   const historyPath=target=>`/relay/api/agents/${encodeURIComponent(target.agentId)}/sessions/${encodeURIComponent(target.sessionId)}/messages?limit=10`;
   const drafts=new Map();
   function state() {
+    const draft=destination ? drafts.get(key(destination)) || '' : '';
+    const lengthHold=draft.length>4000 ? `${draft.length}/4000 characters. Please shorten your message; your full draft is kept until access ends.` : '';
     return {available,initializing,sending,live,agents:[...agents],destination:destination && {...destination},
-      messages:[...messages],observedAt,pending:pending && {...pending},note:sendHold ? `${sendHold} ${note}` : note,hasOlder,loadingOlder,
-      draft:destination ? drafts.get(key(destination)) || '' : '',
-      canSend:available&&!sendHold&&!initializing&&!sending&&!blocked&&Boolean(destination)&&agents.some(peer=>peer.id===destination.agentId)&&(!pending||Boolean(same(pending,destination)))&&(live||Boolean(same(pending,destination)))};
+      messages:[...messages],observedAt,pending:pending && {...pending},note:[sendHold,lengthHold,note].filter(Boolean).join(' '),hasOlder,loadingOlder,
+      draft,
+      canSend:available&&!sendHold&&!lengthHold&&!initializing&&!sending&&!blocked&&Boolean(destination)&&agents.some(peer=>peer.id===destination.agentId)&&(!pending||Boolean(same(pending,destination)))&&(live||Boolean(same(pending,destination)))};
   }
   const publish=()=>onChange(state());
   const current=turn=>available&&turn===epoch;
@@ -157,7 +159,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
   }
   return {
     state,refresh,select,send,loadOlder,
-    setDraft(text){if(available&&destination&&!sending){drafts.set(key(destination),String(text).slice(0,4000));publish();}},
+    setDraft(text){if(available&&destination&&!sending){drafts.set(key(destination),String(text));publish();}},
     async setAvailable(value){
       value=Boolean(value);if(value===available)return;
       epoch++;reads++;available=value;live=false;
