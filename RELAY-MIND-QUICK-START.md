@@ -23,6 +23,15 @@ Relay and Mind are the current focus. Workroom, Rook and Inference work is parke
 
 Opening or refreshing never submits a message. Basic Echo send, reply, history and reload are already owner-confirmed.
 
+## Cyony Chat (phone verified)
+
+1. In Relay, choose **Cyony** in the Conversation agent.
+2. If needed, press **Use current** to bind the displayed conversation.
+3. Type your message and deliberately press **Send** once.
+4. Your message and Cyony's reply appear separately; reopen or reload to read saved history.
+
+Eddie confirmed that Cyony replied and the reply stayed after closing and reloading. No repeat connection test is needed. Cyony's private Mind home is not connected yet.
+
 ## Native Nims (installed; physical-phone acceptance pending)
 
 Only if the connection is available:
