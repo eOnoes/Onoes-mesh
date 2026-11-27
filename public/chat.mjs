@@ -358,6 +358,7 @@ export function createRelayMessenger({document}) {
   if (!document.defaultView || typeof document.defaultView.getComputedStyle !== 'function') return {setAvailable(){}};
   const win = document.defaultView;
   let available = false;
+  let availabilityInitialized = false;
   let pickerSignature = '';
 
   const nativeRoot = document.getElementById('relay-nims-chats');
@@ -706,7 +707,13 @@ export function createRelayMessenger({document}) {
   }
 
   function setAvailable(value) {
-    available = !!value;
+    const next = !!value;
+    if (availabilityInitialized && next === available) {
+      if (available) { rebuildAgents(); measureComposer(); syncLatest(); }
+      return;
+    }
+    availabilityInitialized = true;
+    available = next;
     if (!available) {
       if (agentDrawer.dialog.open) agentDrawer.dialog.close();
       if (historyDrawer.dialog.open) historyDrawer.dialog.close();

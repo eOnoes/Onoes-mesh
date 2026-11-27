@@ -124,7 +124,9 @@ try{
     assert.equal(await page.locator('.relay-messenger-agents button').count(),0);
     assert.equal(await input.inputValue(),'');assert.equal(await nativeInput.inputValue(),'');
     assert.equal(await native.locator('article').count(),0);
-    await menus.click();await page.getByRole('button',{name:'Back to Mesh',exact:true}).click();
+    await menus.click();
+    await page.evaluate(()=>{window.fixtureChat.setAvailable(false);window.fixtureChat.setAvailable(false);});
+    await page.getByRole('button',{name:'Back to Mesh',exact:true}).click();
     assert.equal(await page.evaluate(()=>window.fixtureBack),1,'Locked workspace navigation remains reachable');
     assert.equal(await page.evaluate(()=>window.fixtureWrites.length),0);
     assert.deepEqual(errors,[]);
