@@ -12,6 +12,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
   let available=false,blocked=false,initializing=false,sending=false,live=false,epoch=0,reads=0;
   let agents=[],destination=null,messages=[],observedAt=null,pending=null,note='Connect to choose a Relay agent.';
   let refreshFlight=null;
+  let sessions=[],sessionsLoading=false,sessionsNote='',sessionCatalogue=null,sessionFlight=null;
   let sendHold = '';
   function observeDispatch(reply) {
     sendHold = reply.meshDispatchState === 'paused' ? 'Sending is paused for Mesh maintenance.'
@@ -28,7 +29,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
     const lengthHold=draft.length>4000 ? `${draft.length}/4000 characters. Please shorten your message; your full draft is kept until access ends.` : '';
     return {available,initializing,sending,live,agents:[...agents],destination:destination && {...destination},
       messages:[...messages],observedAt,pending:pending && {...pending},note:[sendHold,lengthHold,note].filter(Boolean).join(' '),hasOlder,loadingOlder,
-      draft,
+      draft,sessions:sessions.map(s=>({...s,current:s.id===agents.find(a=>a.id===destination?.agentId)?.sessionId})),sessionsLoading,sessionsNote,
       canSend:available&&!sendHold&&!lengthHold&&!initializing&&!sending&&!blocked&&Boolean(destination)&&agents.some(peer=>peer.id===destination.agentId)&&(!pending||Boolean(same(pending,destination)))&&(live||Boolean(same(pending,destination)))};
   }
   const publish=()=>onChange(state());
@@ -77,6 +78,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
       const peer=agents.find(a=>a.id===destination.agentId);
       if(!peer)throw Error('Selected agent is unavailable. No other agent was selected.');
       destination.name=peer.name;
+      if(sessionCatalogue&&sessionCatalogue.agentId!==destination.agentId){sessions=[];sessionsNote='';sessionCatalogue=null;sessionFlight=null;}
       let result=await request(historyPath(destination));
       if(!current(turn)||read!==reads)return;
       if(!Array.isArray(result?.messages))throw Error('Conversation history unavailable.');
@@ -99,6 +101,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
         newest=cursor(result.newest_id)||newest;
       }else if(!catchingUp){messages=page;hasOlder=false;oldest=null;newest=null;}
       live=peer.sessionId===destination.sessionId;observedAt=new Date().toISOString();
+      if(sessionCatalogue&&sessionCatalogue.agentId===destination.agentId)sessions=sessionCatalogue.list.map(s=>({...s,current:s.id===peer.sessionId}));
       // Observed only: the selected agent reports stopped while the newest displayed message is the user's.
       if(live&&!catchingUp&&!pending&&!sendHold&&peer.status==='stopped'&&page.length&&page[page.length-1].k==='you')stoppedUnanswered=true;
       note=live ? (pending?'Uncertain send: retry requires its exact original text and destination.':(sendHold ? 'You can read history and edit your draft.' : 'Conversation checked. Sending requires an explicit Send.')) : 'Native conversation changed. This is the selected historical session. Use current conversation explicitly; an uncertain retry stays bound to its original session.';
@@ -131,6 +134,36 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
     if(!peer?.sessionId){note='Choose an available agent with a current conversation.';publish();return;}
     epoch++;reads++;destination={agentId:peer.id,sessionId:peer.sessionId,name:peer.name};messages=[];observedAt=null;live=false;
     hasOlder=false;loadingOlder=false;oldest=null;newest=null;
+    sessions=[];sessionsNote='';sessionCatalogue=null;sessionFlight=null;sessionsLoading=false;
+    note='Reading the explicitly selected conversation…';publish();await refresh();
+  }
+  async function listSessions() {
+    if(!available||initializing||sending||!destination||destination.agentId==='nims')return;
+    if(sessionFlight?.turn===epoch)return sessionFlight.promise;
+    // Dedicated session-list flight: never touches the shared history read counter.
+    const flight={turn:epoch,agentId:destination.agentId};sessionFlight=flight;sessionsLoading=true;publish();
+    flight.promise=request(`/relay/api/agents/${encodeURIComponent(flight.agentId)}/sessions`)
+      .then(reply=>{
+      if(!current(flight.turn)||sessionFlight!==flight||!destination||destination.agentId!==flight.agentId)return;
+      if(reply?.ok!==true||!Array.isArray(reply.sessions))throw Error('Sessions unavailable.');
+      const seen=new Set();
+      sessions=reply.sessions.filter(s=>identity(s?.id)&&!seen.has(s.id)&&seen.add(s.id))
+        .map(s=>({id:s.id,title:String(s.title??'').slice(0,160),updatedAt:String(s.updated_at??'').slice(0,80),current:false}));
+      sessionCatalogue={agentId:flight.agentId,list:sessions};
+      sessions=sessionCatalogue.list.map(s=>({...s,current:s.id===agents.find(a=>a.id===flight.agentId)?.sessionId}));
+      sessionsNote='';
+      publish();
+    }).catch(()=>{if(current(flight.turn)&&sessionFlight===flight){sessions=[];sessionCatalogue=null;sessionsNote='Session list unavailable. Your conversation and draft are unchanged.';publish();}})
+      .finally(()=>{if(current(flight.turn)&&sessionFlight===flight){sessionsLoading=false;sessionFlight=null;publish();}});
+    return flight.promise;
+  }
+  async function selectSession(sessionId) {
+    if(!available||initializing||sending||!destination||!sessionCatalogue||sessionCatalogue.agentId!==destination.agentId)return;
+    if(!sessionCatalogue.list.some(s=>s.id===sessionId))return;
+    epoch++;reads++;destination={...destination,sessionId};messages=[];observedAt=null;live=false;
+    hasOlder=false;loadingOlder=false;oldest=null;newest=null;
+    // Same agent: keep the valid catalogue; the new epoch/read token invalidates any outstanding read.
+    sessionsLoading=false;sessionFlight=null;sessions=sessionCatalogue.list.map(s=>({...s,current:false}));
     note='Reading the explicitly selected conversation…';publish();await refresh();
   }
   async function send() {
@@ -162,13 +195,13 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
     finally{if(current(turn)){sending=false;publish();}}
   }
   return {
-    state,refresh,select,send,loadOlder,
+    state,refresh,select,selectSession,send,loadOlder,listSessions,
     setDraft(text){if(available&&destination&&!sending){drafts.set(key(destination),String(text));publish();}},
     async setAvailable(value){
       value=Boolean(value);if(value===available)return;
       epoch++;reads++;available=value;live=false;
       hasOlder=false;loadingOlder=false;oldest=null;newest=null;
-      if(!value){sendHold='';agents=[];destination=null;messages=[];observedAt=null;drafts.clear();pending=null;blocked=false;initializing=false;sending=false;note='Private chat cleared. Reconnect to choose an agent.';publish();return;}
+      if(!value){sendHold='';agents=[];destination=null;messages=[];observedAt=null;drafts.clear();pending=null;blocked=false;initializing=false;sending=false;sessions=[];sessionsLoading=false;sessionsNote='';sessionCatalogue=null;sessionFlight=null;note='Private chat cleared. Reconnect to choose an agent.';publish();return;}
       initializing=true;const turn=epoch;publish();
       try{await restore(turn);}catch(error){if(current(turn)){blocked=true;note=error.message;}}
       if(current(turn)){initializing=false;publish();if(!blocked)await refresh();}

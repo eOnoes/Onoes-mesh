@@ -61,7 +61,7 @@ You can ask Echo to read Nims's current shared handoff from Mind and report its 
 - Refresh or reopen to read saved history. Drafts are memory-only and may be lost when access ends.
 - An uncertain send is not a failed send. Don't blindly resend, create new IDs, or auto-retry. Check the message's existing delivery status; if it's still unclear, ask Nims or Echo for help with that exact message.
 - **Back to Mesh** in the top-left menu returns to the other tabs, including when the workspace is locked. **Lock workspace** uses the existing privacy lock.
-- Nims lists its existing project chats. Other agents currently expose their selected conversation and older messages; the new layout does not promise a complete previous-chat chooser for every backend.
+- Nims keeps its native project chats. For ordinary agents, the left menu's **Saved chats** lists the sessions that backend exposes; selecting one reads its history, the current label means the backend's current chat, and **Use current** returns to the chat that can accept a fresh reply. Older chats are read-only for fresh sends; nothing is auto-created, auto-activated or auto-sent. The menu does not promise chats the backend never exposed.
 - No attachment support is currently promised.
 
 ## A Good First Step

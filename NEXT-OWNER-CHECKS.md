@@ -6,7 +6,7 @@ Current phase: Relay for Echo/Nims, and Onoes-Mind for Echo/Nims/Cyony. Eddie's 
 
 | Where | Status | What to do / note |
 | --- | --- | --- |
-| Phone · Relay | Project chats accepted; new layout feel pending | Open [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay). Right badge chooses an agent; left menu chooses Nims chats. Scroll up/use the down-arrow and try typing without sending to check keyboard movement. Keep Codex desktop running. |
+| Phone · Relay | Project chats accepted; new layout feel/keyboard pending | Open [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay). Right badge chooses an agent; left menu shows Saved chats for ordinary agents and Nims's native conversations. Scroll up/use the down-arrow and try typing without sending to check keyboard movement. Keep Codex desktop running. |
 | Phone · Echo chat | Already accepted | Send, reply, reload and separate older history passed. Do not repeat. Echo uses its private Mind home and the scoped shared project reader. |
 | Mind screen (optional) | Shared handoff check passed | [Open Mind](https://emitchell.tail8c4a75.ts.net:8453/#mind) if useful. No repeat of that check is needed. |
 | Cyony · Relay phone | Already accepted | Relay reply and reload on the phone passed. Do not repeat. The private Mind connection for Cyony remains OFF behind the strict original completion-proof gate; no cloud Mind activation is claimed. |
@@ -20,6 +20,8 @@ Cyony boundary: the dedicated Relay A2A route and the phone response/reload are 
 Mind now opens with canonical memory first and "Saved task context (optional)" closed; that check already passed and needs no repeat. The remaining native-phone acceptance stays clearly PENDING. Wider devices and orchestration are not complete.
 
 Keep the existing Deep functionality; no expansion. Relay and Telegram are not one conversation: Mind shares deliberately saved context, not raw chat mirroring.
+
+Source/browser qualification does not itself install a live update; deployment status stays in the canonical checkpoint.
 
 Everything below this line is historical/deferred evidence from earlier phases and installations. It is not the current checklist or authorization to resume parked services.
 

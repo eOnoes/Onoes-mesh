@@ -25,9 +25,12 @@ function boot(createRelayChat){
       const {threadId}=JSON.parse(options.body);
       return {conversation:{id:threadId,title:threadId===a?'Fixture A':'Fixture B',status:'idle'},groups:[{id:'turn-'+threadId,messages:Array.from({length:30},(_,i)=>({id:threadId+'-'+i,role:i%2?'assistant':'user',text:'Native fixture '+i+'. '+('Readable synthetic message. '.repeat(14))})),olderItemCursor:null}],olderTurnCursor:null};
     }
+    if(route==='/relay/api/agents/echo/sessions')return {ok:true,sessions:[{id:'echo-session',title:'Current Echo chat',updated_at:'2026-11-27'},{id:'echo-old',title:'Historical Echo chat',updated_at:'2026-11-20'}]};
+    if(route==='/relay/api/agents/cyony/sessions')return {ok:true,sessions:[{id:'cyony-session',title:'Current Cyony chat',updated_at:'2026-11-27'}]};
     if(route.includes('/messages?')){
       const older=route.includes('before='),first=older?91:101,count=older?10:20;
-      return {messages:Array.from({length:count},(_,i)=>({id:first+i,k:i%2?'ag':'you',t:'Echo message '+(first+i)+'. '+('Synthetic history only. '.repeat(15))})),oldest_id:first,newest_id:first+count-1,has_more:!older};
+      const prefix=route.includes('/sessions/echo-old/')?'Historical Echo message ':'Echo message ';
+      return {messages:Array.from({length:count},(_,i)=>({id:first+i,k:i%2?'ag':'you',t:prefix+(first+i)+'. '+('Synthetic history only. '.repeat(15))})),oldest_id:first,newest_id:first+count-1,has_more:!older};
     }
     if(options?.method==='POST'){window.fixtureWrites.push(route);throw Error('Unexpected synthetic write: '+route);}
     if(route==='/relay/api/mesh-capabilities')return {taskSessionBinding:1};
@@ -77,6 +80,34 @@ try{
     assert.ok(Math.abs(geometry.top)<2&&Math.abs(geometry.height-height)<2,JSON.stringify(geometry));
     assert.ok(geometry.composerBottom<=height+2&&geometry.transcriptHeight>60,JSON.stringify(geometry));
     assert.ok(geometry.width<=width+1,'Horizontal overflow');
+    await menus.click();
+    const sessionSelect=page.locator('#relay-previous-session');await sessionSelect.waitFor();await page.waitForFunction(()=>!document.getElementById('relay-previous-session').disabled);
+    await page.locator('#relay-previous-session-echo-old').waitFor({state:'attached'});
+    assert.ok(await page.locator('#relay-previous-session-echo-session').evaluate(o=>o.textContent.includes('current')),'Current Echo row marked current');
+    await sessionSelect.selectOption('echo-old');
+    await page.locator('#relay-history-drawer').waitFor({state:'hidden'});
+    await page.waitForFunction(()=>document.getElementById('relay-chat').textContent.includes('Historical Echo message '));
+    assert.ok(await page.locator('#relay-send').isDisabled(),'Send disabled on historical session');
+    assert.equal(await page.evaluate(()=>window.fixtureWrites.length),0);
+    assert.equal(await badge.textContent(),'Echo');
+    await input.fill('Unsent historical draft');
+    await menus.click();await page.locator('#relay-chat-current').click();
+    await page.locator('#relay-history-drawer').waitFor({state:'hidden'});
+    assert.equal(await input.inputValue(),'Unsent Echo draft','Current chat restores original draft');
+    assert.ok(await page.evaluate(()=>!document.getElementById('relay-chat').textContent.includes('Historical Echo message ')),'Current chat has no historical prefix');
+    await menus.click();await sessionSelect.selectOption('echo-old');
+    await page.locator('#relay-history-drawer').waitFor({state:'hidden'});
+    assert.equal(await input.inputValue(),'Unsent historical draft','Historical draft restored');
+    await menus.click();await page.locator('#relay-chat-current').click();
+    await page.locator('#relay-history-drawer').waitFor({state:'hidden'});
+    assert.equal(await input.inputValue(),'Unsent Echo draft','Original draft restored again');
+    await choose('cyony');await menus.click();
+    await page.waitForFunction(()=>!document.getElementById('relay-previous-session').disabled);
+    await page.locator('#relay-previous-session-cyony-session').waitFor({state:'attached'});
+    assert.equal(await page.locator('#relay-previous-session-echo-old').count(),0,'Cyony list must not contain echo-old');
+    await page.locator('#relay-history-drawer .relay-messenger-drawer-close').click();
+    await page.locator('#relay-history-drawer').waitFor({state:'hidden'});
+    await choose('echo');assert.equal(await input.inputValue(),'Unsent Echo draft','Echo draft survives Cyony switch');
     await choose('nims');assert.equal(await badge.textContent(),'Nims');
     await menus.click();await page.waitForFunction(()=>!document.getElementById('nims-native-conversation').disabled);
     await page.locator('#nims-native-conversation').selectOption('11111111-1111-4111-8111-111111111111');
@@ -119,6 +150,9 @@ try{
     }
     await menus.click();await page.locator('#relay-messenger-lock').click();
     await page.waitForFunction(()=>document.getElementById('relay-agent-toggle').disabled);
+    const savedOptions=await page.evaluate(()=>Array.from(document.getElementById('relay-previous-session').options).map(o=>o.textContent));
+    assert.ok(!savedOptions.some(t=>t.includes('Historical Echo')),'Privacy lock clears saved-chat rows');
+    assert.equal(await page.locator('#relay-previous-session-echo-old').count(),0,'No historical saved-chat row after lock');
     await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
     assert.equal(await badge.textContent(),'Choose agent');
     assert.equal(await page.locator('.relay-messenger-agents button').count(),0);
@@ -130,7 +164,7 @@ try{
     assert.equal(await page.evaluate(()=>window.fixtureBack),1,'Locked workspace navigation remains reachable');
     assert.equal(await page.evaluate(()=>window.fixtureWrites.length),0);
     assert.deepEqual(errors,[]);
-    results.push({width,height,geometry,nativePickerWithoutLegacyEntry:true,bothJumpArrows:true,draftsPreserved:true,olderReadingPosition:true,keyboardCheck:'simulated visualViewport event, not physical keyboard',privacyCleared:true,newChatCancelledWithoutWrite:true,pageErrors:0});
+    results.push({width,height,geometry,nativePickerWithoutLegacyEntry:true,bothJumpArrows:true,draftsPreserved:true,olderReadingPosition:true,savedChatSwitching:true,keyboardCheck:'simulated visualViewport event, not physical keyboard',privacyCleared:true,newChatCancelledWithoutWrite:true,pageErrors:0});
     await page.close();
   }
   await writeFile(proof+'/BROWSER.json',JSON.stringify({passed:true,scope:'SYNTHETIC candidate: actual UI/core/DOM, local fixture requests only',liveServiceContact:false,modelCalls:0,results},null,2));

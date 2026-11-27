@@ -130,11 +130,39 @@ export function createRelayChat({request}) {
   const current=document.getElementById('relay-chat-current');
   const refreshButton=document.getElementById('relay-chat-refresh');
   const olderButton=document.getElementById('relay-chat-older');
+  const sessionSelect=document.getElementById('relay-previous-session');
+  const sessionsRefresh=document.getElementById('relay-sessions-refresh');
+  const sessionsStatus=document.getElementById('relay-sessions-status');
   const destination=document.getElementById('relay-chat-destination');
   const status=document.getElementById('relay-chat-status');
   const send=document.getElementById('relay-send');
   const attach=document.getElementById('relay-add-files');
-  let busy=false,lastPaint='',lastAgents='',lastDestination='',lastTarget='',lastFirst=null,core;
+  let busy=false,lastPaint='',lastAgents='',lastSessions='',lastDestination='',lastTarget='',lastFirst=null,core;
+  function drawSessions(state) {
+    if(!sessionSelect) return;
+    const legacyNims=state.destination?.agentId==='nims';
+    const disabled=busy||!state.available||state.initializing||state.sending||state.sessionsLoading||legacyNims||!state.destination;
+    const rows=state.sessions||[];
+    const signature=JSON.stringify([rows.map(s=>[s.id,s.title,s.updatedAt,s.current]),legacyNims,Boolean(state.destination)]);
+    if(signature!==lastSessions){
+      lastSessions=signature;
+      sessionSelect.replaceChildren();
+      const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Choose a saved chat';sessionSelect.append(placeholder);
+      for(const row of rows){
+        const option=document.createElement('option');
+        option.value=row.id;option.id=`relay-previous-session-${row.id}`;
+        option.textContent=`${(row.title||'Untitled chat').slice(0,160)}${row.current?' · current':''}`;
+        sessionSelect.append(option);
+      }
+    }
+    // Selected value follows the actual destination only when that row is listed; never auto-select a first row.
+    const listed=rows.some(s=>s.id===state.destination?.sessionId);
+    const next=listed?state.destination.sessionId:'';
+    if(sessionSelect.value!==next)sessionSelect.value=next;
+    sessionSelect.disabled=disabled||rows.length===0;
+    if(sessionsRefresh)sessionsRefresh.disabled=disabled;
+    if(sessionsStatus)sessionsStatus.textContent=state.sessionsNote||(state.sessionsLoading?'Loading chats…':(!state.destination||legacyNims?'':rows.length?'':'No saved chats listed yet. Refresh chats to check.'));
+  }
   function draw(state) {
     agentName=state.destination?.name || 'Relay';
     const signature=JSON.stringify(state.agents);
@@ -155,6 +183,7 @@ export function createRelayChat({request}) {
     current.disabled=select.disabled||!state.destination||legacyNims;
     refreshButton.disabled=busy||!state.available||state.initializing||state.sending;
     if(olderButton){olderButton.hidden=!state.hasOlder;olderButton.disabled=busy||!state.available||state.loadingOlder||state.sending;olderButton.textContent=state.loadingOlder?'Loading older messages…':'Load older messages';}
+    drawSessions(state);
     attach.disabled=true;
     const legacyId=document.getElementById('relay-message-id');if(legacyId)legacyId.disabled=true;
     const painted=JSON.stringify([state.destination,state.messages]);
@@ -174,9 +203,30 @@ export function createRelayChat({request}) {
   core=createRelayConversation({request,storage,onChange:draw});
   composer.addEventListener('input',()=>core.setDraft(composer.value));
   select.addEventListener('change',()=>{if(!busy)core.select(select.value);});
-  current.addEventListener('click',()=>{if(!busy&&core.state().destination)core.select(core.state().destination.agentId);});
+  current.addEventListener('click',async()=>{
+    if(busy||!core.state().destination)return;
+    const snapshot=core.state();
+    const agentId=snapshot.destination.agentId;
+    const peer=snapshot.agents?.find(a=>a.id===agentId);
+    const expectedCurrent=peer && (peer.sessionId||snapshot.destination.sessionId);
+    await core.select(agentId);
+    // Close the drawer only after the verified current selection; never on failure.
+    const settled=core.state().destination;
+    if(settled&&settled.agentId===agentId&&settled.sessionId===expectedCurrent&&core.state().live)document.getElementById('relay-history-drawer')?.close?.();
+  });
   refreshButton.addEventListener('click',()=>{if(!busy)core.refresh();});
   olderButton?.addEventListener('click',()=>{if(!busy)core.loadOlder();});
+  sessionsRefresh?.addEventListener('click',()=>{if(!busy)core.listSessions();});
+  sessionSelect?.addEventListener('change',async()=>{
+    if(busy)return;
+    const requested=sessionSelect.value;
+    if(!requested)return;
+    const agentId=core.state().destination?.agentId;
+    await core.selectSession(requested);
+    // Close the Chats drawer only after the actual destination is the requested chat.
+    const settled=core.state().destination;
+    if(settled&&settled.agentId===agentId&&settled.sessionId===requested)document.getElementById('relay-history-drawer')?.close?.();
+  });
   form.addEventListener('submit',async event=>{event.preventDefault();if(busy)return;await core.send();});
   const panel=document.getElementById('panel-relay');
   const refresh=()=>{if(!panel?.hidden&&!document.hidden&&!busy){taskProgress.refresh();return core.refresh();}};
@@ -184,7 +234,16 @@ export function createRelayChat({request}) {
   if(panel)new MutationObserver(()=>{if(!panel.hidden){toBottom();refresh();}}).observe(panel,{attributes:true,attributeFilter:['hidden']});
   draw(core.state());
   const messenger=createRelayMessenger({document});
-  return {refresh,setAvailable(value,isBusy=false){busy=isBusy;nativeReader.setAvailable(value);taskProgress.setAvailable(value,isBusy);core.setAvailable(value);draw(core.state());messenger.setAvailable(value);},clear(){nativeReader.clear();taskProgress.clear();core.setAvailable(false);draw(core.state());messenger.setAvailable(false);}};
+  // Explicit menu opening only: never a poll. Nims keeps its existing native reader.
+  document.getElementById('relay-history-toggle')?.addEventListener('click',()=>{
+    if(busy)return;
+    const snapshot=core.state();
+    if(!snapshot.available||snapshot.initializing||snapshot.sending||!snapshot.destination)return;
+    const badge=document.getElementById('relay-agent-toggle');
+    if(!badge||badge.dataset.agentId==='nims'||badge.dataset.agentId!==snapshot.destination.agentId)return;
+    core.listSessions();
+  });
+  return {refresh,setAvailable(value,isBusy=false){busy=isBusy;nativeReader.setAvailable(value);taskProgress.setAvailable(value,isBusy);core.setAvailable(value);draw(core.state());messenger.setAvailable(value);},clear(){nativeReader.clear();taskProgress.clear();core.setAvailable(false);lastSessions='';draw(core.state());messenger.setAvailable(false);}};
 }
 // --- chat chrome ------------------------------------------------------------------
 // Two things the conversation needs to be usable: a width you can drag, and a scroll
