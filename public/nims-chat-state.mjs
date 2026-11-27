@@ -29,11 +29,29 @@ export function createNimsChatState({request,onChange=()=>{},storage,makeId,hash
     note=`${selected.title} · ${nimsStatusLabel(selected.status)}${readOnly?' · read-only preview':''}.`;
   }
   async function read(input,mode){
-    if(!available||busy||!selected||sender?.state().writing)return;
-    const token=epoch;busy=true;publish();
-    try{const result=await request('/api/relay/codex/history',{method:'POST',body:JSON.stringify(input)});if(!active(token))return;merge(result,mode);}
+    if(!available||busy||!selected||sender?.state().writing)return{loaded:false};
+    const token=epoch,thread=selected.id;busy=true;publish();
+    let loaded=false;
+    try{const result=await request('/api/relay/codex/history',{method:'POST',body:JSON.stringify(input)});if(!active(token))return{loaded:false};merge(result,mode);loaded=true;}
     catch(error){if(active(token))note=`History unavailable; the displayed record may be stale. ${error.message}`;}
     finally{if(active(token)){busy=false;publish();}}
+    return{loaded,token,thread};
+  }
+  async function prefetchOlderItems(token,thread){
+    let attempts=0;
+    while(attempts<2){
+      if(!active(token)||busy||selected?.id!==thread||sender?.state().writing)return;
+      if(groups.some(g=>g.messages.some(m=>m.role==='user')))return;
+      const group=[...groups].reverse().find(g=>g.olderItemCursor);
+      if(!group)return;
+      const target=group.id,cursor=group.olderItemCursor;
+      const outcome=await read({threadId:selected.id,itemCursor:cursor},'olderItems');
+      if(!outcome.loaded||outcome.token!==token||outcome.thread!==thread)return;
+      ++attempts;
+      if(outcome.token!==epoch){return;}
+      const updated=groups.find(g=>g.id===target);
+      if(updated&&updated.olderItemCursor===cursor)return;
+    }
   }
   sender=createNimsSendState({request,storage,makeId,hash,
     getContext:()=>({available,readOnly,selected,project,busy,nativeMessages:groups.flatMap(group=>group.messages)}),onChange:publish,
@@ -68,7 +86,9 @@ export function createNimsChatState({request,onChange=()=>{},storage,makeId,hash
     async select(id){
       if(!available||sender.state().writing||!uuid(id)||!conversations.some(c=>c.id===id))return;
       ++epoch;busy=false;selected=conversations.find(c=>c.id===id);groups=[];turnCursor=null;note='Reading the selected native conversation…';publish();
-      await read({threadId:id},'latest');
+      const token=epoch,thread=id;
+      const outcome=await read({threadId:id},'latest');
+      if(outcome.loaded&&active(token)&&selected?.id===thread)await prefetchOlderItems(token,thread);
     },
     refresh(){return selected?read({threadId:selected.id},'latest'):Promise.resolve();},
     older(){
