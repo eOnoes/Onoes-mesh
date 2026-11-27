@@ -223,7 +223,9 @@ def prompt_for(task, originals, failure=None):
             'model calls, settings, git, new tools, dependencies or parent paths. Stop on tool error.\n'
             'Coordinator runs fixed checks independently. Do not claim tests you did not run. '
             'Give a short actual-change report and stop. This task never applies a source change.\n'
-            'Task:\n' + task['instruction'] + '\nFixed acceptance checks:\n' + json.dumps(task['checks']) + '\n')
+            'Task:\n<task_instructions>\n' + task['instruction'] + '\n</task_instructions>\n'
+            'Coordinator metadata below is for verification only; never copy it into deliverable files.\n'
+            'Fixed acceptance checks:\n' + json.dumps(task['checks']) + '\n')
     if task.get('lessons'):
         text += '\nReviewed task-specific lessons:\n' + '\n'.join(task['lessons']) + '\n'
     if failure:
