@@ -97,13 +97,13 @@ test('MOCK UI: Mind uses admitted GET and clears selected context and titles on 
  const record={id:'memory-one',title:'Selected context',revision:1,workroom:{revision:1},progress:{revision:1,result:'Pending result',decision:'pending'}};
  const ui=mockUI({responder:route=>response(route.endsWith('bootstrap')?201:200,route.endsWith('bootstrap')?{csrfToken:'h'.repeat(43),expiresAt:Date.now()+60000}:route==='/api/workroom'?{tasks:[record]}:route==='/api/workroom/memory-one'?{task:record}:bodyFor(route))});
  ui.ids.get('demo-start').events.click();await flush();
- const [,select,read,,,content]=ui.ids.get('mind-workspace').children;
+ const [summary,label,select,read,forget,state,content]=ui.ids.get('mind-workspace').children[1].children;
  assert.deepEqual(select.children.map(n=>n.value),['','memory-one']);
  assert.equal(ui.requests.filter(r=>r.route==='/api/workroom/memory-one').length,0);
  select.value='memory-one';select.events.change();
- assert.equal(read.disabled,false,JSON.stringify({options:select.children.map(n=>n.value),admitted:vm.runInContext('admitted',ui.context),busy:vm.runInContext('busy',ui.context),state:ui.ids.get('mind-workspace').children[4].textContent}));
+ assert.equal(read.disabled,false,JSON.stringify({options:select.children.map(n=>n.value),admitted:vm.runInContext('admitted',ui.context),busy:vm.runInContext('busy',ui.context),state:ui.ids.get('mind-workspace').children[1].children[5].textContent}));
  await read.events.click();
- assert.equal(content.hidden,false,ui.ids.get('mind-workspace').children[4].textContent+'; requests: '+ui.requests.map(r=>r.route).join(','));
+ assert.equal(content.hidden,false,ui.ids.get('mind-workspace').children[1].children[5].textContent+'; requests: '+ui.requests.map(r=>r.route).join(','));
  const request=ui.requests.find(r=>r.route==='/api/workroom/memory-one');
  assert.equal(request.options.method,undefined);assert.equal(request.options.headers['X-Trial-CSRF'],'h'.repeat(43));
  ui.events.pagehide();assert.equal(content.hidden,true);assert.equal(content.children.length,0);assert.equal(select.children.length,0);

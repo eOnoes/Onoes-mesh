@@ -27,8 +27,11 @@ export function createMindWorkspace({root, request, openTask, doc = globalThis.d
   const forget = node('button', 'Clear this view'); forget.type = 'button';
   const state = node('p'); state.setAttribute('role', 'status');
   const content = node('article'); content.className = 'box section-gap'; content.hidden = true;
-  root.replaceChildren(label, select, read, forget, state, content);
+  const saved = node('details');
+  saved.append(node('summary','Saved task context (optional)'), label, select, read, forget, state, content);
+  root.replaceChildren();
   const recall=createMindRecallView({root,request,doc});
+  root.append(saved);
   function controls() {
     select.disabled = !available || !tasks?.length || reading;
     read.disabled = !available || !select.value || reading;

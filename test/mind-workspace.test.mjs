@@ -6,7 +6,7 @@ import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 
 class Element {
-  children=[]; events={}; style={}; value=''; hidden=false; disabled=false; textContent='';
+  children=[]; events={}; style={}; value=''; hidden=false; disabled=false; textContent=''; tag='';
   attributes={}; setAttribute(name,value) {this.attributes[name]=value;} removeAttribute(name) {delete this.attributes[name];}
   addEventListener(name,fn) {this.events[name]=fn;}
   append(...nodes) {this.children.push(...nodes);}
@@ -20,9 +20,10 @@ const task = {id:'one',title:'<script>source title</script>',description:'Saved 
 const text = element => [element.textContent,...element.children.map(text)].join('\n');
 function fixture(request=async()=>({task:structuredClone(task)})) {
   const root=new Element(),opened=[],calls=[];
-  const mind=createMindWorkspace({root,doc:{createElement:()=>new Element()},request:async(...args)=>{calls.push(args);return request(...args);},openTask:id=>opened.push(id)});
+  const mind=createMindWorkspace({root,doc:{createElement:tag=>Object.assign(new Element(),{tag})},request:async(...args)=>{calls.push(args);return request(...args);},openTask:id=>opened.push(id)});
   mind.setTasks([task,{id:'two',title:'Other task'}]);mind.setAvailable(true);
-  const [,select,read,forget,state,content]=root.children;
+  const [memorySection,saved]=root.children;
+  const [,,select,read,forget,state,content]=saved.children;
   const choose=(id='one')=>{select.value=id;select.events.change();};
   return {root,mind,select,read,forget,state,content,choose,calls,opened};
 }
@@ -56,6 +57,26 @@ test('Mind clears an old snapshot on selection/list refresh and leaves independe
   f.choose('two');assert.equal(f.content.hidden,true);assert.equal(f.calls.length,1);
   f.mind.setTasks([task]);assert.equal(f.select.value,'');assert.equal(f.content.hidden,true);
   f.mind.clear();assert.equal(f.select.children.length,0);assert.equal(f.read.disabled,true);
+});
+
+test('memory search is primary and optional task lookup stays closed without reads',async()=>{
+  const f=fixture();
+  const [memorySection,saved]=f.root.children;
+  assert.equal(memorySection.tag,'section');
+  assert.equal(memorySection.children[0].tag,'h2');
+  assert.equal(memorySection.children[0].textContent,'Onoes-Mind memory');
+  assert.notEqual(saved,memorySection);
+  assert.equal(saved.tag,'details');
+  assert.equal(saved.children[0].tag,'summary');
+  assert.equal(saved.children[0].textContent,'Saved task context (optional)');
+  assert.equal(saved.open,undefined); // starts closed: no open attribute or property set
+  assert.equal(f.select.children.map(n=>n.textContent).join(','),'Choose a task…,<script>source title</script>,Other task');
+  assert.equal(f.calls.length,0);
+  saved.open=true; saved.events.toggle?.();
+  f.choose();
+  assert.equal(f.calls.length,0);
+  saved.open=false; saved.events.toggle?.();
+  assert.equal(f.calls.length,0);
 });
 
 test('Mind module is served byte-for-byte by the actual isolated HTTP app',async()=>{
@@ -128,7 +149,7 @@ test('recall navigation requires a matching source and a card on the current boa
   {...row,provenance:[ref,{...ref,ref:`card:${other}@1/2/3`}]}, {...row,source_class:'operator'}, {...row,provenance:[{...ref,ref:ref.ref+'/extra'}]}];
  const f = fixture(async route => route.endsWith('/status') ? {configured:true,source:'canonical_ledger'}
   : {schema:'onoes-mind-recall/v1',source:'canonical_ledger',records});
- const [,check,,query,read,, ,results] = f.root.children.at(-1).children;
+  const [,check,,query,read,, ,results] = f.root.children[0].children;
  await check.events.click(); query.value='tray'; query.events.input(); await read.events.click();
  const links = results.children.flatMap(article => article.children).filter(n => n.textContent === 'Open current Workroom card');
  assert.equal(links.length,1);
