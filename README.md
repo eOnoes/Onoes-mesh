@@ -48,13 +48,19 @@ private facts and admitted shared project context can cross those conversations
 through Mind; raw transcripts are not automatically ingested. One agent's private
 home is not another agent's readable memory.
 
-Next: install the reviewed native Nims chat connection in Relay after approval
-for its project-chat access and trusted startup update. The real new-chat and
-follow-up check passed; the live app does not yet include this connection.
-[RELAY-INTEGRATION.md](RELAY-INTEGRATION.md#native-nims-project-chats---november262026)
-describes the actual-project wrapper and its limits. Deep's bounded normal-chat
-memory check above is complete; do not repeat that check or the consumed Nims
-trial without a new grant.
+Status: the reviewed native Nims project chats are installed in the live Relay
+on port 8453 and use the existing Codex project; the deliberately approved
+new-chat and follow-up pair passed. Live private HTTPS browser reads at 390 and
+1440 showed both original speakers plus Refresh, drafts and Lock privacy.
+Physical-phone native acceptance remains pending and Codex desktop must keep
+running; the separate latest UI refinements are reviewed source, not deployed.
+Existing approvals, model and tool defaults remain native. Source verification
+does not itself prove a runtime update; the installed checkpoint tracks
+deployment. [RELAY-INTEGRATION.md](RELAY-INTEGRATION.md#native-nims-project-chats---november262026)
+describes the actual-project wrapper and its limits, and
+[RELAY-MIND-QUICK-START.md](RELAY-MIND-QUICK-START.md) is the existing quick
+start. Deep's bounded normal-chat memory check above is complete; do not
+repeat that check or the consumed Nims trial without a new grant.
 
 Then qualify the remaining named agent identities and shared project context,
 including 3D-print plans/specs. Remote client source preparation does not prove a
