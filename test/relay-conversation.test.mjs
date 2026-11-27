@@ -310,3 +310,100 @@ test('Length warning follows the selected draft and preserves maintenance and pr
   await f.core.setAvailable(false); assert.equal(f.core.state().draft,'');
   assert.doesNotMatch(f.core.state().note,/4001\/4000|shorten/i);
 });
+
+test('stopped agent unanswered message shows observed guidance without sending', async () => {
+  const f = fixture();
+  f.setHistory({messages:[{id:1,k:'you',t:'My latest message'}]});
+  f.setAgents([{id:'echo',name:'Echo',conversation_id:'one',status:'stopped'}]);
+  await f.ready();
+  assert.match(f.core.state().note, /Echo is stopped/);
+  assert.match(f.core.state().note, /no agent reply yet/);
+  assert.match(f.core.state().note, /Check the agent connection before sending again/);
+  assert.equal(f.core.state().draft,'');
+  f.core.setDraft('my draft');
+  assert.equal(f.core.state().canSend, true, 'stopped status alone must not change Send eligibility');
+  const postsBefore = f.calls.filter(c => c.options?.method === 'POST').length;
+  await f.core.refresh();
+  assert.equal(f.core.state().draft,'my draft');
+  assert.deepEqual(f.core.state().messages.map(m=>m.t),['My latest message']);
+  assert.equal(f.calls.filter(c => c.options?.method === 'POST').length, postsBefore, 'no extra POST and no automatic retry');
+  assert.equal(f.receipts.size,0); assert.equal(f.storage.size,0);
+});
+
+test('stopped reply guidance clears after status change or agent reply', async () => {
+  const f = fixture();
+  f.setHistory({messages:[{id:1,k:'you',t:'My latest message'}]});
+  f.setAgents([{id:'echo',name:'Echo',conversation_id:'one',status:'stopped'}]);
+  await f.ready();
+  assert.match(f.core.state().note, /no agent reply yet/);
+  f.setAgents([{id:'echo',name:'Echo',conversation_id:'one',status:'idle'}]);
+  await f.core.refresh();
+  assert.doesNotMatch(f.core.state().note, /no agent reply yet/);
+  assert.match(f.core.state().note, /Conversation checked/);
+  f.setAgents([{id:'echo',name:'Echo',conversation_id:'one',status:'stopped'}]);
+  f.setHistory({messages:[{id:1,k:'you',t:'My latest message'},{id:2,k:'ag',t:'Echo replied now'}]});
+  await f.core.refresh();
+  assert.doesNotMatch(f.core.state().note, /no agent reply yet/);
+  assert.equal(f.core.state().messages.length,2);
+});
+
+test('stopped guidance does not replace uncertain receipt or maintenance guidance', async () => {
+  let lose = true;
+  const f = fixture({intercept:(route,options)=>{ if(options?.method==='POST'&&lose){lose=false;throw Error('acknowledgement lost');} }});
+  await f.ready();
+  f.core.setDraft('uncertain original');
+  await f.core.send();
+  const saved = f.storage.get(RECEIPT_KEY);
+  assert.ok(saved);
+  f.setAgents([{id:'echo',name:'Echo',conversation_id:'one',status:'stopped'}]);
+  f.setHistory({messages:[{id:1,k:'you',t:'My latest message'}]});
+  await f.core.refresh();
+  assert.match(f.core.state().note, /Uncertain send/);
+  assert.doesNotMatch(f.core.state().note, /no agent reply yet/);
+  assert.equal(f.storage.get(RECEIPT_KEY), saved, 'uncertain receipt remains stored');
+  assert.equal(f.core.state().draft,'uncertain original');
+  assert.equal(f.calls.filter(c=>c.options?.method==='POST').length, 1, 'no automatic retry');
+  const g = fixture();
+  g.setHistory({messages:[{id:1,k:'you',t:'My latest message'}],meshDispatchState:'paused'});
+  g.setAgents([{id:'echo',name:'Echo',conversation_id:'one',status:'stopped'}]);
+  await g.ready();
+  assert.match(g.core.state().note, /paused for Mesh maintenance/);
+  assert.doesNotMatch(g.core.state().note, /no agent reply yet/);
+  assert.equal(g.core.state().canSend, false);
+  const h = fixture();
+  h.setHistory({messages:[{id:1,k:'you',t:'My latest message'}],meshDispatchState:'unavailable'});
+  h.setAgents([{id:'echo',name:'Echo',conversation_id:'one',status:'stopped'}]);
+  await h.ready();
+  assert.match(h.core.state().note, /could not check whether sending is available/);
+  assert.doesNotMatch(h.core.state().note, /no agent reply yet/);
+});
+
+test('stopped guidance does not replace historical stale or catch-up guidance', async () => {
+  const f = fixture();
+  f.setHistory({messages:[{id:1,k:'you',t:'My latest message'}]});
+  f.setAgents([{id:'echo',name:'Echo',conversation_id:'one',status:'stopped'}]);
+  await f.ready();
+  assert.match(f.core.state().note, /no agent reply yet/);
+  f.setAgents([{id:'echo',name:'Echo',conversation_id:'rotated',status:'stopped'}]);
+  await f.core.refresh();
+  assert.match(f.core.state().note, /historical session/);
+  assert.doesNotMatch(f.core.state().note, /no agent reply yet/);
+  assert.equal(f.core.state().live,false);
+  const rows = (first,last) => Array.from({length:last-first+1},(_,i)=>({id:first+i,k:'ag',t:'Message '+(first+i)}));
+  let reconnect = false;
+  const g = fixture({intercept:r=>{
+    if(!r.includes('/messages?'))return;
+    const after = new URL(r,'http://fixture').searchParams.get('after');
+    if(after)return {messages:rows(31,40),oldest_id:31,newest_id:40,has_more:true};
+    return reconnect?{messages:rows(51,60),oldest_id:51,newest_id:60,has_more:true}:{messages:rows(21,30),oldest_id:21,newest_id:30,has_more:true};
+  }});
+  g.setAgents([{id:'echo',name:'Echo',conversation_id:'one',status:'stopped'}]);
+  await g.ready();
+  g.core.setDraft('keep during catch-up');
+  reconnect = true;
+  await g.core.refresh();
+  assert.match(g.core.state().note, /Catching up/);
+  assert.doesNotMatch(g.core.state().note, /no agent reply yet/);
+  assert.equal(g.core.state().draft,'keep during catch-up');
+  assert.equal(g.calls.filter(c=>c.options?.method==='POST').length, 0);
+});

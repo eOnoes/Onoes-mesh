@@ -72,6 +72,7 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
       if(!current(turn)||read!==reads)return;
       if(!Array.isArray(list))throw Error('Agent list unavailable.');
       agents=list.filter(a=>identity(a.id)).map(a=>({id:a.id,name:typeof a.name==='string'?a.name:a.id,sessionId:identity(a.conversation_id)?a.conversation_id:null,status:a.status||'unknown'}));
+      let stoppedUnanswered=false;
       if(!destination){live=false;note='Choose an agent to read its current conversation.';publish();return;}
       const peer=agents.find(a=>a.id===destination.agentId);
       if(!peer)throw Error('Selected agent is unavailable. No other agent was selected.');
@@ -98,7 +99,10 @@ export function createRelayConversation({request,storage,onChange=()=>{},uuid=()
         newest=cursor(result.newest_id)||newest;
       }else if(!catchingUp){messages=page;hasOlder=false;oldest=null;newest=null;}
       live=peer.sessionId===destination.sessionId;observedAt=new Date().toISOString();
+      // Observed only: the selected agent reports stopped while the newest displayed message is the user's.
+      if(live&&!catchingUp&&!pending&&!sendHold&&peer.status==='stopped'&&page.length&&page[page.length-1].k==='you')stoppedUnanswered=true;
       note=live ? (pending?'Uncertain send: retry requires its exact original text and destination.':(sendHold ? 'You can read history and edit your draft.' : 'Conversation checked. Sending requires an explicit Send.')) : 'Native conversation changed. This is the selected historical session. Use current conversation explicitly; an uncertain retry stays bound to its original session.';
+      if(stoppedUnanswered)note+=` Observed: ${peer.name} is stopped; no agent reply yet for your latest message. Check the agent connection before sending again.`;
       if(catchingUp&&result.has_more)note+=' Catching up on newer messages; Refresh continues from this page.';
       publish();
     }catch(error){if(current(turn)&&read===reads){live=false;note=`History unavailable; last displayed record is stale. ${error.message}`;publish();}}

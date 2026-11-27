@@ -337,3 +337,18 @@ the Nims read refuses the stale connection while the rest of Mesh stays usable.
 Review new installed-file pins before reconnecting; never accept changed code by
 disabling the check. Gateway and native-frame checks use a synthetic app peer and
 temporary private app data, without enrolling the live phone service.
+
+## Stopped-agent conversation guidance
+
+When the selected agent reports stopped and the newest displayed message is from
+the user, Relay notes stopped and no agent reply yet, and suggests checking the
+agent connection. This notice is a current-conversation observation only. It is
+not proof that delivery failed and not a promise the agent is reachable. Status
+alone never disables Send, blocks the composer or retries anything. Uncertain
+receipt, maintenance, historical or stale-session and catching-up guidance still
+take precedence over this note. The notice clears on a new agent reply or a
+changed status; the existing privacy lock keeps clearing private history and
+drafts. The change uses only existing status and history reads. It repairs no
+remote endpoint, creates no peer, changes no credentials or scopes, and does not
+activate Cyony Mind. Unit and browser checks verify this notice path separately
+from any unqualified live Cyony connection; neither qualifies a live deployment.
