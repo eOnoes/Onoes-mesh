@@ -1,0 +1,13 @@
+{
+  "schema": "onoes-local-worker-task/v1",
+  "id": "example-guide-update",
+  "instruction": "In integrations/LOCAL-WORKER.md, keep the existing title and add one short usage clarification that a passing candidate remains subject to independent review. Preserve everything from the heading ## Limits and review through EOF exactly. Do not request any service or model action.",
+  "allowed_files": ["integrations/LOCAL-WORKER.md"],
+  "context_files": [],
+  "checks": [
+    {"type": "text_contains", "path": "integrations/LOCAL-WORKER.md", "fragments": ["independent review"]},
+    {"type": "preserve_suffix", "path": "integrations/LOCAL-WORKER.md", "marker": "## Limits and review"}
+  ],
+  "repairs": 0,
+  "lessons": []
+}
