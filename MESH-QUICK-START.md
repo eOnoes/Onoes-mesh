@@ -1,3 +1,13 @@
+# Mesh quick start: Relay and Mind
+
+Hi Eddie — today's priority is Relay and Mind, using your phone or Echo's PC. Relay and Mind use the existing private address on port 8453.
+
+Relay is at https://emitchell.tail8c4a75.ts.net:8453/#relay. Messages to and replies from Echo, plus history, have been verified to work and to survive a page reload. Quick check: open the Relay link, send Echo a short message, then reload the page and confirm both sides of the exchange are still there. Nims chats in the existing native project-chat panel inside Relay; that chat is a separate conversation from Echo, so do not expect the two threads to merge.
+
+Mind is at https://emitchell.tail8c4a75.ts.net:8453/#mind. Use the two buttons there: "Check memory connection" confirms Mind can be reached, and "Read matching memories" shows what it can recall. Nims's current shared handoff can be retrieved by Echo with its author, source, revision and next action. Agent-private memory stays separate from deliberately shared project context — sharing is a deliberate act, not automatic.
+
+Phone verification passed for the tested Cyony connection, including its expected host and account. That check did not enroll Cyony into Mind — Cyony's Mind enrollment is not active, so do not assume a generic Tailscale sign-in approves any connection. Workroom, Rook and Inference are parked; nothing there needs your attention today. Do not paste passwords or verification codes into chat. The Workroom guide below is historical — read it for reference only, and do not start teams from it.
+
 # Mesh quick start: phone acceptance
 
 Open the current private Workroom at https://emitchell.tail8c4a75.ts.net:8453/#workroom. Use port 8453 for this Workroom; the older 8446 installation and its data are separate. Workroom is a private release candidate, not whole-app production acceptance.
