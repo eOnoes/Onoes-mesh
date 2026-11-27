@@ -152,7 +152,7 @@ class DiagnosticsTests(unittest.TestCase):
         w.subprocess.Popen = FakePopen
         try:
             answers = {}
-            for attempt, (tools, seconds) in ((1, (12, 180)), (2, (8, 120))):
+            for attempt, (tools, seconds) in ((1, (24, 180)), (2, (16, 120))):
                 answer = w.call_dsh(runtime, self.workspace, evidence, 'Base task prompt.\n', attempt)
                 sent = FakePopen.captured[-1][-1]
                 self.assertIn('Actual tool budget:', sent)

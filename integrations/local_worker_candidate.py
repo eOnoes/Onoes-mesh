@@ -240,7 +240,7 @@ def call_dsh(runtime, workspace, evidence, prompt, attempt):
     guard_module = module(runtime['guard']['path'], 'pinned_local_worker_guard')
     allowed = {s.casefold() for s in runtime['task_allowed_files']}
     readable = {s.casefold() for s in runtime['task_selected_files']}
-    tools, seconds = (12, 180) if attempt == 1 else (8, 120)
+    tools, seconds = (24, 180) if attempt == 1 else (16, 120)
     prompt += ('\nActual tool budget: ' + str(tools) + ' tool calls and ' + str(seconds) +
                ' seconds for this attempt. Every read, write and edit counts against this budget. '
                'Stop as soon as the requested edits are complete; no redundant final readback or '
