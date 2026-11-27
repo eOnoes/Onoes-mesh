@@ -581,7 +581,7 @@ footer{flex:none;padding:6px 12px 0;font-size:10px;color:var(--faint)}
 
 /* the Relay panel is a flex column: chat scrolls, composer pinned at the bottom */
 .content-layout{display:flex;flex-direction:column}
-#panel-relay{flex:1;display:flex;flex-direction:column;min-height:0;gap:0}
+#panel-relay{width:100%;flex:1;display:flex;flex-direction:column;min-height:0;gap:0}
 #panel-relay .chat{flex:1 1 auto;min-height:0;overflow-y:auto}
 #panel-relay .cmp{flex:none}
 .cmp-lead{grid-column:1;color:var(--faint);font-family:var(--mono)}
