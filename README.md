@@ -52,11 +52,11 @@ Status: the reviewed native Nims project chats are installed in the live Relay
 on port 8453 and use the existing Codex project; the deliberately approved
 new-chat and follow-up pair passed. Live private HTTPS browser reads at 390 and
 1440 showed both original speakers plus Refresh, drafts and Lock privacy.
-Physical-phone native acceptance remains pending and Codex desktop must keep
-running; the separate latest UI refinements are reviewed source, not deployed.
-Existing approvals, model and tool defaults remain native. Source verification
-does not itself prove a runtime update; the installed checkpoint tracks
-deployment. [RELAY-INTEGRATION.md](RELAY-INTEGRATION.md#native-nims-project-chats---november262026)
+The three reviewed UI refinements are now installed in the live app;
+physical-phone native acceptance remains pending and Codex desktop must keep
+running. Existing approvals, model and tool defaults remain native. Source
+verification does not itself prove a runtime update; the installed checkpoint
+tracks deployment. [RELAY-INTEGRATION.md](RELAY-INTEGRATION.md#native-nims-project-chats---november262026)
 describes the actual-project wrapper and its limits, and
 [RELAY-MIND-QUICK-START.md](RELAY-MIND-QUICK-START.md) is the existing quick
 start. Deep's bounded normal-chat memory check above is complete; do not
