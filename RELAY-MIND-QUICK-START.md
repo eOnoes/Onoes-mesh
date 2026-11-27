@@ -23,7 +23,7 @@ Relay and Mind are the current focus. Workroom, Rook and Inference work is parke
 
 Opening or refreshing never submits a message. Basic Echo send, reply, history and reload are already owner-confirmed.
 
-## Native Nims (installation in progress)
+## Native Nims (installed; physical-phone acceptance pending)
 
 Only if the connection is available:
 
@@ -33,7 +33,7 @@ Only if the connection is available:
 4. When messaging is available, **Message Nims** and **Send to Nims** continue that selected chat.
 5. A new chat opens **Chat title (optional)** and **Start with a message**; press **Create chat** deliberately to start it, or **Cancel** to back out.
 
-Messages stay in the existing Codex project — it does not clone the project, switch to Echo, or auto-send on opening. Native permissions and approval prompts still belong to Codex desktop. If Nims isn't reachable, leave the draft as-is and use Echo or the current Codex directly — don't change destination silently. Deployment and phone use aren't confirmed yet.
+The native Nims connection is installed in the live Relay app (port 8453). Browser checks at 390 and 1440 widths passed history, Refresh, Cancel-draft and Lock privacy; no new native message test was run. Physical-phone acceptance is still pending. Messages stay in the existing Codex project — it does not clone the project, switch to Echo, or auto-send on opening. Native permissions and approval prompts still belong to Codex desktop. If Nims isn't reachable, leave the draft as-is and use Echo or the current Codex directly — don't change destination silently.
 
 ## Mind Memory
 
