@@ -6,7 +6,7 @@ Current phase: Relay for Echo/Nims, and Onoes-Mind for Echo/Nims/Cyony. Eddie's 
 
 | Where | Status | What to do / note |
 | --- | --- | --- |
-| Phone · Relay | One pending physical-phone check | Open [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay), expand Nims project chats, select **Onoes-Mesh build**, open history, then switch back to Echo. Load older history if needed. No message needed. Keep Codex desktop running. |
+| Phone · Relay | Project chats accepted; new layout feel pending | Open [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay). Right badge chooses an agent; left menu chooses Nims chats. Scroll up/use the down-arrow and try typing without sending to check keyboard movement. Keep Codex desktop running. |
 | Phone · Echo chat | Already accepted | Send, reply, reload and separate older history passed. Do not repeat. Echo uses its private Mind home and the scoped shared project reader. |
 | Mind screen (optional) | Shared handoff check passed | [Open Mind](https://emitchell.tail8c4a75.ts.net:8453/#mind) if useful. No repeat of that check is needed. |
 | Cyony · Relay phone | Already accepted | Relay reply and reload on the phone passed. Do not repeat. The private Mind connection for Cyony remains OFF behind the strict original completion-proof gate; no cloud Mind activation is claimed. |

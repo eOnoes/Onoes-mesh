@@ -1556,3 +1556,68 @@ html[data-theme=light] .workroom-sheet h2{font-family:var(--display);text-transf
 
 .nims-native-history article.box{padding:12px;margin:0;min-height:0}
 .nims-native-history pre{margin:.5rem 0 0}
+
+/* Relay messenger shell — phone-first conversation viewport. */
+#panel-relay[hidden]{display:none!important}
+.relay-messenger [hidden],.relay-messenger-drawer [hidden]{display:none!important}
+body:has(#panel-relay:not([hidden]) .relay-messenger){overflow:hidden}
+.relay-messenger{position:fixed;z-index:1000;inset-inline:0;top:0px;height:100dvh;width:100%;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--mono)}
+.relay-messenger-header{flex:none;display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:44px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top));border-bottom:1px solid var(--border);background:var(--surface);color:var(--ink)}
+.relay-messenger-header button{min-height:44px;min-width:44px;border:1px solid var(--border);background:var(--raised);color:var(--ink)}
+.relay-messenger-menu{justify-self:start}
+.relay-messenger-title{justify-self:center;text-align:center;font:500 13px/1.5 var(--mono);color:var(--ink);white-space:nowrap;overflow:hidden}
+.relay-messenger-title::after{content:"";display:inline-block;width:.5em;height:1em;margin-left:.25em;background:currentColor;vertical-align:-.1em;animation:relay-messenger-cursor 1s steps(2,start) infinite}
+@keyframes relay-messenger-cursor{to{visibility:hidden}}
+#relay-agent-toggle{justify-self:end;max-width:min(40vw,220px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:6px;border:1px solid var(--accent,var(--blue));color:var(--accent,var(--blue));background:var(--surface)}
+.relay-messenger-body{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden;width:100%}
+#panel-relay:has(.relay-messenger) #relay-nims-chats{flex:1 1 auto;display:flex;flex-direction:column;border:0;padding:0;margin:0;background:transparent;min-height:0;min-width:0;overflow:hidden}
+#panel-relay:has(.relay-messenger) #relay-nims-chats > summary{display:none}
+#panel-relay:has(.relay-messenger) #relay-nims-chats > [data-nims-mode],#panel-relay:has(.relay-messenger) #relay-nims-chats > [data-nims-project],#panel-relay:has(.relay-messenger) #relay-nims-chats > label,#panel-relay:has(.relay-messenger) #relay-nims-chats > select,#panel-relay:has(.relay-messenger) #relay-nims-chats > .actions{font-size:11px;max-height:64px;overflow:auto}
+#panel-relay:has(.relay-messenger) #relay-nims-chats > [data-nims-status],#panel-relay:has(.relay-messenger) #relay-nims-chats > [data-nims-send-note]{display:block!important;visibility:visible;font-size:11px;max-height:64px;overflow:auto;color:var(--muted)}
+#panel-relay .relay-messenger-body #relay-chat,#panel-relay .relay-messenger-body [data-nims-history]{flex:1 1 auto;min-height:0;min-width:0;overflow-y:auto;max-block-size:none;overscroll-behavior-y:contain;padding:12px 16px;width:100%;margin:0 auto;max-width:960px;white-space:normal;overflow-wrap:anywhere}
+#panel-relay:has(.relay-messenger) .relay-messenger-native [data-nims-history]{max-block-size:none}
+#panel-relay .relay-messenger-body #relay-chat > *,#panel-relay .relay-messenger-body [data-nims-history] pre{overflow-wrap:anywhere;word-break:normal;max-width:100%}
+#panel-relay .relay-messenger-body #relay-chat > * + *{margin-top:8px}
+#panel-relay .relay-messenger-body [data-nims-history] article{border:1px solid var(--soft);background:var(--surface);border-radius:8px}
+#panel-relay:has(.relay-messenger) #relay-form.cmp,#panel-relay:has(.relay-messenger) [data-nims-compose],#panel-relay:has(.relay-messenger) [data-nims-new-form]{flex:none;width:100%;max-width:960px;margin:0 auto;padding:8px 12px;padding-bottom:calc(8px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--border);min-width:0}
+#panel-relay:has(.relay-messenger) #relay-form.cmp .cmp-box{min-width:0}
+#panel-relay:has(.relay-messenger) #relay-text{min-width:0;min-height:44px;max-height:120px;resize:none}
+#panel-relay:has(.relay-messenger) #relay-form.cmp button{min-height:44px}
+#panel-relay:has(.relay-messenger) [data-nims-compose]{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px;align-items:end}
+#panel-relay:has(.relay-messenger) [data-nims-compose] label[for=nims-message]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#panel-relay:has(.relay-messenger) [data-nims-compose] textarea{grid-column:1;min-width:0;min-height:44px;max-height:120px;resize:none}
+#panel-relay:has(.relay-messenger) [data-nims-compose] button{grid-column:2;min-height:44px;width:44px;padding:0}
+#panel-relay:has(.relay-messenger) [data-nims-new-form]{max-height:min(60vh,360px);overflow-y:auto}
+#panel-relay:has(.relay-messenger) [data-nims-new-form] .actions{flex-wrap:wrap}
+#relay-messenger-latest{position:absolute;right:16px;bottom:120px;width:44px;height:44px;border-radius:50%;z-index:2;display:flex;align-items:center;justify-content:center;background:var(--accent,var(--blue));color:var(--bg);border:1px solid var(--border);scroll-behavior:auto}
+.relay-messenger-drawer{position:fixed;top:0px;right:0;left:auto;margin:0;width:min(360px,88vw);height:100dvh;max-height:100dvh;padding:0;border:1px solid var(--border);background:var(--surface);color:var(--ink);overflow-x:hidden;transform:translateX(100%);transition:transform 180ms ease}
+#relay-history-drawer{left:0;right:auto;transform:translateX(-100%)}
+.relay-messenger-drawer[open]{display:flex;flex-direction:column;transform:translateX(0)}
+.relay-messenger-drawer::backdrop{background:var(--scrim)}
+.relay-messenger-drawer-bar{position:sticky;top:0;flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface)}
+.relay-messenger-drawer-bar button{min-height:44px;min-width:44px}
+.relay-messenger-drawer-content{min-height:0;flex:1 1 auto;overflow-y:auto;padding:12px}
+.relay-messenger-agents{display:grid;gap:8px}
+.relay-messenger-agents button{width:100%;min-height:44px;text-align:left}
+.relay-messenger-agents button[data-agent-id][aria-selected=true],.relay-messenger-agents button[aria-current=true]{border-color:var(--accent,var(--blue));color:var(--accent,var(--blue))}
+#panel-relay:has(.relay-messenger) .relay-messenger-drawer nav,#panel-relay:has(.relay-messenger) .relay-messenger-drawer .actions{width:100%;max-width:100%;flex-wrap:wrap}
+#panel-relay:has(.relay-messenger) #relay-history-drawer #relay-chat-agent,#panel-relay:has(.relay-messenger) #relay-history-drawer label[for=relay-chat-agent]{display:none}
+#panel-relay:has(.relay-messenger) .relay-messenger-drawer select{width:100%;max-width:100%}
+#panel-relay:has(.relay-messenger) > .chat-seek,#panel-relay:has(.relay-messenger) > .chat-jump,#panel-relay:has(.relay-messenger) > #chat-grip{display:none}
+@keyframes relay-drawer-slide-in{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes relay-history-slide-in{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+#relay-agent-drawer[open]{animation:relay-drawer-slide-in 180ms ease}
+#relay-history-drawer[open]{animation:relay-history-slide-in 180ms ease}
+#relay-agent-drawer[open],#relay-history-drawer[open]{transform:translateX(0)}
+@media (prefers-reduced-motion:reduce){
+  .relay-messenger-title::after{animation:none}
+  .relay-messenger-drawer{transition:none;animation:none}
+  #relay-agent-drawer[open],#relay-history-drawer[open]{animation:none}
+  #relay-messenger-latest{scroll-behavior:auto;animation:none}
+}
+@media (min-width:960px){
+  #panel-relay .relay-messenger-body #relay-chat,#panel-relay .relay-messenger-body [data-nims-history],#panel-relay:has(.relay-messenger) #relay-form.cmp,#panel-relay:has(.relay-messenger) [data-nims-compose],#panel-relay:has(.relay-messenger) [data-nims-new-form]{max-width:960px}
+}
+@media (max-width:959px){
+  #panel-relay .relay-messenger-body #relay-chat,#panel-relay .relay-messenger-body [data-nims-history],#panel-relay:has(.relay-messenger) #relay-form.cmp,#panel-relay:has(.relay-messenger) [data-nims-compose],#panel-relay:has(.relay-messenger) [data-nims-new-form]{max-width:100%}
+}

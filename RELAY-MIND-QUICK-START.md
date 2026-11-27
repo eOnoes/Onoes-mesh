@@ -15,38 +15,38 @@ Relay and Mind are the current focus. Workroom, Rook and Inference work is parke
 ## Echo Chat (works today)
 
 1. Open Relay from the menu.
-2. Choose **Echo** in the Conversation agent.
-3. If needed, press **Use current** to bind Echo to its current conversation.
+2. Tap the agent badge at the top right, then choose **Echo**; the picker closes.
+3. The top-left menu contains current-chat/history controls; use **Use current** there if needed.
 4. Type your message and deliberately press **Send** (the arrow).
 5. Your messages and ECHO replies appear separately.
-6. **Refresh** re-reads the same destination; **Load older messages** keeps older history.
+6. The top-left menu holds **Refresh** and **Load older messages**. Scroll up to read; the down-arrow jumps to the latest message. The composer stays at the bottom and follows keyboard viewport changes.
 
 Opening or refreshing never submits a message. Basic Echo send, reply, history and reload are already owner-confirmed.
 
 ## Cyony Chat (phone verified)
 
-1. In Relay, choose **Cyony** in the Conversation agent.
-2. If needed, press **Use current** to bind the displayed conversation.
+1. In Relay, tap the top-right agent badge and choose **Cyony**.
+2. If needed, use **Use current** in the top-left menu.
 3. Type your message and deliberately press **Send** once.
 4. Your message and Cyony's reply appear separately; reopen or reload to read saved history.
 
 Eddie confirmed that Cyony replied and the reply stayed after closing and reloading. No repeat connection test is needed. Cyony's private Mind home is not connected yet.
 
-## Native Nims (installed; physical-phone acceptance pending)
+## Native Nims project chats
 
 Only if the connection is available:
 
-1. Open the separate section **Nims · project chats** — not the Echo/Deep Conversation agent dropdown.
-2. Use **Conversation** to pick a project chat, then **Refresh Nims** to read it.
+1. Tap the top-right agent badge and choose **Nims**.
+2. Open the top-left menu and use **Conversation** to pick a project chat; the menu closes after selection. **Refresh Nims** re-reads it.
 3. Use **More conversations** / **Earlier messages** for paging if present.
-4. When messaging is available, **Message Nims** and **Send to Nims** continue that selected chat.
-5. A new chat opens **Chat title (optional)** and **Start with a message**; press **Create chat** deliberately to start it, or **Cancel** to back out.
+4. When messaging is available, use the bottom composer and its send arrow to continue the selected chat.
+5. **New chat** in the top-left menu opens **Chat title (optional)** and **Start with a message**; press **Create chat** deliberately to start it, or **Cancel** to back out.
 
-The native Nims connection is installed in the live Relay app (port 8453). Browser checks at 390 and 1440 widths passed history, Refresh, Cancel-draft and Lock privacy; no new native message test was run. Physical-phone acceptance is still pending. Messages stay in the existing Codex project — it does not clone the project, switch to Echo, or auto-send on opening. Native permissions and approval prompts still belong to Codex desktop. If Nims isn't reachable, leave the draft as-is and use Echo or the current Codex directly — don't change destination silently.
+The native Nims connection is installed in the live Relay app (port 8453). Browser checks at 390 and 1440 widths passed history, Refresh, Cancel-draft and Lock privacy; no new native message test was run. Eddie confirmed project chats work on his phone. The new messenger layout still needs his physical-phone feel/keyboard check. Messages stay in the existing Codex project — it does not clone the project, switch to Echo, or auto-send on opening. Native permissions and approval prompts still belong to Codex desktop. If Nims isn't reachable, leave the draft as-is and use Echo or the current Codex directly — don't change destination silently.
 
 ## Mind Memory
 
-1. Open Mind.
+1. Open Mind; canonical memory search comes first. **Saved task context (optional)** stays collapsed unless needed.
 2. Press **Check memory connection**.
 3. Type a search, then press **Read matching memories**.
 
@@ -60,6 +60,8 @@ You can ask Echo to read Nims's current shared handoff from Mind and report its 
 
 - Refresh or reopen to read saved history. Drafts are memory-only and may be lost when access ends.
 - An uncertain send is not a failed send. Don't blindly resend, create new IDs, or auto-retry. Check the message's existing delivery status; if it's still unclear, ask Nims or Echo for help with that exact message.
+- **Back to Mesh** in the top-left menu returns to the other tabs, including when the workspace is locked. **Lock workspace** uses the existing privacy lock.
+- Nims lists its existing project chats. Other agents currently expose their selected conversation and older messages; the new layout does not promise a complete previous-chat chooser for every backend.
 - No attachment support is currently promised.
 
 ## A Good First Step
