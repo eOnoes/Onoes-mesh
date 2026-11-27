@@ -173,6 +173,46 @@ class DiagnosticsTests(unittest.TestCase):
         self.assertEqual(len(fake_pinned.seen), 14)  # 7 pinned runtime items re-verified per attempt x 2 attempts
         self.assertTrue(all(item['path'] == str(pin) for item in fake_pinned.seen))
 
+    def card_after(self, prompt, prefix):
+        # Parse the exact card line by prefix + json.loads of the remainder, so
+        # assertions never depend on incidental prose wrapping.
+        marker = prefix + ' '
+        line = next(line for line in prompt.splitlines() if line.startswith(marker))
+        return json.loads(line[len(marker):])
+
+    def test_prompt_card_lists_relative_paths_and_recovers_original_text(self):
+        task = dict(allowed_files=['guide.md'], instruction='Edit only guide.md.',
+                    checks=[{'type': 'text_contains', 'path': 'guide.md', 'fragments': ['survives']}],
+                    lessons=['Keep the card relative.'])
+        originals = {'guide.md': b'original', 'context.txt': b'read only'}
+        prompt = w.prompt_for(task, originals, ['check failed: fragment missing'])
+        reads = self.card_after(prompt, 'Read file_path choices:')
+        self.assertEqual(reads, ['guide.md', 'context.txt'])
+        self.assertEqual(self.card_after(prompt, 'Write/edit file_path choices:'), ['guide.md'])
+        self.assertNotIn('context.txt', self.card_after(prompt, 'Write/edit file_path choices:'))
+        example = self.card_after(prompt, 'Example read input:')
+        self.assertEqual(example, {'file_path': 'guide.md'})
+        self.assertIn(example['file_path'], task['allowed_files'])
+        self.assertTrue(example['file_path'])
+        for text in (task['instruction'], json.dumps(task['checks']),
+                     task['lessons'][0], 'Fix these check failures:',
+                     'check failed: fragment missing'):
+            self.assertIn(text, prompt)
+
+    def test_prompt_card_preserves_unicode_and_spaced_relative_names(self):
+        allowed = 'docs/Agent notes & specs.md'
+        read_only = 'docs/écho.md'
+        task = dict(allowed_files=[allowed], instruction='Edit the notes file.',
+                    checks=[], lessons=[])
+        originals = {allowed: b'notes', read_only: b'read only'}
+        prompt = w.prompt_for(task, originals)
+        self.assertEqual(self.card_after(prompt, 'Read file_path choices:'), [allowed, read_only])
+        self.assertEqual(self.card_after(prompt, 'Write/edit file_path choices:'), [allowed])
+        self.assertEqual(self.card_after(prompt, 'Example read input:'), {'file_path': allowed})
+        for name in (allowed, read_only):
+            self.assertNotIn(':/', name)
+            self.assertFalse(Path(name).is_absolute())
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

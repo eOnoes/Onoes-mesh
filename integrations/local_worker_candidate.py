@@ -226,6 +226,16 @@ def prompt_for(task, originals, failure=None):
             'Task:\n<task_instructions>\n' + task['instruction'] + '\n</task_instructions>\n'
             'Coordinator metadata below is for verification only; never copy it into deliverable files.\n'
             'Fixed acceptance checks:\n' + json.dumps(task['checks']) + '\n')
+    text += ('File tool call card (relative paths):\n'
+             'The staged workspace is already the current working directory: use exactly one listed '
+             'relative value as file_path in every file tool call; never prepend or copy workspace '
+             'paths from diagnostics.\n'
+             'Read file_path choices: ' + json.dumps(list(originals)) + '\n'
+             'Write/edit file_path choices: ' + json.dumps(task['allowed_files']) + '\n'
+             'Example read input: ' + json.dumps({"file_path": task['allowed_files'][0]}) + '\n'
+             'The example only demonstrates the required path; supply the chosen '
+             'tool\'s other required arguments. Context choices are read-only unless also '
+             'listed in allowed_files; not every shown path is writable.\n')
     if task.get('lessons'):
         text += '\nReviewed task-specific lessons:\n' + '\n'.join(task['lessons']) + '\n'
     if failure:

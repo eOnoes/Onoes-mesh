@@ -17,9 +17,11 @@ Nims's fixed handoff path was already retrieved by Echo through the configured M
 
 Cyony boundary: the dedicated Relay A2A route and the phone response/reload are qualified. The original r12/r13 completion/retirement remains UNKNOWN, and the strict original proof and remote history/evidence stay unchanged. No new Cyony private home, curated import or shared reader. A new LOCAL native A2A restart/restore test passed; it does not close the historical retirement or activate access.
 
-Mind now opens with canonical memory first and "Saved task context (optional)" closed; that check already passed and needs no repeat. The remaining native-phone acceptance stays clearly PENDING. Wider devices and orchestration are not complete.
+Mind now opens with canonical memory first and "Saved task context (optional)" closed; that check already passed and needs no repeat. Only the new phone layout/touch/keyboard feel remains pending; native project-chat messaging was already owner-confirmed. Wider devices and orchestration are not complete.
 
 Keep the existing Deep functionality; no expansion. Relay and Telegram are not one conversation: Mind shares deliberately saved context, not raw chat mirroring.
+
+Echo's current Onoes-Mind provider configuration exactly matches its approved activation receipt, and both original private-home checks passed. Deep's private write/read and shared-handoff pickup were verified in its existing test; cross-conversation acceptance is not proven. No new Deep test is requested. Nims's later handoff readback is not a new Echo pickup. All agents and homes are not complete.
 
 Source/browser qualification does not itself install a live update; deployment status stays in the canonical checkpoint.
 
