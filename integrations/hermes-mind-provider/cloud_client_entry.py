@@ -51,7 +51,7 @@ def load(name,pin):
 
 def approved(phase,plan_path,pin,auth_path):
     require(os.name=='posix' and sys.flags.isolated==1 and sys.dont_write_bytecode
-        and phase in ('materialize','capture','export-curated','deliver','select','restore','qualify-held')
+        and phase in ('materialize','capture','export-curated','deliver','select','restore','qualify-held','qualify-original-held')
         and digest(plan_path)==pin)
     plan=read(plan_path)
     require(plan['schema']=='onoes-cloud-client-operation/v1' and plan['agentId']=='cyony'
@@ -65,7 +65,7 @@ def approved(phase,plan_path,pin,auth_path):
     gateway=load('cloud_gateway_entry.py',plan['executors']['cloud_gateway_entry.py'])
     g=plan['gateway'];gate_plan=gateway.approved_inputs(g['planPath'],g['sha256'],g['authorizationPath'])
     require(plan['home']==gate_plan['home'] and plan['evidence']==gate_plan['evidence'])
-    stopped='verify-rollback-stopped' if phase=='restore' and (Path(plan['evidence'])/'rollback/GATEWAY-STOPPED.json').exists() else 'verify-stopped'
+    stopped='verify-rollback-stopped' if phase in ('restore','qualify-original-held') and (Path(plan['evidence'])/'rollback/GATEWAY-STOPPED.json').exists() else 'verify-stopped'
     def held():
         require(gateway.run_phase(stopped,g['planPath'],g['sha256'],g['authorizationPath'])['verified'] is True)
         return True
@@ -153,6 +153,33 @@ def _run_checked(phase,pin,context):
     plan,gate,held,package_api,package,gateway=context
     held()
     evidence=Path(plan['evidence']);home=Path(plan['home'])
+    if phase=='qualify-original-held':
+        # The original native-memory selection did not use the new Mind MCP.
+        # Verify exactly what is restored, including every owner-pinned file;
+        # no installed package, live credential or successful new API is needed.
+        require(gate['originalReleasePins'].get(str(home/'config.yaml'))==plan['configurationBeforeSha256'])
+        for name,expected in gate['originalReleasePins'].items():
+            # Original native configuration can be 0644 within the private
+            # agent home. Preserve that mode; these are pinned original files,
+            # not the new 0600 credential transport or enrollment custody.
+            path=Path(name);require(path.resolve(strict=True)==path)
+            info=path.stat()
+            require(info.st_uid==os.geteuid() and stat.S_ISREG(info.st_mode)
+                and info.st_nlink==1 and not stat.S_IMODE(info.st_mode)&0o022
+                and info.st_size<=1024*1024 and digest(path)==expected)
+        held()
+        receipt={'schema':'onoes-cloud-original-held-qualification/v1',
+            'planSha256':plan['gateway']['sha256'],'verified':True,
+            'originalConfigurationReadback':True,'originalReleaseFilesReadback':True,
+            'nativeGatewayRetired':True,'modelCalls':0}
+        save(evidence/'ORIGINAL-HELD-QUALIFICATION.json',receipt)
+        return receipt
+    if phase=='restore' and not (evidence/'CONFIG-ATTEMPT.json').exists():
+        # An early public-package failure must not require the failed package
+        # to be fully installed just to prove config was never selected.
+        require(digest(home/'config.yaml')==plan['configurationBeforeSha256'])
+        held()
+        return {'verified':True,'configurationUntouched':True}
     if phase=='materialize':
         save(evidence/'MATERIALIZE-ATTEMPT.json',{'planSha256':pin,'automaticRetry':False})
         result=package_api.materialize(package);held();save(evidence/'MATERIALIZED.json',result)

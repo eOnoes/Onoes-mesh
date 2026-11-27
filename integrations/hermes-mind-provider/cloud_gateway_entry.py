@@ -146,12 +146,16 @@ def approved_inputs(plan_path, pin, authorization_path):
 
 
 def require_qualification(plan, pin, *, original=False):
-    """The stopped client/MCP readback belongs to this exact owner window."""
+    """Distinguish new Mind readback from an exact original-file restoration."""
     name = 'ORIGINAL-HELD-QUALIFICATION.json' if original else 'HELD-QUALIFICATION.json'
     result = read_private(Path(plan['evidence']) / name)
-    require(result == {'schema': 'onoes-cloud-held-qualification/v1', 'planSha256': pin,
+    expected = {'schema': 'onoes-cloud-original-held-qualification/v1', 'planSha256': pin,
+            'verified': True, 'originalConfigurationReadback': True,
+            'originalReleaseFilesReadback': True, 'nativeGatewayRetired': True,
+            'modelCalls': 0} if original else {'schema': 'onoes-cloud-held-qualification/v1', 'planSha256': pin,
             'verified': True, 'hostReadback': True, 'clientReadback': True,
-            'sharedMcpReadback': True, 'modelCalls': 0})
+            'sharedMcpReadback': True, 'modelCalls': 0}
+    require(result == expected)
     pins = plan['originalReleasePins'] if original else plan['releasePins']
     for name, expected in pins.items():
         candidate = Path(name)

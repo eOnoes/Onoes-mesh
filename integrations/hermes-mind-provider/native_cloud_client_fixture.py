@@ -156,6 +156,8 @@ def driver(*,root,home,evidence,tree,manager,initial,peer_pid,peerhome,peer_stat
             client('materialize',expected=1);gateway('rehold',expected=1)
             assert not (evidence/'MATERIALIZE-ATTEMPT.json').exists()
         finally:fcntl.flock(lock,fcntl.LOCK_UN);os.close(lock)
+        assert client('restore')['configurationUntouched']
+        assert not (evidence/'MATERIALIZED.json').exists()
         assert client('materialize')['publicCodeOnly']
         assert not ledger.db.execute("SELECT 1 FROM principals WHERE principal_id='cyony'").fetchone()
         captured=client('capture');transport=client('export-curated')
@@ -182,7 +184,13 @@ def driver(*,root,home,evidence,tree,manager,initial,peer_pid,peerhome,peer_stat
         assert (home/'config.yaml').read_bytes()==original_config
         qualification={'schema':'onoes-cloud-held-qualification/v1','planSha256':gate_pin,'verified':True,
             'hostReadback':True,'clientReadback':True,'sharedMcpReadback':True,'modelCalls':0}
+        # New-connection proof is not proof of the original native selection.
         put(evidence/'ORIGINAL-HELD-QUALIFICATION.json',qualification)
+        gateway('release-original',expected=1)
+        assert not (evidence/'rollback/GATEWAY-START-ATTEMPT.json').exists()
+        (evidence/'ORIGINAL-HELD-QUALIFICATION.json').rename(evidence/'REJECTED-NEW-PROOF-AS-ORIGINAL.json')
+        assert client('qualify-original-held')['originalConfigurationReadback']
+        assert 'sharedMcpReadback' not in read(evidence/'ORIGINAL-HELD-QUALIFICATION.json')
         assert gateway('release-original')['verified'];assert gateway('verify-original-running')['verified']
         assert json.loads((root/'boot-intents.jsonl').read_text().splitlines()[-1])['desired_state']=='running'
         assert manager._supervised_pid('gateway-other')==peer_pid and (peerhome/'gateway_state.json').read_bytes()==peer_state
@@ -193,6 +201,7 @@ def driver(*,root,home,evidence,tree,manager,initial,peer_pid,peerhome,peer_stat
             'concurrentWindowActorRefused':True,'defaultTlsTrustVerified':True,
             'nonFileBackendRefusedBeforeSelection':True,
             'runningIntentObservedBeforeBothBoots':True,
+            'originalQualificationHasNoNewMindClaim':True,
             'hostStorage':'SYNTHETIC_POSIX_LEDGER_NOT_WINDOWS_CHECKPOINT_HOST'}),flush=True)
     finally:
         if api is not None:api.close()

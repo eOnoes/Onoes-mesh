@@ -162,7 +162,9 @@ def main(driver=None):
         assert marker.exists() and not (evidence/'rollback/GATEWAY-START-ATTEMPT.json').exists()
         (HOME/'config.yaml').write_bytes(original_config)
         original_qualification=evidence/'ORIGINAL-HELD-QUALIFICATION.json'
-        original_qualification.write_bytes(qualification.read_bytes());original_qualification.chmod(0o600)
+        original_qualification.write_text(json.dumps({'schema':'onoes-cloud-original-held-qualification/v1',
+            'planSha256':pin,'verified':True,'originalConfigurationReadback':True,
+            'originalReleaseFilesReadback':True,'nativeGatewayRetired':True,'modelCalls':0}));original_qualification.chmod(0o600)
         restored=phase('release-original')
         assert restored['pid']!=started['pid'] and phase('verify-original-running')['verified']
         assert (HOME/'config.yaml').read_bytes()==original_config and not marker.exists()
