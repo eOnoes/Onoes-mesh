@@ -1,6 +1,6 @@
 # Remaining owner checks
 
-## Current owner checks · November 26, 2026
+## Current owner checks · November 27, 2026
 
 Current phase: Relay for Echo/Nims, and Onoes-Mind for Echo/Nims/Cyony. Eddie's phone and Echo's PC come first. Tripp is explicitly deferred. Workroom, Rook, Inference, the eight old holds and orchestration stay parked. No restart or quiet window is requested now.
 
@@ -9,13 +9,15 @@ Current phase: Relay for Echo/Nims, and Onoes-Mind for Echo/Nims/Cyony. Eddie's 
 | Phone · Relay | One pending physical-phone check | Open [Relay](https://emitchell.tail8c4a75.ts.net:8453/#relay), expand Nims project chats, select **Onoes-Mesh build**, open history, then switch back to Echo. Load older history if needed. No message needed. Keep Codex desktop running. |
 | Phone · Echo chat | Already accepted | Send, reply, reload and separate older history passed. Do not repeat. Echo uses its private Mind home and the scoped shared project reader. |
 | Mind screen (optional) | Shared handoff check passed | [Open Mind](https://emitchell.tail8c4a75.ts.net:8453/#mind) if useful. No repeat of that check is needed. |
-| Cyony · cloud host | Awaiting Eddie's assistance decision | Smart Stop is in place after the three current remote diagnostics timed out, following an initial working route. No probes, retries, enrollments or grants. |
+| Cyony · Relay phone | Already accepted | Relay reply and reload on the phone passed. Do not repeat. The private Mind connection for Cyony remains OFF behind the strict original completion-proof gate; no cloud Mind activation is claimed. |
 
 The Relay Nims chats are native project chats installed in Relay, using this existing Codex project. The hosted browser checks at phone and desktop widths passed; they do not replace the physical-phone acceptance above. Do not expect every owner prompt to load at first: automatic loading checks at most two earlier item pages, followed by manual older history.
 
-Nims's current handoff was already retrieved by Echo through the configured Mind MCP: document revision 35 / canonical record revision 60, matching author, provenance and next action. That check is done; no further model call is needed, and this does not mean future revisions are read.
+Nims's fixed handoff path was already retrieved by Echo through the configured Mind MCP: actual pickup document 38 / canonical record 64, matching author, provenance and next action. That check is done; no further model call is needed, and later handoffs are not proof of pickup.
 
-Cyony: the local client/rollback check and 45 entry/transport tests passed, but the three current remote diagnostics timed out after the initial route worked. Smart Stop is in place, awaiting Eddie's assistance decision. New Cyony private-home/shared-reader access, curated import and private route remain OFF/unapproved.
+Cyony boundary: the dedicated Relay A2A route and the phone response/reload are qualified. The original r12/r13 completion/retirement remains UNKNOWN, and the strict original proof and remote history/evidence stay unchanged. No new Cyony private home, curated import or shared reader. A new LOCAL native A2A restart/restore test passed; it does not close the historical retirement or activate access.
+
+Mind now opens with canonical memory first and "Saved task context (optional)" closed; that check already passed and needs no repeat. The remaining native-phone acceptance stays clearly PENDING. Wider devices and orchestration are not complete.
 
 Keep the existing Deep functionality; no expansion. Relay and Telegram are not one conversation: Mind shares deliberately saved context, not raw chat mirroring.
 

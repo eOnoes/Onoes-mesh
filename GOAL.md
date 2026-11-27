@@ -1,3 +1,19 @@
+# Current roadmap · November 27, 2026
+
+**Full objective.** Relay + Onoes-Mind usable on Eddie's phone and Echo's PC first, later laptop/cloud/AI box. Reliable Echo chat, history and reconnect on Relay. Nims JSON/Markdown handoff in Mind, with Echo picking up the current source, revision and next action. Canonical private agent homes plus deliberately shared project context; wider devices only after verification; Echo orchestration afterward. Workroom, Rook and Inference are parked; Tripp is deferred; the AI box is not ready.
+
+**Verified.** Echo phone send/reply/separate history/reload accepted. Cyony phone reply/reload accepted. Echo and Deep existing private homes and shared readers proven. Fixed Nims handoff path: actual Echo pickup document 38 / canonical record 64 accepted. Native Nims project chats installed; 390+1440 browser checks passed; physical-phone chat selection/switch still pending. Mind memory-first UI live; 222 workspace + 43 current-app checks and real deployed 390/1440 browser checks passed.
+
+**Remaining.** Cyony private Mind enrollment/import remains OFF; original remote r12/r13 completion/retirement is UNKNOWN and the strict original proof is retained. A new local A2A preservation test passed but does not prove those original remote retirements. No rerun, quarantine or cleanup counts as a substitute. Any future enrollment needs a fresh current binding and separately authorized access. Current wider-device and orchestration acceptance is unproven; do not shrink the full goal to the current milestone.
+
+**Current rules.** QFN authors further code in an isolated worktree; Nims plans, reviews and runs independent checks; log strengths/weaknesses and preserve original attempt caps/failures. Continue productive in-scope work per current owner rules; Smart Stop applies. No PC restart while Eddie is away or asleep. Standing tested milestone publication is subject to the existing no-Actions policy and unchanged private-access boundaries. Do NOT repeat owner/model tests already accepted.
+
+**Where to read.** README, MIND-CONTRACT.md, RELAY-INTEGRATION.md, RELAY-MIND-QUICK-START.md and NEXT-OWNER-CHECKS.md. Exact private runtime/evidence stays in the existing local-only checkpoint.
+
+Historical Workroom rules and milestones (retained, not current instructions)
+
+The retry, scheduler and default-start commands below are historical. They are not authorization to resume parked work or bypass current limits.
+
 ## 5. Rules (the whole set)
 
 **Hard stops — ask Eddie and wait.** Money · credentials/keys/tokens · exposure beyond Tailscale/localhost · deleting a repo, DB, or non-disposable data · OS/driver/firmware/BIOS or hardware risk · changing the milestone list.
