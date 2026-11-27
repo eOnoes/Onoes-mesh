@@ -69,7 +69,16 @@ export function createNimsChatReader({root,request}){
   refresh.addEventListener('click',async()=>{await core.catalog();await core.refresh();});
   older.addEventListener('click',()=>core.older());more.addEventListener('click',()=>core.catalog(true));
   root.addEventListener('toggle',()=>{if(root.open&&core.state().available&&!core.state().project)core.catalog();});
-  const timer=setInterval(()=>{if(root.open&&!document.hidden&&core.state().available)core.refresh();},10000);
-  timer.unref?.();draw(core.state());
+  function refreshVisible(){
+    if(!root.open||document.hidden||!core.state().available)return;
+    const state=core.state();
+    if(state.busy||state.writing)return;
+    core.refresh();
+  }
+  const timer=setInterval(refreshVisible,10000);
+  timer.unref?.();
+  document.addEventListener('visibilitychange',refreshVisible);
+  document.defaultView?.addEventListener?.('focus',refreshVisible);
+  draw(core.state());
   return {setAvailable(value){core.setAvailable(value);},clear(){core.clear();}};
 }
