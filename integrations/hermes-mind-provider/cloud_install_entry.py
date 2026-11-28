@@ -5,7 +5,7 @@ database writes. Source/runtime swaps happen only after authoritative retirement
 unknown transport or partial actor startup holds before revocation/restoration.
 """
 from copy import deepcopy
-import base64,hashlib,importlib.util,json,os,re,secrets,subprocess,sys,traceback
+import ast,base64,hashlib,importlib.util,json,os,re,secrets,subprocess,sys,traceback
 from pathlib import Path
 
 DECISION='approve_cyony_private_home_and_mesh_reader'
@@ -53,6 +53,48 @@ def _validated(action):
     try:return action()
     except (InstallHeld,ValueError,OSError,OverflowError,TypeError,AttributeError,KeyError,IndexError,ImportError):
         raise InstallHeld('Cloud installation held; retain the exact owner window and native receipts') from None
+
+
+def _qualify_windows_template_bindings(plan,body):
+    """Fail-safe Windows template binding readiness; never imports or executes helpers.
+
+    Reads public source files only. A missing or malformed explicit binding
+    holds before downtime; no guessed defaults are permitted.
+    """
+    def held():raise InstallHeld('Cloud installation held; retain the exact owner window and native receipts')
+    def canonical_file(path):
+        require(type(path) is str and os.path.isabs(path))
+        require(os.path.normcase(os.path.normpath(path))==os.path.normcase(path))
+        require(not os.path.islink(path))
+        resolved=Path(path).resolve(strict=True)
+        require(resolved==Path(os.path.normpath(path)))
+        stat=os.lstat(path)
+        require(stat.st_mode&0o170000==0o100000)
+        return Path(path)
+    try:
+        if type(plan) is not dict or type(body) is not dict:held()
+        windows=plan['windows'];pins=plan['sourcePins']
+        require(type(windows) is dict and type(pins) is dict)
+        entry=canonical_file(windows['entryPath'])
+        require(digest(entry)==windows['entrySha256'])
+        for name in ('cutoverSha256','nativeControlsPath','nativeControlsSha256'):
+            require(name in body and type(body[name]) is str)
+        for name in ('cutoverSha256','nativeControlsSha256'):
+            value=body[name]
+            require(re.fullmatch('[a-f0-9]{64}',value) is not None)
+        cutover=canonical_file(str(entry.parent/'cloud_windows_cutover.py'))
+        controls=canonical_file(body['nativeControlsPath'])
+        require(controls.parent==cutover.parent and str(controls)!=str(cutover)
+            and str(controls)!=str(entry) and str(cutover)!=str(entry))
+        require(str(cutover) in pins and pins[str(cutover)]==body['cutoverSha256'])
+        require(str(controls) in pins and pins[str(controls)]==body['nativeControlsSha256'])
+        require(digest(cutover)==body['cutoverSha256'] and digest(controls)==body['nativeControlsSha256'])
+        require(len(controls.read_bytes())<=1048576)
+        tree=ast.parse(controls.read_bytes(),filename='controls')
+        require(any(type(node) is ast.ClassDef and node.name=='MindRoles' for node in tree.body))
+        return True
+    except InstallHeld:raise
+    except Exception:held()
 
 
 def _authorized(auth,plan,pin,legacy):
@@ -190,6 +232,7 @@ class CombinedWindow:
 
     def preflight(self,pin,evidence):
         require(pin==self.pin and Path(evidence)==self.root['journal'])
+        _qualify_windows_template_bindings(self.plan,self.windows_body)
         require(test_accounting(self.plan,self.pin,self.authorization)==self.test_disposition)
         b=self.task.binding;state=self.task.status()
         require(b.task_name==TASK and b.task_path=='\\' and state['definitionSha256']==b.original_sha256

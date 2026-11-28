@@ -133,7 +133,7 @@ def run_phase(phase, plan_path, pin, authorization_path):
     with ExitStack() as stack:
         window = stack.enter_context(MeshLauncherWindow(workspace,plan['launcherSha256']))
         require(not window.abandoned and maintenance_paused(plan))
-        control = controls.MindRoles(evidence=evidence,retained=retained)
+        control = controls.MindRoles(evidence=evidence,retained=retained,window=window)
         def close_observations():
             # Observation cleanup never terminates a gateway or memory service.
             for actor in reversed(retained):
