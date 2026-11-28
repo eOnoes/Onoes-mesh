@@ -36,10 +36,10 @@ FAILURE_METADATA_MAX_FRAMES=12
 FAILURE_METADATA_KEYS=('errorType','frames','messagesAndLocalsExcluded')
 FAILURE_METADATA_ERROR_TYPES=('GatewayHeld','EntryHeld','RuntimeError','ValueError','TypeError','OSError',
     'TimeoutExpired','FileNotFoundError','PermissionError','AssertionError',
-    'OwnerHeld','ImportError','ModuleNotFoundError')
+    'OwnerHeld','ImportError','ModuleNotFoundError','ClientHeld')
 FAILURE_METADATA_FRAME_KEYS=('file','function','line')
 FAILURE_METADATA_FRAME_FILES=('cloud_gateway_entry.py','cloud_native_gateway.py','service_manager.py',
-    'cloud_owner_entry.py')
+    'cloud_owner_entry.py','cloud_client_entry.py')
 FAILURE_METADATA_FRAME_FUNCTIONS=('main','run_phase','_run_phase','quiesce_and_stop','release_and_start',
     'resume_stopped','assert_stopped','identity','_snapshot','_drained','_owned_marker','_fields','_sources',
     'require','stop','_run_svc','_write_gateway_desired_state')
@@ -48,6 +48,12 @@ FAILURE_METADATA_FRAME_FUNCTIONS=('main','run_phase','_run_phase','quiesce_and_s
 # other file may use them.
 FAILURE_METADATA_OWNER_ENTRY_BASENAMES=('cloud_owner_entry.py',)
 FAILURE_METADATA_OWNER_FRAME_FUNCTIONS=('<module>','run','approved_inputs','read','require','_same_archive_path')
+# File-specific client allowance only: the pinned client entry's own top-level
+# handler frames. These names never join the shared global gateway list and no
+# other file may use them.
+FAILURE_METADATA_CLIENT_ENTRY_BASENAMES=('cloud_client_entry.py',)
+FAILURE_METADATA_CLIENT_FRAME_FUNCTIONS=('<module>','run','_run_checked','approved','installed',
+    'private_read','read','save','load','_reuse_public_materialization','switch_plan','require')
 
 
 def _reject_duplicate_keys(pairs):
@@ -66,6 +72,11 @@ def _valid_failure_frame(frame):
     # gateway logic, so no owner name ever widens the global gateway list.
     if frame['file'] in FAILURE_METADATA_OWNER_ENTRY_BASENAMES:
         if function not in FAILURE_METADATA_OWNER_FRAME_FUNCTIONS:return False
+    elif frame['file'] in FAILURE_METADATA_CLIENT_ENTRY_BASENAMES:
+        # Client frames are likewise a file-specific set BEFORE the gateway
+        # fallback: client names never widen the global list and owner-only
+        # names never validate on the client entry.
+        if function not in FAILURE_METADATA_CLIENT_FRAME_FUNCTIONS:return False
     else:
         # The pinned entry's top-level handler frames its own module under <module>;
         # accept that name ONLY for the exact cloud_gateway_entry.py file, never elsewhere.

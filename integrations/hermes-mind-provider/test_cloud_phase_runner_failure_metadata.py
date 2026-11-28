@@ -312,7 +312,7 @@ class ModuleFrameAllowance(unittest.TestCase):
             self.assertIsNone(runner.parse_failure_metadata(module_frame(file_name).encode()),file_name)
 
     def test_module_frame_rejected_on_unknown_and_full_paths(self):
-        for file_name in ('evil_entry.py','cloud_client_entry.py','/opt/data/cloud_gateway_entry.py',
+        for file_name in ('evil_entry.py','unreviewed_client_entry.py','/opt/data/cloud_gateway_entry.py',
             'C:\\opt\\data\\cloud_gateway_entry.py','./cloud_gateway_entry.py',''):
             self.assertIsNone(runner.parse_failure_metadata(module_frame(file_name).encode()),file_name)
 
