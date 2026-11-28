@@ -27,6 +27,68 @@ def save(path,value):
         stream.write(json.dumps(value,sort_keys=True).encode());stream.flush();os.fsync(stream.fileno())
 
 
+# Only the pinned cloud entry's own already-sanitized summary line may reach a
+# generic journal. Nothing else in child stderr (prose, messages, locals, paths)
+# is ever copied, stripped or reinterpreted.
+FAILURE_METADATA_MAX_BYTES=65536
+FAILURE_METADATA_MAX_LINE_CHARS=4096
+FAILURE_METADATA_MAX_FRAMES=12
+FAILURE_METADATA_KEYS=('errorType','frames','messagesAndLocalsExcluded')
+FAILURE_METADATA_ERROR_TYPES=('GatewayHeld','EntryHeld','RuntimeError','ValueError','TypeError','OSError',
+    'TimeoutExpired','FileNotFoundError','PermissionError','AssertionError')
+FAILURE_METADATA_FRAME_KEYS=('file','function','line')
+FAILURE_METADATA_FRAME_FILES=('cloud_gateway_entry.py','cloud_native_gateway.py','service_manager.py')
+FAILURE_METADATA_FRAME_FUNCTIONS=('main','run_phase','_run_phase','quiesce_and_stop','release_and_start',
+    'resume_stopped','assert_stopped','identity','_snapshot','_drained','_owned_marker','_fields','_sources',
+    'require','stop','_run_svc','_write_gateway_desired_state')
+
+
+def _reject_duplicate_keys(pairs):
+    seen=set()
+    for key,_ in pairs:
+        if key in seen:raise ValueError('duplicate JSON object key')
+        seen.add(key)
+    return dict(pairs)
+
+
+def _valid_failure_frame(frame):
+    if type(frame) is not dict or set(frame)!=set(FAILURE_METADATA_FRAME_KEYS):return False
+    if frame['file'] not in FAILURE_METADATA_FRAME_FILES:return False
+    if frame['function'] not in FAILURE_METADATA_FRAME_FUNCTIONS:return False
+    line=frame['line']
+    return type(line) is int and 1<=line<=100000
+
+
+def parse_failure_metadata(stderr):
+    """Return only the pinned entry's trusted sanitized summary, else None.
+
+    Exact bytes, bounded size, strict UTF-8, strict JSON with exact keys, a
+    true privacy flag, an allow-listed error type and safe frames only. Any
+    ambiguity (two or more valid lines) yields None. Raw stderr never escapes.
+    """
+    if type(stderr) is not bytes or len(stderr)>FAILURE_METADATA_MAX_BYTES:return None
+    try:text=stderr.decode('utf-8')
+    except UnicodeDecodeError:return None
+    found=[]
+    for line in text.splitlines():
+        if len(line)>FAILURE_METADATA_MAX_LINE_CHARS:continue
+        stripped=line.strip()
+        if not stripped.startswith('{') or not stripped.endswith('}'):continue
+        try:candidate=json.loads(stripped,object_pairs_hook=_reject_duplicate_keys)
+        except (ValueError,RecursionError):continue
+        if type(candidate) is not dict or set(candidate)!=set(FAILURE_METADATA_KEYS):continue
+        if candidate['messagesAndLocalsExcluded'] is not True:continue
+        if candidate['errorType'] not in FAILURE_METADATA_ERROR_TYPES:continue
+        frames=candidate['frames']
+        if type(frames) is not list or not 1<=len(frames)<=FAILURE_METADATA_MAX_FRAMES:continue
+        if not all(_valid_failure_frame(f) for f in frames):continue
+        found.append({'errorType':candidate['errorType'],
+            'messagesAndLocalsExcluded':True,
+            'frames':[dict(f) for f in frames]})
+    if len(found)!=1:return None
+    return found[0]
+
+
 def execute_once(argv,*,evidence,label,stdin=None,private_stdout=False,timeout=180):
     """Run one bounded child; a lost transport is never proof a peer retired."""
     from onoes_mind.enrollment_store import qualify_private_storage
@@ -49,6 +111,11 @@ def execute_once(argv,*,evidence,label,stdin=None,private_stdout=False,timeout=1
     summary={'exitCode':result.returncode,'stdoutBytes':len(result.stdout),
         'stderrBytes':len(result.stderr),'stdoutSha256':hashlib.sha256(result.stdout).hexdigest(),
         'stderrSha256':hashlib.sha256(result.stderr).hexdigest(),'privateStdioExcluded':True}
+    # Only the pinned entry's own trusted sanitized summary line may be journalled;
+    # any other stderr text (prose, messages, locals, paths) stays unparsed and unsaved.
+    if result.returncode!=0:
+        metadata=parse_failure_metadata(result.stderr)
+        if metadata is not None:summary['failureMetadata']=metadata
     save(evidence/(label+'-TRANSPORT-RESULT.json'),summary)
     require(result.returncode==0 and len(result.stdout)<=262144)
     if private_stdout:return result.stdout
