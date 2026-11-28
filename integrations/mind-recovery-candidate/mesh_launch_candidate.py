@@ -13,6 +13,7 @@ import re
 import sqlite3
 import subprocess
 import sys
+import uuid
 
 ROOT=Path(__file__).resolve().parents[2]
 SETTINGS={'MESH_PREVIEW_PORT','MESH_DATA_DIR','MESH_RELAY','MESH_RELAY_MODE','MESH_NIMS',
@@ -333,45 +334,73 @@ def _mind_frame(p,roles,approval_path,profile_sha):
     return dict(schema='onoes-mesh-native-input/v2',mindRecallOptions=options,projectSyncOptions=project)
 
 
+def _atomic_attempt(path,record,roles,previous_bytes):
+    # Update the already-reserved canonical attempt only through a complete
+    # sibling temp plus os.replace; never seek/truncate the canonical file.
+    target=Path(path);payload=json.dumps(record).encode('utf-8')
+    require(type(previous_bytes) is bytes)
+    def ordinary(p):
+        st=p.lstat();attrs=getattr(st,'st_file_attributes',0)
+        return st.st_mode&0o170000==0o100000 and attrs&0x400==0
+    require(ordinary(target) and target.resolve(strict=True)==target)
+    stat=target.lstat();require(target.read_bytes()==previous_bytes)
+    temp=roles.new_role_file(target.parent/(target.name+'.'+uuid.uuid4().hex+'.tmp'))
+    require(temp.parent==target.parent and temp.resolve(strict=False)==temp)
+    with temp.open('xb') as handle:
+        handle.write(payload);handle.flush();os.fsync(handle.fileno())
+    require(ordinary(temp) and temp.resolve(strict=True)==temp)
+    fresh=target.lstat()
+    require((fresh.st_dev,fresh.st_ino)==(stat.st_dev,stat.st_ino) and fresh.st_size==len(previous_bytes)
+        and temp.lstat().st_dev==fresh.st_dev)
+    require(ordinary(target) and target.resolve(strict=True)==target
+        and target.read_bytes()==previous_bytes and temp.read_bytes()==payload)
+    os.replace(temp,target)
+    require(target.stat().st_size==len(payload) and target.read_bytes()==payload)
+    return payload
+
+
 def launch_mesh(path,expected_sha,approval_path):
     p,roles=checked_launch(path,expected_sha,approval_path)
-    # Reserve all owned records before a child exists; leftovers block a retry.
+    # Finish every read-only preflight before reserving any attempt or log file.
+    options=native_frame(p,roles,approval_path,expected_sha)
+    peers=native_peers(p,roles,approval_path,options) if p.get('schema')=='onoes-mesh-native-launch/v2' else None
+    env=approved_environment(p['settings'])
     attempt_path=roles.new_role_file(p['attemptPath'])
+    with attempt_path.open('xb') as attempt:
+        # Pre-spawn reservation: complete JSON written, fsynced and closed
+        # before Popen; the initial exclusive write may still fail pre-spawn,
+        # so this is not a universal power-loss guarantee. This state identifies no child.
+        reservation=dict(schema='onoes-mesh-native-reservation/v1',state='launch_reserved',
+            profileSha256=expected_sha,executable=p['nodeExecutable'],entryPoint=str(ROOT/'serve.mjs'),
+            credentialsInRecord=False)
+        previous_bytes=json.dumps(reservation).encode()
+        attempt.write(previous_bytes);attempt.flush();os.fsync(attempt.fileno())
+    for name in ('stdoutPath','stderrPath'):
+        with roles.new_role_file(p[name]).open('xb'):pass
+    with open(p['stdoutPath'],'ab') as out,open(p['stderrPath'],'ab') as err:
+        child=subprocess.Popen([p['nodeExecutable'],str(ROOT/'serve.mjs'),'--native-mind'],
+            cwd=ROOT,env=env,stdin=subprocess.PIPE,stdout=out,stderr=err,
+            creationflags=subprocess.CREATE_NO_WINDOW)
+    stamp=None
     try:
-        with attempt_path.open('xb') as attempt:
-            for name in ('stdoutPath','stderrPath'):
-                with roles.new_role_file(p[name]).open('xb'):pass
-            options=native_frame(p,roles,approval_path,expected_sha)
-            peers=None
-            if p.get('schema')=='onoes-mesh-native-launch/v2':
-                peers=native_peers(p,roles,approval_path,options)
-            env=approved_environment(p['settings'])
-            with open(p['stdoutPath'],'ab') as out,open(p['stderrPath'],'ab') as err:
-                child=subprocess.Popen([p['nodeExecutable'],str(ROOT/'serve.mjs'),'--native-mind'],
-                    cwd=ROOT,env=env,stdin=subprocess.PIPE,stdout=out,stderr=err,
-                    creationflags=subprocess.CREATE_NO_WINDOW)
-            stamp=None
-            try:
-                record=dict(schema='onoes-mesh-native-child/v1',profileSha256=expected_sha,pid=child.pid,
-                    creationTicks=None,executable=p['nodeExecutable'],entryPoint=str(ROOT/'serve.mjs'),
-                    state='identity_pending',credentialsInRecord=False)
-                if p.get('schema')==CAPTURE_SCHEMA:record.update(schema='onoes-mesh-native-child/v3',mode='capture_only')
-                if peers is not None:record.update(schema='onoes-mesh-native-child/v2',peers=peers)
-                attempt.write(json.dumps(record).encode());attempt.flush();os.fsync(attempt.fileno())
-                stamp=roles.creation_ticks(child._handle)
-                record.update(creationTicks=stamp,state='input_pending');attempt.seek(0);attempt.truncate()
-                attempt.write(json.dumps(record).encode());attempt.flush();os.fsync(attempt.fileno())
-                child.stdin.write(json.dumps(options).encode())
-                child.stdin.close();options=None
-                record['state']='input_sent';attempt.seek(0);attempt.truncate()
-                attempt.write(json.dumps(record).encode());attempt.flush();os.fsync(attempt.fileno())
-            except Exception:
-                try:child.stdin.close()
-                except Exception:pass
-                # Keep the original handle and durable attempt. Never kill/retry.
-                raise roles.RoleLaunchUnknown(child,stamp) from None
-            return child,stamp,record
-    except Exception:raise
+        record=dict(schema='onoes-mesh-native-child/v1',profileSha256=expected_sha,pid=child.pid,
+            creationTicks=None,executable=p['nodeExecutable'],entryPoint=str(ROOT/'serve.mjs'),
+            state='identity_pending',credentialsInRecord=False)
+        if p.get('schema')==CAPTURE_SCHEMA:record.update(schema='onoes-mesh-native-child/v3',mode='capture_only')
+        if peers is not None:record.update(schema='onoes-mesh-native-child/v2',peers=peers)
+        previous_bytes=_atomic_attempt(attempt_path,record,roles,previous_bytes)
+        stamp=roles.creation_ticks(child._handle)
+        record.update(creationTicks=stamp,state='input_pending')
+        previous_bytes=_atomic_attempt(attempt_path,record,roles,previous_bytes)
+        child.stdin.write(json.dumps(options).encode())
+        child.stdin.close();options=None
+        record['state']='input_sent';_atomic_attempt(attempt_path,record,roles,previous_bytes)
+    except Exception:
+        try:child.stdin.close()
+        except Exception:pass
+        # Keep the original handle and durable attempt. Never kill/retry.
+        raise roles.RoleLaunchUnknown(child,stamp) from None
+    return child,stamp,record
 
 
 def main():
