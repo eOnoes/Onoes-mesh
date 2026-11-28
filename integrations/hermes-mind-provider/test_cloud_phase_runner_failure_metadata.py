@@ -410,5 +410,122 @@ class ModuleFrameExecuteOnceIntegration(unittest.TestCase):
                 self.assertNotIn(fragment,blob)
 
 
+OWNER_SECRET_PROSE=('OwnerHeld: Canonical owner operation is unconfirmed token=super-secret-value '
+    'local={"password":"hunter2"} path=C:\\opt\\data\\private\\owner-plan.json')
+OWNER_SEQUENCE=('{"errorType":"OwnerHeld","frames":[{"file":"cloud_owner_entry.py",'
+    '"function":"<module>","line":197},{"file":"cloud_owner_entry.py","function":"run","line":105},'
+    '{"file":"cloud_owner_entry.py","function":"approved_inputs","line":75},'
+    '{"file":"cloud_owner_entry.py","function":"require","line":27}],'
+    '"messagesAndLocalsExcluded":true}')
+
+
+def owner_frame(function,line=1,file_name='cloud_owner_entry.py'):
+    return ('{"errorType":"OwnerHeld","frames":[{"file":"%s","function":"%s",'
+        '"line":%d}],"messagesAndLocalsExcluded":true}')%(file_name,function,line)
+
+
+class OwnerEntryFrameAllowance(unittest.TestCase):
+    """The pinned owner entry's own sanitized record; frames stay file-specific."""
+
+    def test_owner_sequence_beside_secret_prose_returns_only_sanitized_metadata(self):
+        stderr=('\r\n'+OWNER_SECRET_PROSE+'\r\n'+OWNER_SEQUENCE+'\r\n'+OWNER_SECRET_PROSE+'\r\n').encode()
+        value=runner.parse_failure_metadata(stderr)
+        self.assertIsNotNone(value)
+        self.assertEqual(set(value),{'errorType','frames','messagesAndLocalsExcluded'})
+        self.assertEqual(value['errorType'],'OwnerHeld')
+        self.assertIs(value['messagesAndLocalsExcluded'],True)
+        self.assertEqual([f['function'] for f in value['frames']],
+            ['<module>','run','approved_inputs','require'])
+        self.assertEqual({f['file'] for f in value['frames']},{'cloud_owner_entry.py'})
+        rendered=repr(value)
+        for fragment in ('secret','hunter2','unconfirmed','Canonical','C:\\opt\\data\\private'):
+            self.assertNotIn(fragment,rendered)
+
+    def test_each_permitted_owner_function_accepted(self):
+        for function in runner.FAILURE_METADATA_OWNER_FRAME_FUNCTIONS:
+            value=runner.parse_failure_metadata(owner_frame(function).encode())
+            self.assertIsNotNone(value,function)
+            self.assertEqual(value['frames'],
+                [{'file':'cloud_owner_entry.py','function':function,'line':1}])
+
+    def test_arbitrary_owner_and_gateway_only_functions_rejected_on_owner(self):
+        for function in ('stage','admit','main','run_phase','quiesce_and_stop','_write_gateway_desired_state'):
+            self.assertIsNone(runner.parse_failure_metadata(owner_frame(function).encode()),function)
+
+    def test_owner_only_functions_rejected_on_gateway_files(self):
+        for function in ('<module>','approved_inputs','_same_archive_path'):
+            for file_name in ('service_manager.py','cloud_native_gateway.py'):
+                self.assertIsNone(runner.parse_failure_metadata(
+                    owner_frame(function,file_name=file_name).encode()),(function,file_name))
+
+    def test_owner_full_path_and_other_names_rejected(self):
+        for file_name in ('C:\\opt\\data\\cloud_owner_entry.py','/opt/data/cloud_owner_entry.py',
+            './cloud_owner_entry.py','cloud_owner_entry.py.bak','evil_owner_entry.py'):
+            self.assertIsNone(runner.parse_failure_metadata(
+                owner_frame('run',file_name=file_name).encode()),file_name)
+
+    def test_owner_and_gateway_valid_lines_are_ambiguous(self):
+        self.assertIsNone(runner.parse_failure_metadata((OWNER_SEQUENCE+'\n'+VALID_LINE).encode()))
+        self.assertIsNone(runner.parse_failure_metadata((VALID_LINE+'\n'+OWNER_SEQUENCE).encode()))
+
+    def test_owner_error_types_accepted_and_global_lists_not_broadened(self):
+        for error_type in ('OwnerHeld','ImportError','ModuleNotFoundError'):
+            self.assertIn(error_type,runner.FAILURE_METADATA_ERROR_TYPES)
+            line=('{"errorType":"%s","frames":[{"file":"service_manager.py",'
+                '"function":"stop","line":1}],"messagesAndLocalsExcluded":true}')%error_type
+            value=runner.parse_failure_metadata(line.encode())
+            self.assertIsNotNone(value,error_type)
+            self.assertEqual(value['errorType'],error_type)
+        self.assertEqual(runner.FAILURE_METADATA_OWNER_ENTRY_BASENAMES,('cloud_owner_entry.py',))
+        # The shared gateway function list is byte-for-byte the original tuple;
+        # 'require' already existed there for gateway frames and must stay allowed.
+        self.assertEqual(runner.FAILURE_METADATA_FRAME_FUNCTIONS,
+            ('main','run_phase','_run_phase','quiesce_and_stop','release_and_start','resume_stopped',
+            'assert_stopped','identity','_snapshot','_drained','_owned_marker','_fields','_sources',
+            'require','stop','_run_svc','_write_gateway_desired_state'))
+        for function in ('run','approved_inputs','read','_same_archive_path','<module>'):
+            self.assertNotIn(function,runner.FAILURE_METADATA_FRAME_FUNCTIONS)
+        self.assertNotIn('main',runner.FAILURE_METADATA_OWNER_FRAME_FUNCTIONS)
+        self.assertNotIn('run_phase',runner.FAILURE_METADATA_OWNER_FRAME_FUNCTIONS)
+
+
+class OwnerEntryExecuteOnceIntegration(unittest.TestCase):
+    """Mocked nonzero owner child: only sanitized owner fields reach journals."""
+
+    def setUp(self):
+        module=types.ModuleType('onoes_mind')
+        store=types.ModuleType('onoes_mind.enrollment_store')
+        store.qualify_private_storage=lambda path,kind='directory':Path(path)
+        module.enrollment_store=store
+        patch=mock.patch.dict(sys.modules,{'onoes_mind':module,'onoes_mind.enrollment_store':store})
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def test_nonzero_owner_child_journals_only_sanitized_fields_and_raises(self):
+        stderr=(OWNER_SECRET_PROSE+'\r\n'+OWNER_SEQUENCE+'\r\n').encode()
+        with TemporaryDirectory() as directory:
+            completed=mock.Mock(returncode=1,stdout=b'',stderr=stderr)
+            with mock.patch.object(runner.subprocess,'run',return_value=completed) as run:
+                with self.assertRaises(runner.PhaseTransportHeld):
+                    runner.execute_once([sys.executable,'-I','-B','cloud_owner_entry.py','admit'],
+                        evidence=directory,label='phase-owner')
+            self.assertEqual(1,run.call_count)
+            journal=json.loads((Path(directory)/'phase-owner-TRANSPORT-RESULT.json').read_bytes())
+            self.assertEqual(journal['exitCode'],1)
+            self.assertEqual(set(journal['failureMetadata']),
+                {'errorType','frames','messagesAndLocalsExcluded'})
+            self.assertEqual(journal['failureMetadata']['errorType'],'OwnerHeld')
+            self.assertEqual([f['function'] for f in journal['failureMetadata']['frames']],
+                ['<module>','run','approved_inputs','require'])
+            self.assertIs(journal['failureMetadata']['messagesAndLocalsExcluded'],True)
+            self.assertEqual(journal['stderrBytes'],len(stderr))
+            self.assertEqual(journal['stderrSha256'],hashlib.sha256(stderr).hexdigest())
+            self.assertFalse((Path(directory)/'phase-owner-TRANSPORT-UNKNOWN.json').exists())
+            blob=b''.join(path.read_bytes() for path in sorted(Path(directory).rglob('*')) if path.is_file())
+            for fragment in (b'secret',b'hunter2',b'unconfirmed',b'Canonical',b'owner-plan.json',
+                b'/data/private',b'Cloud phase held'):
+                self.assertNotIn(fragment,blob)
+
+
 if __name__=='__main__':
     unittest.main()
