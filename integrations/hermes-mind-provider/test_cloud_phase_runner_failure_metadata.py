@@ -4,7 +4,7 @@ No real SSH, network, Mind service or child process is launched here. The
 pinned child transport is mocked and qualify_private_storage is injected as a
 fake, so only local TemporaryDirectory journals are written.
 """
-import hashlib,json,sys,types,unittest
+import hashlib,json,subprocess,sys,types,unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
@@ -277,6 +277,137 @@ class ExecuteOnceIntegration(unittest.TestCase):
             self.assertEqual(saved['errorType'],'TimeoutExpired')
             self.assertFalse(any(p.name.endswith('-TRANSPORT-RESULT.json')
                 for p in Path(directory).iterdir()))
+
+
+MODULE_LINE=('{"errorType":"EntryHeld","frames":[{"file":"cloud_gateway_entry.py",'
+    '"function":"<module>","line":251}],"messagesAndLocalsExcluded":true}')
+
+
+def module_frame(file_name,line='251'):
+    return ('{"errorType":"EntryHeld","frames":[{"file":"%s","function":"<module>",'
+        '"line":%s}],"messagesAndLocalsExcluded":true}')%(file_name,line)
+
+
+class ModuleFrameAllowance(unittest.TestCase):
+    """<module> is accepted ONLY for the exact cloud_gateway_entry.py file."""
+
+    def test_module_frame_on_cloud_gateway_entry_accepted(self):
+        value=runner.parse_failure_metadata(MODULE_LINE.encode())
+        self.assertIsNotNone(value)
+        self.assertEqual(value['errorType'],'EntryHeld')
+        self.assertEqual(value['frames'],
+            [{'file':'cloud_gateway_entry.py','function':'<module>','line':251}])
+        self.assertIs(value['messagesAndLocalsExcluded'],True)
+
+    def test_module_frame_alongside_main_frame_accepted(self):
+        stderr=('{"errorType":"EntryHeld","frames":[{"file":"cloud_gateway_entry.py",'
+            '"function":"<module>","line":251},{"file":"cloud_gateway_entry.py",'
+            '"function":"main","line":243}],"messagesAndLocalsExcluded":true}').encode()
+        value=runner.parse_failure_metadata(stderr)
+        self.assertIsNotNone(value)
+        self.assertEqual([f['function'] for f in value['frames']],['<module>','main'])
+
+    def test_module_frame_rejected_on_other_allowed_files(self):
+        for file_name in ('service_manager.py','cloud_native_gateway.py'):
+            self.assertIsNone(runner.parse_failure_metadata(module_frame(file_name).encode()),file_name)
+
+    def test_module_frame_rejected_on_unknown_and_full_paths(self):
+        for file_name in ('evil_entry.py','cloud_client_entry.py','/opt/data/cloud_gateway_entry.py',
+            'C:\\opt\\data\\cloud_gateway_entry.py','./cloud_gateway_entry.py',''):
+            self.assertIsNone(runner.parse_failure_metadata(module_frame(file_name).encode()),file_name)
+
+    def test_module_frame_line_bounds_and_extra_fields_still_rejected(self):
+        for line_json in ('"251"','251.0','true','0','-5','100001','null'):
+            self.assertIsNone(runner.parse_failure_metadata(
+                module_frame('cloud_gateway_entry.py',line_json).encode()),line_json)
+        self.assertIsNone(runner.parse_failure_metadata(
+            ('{"errorType":"EntryHeld","frames":[{"file":"cloud_gateway_entry.py",'
+                '"function":"<module>","line":251,"message":"private locals"}],'
+                '"messagesAndLocalsExcluded":true}').encode()))
+        self.assertIsNone(runner.parse_failure_metadata(
+            ('{"errorType":"EntryHeld","frames":[{"file":"cloud_gateway_entry.py",'
+                '"function":"<module>"}],"messagesAndLocalsExcluded":true}').encode()))
+
+    def test_module_allow_list_is_not_broadened(self):
+        self.assertNotIn('<module>',runner.FAILURE_METADATA_FRAME_FUNCTIONS)
+        self.assertIn('main',runner.FAILURE_METADATA_FRAME_FUNCTIONS)
+        self.assertIn('service_manager.py',runner.FAILURE_METADATA_FRAME_FILES)
+        self.assertIsNotNone(runner.parse_failure_metadata(
+            ('{"errorType":"EntryHeld","frames":[{"file":"service_manager.py",'
+                '"function":"main","line":1}],"messagesAndLocalsExcluded":true}').encode()))
+        self.assertIsNone(runner.parse_failure_metadata(module_frame('service_manager.py').encode()))
+
+
+class RealEntrySubprocessRegression(unittest.TestCase):
+    """One real local child of the adjacent pinned entry, called with no arguments.
+
+    Wrong argc fails inside main() before any plan read, OS-specific operation,
+    network or service action; only the exit code, empty stdout and the entry's
+    own sanitized stderr summary are examined here.
+    """
+
+    ENTRY=Path(__file__).resolve().parent/'cloud_gateway_entry.py'
+
+    def test_wrong_argc_child_yields_entry_held_module_frame(self):
+        self.assertTrue(self.ENTRY.is_file())
+        completed=subprocess.run([sys.executable,'-I','-B',str(self.ENTRY)],
+            capture_output=True,timeout=10)
+        self.assertEqual(completed.returncode,1)
+        self.assertEqual(completed.stdout,b'')
+        value=runner.parse_failure_metadata(completed.stderr)
+        self.assertIsNotNone(value)
+        self.assertEqual(value['errorType'],'EntryHeld')
+        module_frames=[f for f in value['frames']
+            if f['file']=='cloud_gateway_entry.py' and f['function']=='<module>']
+        self.assertEqual(len(module_frames),1)
+        self.assertIsInstance(module_frames[0]['line'],int)
+        self.assertGreater(module_frames[0]['line'],0)
+        self.assertIs(value['messagesAndLocalsExcluded'],True)
+        self.assertEqual(set(value),{'errorType','frames','messagesAndLocalsExcluded'})
+        for frame in value['frames']:
+            self.assertEqual(set(frame),{'file','function','line'})
+            self.assertEqual(frame['file'],'cloud_gateway_entry.py')
+            self.assertNotIn('\\',frame['file'])
+            self.assertNotIn('/',frame['file'])
+        rendered=repr(value)
+        for fragment in ('Cloud phase held','preserve','unconfirmed','Traceback','/opt','sys.argv'):
+            self.assertNotIn(fragment,rendered)
+        for line in completed.stderr.decode('utf-8','replace').splitlines():
+            if line.strip().startswith('{') and line.strip().endswith('}'):continue
+            self.assertNotIn(self.ENTRY.name+'\\',line)
+
+
+class ModuleFrameExecuteOnceIntegration(unittest.TestCase):
+    """Accepted module-frame metadata is journalled yet the nonzero child still raises."""
+
+    def setUp(self):
+        module=types.ModuleType('onoes_mind')
+        store=types.ModuleType('onoes_mind.enrollment_store')
+        store.qualify_private_storage=lambda path,kind='directory':Path(path)
+        module.enrollment_store=store
+        patch=mock.patch.dict(sys.modules,{'onoes_mind':module,'onoes_mind.enrollment_store':store})
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def test_module_metadata_journalled_and_still_raises(self):
+        stderr=(SECRET_PROSE+'\r\n'+MODULE_LINE+'\r\n').encode()
+        with TemporaryDirectory() as directory:
+            completed=mock.Mock(returncode=1,stdout=b'',stderr=stderr)
+            with mock.patch.object(runner.subprocess,'run',return_value=completed) as run:
+                with self.assertRaises(runner.PhaseTransportHeld):
+                    runner.execute_once([sys.executable,'-I','-B','cloud_gateway_entry.py'],
+                        evidence=directory,label='phase-module-frame')
+            self.assertEqual(1,run.call_count)
+            journal=json.loads((Path(directory)/'phase-module-frame-TRANSPORT-RESULT.json').read_bytes())
+            self.assertEqual(journal['exitCode'],1)
+            self.assertEqual(journal['failureMetadata']['errorType'],'EntryHeld')
+            self.assertEqual(journal['failureMetadata']['frames'],
+                [{'file':'cloud_gateway_entry.py','function':'<module>','line':251}])
+            self.assertIs(journal['failureMetadata']['messagesAndLocalsExcluded'],True)
+            self.assertFalse((Path(directory)/'phase-module-frame-TRANSPORT-UNKNOWN.json').exists())
+            blob=b''.join(path.read_bytes() for path in sorted(Path(directory).rglob('*')) if path.is_file())
+            for fragment in (b'secret',b'hunter2',b'Traceback',b'/opt/data/private'):
+                self.assertNotIn(fragment,blob)
 
 
 if __name__=='__main__':

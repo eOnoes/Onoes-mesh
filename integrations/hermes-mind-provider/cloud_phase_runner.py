@@ -54,7 +54,12 @@ def _reject_duplicate_keys(pairs):
 def _valid_failure_frame(frame):
     if type(frame) is not dict or set(frame)!=set(FAILURE_METADATA_FRAME_KEYS):return False
     if frame['file'] not in FAILURE_METADATA_FRAME_FILES:return False
-    if frame['function'] not in FAILURE_METADATA_FRAME_FUNCTIONS:return False
+    function=frame['function']
+    # The pinned entry's top-level handler frames its own module under <module>;
+    # accept that name ONLY for the exact cloud_gateway_entry.py file, never elsewhere.
+    if function=='<module>':
+        if frame['file']!='cloud_gateway_entry.py':return False
+    elif function not in FAILURE_METADATA_FRAME_FUNCTIONS:return False
     line=frame['line']
     return type(line) is int and 1<=line<=100000
 
