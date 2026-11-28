@@ -34,6 +34,22 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def _same_archive_path(reported,approved):
+    # Pure comparison of the native reported archive spelling against the
+    # reviewed approved archive. No filesystem access, no alias acceptance.
+    try:
+        for value in (reported,approved):
+            if type(value) is not str or not value or '\x00' in value:
+                return False
+            if any(component in ('.','..') for component in re.split('[\\\\/]',value)):
+                return False
+        if not (Path(reported).is_absolute() and Path(approved).is_absolute()):
+            return False
+        return Path(reported)==Path(approved)
+    except Exception:
+        return False
+
+
 def read(path):
     path=Path(path)
     require(path.is_absolute() and path.resolve(strict=True)==path and path.stat().st_size<=262144)
@@ -78,8 +94,9 @@ def approved_inputs(action,plan_path,pin,authorization_path):
     backup_profile=read(backup['profilePath'])
     require(backup_profile['resultPath']==plan['beforeBackupResult']
             and backup_profile['encryptedBackup']==plan['beforeArchive']
-            and before['archive']==plan['beforeArchive']
+            and _same_archive_path(before['archive'],plan['beforeArchive'])
             and digest(plan['beforeArchive'])==before['archiveSha256'])
+    require(before['profileSha256']==backup['profileSha256'])
     require(type(plan['attemptId']) is str and re.fullmatch('[a-z0-9][a-z0-9_-]{0,95}',plan['attemptId']))
     return plan
 
@@ -95,7 +112,7 @@ def run(action,plan_path,pin,authorization_path):
         stdin=subprocess.DEVNULL,capture_output=True,timeout=120,creationflags=subprocess.CREATE_NO_WINDOW)
     require(verified.returncode==0)
     verification=json.loads(verified.stdout)
-    require(verification['status']=='archive_verified' and verification['archive']==plan['beforeArchive']
+    require(verification['status']=='archive_verified' and _same_archive_path(verification['archive'],plan['beforeArchive'])
             and verification['sourceLedgerOpened'] is False)
     sdk=Path(plan['sdk']);workspace=Path(plan['workspace'])
     sys.path[:0]=[str(Path(__file__).parent),str(workspace/'integrations/mind-recovery-candidate'),str(sdk)]

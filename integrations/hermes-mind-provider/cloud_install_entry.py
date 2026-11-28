@@ -97,6 +97,33 @@ def _qualify_windows_template_bindings(plan,body):
     except Exception:held()
 
 
+def _qualify_owner_backup_bindings(plan,owner,profile):
+    """Cross-check the planned before-backup against owner-body and profile references.
+
+    Pure input comparison only: no file access, path resolution or normalization.
+    A stale owner backup, profile or archive reference holds before downtime.
+    """
+    def held():raise InstallHeld('Cloud installation held; retain the exact owner window and native receipts')
+    def nonempty(value):return type(value) is str and value!=''
+    def hash64(value):return nonempty(value) and re.fullmatch('[a-f0-9]{64}',value) is not None
+    try:
+        if type(plan) is not dict or type(owner) is not dict or type(profile) is not dict:held()
+        backups=plan['backups'];require(type(backups) is dict)
+        selected=backups['before'];require(type(selected) is dict)
+        descriptor=owner['beforeBackup'];require(type(descriptor) is dict)
+        for field in ('entryPath','entrySha256','profilePath','profileSha256'):
+            require(nonempty(descriptor[field]) and descriptor[field]==selected[field])
+        require(hash64(descriptor['entrySha256']) and hash64(descriptor['profileSha256']))
+        require(nonempty(selected['resultPath']) and nonempty(owner['beforeBackupResult'])
+            and nonempty(profile['resultPath'])
+            and owner['beforeBackupResult']==selected['resultPath']==profile['resultPath'])
+        archive=owner['beforeArchive'];archive2=profile['encryptedBackup']
+        require(nonempty(archive) and nonempty(archive2) and archive==archive2)
+        return True
+    except InstallHeld:raise
+    except Exception:held()
+
+
 def _authorized(auth,plan,pin,legacy):
     if legacy:
         return auth=={'schema':'onoes-cloud-install-authorization/v2','owner':'Eddie',
@@ -260,6 +287,7 @@ class CombinedWindow:
             require(profile['archiveCredentialMode']=='windows-local'
                 and profile['resultPath']==value['resultPath']
                 and not os.path.lexists(profile['resultPath']) and not os.path.lexists(profile['attemptPath']))
+            if which=='before':_qualify_owner_backup_bindings(self.plan,self.owner_body,profile)
         operator=read(self.owner_body['operator']['path'])['binding']
         require(all(self.plan['canonicalBinding'][k]==operator[k] for k in (
             'database_path','store_id','environment','authority_ref','file_device','file_inode')))
