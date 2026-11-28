@@ -196,8 +196,16 @@ class NativePhases:
             evidence=self.evidence,label=label,timeout=600,private_stdout=True)
         result_path=qualify_private_storage(Path(body['resultPath']),kind='file')
         result=json.loads(result_path.read_bytes())
+        # Path identity only: exact str spellings compared as absolute pathlib Paths, so Windows
+        # slash/case variants of the same location match. Never samefile/resolve: a hardlink,
+        # symlink or relative alias to the same bytes stays a different archive.
+        reported=Path(result['archive']) if type(result['archive']) is str else None
+        approved=Path(body['encryptedBackup']) if type(body['encryptedBackup']) is str else None
+        same=(reported is not None and approved is not None and reported.is_absolute()
+            and approved.is_absolute() and '..' not in reported.parts and '..' not in approved.parts
+            and reported==approved)
         require(result['profileSha256']==value['profileSha256'] and result['status']=='backup_complete_inactive'
-            and result['archiveRehearsal']=='PASS' and result['archive']==body['encryptedBackup']
+            and result['archiveRehearsal']=='PASS' and same
             and digest(result['archive'])==result['archiveSha256'] and result['serviceStarted'] is False)
         return result
 
