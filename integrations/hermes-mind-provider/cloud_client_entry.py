@@ -5,7 +5,7 @@ Credential stdin and curated stdout are private transports, never journal text.
 The caller installs public code before capture and delivers credentials later.
 """
 from dataclasses import replace
-import base64,hashlib,importlib.util,json,os,stat,subprocess,sys,traceback
+import base64,hashlib,importlib.util,json,os,re,stat,subprocess,sys,traceback
 from pathlib import Path
 
 
@@ -101,6 +101,53 @@ def installed(plan,package):
     return sdk
 
 
+def _reuse_public_materialization(plan,package,prior):
+    # Bounded READ-ONLY qualification of an explicitly approved prior public
+    # install. Never save/mkdir/write/rename/unlink or touch services, models,
+    # stores or custody. The old receipt is immutable evidence, never authority
+    # for gateway retirement, and fresh materialization is never implied.
+    require(type(prior) is dict and set(prior)=={'path','sha256'}
+        and type(prior['path']) is str and type(prior['sha256']) is str
+        and re.fullmatch(r'[0-9a-f]{64}',prior['sha256']))
+    prior_path=Path(prior['path']);home=Path(plan['home'])
+    require(prior_path.is_absolute() and prior_path.resolve(strict=True)==prior_path
+        and not prior_path.is_symlink() and prior_path.name=='MATERIALIZED.json'
+        and prior_path.parent.name.startswith('onoes-cloud-window-')
+        and prior_path.parent.parent==home and prior_path.parent!=Path(plan['evidence'])
+        and package.home==str(home))
+    raw=private_read(prior_path);require(sha(raw)==prior['sha256'])
+    receipt=json.loads(raw.decode('utf-8'));require(type(receipt) is dict)
+    for k,v in package.descriptor().items():require(receipt.get(k)==v)
+    require(receipt.get('codeInstalled') is True and receipt.get('nativeMcpChanged') is False
+        and receipt.get('readerVersion')=='1.26.0' and re.fullmatch(r'[0-9a-f]{64}',str(receipt.get('bootstrapPthSha256'))))
+    require(digest(home/'config.yaml')==plan['configurationBeforeSha256'])
+    root=home/'onoes-mind';client=root/'cyony';sdk=root/'sdk-4a7c3e3';plugin=home/'plugins/onoes_mind'
+    require({q.name for q in root.iterdir()}=={'sdk-4a7c3e3','cyony'}
+        and {q.name for q in client.iterdir()}=={'custody','intents','review','reader-runtime','vendor'})
+    for folder in (client/'custody',client/'intents'):
+        info=os.lstat(folder);require(info.st_uid==os.geteuid() and stat.S_ISDIR(info.st_mode)
+            and stat.S_IMODE(info.st_mode)==0o700 and folder.resolve(strict=True)==folder
+            and not any(folder.iterdir()))
+    require(not os.path.lexists(client/'intent.key'))
+    names=set(package.files)
+    def walk(path):
+        for entry in path.iterdir():
+            info=os.lstat(entry);require(not stat.S_ISLNK(info.st_mode))
+            if stat.S_ISDIR(info.st_mode):walk(entry)
+            else:
+                require(stat.S_ISREG(info.st_mode) and entry.relative_to(home).as_posix() in names)
+    for path in (sdk,plugin,client/'vendor'):
+        require(os.path.isdir(path) and not os.path.islink(path));walk(path)
+    site=client/'reader-runtime'/f'lib/python{sys.version_info.major}.{sys.version_info.minor}'/'site-packages'
+    require({q.name for q in site.iterdir()}=={'onoes-reader-dependencies.pth'}
+        and digest(site/'onoes-reader-dependencies.pth')==receipt['bootstrapPthSha256'])
+    runtime=client/'reader-runtime'
+    require(os.path.realpath(runtime/'bin/python')==package.python_resolved
+        and digest(runtime/'bin/python')==package.python_sha256)
+    installed({**plan,'evidence':str(prior_path.parent)},package)
+    return {**receipt,'publicCodeReused':True,'codeNewlyInstalled':False,'priorMaterializationSha256':prior['sha256']}
+
+
 def switch_plan(plan,package,*,restore=False):
     api=load('portable_owner_switch.py',plan['executors']['portable_owner_switch.py'])
     meta=package.descriptor();home=Path(plan['home'])
@@ -182,7 +229,10 @@ def _run_checked(phase,pin,context):
         return {'verified':True,'configurationUntouched':True}
     if phase=='materialize':
         save(evidence/'MATERIALIZE-ATTEMPT.json',{'planSha256':pin,'automaticRetry':False})
-        result=package_api.materialize(package);held();save(evidence/'MATERIALIZED.json',result)
+        if 'priorPublicMaterialization' in plan:
+            result=_reuse_public_materialization(plan,package,plan['priorPublicMaterialization'])
+        else:result=package_api.materialize(package)
+        held();save(evidence/'MATERIALIZED.json',result)
         return {'verified':True,'publicCodeOnly':True,'credentialsCreated':False,'configChanged':False}
     installed(plan,package)
     if phase=='capture':
