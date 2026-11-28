@@ -9,6 +9,7 @@ import base64,hashlib,importlib.util,json,os,re,secrets,subprocess,sys,traceback
 from pathlib import Path
 
 DECISION='approve_cyony_private_home_and_mesh_reader'
+LEGACY_DECISION='approve_cyony_private_home_and_mesh_reader_with_exact_legacy_case_policy'
 TASK='ONOes Mesh Workroom Recovery'
 
 
@@ -47,13 +48,80 @@ def load(path,name,pin):
     return module
 
 
+def _validated(action):
+    """Malformed gate input becomes a sanitized hold; never echo input data."""
+    try:return action()
+    except (InstallHeld,ValueError,OSError,OverflowError,TypeError,AttributeError,KeyError,IndexError,ImportError):
+        raise InstallHeld('Cloud installation held; retain the exact owner window and native receipts') from None
+
+
+def _authorized(auth,plan,pin,legacy):
+    if legacy:
+        return auth=={'schema':'onoes-cloud-install-authorization/v2','owner':'Eddie',
+            'decision':LEGACY_DECISION,'planSha256':pin,'legacyCaseSha256':plan['legacyCasePolicy']['sha256']}
+    return auth=={'schema':'onoes-cloud-install-authorization/v1','owner':'Eddie',
+        'decision':DECISION,'planSha256':pin}
+
+
+def owner_authorization(plan,pin,authorization):
+    """Exact owner authorization; a legacy descriptor never relaxes the v1 form."""
+    return _validated(lambda:_owner_authorization(plan,pin,authorization))
+
+
+def _owner_authorization(plan,pin,authorization):
+    if type(plan) is not dict or type(pin) is not str or not re.fullmatch('[a-f0-9]{64}',pin):
+        raise InstallHeld('Cloud installation held; retain the exact owner window and native receipts')
+    auth=authorization
+    require(type(auth) is dict)
+    if 'legacyCasePolicy' not in plan:
+        require(_authorized(auth,plan,pin,False))
+        return auth
+    descriptor=plan['legacyCasePolicy']
+    require(type(descriptor) is dict and set(descriptor)=={'path','sha256','originalAttempts'}
+        and type(descriptor['sha256']) is str and re.fullmatch('[a-f0-9]{64}',descriptor['sha256']))
+    require(_authorized(auth,plan,pin,True))
+    return auth
+
+
+def test_accounting(plan,pin,authorization):
+    """Test accounting only; never proof of production retirement."""
+    return _validated(lambda:_test_accounting(plan,pin,authorization))
+
+
+def _test_accounting(plan,pin,authorization):
+    auth=_owner_authorization(plan,pin,authorization)
+    retirement=plan['remoteTestRetirement']
+    require(digest(retirement['path'])==retirement['sha256'])
+    known=read(retirement['path'])
+    if 'legacyCasePolicy' not in plan:
+        require(known.get('remaining')==0 and known.get('verified') is True)
+        return None
+    descriptor=plan['legacyCasePolicy']
+    helper=Path(__file__).with_name('cloud_legacy_case_policy.py')
+    require(str(helper) in plan['sourcePins'])
+    module=load(helper,'cloud_legacy_case_policy',plan['sourcePins'][str(helper)])
+    require(digest(descriptor['path'])==descriptor['sha256'])
+    policy=read(descriptor['path'])
+    require(Path(descriptor['path']).read_bytes()==json.dumps(policy,sort_keys=True,
+        separators=(',',':'),ensure_ascii=True,allow_nan=False).encode('ascii'))
+    attempts=descriptor['originalAttempts']
+    require(type(attempts) is dict and set(attempts)=={'r12','r13'})
+    for actor in module.EXPECTED_ACTORS:
+        item=attempts[actor['label']]
+        require(type(item) is dict and set(item)=={'path','sha256'}
+            and item['sha256']==actor['originalAttemptSha256'])
+        read(item['path'])
+        require(digest(item['path'])==item['sha256'])
+    return module.validate_policy(policy,known,auth,plan_sha256=pin,policy_sha256=descriptor['sha256'])
+
+
 def approved_inputs(path,pin,authorization):
     """Validate the complete source and owner contract before SDK or helper imports."""
     require(os.name=='nt' and sys.flags.isolated==1 and sys.dont_write_bytecode
         and type(pin) is str and re.fullmatch('[a-f0-9]{64}',pin) and digest(path)==pin)
-    plan=read(path)
-    require(read(authorization)=={'schema':'onoes-cloud-install-authorization/v1','owner':'Eddie',
-        'decision':DECISION,'planSha256':pin})
+    plan=read(path);auth=read(authorization)
+    require(('legacyCasePolicy' in plan)==('legacyCaseSha256' in auth))
+    owner_authorization(plan,pin,auth)
     require(plan['schema']=='onoes-cloud-install-window/v1' and plan['agentId']=='cyony'
         and plan['readerPrincipal']=='context-cyony' and plan['sharedProject']=='onoes-mesh'
         and type(plan['modelCalls']) is int and plan['modelCalls']==0
@@ -63,6 +131,7 @@ def approved_inputs(path,pin,authorization):
         and Path(sys.executable).resolve()==python and digest(python)==plan['pythonSha256'])
     required={Path(__file__).with_name(n) for n in ('cloud_install_entry.py','cloud_install_window.py',
         'cloud_phase_runner.py','cloud_windows_task.py','cloud_source_selection.py','private_mind_route.py')}
+    if 'legacyCasePolicy' in plan:required.add(Path(__file__).with_name('cloud_legacy_case_policy.py'))
     required.update((sdk/'onoes_mind').rglob('*.py'));required.update((sdk/'onoes_mind/migrations').glob('*.sql'))
     core=workspace/'integrations'
     require(plan['core']['rolesPath']==str(core/'mind-recovery-candidate/recall_process_candidate.py')
@@ -71,6 +140,10 @@ def approved_inputs(path,pin,authorization):
     require(sdk/'onoes_mind/__init__.py' in required and all(str(p) in plan['sourcePins'] for p in required))
     for filename,expected in plan['sourcePins'].items():
         p=Path(filename);require(p.is_absolute() and p.resolve(strict=True)==p and digest(p)==expected)
+    # Test accounting only; this never proves production retirement, which the
+    # unchanged native window enforces separately. Unapproved evidence must not
+    # import the SDK.
+    test_accounting(plan,pin,auth)
     sys.path[:0]=[str(Path(__file__).parent),str(sdk)]
     import onoes_mind
     require(Path(onoes_mind.__file__).resolve().parents[1]==sdk)
@@ -81,10 +154,6 @@ def approved_inputs(path,pin,authorization):
     locations=list(map(Path,plan['evidence'].values()))
     require(len(set(locations))==len(locations) and all(not list(p.iterdir()) for p in locations
         if p!=Path(plan['evidence']['private'])))
-    # A stopped earlier test is not inferred from an absent local SSH process.
-    retirement=plan['remoteTestRetirement']
-    require(digest(retirement['path'])==retirement['sha256'])
-    known=read(retirement['path']);require(known.get('remaining')==0 and known.get('verified') is True)
     return plan
 
 
@@ -95,6 +164,8 @@ class CombinedWindow:
         import cloud_source_selection as selection
         import private_mind_route as routes
         self.plan=plan;self.pin=pin;self.execution=deepcopy(plan)
+        self.authorization=authorization
+        self.test_disposition=test_accounting(self.plan,self.pin,self.authorization)
         self.root={k:Path(v) for k,v in plan['evidence'].items()}
         self.phase=NativePhases(self.execution,pin,authorization,self.root['transport'])
         self.task=TaskWindow(Binding(**plan['taskBinding']),self.root['task'])
@@ -119,6 +190,7 @@ class CombinedWindow:
 
     def preflight(self,pin,evidence):
         require(pin==self.pin and Path(evidence)==self.root['journal'])
+        require(test_accounting(self.plan,self.pin,self.authorization)==self.test_disposition)
         b=self.task.binding;state=self.task.status()
         require(b.task_name==TASK and b.task_path=='\\' and state['definitionSha256']==b.original_sha256
             and state['otherDefinitionSha256']==b.other_sha256 and state['enabled']==b.original_enabled)
@@ -364,6 +436,10 @@ def main():
     path,pin,auth=sys.argv[1:];plan=approved_inputs(path,pin,auth)
     from cloud_install_window import install_once
     adapter=CombinedWindow(plan,pin,read(auth))
+    # Quarantined legacy test accounting (UNKNOWN retirement retained), never a
+    # remaining0 claim; the strict legacy-free path writes no extra file.
+    if adapter.test_disposition is not None:
+        save(Path(plan['evidence']['private'])/'LEGACY-TEST-ACCOUNTING.json',adapter.test_disposition)
     result=install_once(adapter,plan['evidence']['journal'],pin)
     # Re-enable the original recovery trigger only after either complete new
     # health or complete original health. A failure here holds this final stage

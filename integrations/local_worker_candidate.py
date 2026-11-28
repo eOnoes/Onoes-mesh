@@ -233,9 +233,19 @@ def prompt_for(task, originals, failure=None):
              'Read file_path choices: ' + json.dumps(list(originals)) + '\n'
              'Write/edit file_path choices: ' + json.dumps(task['allowed_files']) + '\n'
              'Example read input: ' + json.dumps({"file_path": task['allowed_files'][0]}) + '\n'
+             'Example write input: ' + json.dumps({'file_path': task['allowed_files'][0],
+                                                   'content': '<complete intended file text>'}) + '\n'
+             'Example edit input: ' + json.dumps({'file_path': task['allowed_files'][0],
+                                                  'old_string': '<exact existing text>',
+                                                  'new_string': '<replacement text>'}) + '\n'
              'The example only demonstrates the required path; supply the chosen '
              'tool\'s other required arguments. Context choices are read-only unless also '
-             'listed in allowed_files; not every shown path is writable.\n')
+             'listed in allowed_files; not every shown path is writable.\n'
+             'Every read/write/edit, including subsequent edits, needs file_path from the listed relative '
+             'choices. Selected paths are already known; avoid globs and searches. If an edit reports '
+             'old_string absent, read one narrow current snippet then make one corrected edit; do not '
+             'repeat the same failing edit. Stop once the required edits are done; the coordinator runs '
+             'the tests.\n')
     if task.get('lessons'):
         text += '\nReviewed task-specific lessons:\n' + '\n'.join(task['lessons']) + '\n'
     if failure:

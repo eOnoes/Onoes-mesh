@@ -65,14 +65,30 @@ class NativePhases:
     CLIENT=('materialize','capture','export-curated','deliver','select','restore','qualify-held','qualify-original-held')
 
     def __init__(self,plan,plan_sha256,authorization,evidence):
-        require(authorization=={'schema':'onoes-cloud-install-authorization/v1','owner':'Eddie',
-            'decision':'approve_cyony_private_home_and_mesh_reader','planSha256':plan_sha256}
-            and re.fullmatch('[a-f0-9]{64}',plan_sha256))
+        # Mirror the master entry owner_authorization contract exactly. No legacyCasePolicy key
+        # keeps the old strict v1 form; a present descriptor demands an explicit hash-bound v2.
+        # A null/malformed descriptor never falls back to v1 and v2 is never forged into v1.
+        # Construction performs no operation; the entry still owns full pinned case/attempt checks.
+        try:
+            require(type(plan) is dict and type(plan_sha256) is str
+                and re.fullmatch('[a-f0-9]{64}',plan_sha256) and type(authorization) is dict)
+            if 'legacyCasePolicy' not in plan:
+                require(authorization=={'schema':'onoes-cloud-install-authorization/v1','owner':'Eddie',
+                    'decision':'approve_cyony_private_home_and_mesh_reader','planSha256':plan_sha256})
+            else:
+                descriptor=plan['legacyCasePolicy']
+                require(type(descriptor) is dict and set(descriptor)=={'path','sha256','originalAttempts'}
+                    and type(descriptor['sha256']) is str and re.fullmatch('[a-f0-9]{64}',descriptor['sha256'])
+                    and authorization=={'schema':'onoes-cloud-install-authorization/v2','owner':'Eddie',
+                        'decision':'approve_cyony_private_home_and_mesh_reader_with_exact_legacy_case_policy',
+                        'planSha256':plan_sha256,'legacyCaseSha256':descriptor['sha256']})
+        except (AttributeError,TypeError,KeyError,IndexError):
+            raise PhaseTransportHeld('Exact native phase is unconfirmed; preserve original receipts') from None
         # The enclosing entry checks the raw master-plan SHA. This helper also
         # refuses a broader identity, scope or task regardless of child inputs.
-        require(plan['schema']=='onoes-cloud-install-window/v1' and plan['agentId']=='cyony'
-            and plan['readerPrincipal']=='context-cyony' and plan['sharedProject']=='onoes-mesh'
-            and plan['modelCalls']==0 and plan['maintenanceTask']=='ONOes Mesh Workroom Recovery')
+        require(plan.get('schema')=='onoes-cloud-install-window/v1' and plan.get('agentId')=='cyony'
+            and plan.get('readerPrincipal')=='context-cyony' and plan.get('sharedProject')=='onoes-mesh'
+            and plan.get('modelCalls')==0 and plan.get('maintenanceTask')=='ONOes Mesh Workroom Recovery')
         self.plan=plan;self.evidence=Path(evidence)
 
     def local(self,kind,phase,*,label):

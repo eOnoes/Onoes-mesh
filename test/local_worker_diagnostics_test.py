@@ -213,6 +213,25 @@ class DiagnosticsTests(unittest.TestCase):
             self.assertNotIn(':/', name)
             self.assertFalse(Path(name).is_absolute())
 
+    def test_prompt_card_shows_write_and_edit_inputs_with_file_path(self):
+        for allowed in ('guide.md', 'docs/écho notes.md'):
+            task = dict(allowed_files=[allowed], instruction='Edit the allowed file.',
+                        checks=[{'type': 'python_syntax', 'path': allowed}], lessons=['Include file_path.'])
+            originals = {allowed: b'notes', 'context.txt': b'read only'}
+            prompt = w.prompt_for(task, originals)
+            write = self.card_after(prompt, 'Example write input:')
+            self.assertEqual(set(write), {'file_path', 'content'})
+            self.assertEqual(write['file_path'], allowed)
+            self.assertNotIn('context.txt', write['file_path'])
+            self.assertTrue(write['content'])
+            edit = self.card_after(prompt, 'Example edit input:')
+            self.assertEqual(set(edit), {'file_path', 'old_string', 'new_string'})
+            self.assertEqual(edit['file_path'], allowed)
+            self.assertNotIn('context.txt', edit['file_path'])
+            self.assertTrue(edit['old_string'])
+            self.assertTrue(edit['new_string'])
+            self.assertEqual(self.card_after(prompt, 'Example read input:'), {'file_path': allowed})
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
