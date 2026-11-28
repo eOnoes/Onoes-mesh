@@ -124,6 +124,40 @@ def _qualify_owner_backup_bindings(plan,owner,profile):
     except Exception:held()
 
 
+def _qualify_owner_tool_grant_bindings(plan,writer_profile):
+    """Read-only before-downtime guard for the owner tool-grant pointer.
+
+    Requires the reviewed writer-profile row to point at one canonical regular
+    file already pinned in master plan.sourcePins with an exact lowercase SHA256
+    match. Never creates, writes or activates a grant; native owner validation
+    of the SDK grant document still happens later, unchanged.
+    """
+    def held():raise InstallHeld('Cloud installation held; retain the exact owner window and native receipts')
+    def canonical_file(path):
+        require(type(path) is str and os.path.isabs(path))
+        require(Path(path).resolve(strict=True)==Path(path))
+        require(os.lstat(path).st_mode&0o170000==0o100000)
+        return Path(path)
+    try:
+        if type(plan) is not dict or type(writer_profile) is not dict:held()
+        require(plan['readerPrincipal']=='context-cyony' and plan['sharedProject']=='onoes-mesh')
+        rows=writer_profile['projectReaderBindings'];require(type(rows) is list)
+        selected=[]
+        for row in rows:
+            require(type(row) is dict)
+            binding=row['binding'];require(type(binding) is dict)
+            if binding['principal_id']=='context-cyony' and binding['project_id']=='onoes-mesh':
+                selected.append(row)
+        require(len(selected)==1)
+        grant=canonical_file(selected[0]['toolGrantPath'])
+        pins=plan['sourcePins'];require(type(pins) is dict)
+        pin=pins[str(grant)]
+        require(type(pin) is str and re.fullmatch('[a-f0-9]{64}',pin) is not None)
+        require(digest(grant)==pin)
+        return True
+    except (KeyError,TypeError,ValueError,AttributeError,OSError,InstallHeld):held()
+
+
 def _authorized(auth,plan,pin,legacy):
     if legacy:
         return auth=={'schema':'onoes-cloud-install-authorization/v2','owner':'Eddie',
@@ -294,6 +328,7 @@ class CombinedWindow:
         writer=self.owner_body['writer']
         require(digest(writer['path'])==writer['sha256'])
         service=read(writer['path'])
+        _qualify_owner_tool_grant_bindings(self.plan,service)
         homes=[r for r in service['agentHomeBindings'] if r['agent_id']=='cyony']
         readers=[r['binding'] for r in service['projectReaderBindings']
             if r['binding']['principal_id']=='context-cyony' and r['binding']['project_id']=='onoes-mesh']
