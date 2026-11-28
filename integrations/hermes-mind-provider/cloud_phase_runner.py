@@ -167,8 +167,12 @@ class NativePhases:
             and digest(entry)==value['entrySha256'] and digest(value['planPath'])==value['planSha256']
             and python.is_absolute() and python.resolve(strict=True)==python
             and digest(python)==self.plan['pythonSha256'])
+        # The global transport ceiling stays 600. Windows mutating phases need
+        # the full envelope for native role graceful-stop/readiness; every
+        # other local phase keeps the default 180 explicitly.
+        timeout=600 if kind=='windows' and phase in ('retire-old','retire-new','start-new','start-original') else 180
         return execute_once([str(python),'-I','-B',str(entry),phase,value['planPath'],
-            value['planSha256'],value['authorizationPath']],evidence=self.evidence,label=label)
+            value['planSha256'],value['authorizationPath']],evidence=self.evidence,label=label,timeout=timeout)
 
     def backup(self,which,*,label):
         from onoes_mind.enrollment_store import qualify_private_storage
